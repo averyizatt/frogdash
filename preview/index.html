@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
   <title>frogdash — browser preview (sim only)</title>
-  <link rel="stylesheet" href="style.css?v=0.2.6">
+  <link rel="stylesheet" href="style.css?v=0.2.7">
 </head>
 <body>
   <div class="frame-tag">1920×720 — design preview · SIM MODE · no hardware</div>
@@ -135,7 +136,7 @@
           <div class="rbar">
             <div class="lab">Fuel P</div>
             <div class="val"><span class="n" id="fuelp-val">39</span><span class="u">psi</span></div>
-            <div class="vbar"><div class="fill" id="fuelp-fill" style="width:65%; background:linear-gradient(90deg, var(--crit), var(--warn), var(--ok));"></div></div>
+            <div class="vbar"><div class="fill" id="fuelp-fill" style="width:65%; background:var(--ok);"></div></div>
           </div>
           <div class="rbar">
             <div class="lab">Oil P</div>
@@ -148,9 +149,9 @@
         </div>
       </div>
 
-      <div class="brand">FROGDASH · v0.2</div>
-      <div class="sw-version">SIM MODE · ECU sim · GPS sim · CAN sim</div>
-      <div class="menu-hint">KNOCK · press K or sim button</div>
+      <div class="brand">FROGDASH · v0.2.7</div>
+      <div class="sw-version">SIM MODE · GPS sim · CAN sim</div>
+      <button class="knock-launch" id="knock-launch" type="button" aria-haspopup="dialog">KNOCK MONITOR</button>
     </div>
   </div>
 
@@ -161,8 +162,6 @@
       <label><input type="checkbox" id="sim-turn-left">  Left turn</label>
       <label><input type="checkbox" id="sim-turn-right"> Right turn</label>
       <label><input type="checkbox" id="sim-highbeam">  High beam</label>
-      <label><input type="checkbox" id="sim-ecu">       Check engine</label>
-      <label><input type="checkbox" id="sim-brake">     Brake warning</label>
       <button id="sim-open-knock">Open knock monitor</button>
     </div>
     <div class="row">
@@ -185,6 +184,7 @@
         <input type="range" id="sim-fuelp" min="0" max="60" value="39">
         <span id="sim-fuelp-val">39</span> psi
       </label>
+    </div>
     <div class="row">
       <label class="slider-label">Fuel sensor Ω
         <input type="range" id="sim-fuel-r" min="10" max="73" value="42">
@@ -232,25 +232,25 @@
 
   <!-- Knock submenu (modal overlay) -->
   <div class="menu-overlay" id="knock-overlay" hidden>
-    <div class="menu-card knock-card">
-      <div class="menu-title">KNOCK MONITOR · <span id="knock-source">CAN 0x307 EngineKnockState</span></div>
+    <div class="menu-card knock-card" role="dialog" aria-modal="true" aria-labelledby="knock-title">
+      <button class="knock-close" id="knock-close" type="button" aria-label="Close knock monitor">×</button>
+      <div class="menu-title" id="knock-title">KNOCK MONITOR · <span id="knock-source">CAN 0x307 EngineKnockState</span></div>
 
       <div class="knock-graph-wrap">
         <svg class="knock-graph" id="knock-graph" viewBox="0 0 800 280" preserveAspectRatio="none">
           <!-- gridlines -->
           <g class="knock-grid">
-            <line x1="0" y1="56"  x2="800" y2="56" />
-            <line x1="0" y1="112" x2="800" y2="112" />
-            <line x1="0" y1="168" x2="800" y2="168" />
-            <line x1="0" y1="224" x2="800" y2="224" />
+            <line x1="0" y1="70"  x2="800" y2="70" />
+            <line x1="0" y1="140" x2="800" y2="140" />
+            <line x1="0" y1="210" x2="800" y2="210" />
           </g>
           <!-- y axis labels: 0..255 -->
           <g class="knock-axis">
             <text x="6" y="14">255</text>
-            <text x="6" y="62">192</text>
-            <text x="6" y="110">128</text>
-            <text x="6" y="166">64</text>
-            <text x="6" y="222">0</text>
+            <text x="6" y="74">192</text>
+            <text x="6" y="144">128</text>
+            <text x="6" y="214">64</text>
+            <text x="6" y="274">0</text>
           </g>
           <!-- threshold (max) line -->
           <line id="knock-thresh" class="knock-thresh" x1="0" y1="0" x2="800" y2="0" />
@@ -277,10 +277,10 @@
         <div class="kstat"><span class="klab">Status</span><span class="kval" id="knock-status">OK</span></div>
       </div>
 
-      <div class="menu-hint-small">Close: click outside · K key · back button (future)</div>
+      <div class="menu-hint-small">Close: × · click outside · K or Esc</div>
     </div>
   </div>
 
-  <script src="app.js?v=0.2.6"></script>
+  <script src="app.js?v=0.2.7"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-// frogdash v0.2 — browser preview simulator (DESIGN REVIEW ONLY)
+// frogdash v0.2.7 — browser preview simulator (DESIGN REVIEW ONLY)
 // No hardware, no CAN, no GPIO, no GPS. All values are simulated.
 (() => {
   'use strict';
@@ -54,7 +54,7 @@
     speed: 47,
     rpm: 3450,
     throttle: 0.0,
-    coolant: 235,
+    coolant: 205,
     iat: 92,
     // fuel: simulate resistance (Ω), derive % for display
     fuelR: 42,
@@ -65,7 +65,6 @@
     fuelP: 39,
     afr: 12.4,
     ego: 3.1,
-    ext: 54,
     sats: 11,
     // === knock (CCM EngineKnockState 0x307, DLC 8) ===
     // B0 status_flags, B1 energy, B2 baseline, B3 threshold,
@@ -81,9 +80,7 @@
     turnLeft: false,
     turnRight: false,
     highbeam: false,
-    ecu: false,
-    brake: false,
-    coolantWarn: true,
+    coolantWarn: false,
 
     // water/meth
     methState: 'ARMED',
@@ -101,7 +98,6 @@
     coolVal: $('coolant-val'), coolFill: $('coolant-fill'),
     iatVal: $('iat-val'),     iatFill: $('iat-fill'),
     fuelVal: $('fuel-val'),   fuelFill: $('fuel-fill'),
-    topbarFuelPct: $('topbar-fuel-pct'),
     battVal: $('batt-val'),   battFill: $('batt-fill'),
     boostVal: $('boost-val'), boostFill: $('boost-fill'),
     oilpVal: $('oilp-val'),
@@ -110,9 +106,9 @@
     egoVal: $('ego-val'),
     afrVal: $('afr-val'), afrLambda: $('afr-lambda'), afrState: $('afr-state'),
     afrPointer: $('afr-pointer'),
-    topbarExt: $('topbar-ext'),
     gpsSats: $('gps-sats'),
     clockTime: $('clock-time'),
+    clockTz: $('clock-tz'),
     warnBanner: $('warn-banner'),
     iconHigh: $('icon-highbeam'),
     turnLeft:  $('turn-left'),
@@ -165,11 +161,10 @@
     const coolTarget = state.coolantWarn ? 235 : 200 + Math.sin(t * 0.05) * 8;
     state.coolant = lerp(state.coolant, coolTarget, 0.01);
 
-    state.iat = lerp(state.iat, state.ext + 30 + state.throttle * 15, 0.005);
+    state.iat = lerp(state.iat, 84 + state.throttle * 15, 0.005);
     state.battery = lerp(state.battery, 14.0 + Math.sin(t * 0.3) * 0.3, 0.05);
     state.oilP = lerp(state.oilP, 25 + (state.rpm / 6000) * 55, 0.05);
     state.sats = Math.round(lerp(state.sats, 10 + Math.sin(t * 0.2) * 2, 0.05));
-    state.ext = Math.round(54 + Math.sin(t * 0.02) * 3);
 
     // fuel % tracks the slider (which sets resistance)
     state.fuel = fuelPctFromResistance(state.fuelR);
@@ -197,7 +192,6 @@
     els.fuelVal.textContent = Math.round(state.fuel);
     els.fuelFill.style.width = state.fuel + '%';
     els.fuelFill.style.background = 'var(--accent)';
-    els.topbarFuelPct.textContent = Math.round(state.fuel);
     if (state.fuel <= FUEL_LOW_PCT) {
       els.fuelVal.style.color = 'var(--warn)';
     } else {
@@ -214,12 +208,15 @@
     if (state.fuelP < 15) {
       els.fuelpVal.style.color = 'var(--crit)';
       els.fuelpFill.className = 'fill crit';
+      els.fuelpFill.style.background = 'var(--crit)';
     } else if (state.fuelP < 25) {
       els.fuelpVal.style.color = 'var(--warn)';
       els.fuelpFill.className = 'fill warn';
+      els.fuelpFill.style.background = 'var(--warn)';
     } else {
       els.fuelpVal.style.color = 'var(--text-0)';
       els.fuelpFill.className = 'fill';
+      els.fuelpFill.style.background = 'var(--ok)';
     }
     els.egoVal.textContent = (state.ego >= 0 ? '+' : '') + fmt(state.ego, 1);
 
@@ -234,7 +231,6 @@
     els.afrPointer.setAttribute('transform', `rotate(${afrAngle.toFixed(1)} 120 120)`);
 
     // topbar
-    els.topbarExt.textContent = state.ext;
     els.gpsSats.textContent = `FIX ${state.sats} SAT`;
 
     // clock — 12-hour format
@@ -242,6 +238,7 @@
     let h12 = now.getHours() % 12;
     if (h12 === 0) h12 = 12;
     els.clockTime.textContent = `${h12}:${String(now.getMinutes()).padStart(2,'0')}`;
+    els.clockTz.textContent = now.getHours() >= 12 ? 'PM' : 'AM';
 
     // turn signals (chevron ticker)
     els.turnLeft.dataset.on  = state.turnLeft  ? 'true' : 'false';
@@ -249,8 +246,6 @@
 
     // topbar icons
     els.iconHigh.classList.toggle('on', state.highbeam);
-    els.iconEcu.classList.toggle('amber', state.ecu);
-    els.iconBrake.classList.toggle('warn', state.brake);
 
     // === water/meth cell ===
     els.methStatePill.dataset.state = state.methState;
@@ -327,8 +322,6 @@
   $('sim-turn-left').addEventListener('change',  (e) => state.turnLeft  = e.target.checked);
   $('sim-turn-right').addEventListener('change', (e) => state.turnRight = e.target.checked);
   $('sim-highbeam').addEventListener('change',   (e) => state.highbeam  = e.target.checked);
-  $('sim-ecu').addEventListener('change',        (e) => state.ecu       = e.target.checked);
-  $('sim-brake').addEventListener('change',      (e) => state.brake     = e.target.checked);
   $('sim-warn-coolant').addEventListener('click', () => { state.coolantWarn = true; });
   $('sim-clear-warn').addEventListener('click',   () => { state.coolantWarn = false; });
 
@@ -372,8 +365,12 @@
   });
   // open the knock submenu (option a: modal overlay)
   const knockOverlay = $('knock-overlay');
-  $('sim-open-knock').addEventListener('click', () => { knockOverlay.hidden = false; });
-  knockOverlay.addEventListener('click', (e) => { if (e.target === knockOverlay) knockOverlay.hidden = true; });
+  const openKnock = () => { knockOverlay.hidden = false; $('knock-close').focus(); };
+  const closeKnock = () => { knockOverlay.hidden = true; };
+  $('sim-open-knock').addEventListener('click', openKnock);
+  $('knock-launch').addEventListener('click', openKnock);
+  $('knock-close').addEventListener('click', closeKnock);
+  knockOverlay.addEventListener('click', (e) => { if (e.target === knockOverlay) closeKnock(); });
 
   // meth controls
   $('sim-meth-state').addEventListener('change', (e) => { state.methState = e.target.value; });
@@ -407,7 +404,8 @@
   window.addEventListener('keydown', (e) => {
     if (e.key === 't' || e.key === 'T') { state.turnLeft = !state.turnLeft; $('sim-turn-left').checked = state.turnLeft; }
     if (e.key === 'y' || e.key === 'Y') { state.turnRight = !state.turnRight; $('sim-turn-right').checked = state.turnRight; }
-    if (e.key === 'k' || e.key === 'K') { knockOverlay.hidden = !knockOverlay.hidden; }
+    if (e.key === 'k' || e.key === 'K') { knockOverlay.hidden ? openKnock() : closeKnock(); }
+    if (e.key === 'Escape' && !knockOverlay.hidden) closeKnock();
   });
 
   // === knock live trace ===
@@ -419,12 +417,15 @@
   }
   // auto-fire a knock event when the simulated energy crosses the threshold
   // (mirrors how the CCM's adaptive threshold logic would push 0x308)
+  let knockAboveThreshold = false;
   function maybeFireKnockEvent() {
-    if (state.knockEnergy >= state.knockThreshold) {
+    const aboveThreshold = state.knockEnergy >= state.knockThreshold;
+    if (aboveThreshold && !knockAboveThreshold) {
       state.knockEvents = (state.knockEvents + 1) & 0xFF;
       state.knockLastRpm = Math.round(state.rpm / 100);
       state.knockLastBoost = Math.round(state.boost * 6.895);
     }
+    knockAboveThreshold = aboveThreshold;
   }
   // baseline trail (slower, lighter) so the noise floor is visible underneath energy
   const KNOCK_BASELINE_LEN = 200;
@@ -483,7 +484,7 @@
       const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
       ln.setAttribute('x1', '798'); ln.setAttribute('x2', '798');
       ln.setAttribute('y1', '0');   ln.setAttribute('y2', '280');
-      ln.setAttribute('class', 'knock-events');
+      ln.setAttribute('class', 'knock-event');
       els.knockEventsGroup.appendChild(ln);
     }
     // readout text
@@ -494,7 +495,7 @@
     els.knockLastBoost.textContent = state.knockLastBoost ? `${state.knockLastBoost} kPa` : '—';
     // status
     const energyClass = state.knockEnergy >= state.knockThreshold ? 'crit' : (state.knockEnergy >= state.knockThreshold * 0.75 ? 'warn' : '');
-    els.knockEnergyNum.className = energyClass;
+    els.knockEnergyNum.setAttribute('class', energyClass);
     els.knockStatus.textContent = state.knockEnergy >= state.knockThreshold ? 'KNOCK!' : (state.knockEnergy >= state.knockThreshold * 0.75 ? 'NEAR' : 'OK');
     els.knockStatus.className = 'kval' + (energyClass ? ' ' + energyClass : '');
   }
@@ -513,14 +514,4 @@
     renderKnock();
   }
 
-  // override the main loop to also tick the knock sampler
-  const _origFrame = frame;
-  // We can't easily override `frame` here, so we hook the requestAnimationFrame
-  // chain: just call knockTick from inside tickSim. Simpler: hook on each frame
-  // by calling knockTick from render. The render path is called every frame
-  // already, so we add knockTick() into the same call site.
-  // (Implementation note: doing it here keeps the knock trace in lockstep with
-  // the simulated energy slider changes, which is what we want for a sim.)
-  // === END knock sim controls ===
-
-  // (knockTick is invoked from inside render() — see below)
+})();
