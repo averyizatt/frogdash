@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="data:,">
   <title>frogdash — browser preview (sim only)</title>
-  <link rel="stylesheet" href="style.css?v=0.2.10">
+  <link rel="stylesheet" href="style.css?v=0.2.11">
 </head>
 <body>
   <div class="frame-tag">1920×720 — design preview · SIM MODE · no hardware</div>
@@ -236,53 +236,72 @@
   <div class="menu-overlay" id="knock-overlay" hidden>
     <div class="menu-card knock-card" role="dialog" aria-modal="true" aria-labelledby="knock-title">
       <button class="knock-close" id="knock-close" type="button" aria-label="Close knock monitor">×</button>
-      <div class="menu-title" id="knock-title">KNOCK MONITOR · <span id="knock-source">CAN 0x307 EngineKnockState</span></div>
+      <div class="knock-header">
+        <div>
+          <div class="menu-title" id="knock-title">KNOCK MONITOR</div>
+          <div class="knock-source" id="knock-source">LIVE SIGNAL · CAN 0x307</div>
+        </div>
+        <div class="knock-live"><span></span>LIVE · 30 HZ</div>
+      </div>
+
+      <div class="knock-summary">
+        <div class="knock-primary">
+          <span class="klab">Energy</span>
+          <span class="knock-big" id="knock-energy-num">0</span>
+        </div>
+        <div class="knock-summary-item"><span class="klab">Baseline</span><strong id="knock-baseline-num">0</strong></div>
+        <div class="knock-summary-item"><span class="klab">Threshold</span><strong id="knock-threshold-num">0</strong></div>
+        <div class="knock-summary-item"><span class="klab">Headroom</span><strong id="knock-headroom-num">0</strong></div>
+        <div class="knock-status-pill" id="knock-status">OK</div>
+      </div>
 
       <div class="knock-graph-wrap">
-        <svg class="knock-graph" id="knock-graph" viewBox="0 0 800 280" preserveAspectRatio="none">
-          <!-- gridlines -->
+        <svg class="knock-graph" id="knock-graph" viewBox="0 0 960 300" preserveAspectRatio="none" aria-label="Live knock energy history">
+          <rect id="knock-danger-zone" class="knock-danger-zone" x="48" y="18" width="888" height="0" />
           <g class="knock-grid">
-            <line x1="0" y1="70"  x2="800" y2="70" />
-            <line x1="0" y1="140" x2="800" y2="140" />
-            <line x1="0" y1="210" x2="800" y2="210" />
+            <line x1="48" y1="18"  x2="936" y2="18" />
+            <line x1="48" y1="81"  x2="936" y2="81" />
+            <line x1="48" y1="144" x2="936" y2="144" />
+            <line x1="48" y1="207" x2="936" y2="207" />
+            <line x1="48" y1="270" x2="936" y2="270" />
+            <line x1="48" y1="18" x2="48" y2="270" />
+            <line x1="270" y1="18" x2="270" y2="270" />
+            <line x1="492" y1="18" x2="492" y2="270" />
+            <line x1="714" y1="18" x2="714" y2="270" />
+            <line x1="936" y1="18" x2="936" y2="270" />
           </g>
-          <!-- y axis labels: 0..255 -->
           <g class="knock-axis">
-            <text x="6" y="14">255</text>
-            <text x="6" y="74">192</text>
-            <text x="6" y="144">128</text>
-            <text x="6" y="214">64</text>
-            <text x="6" y="274">0</text>
+            <text x="38" y="22" text-anchor="end">255</text>
+            <text x="38" y="85" text-anchor="end">192</text>
+            <text x="38" y="148" text-anchor="end">128</text>
+            <text x="38" y="211" text-anchor="end">64</text>
+            <text x="38" y="274" text-anchor="end">0</text>
+            <text x="48" y="292">−6.7s</text>
+            <text x="492" y="292" text-anchor="middle">−3.3s</text>
+            <text x="936" y="292" text-anchor="end">NOW</text>
           </g>
-          <!-- threshold (max) line -->
-          <line id="knock-thresh" class="knock-thresh" x1="0" y1="0" x2="800" y2="0" />
-          <text id="knock-thresh-label" class="knock-thresh-label" x="794" y="0" text-anchor="end">MAX 0</text>
-          <!-- baseline trail (filled area, light) -->
-          <path id="knock-baseline-area" class="knock-baseline-area" d="" />
+          <line id="knock-thresh" class="knock-thresh" x1="48" y1="0" x2="936" y2="0" />
+          <text id="knock-thresh-label" class="knock-thresh-label" x="928" y="0" text-anchor="end">THRESHOLD 0</text>
+          <path id="knock-energy-area" class="knock-energy-area" d="" />
           <path id="knock-baseline"      class="knock-baseline"      d="" />
-          <!-- energy trace (live) -->
           <path id="knock-energy"        class="knock-energy"        d="" />
-          <!-- event markers (vertical ticks at the top) -->
           <g id="knock-events"></g>
-          <!-- current value readout (right side) -->
-          <g class="knock-readout">
-            <text id="knock-energy-num"  x="794" y="270" text-anchor="end">0</text>
-            <text id="knock-baseline-num" x="794" y="284" text-anchor="end" class="knock-readout-sub">base 0</text>
-          </g>
+          <circle id="knock-current-dot" class="knock-current-dot" cx="936" cy="270" r="4" />
         </svg>
+        <div class="knock-legend"><span class="energy">ENERGY</span><span class="baseline">BASELINE</span><span class="threshold">THRESHOLD</span></div>
       </div>
 
       <div class="knock-stats">
         <div class="kstat"><span class="klab">Event count</span><span class="kval" id="knock-events-num">0</span></div>
         <div class="kstat"><span class="klab">Last @ RPM</span><span class="kval" id="knock-last-rpm">—</span></div>
         <div class="kstat"><span class="klab">Last @ boost</span><span class="kval" id="knock-last-boost">—</span></div>
-        <div class="kstat"><span class="klab">Status</span><span class="kval" id="knock-status">OK</span></div>
+        <div class="kstat"><span class="klab">Peak (window)</span><span class="kval" id="knock-peak">0</span></div>
       </div>
 
       <div class="menu-hint-small">Close: × · click outside · K or Esc</div>
     </div>
   </div>
 
-  <script src="app.js?v=0.2.10"></script>
+  <script src="app.js?v=0.2.11"></script>
 </body>
 </html>

@@ -296,33 +296,65 @@ body {
 .menu-hint-small { margin-top: 14px; color: var(--text-2); font-size: 11px; letter-spacing: 2px; text-align: center; }
 
 /* === knock submenu === */
-.knock-card { width: min(880px, calc(100vw - 80px)); min-width: 0; padding: 20px 28px 18px; }
+.knock-card { width: min(1080px, calc(100vw - 64px)); min-width: 0; padding: 22px 28px 18px; box-sizing: border-box; }
+.knock-header { display: flex; align-items: flex-start; justify-content: space-between; padding-right: 48px; }
+.knock-header .menu-title { margin-bottom: 6px; color: var(--text-0); font-size: 15px; font-weight: 700; }
+.knock-source { color: var(--text-2); font: 10px/1.2 ui-monospace, monospace; letter-spacing: 2px; }
+.knock-live { color: var(--text-2); font: 700 10px/1 ui-monospace, monospace; letter-spacing: 1.5px; margin-top: 5px; }
+.knock-live span { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px rgba(95,208,122,.7); }
+.knock-summary { display: grid; grid-template-columns: 1.35fr repeat(3, 1fr) auto; align-items: stretch; gap: 8px; margin: 18px 0 10px; }
+.knock-primary, .knock-summary-item, .knock-status-pill { background: #090d11; border: 1px solid var(--line-soft); border-radius: 8px; }
+.knock-primary { display: flex; align-items: baseline; justify-content: space-between; padding: 9px 14px; }
+.knock-primary .klab, .knock-summary-item .klab { color: var(--text-2); font-size: 9px; letter-spacing: 1.8px; text-transform: uppercase; }
+.knock-big { color: var(--cool); font: 800 30px/1 var(--font-num); font-variant-numeric: tabular-nums; }
+.knock-big.warn { color: var(--warn); }
+.knock-big.crit { color: var(--crit); }
+.knock-summary-item { padding: 9px 12px; }
+.knock-summary-item strong { display: block; margin-top: 4px; color: var(--text-0); font: 700 16px/1 var(--font-num); font-variant-numeric: tabular-nums; }
+.knock-status-pill { min-width: 92px; display: grid; place-items: center; color: var(--ok); font: 800 13px/1 var(--font-lab); letter-spacing: 2px; }
+.knock-status-pill.warn { color: var(--warn); border-color: rgba(255,178,64,.55); background: rgba(255,178,64,.08); }
+.knock-status-pill.crit { color: var(--crit); border-color: rgba(255,66,66,.65); background: rgba(255,66,66,.1); }
 .knock-graph-wrap {
+  position: relative;
   width: 100%;
-  background: #05080b;
+  background: linear-gradient(180deg, #070b0f 0%, #05080b 100%);
   border: 1px solid var(--line-soft);
   border-radius: 10px;
   padding: 0;
   overflow: hidden;
 }
-.knock-graph { width: 100%; height: 280px; display: block; }
-.knock-grid line { stroke: #1a2129; stroke-width: 1; }
-.knock-axis text { fill: #5a6470; font: 10px/1 ui-monospace, monospace; }
-.knock-thresh { stroke: var(--crit); stroke-width: 1.2; stroke-dasharray: 6 4; opacity: 0.7; }
-.knock-thresh-label { fill: var(--crit); font: 700 10px/1 ui-monospace, monospace; letter-spacing: 1px; }
-.knock-baseline-area { fill: rgba(95,208,122,0.12); }
-.knock-baseline { fill: none; stroke: rgba(95,208,122,0.5); stroke-width: 1.4; }
-.knock-energy { fill: none; stroke: var(--cool); stroke-width: 1.6; }
+.knock-graph { width: 100%; height: 300px; display: block; }
+.knock-danger-zone { fill: rgba(255,66,66,.045); }
+.knock-grid line { stroke: #182129; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.knock-grid line:nth-child(n+6) { stroke-dasharray: 2 7; opacity: .65; }
+.knock-axis text { fill: #697681; font: 9px/1 ui-monospace, monospace; letter-spacing: 1px; }
+.knock-thresh { stroke: var(--crit); stroke-width: 1.25; stroke-dasharray: 8 7; opacity: 0.85; vector-effect: non-scaling-stroke; }
+.knock-thresh-label { fill: var(--crit); font: 700 9px/1 ui-monospace, monospace; letter-spacing: 1px; paint-order: stroke; stroke: #070b0f; stroke-width: 4px; }
+.knock-energy-area { fill: rgba(76,193,255,.08); }
+.knock-baseline { fill: none; stroke: rgba(95,208,122,.8); stroke-width: 1.4; stroke-dasharray: 5 5; vector-effect: non-scaling-stroke; }
+.knock-energy { fill: none; stroke: var(--cool); stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 4px rgba(76,193,255,.34)); }
 .knock-energy.warning { stroke: var(--warn); }
 .knock-energy.critical { stroke: var(--crit); }
-.knock-event { stroke: var(--crit); stroke-width: 1.4; opacity: 0.8; }
-.knock-readout #knock-energy-num { fill: var(--text-0); font: 700 16px/1 var(--font-num); }
-.knock-readout #knock-energy-num.warn { fill: var(--warn); }
-.knock-readout #knock-energy-num.crit { fill: var(--crit); }
-.knock-readout-sub { fill: var(--text-2); font: 10px/1 ui-monospace, monospace; }
-.knock-stats { display: flex; gap: 16px; margin-top: 14px; }
+.knock-event { stroke: var(--crit); stroke-width: 2; opacity: .9; vector-effect: non-scaling-stroke; }
+.knock-event-cap { fill: var(--crit); }
+.knock-current-dot { fill: var(--cool); stroke: #dff6ff; stroke-width: 1.5; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 5px rgba(76,193,255,.75)); }
+.knock-current-dot.warn { fill: var(--warn); stroke: #fff0d5; }
+.knock-current-dot.crit { fill: var(--crit); stroke: #ffe0e0; }
+.knock-legend { position: absolute; top: 10px; left: 60px; display: flex; gap: 18px; color: var(--text-2); font: 700 8px/1 ui-monospace, monospace; letter-spacing: 1.3px; }
+.knock-legend span::before { content: ''; display: inline-block; width: 14px; height: 2px; margin: 0 6px 2px 0; background: currentColor; }
+.knock-legend .energy { color: var(--cool); }
+.knock-legend .baseline { color: var(--ok); }
+.knock-legend .threshold { color: var(--crit); }
+.knock-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
 .kstat { flex: 1; background: #0a0d11; border: 1px solid var(--line-soft); border-radius: 8px; padding: 8px 12px; }
 .kstat .klab { color: var(--text-2); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
 .kstat .kval { display: block; margin-top: 4px; color: var(--text-0); font: 700 18px/1 var(--font-num); font-variant-numeric: tabular-nums; }
 .kstat .kval.warn { color: var(--warn); }
 .kstat .kval.crit { color: var(--crit); }
+
+@media (max-width: 900px) {
+  .knock-card { width: calc(100vw - 32px); padding: 16px; }
+  .knock-summary { grid-template-columns: 1.2fr repeat(3, 1fr); }
+  .knock-status-pill { grid-column: 1 / -1; min-height: 32px; }
+  .knock-graph { height: 250px; }
+}

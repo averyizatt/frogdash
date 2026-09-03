@@ -73,8 +73,8 @@ When reviewing the preview, please comment on:
 
 - [x] **Phase 1a** — static HTML prototype (`frogdash-prototype-v1.html`, pre-repo)
 - [x] **Phase 1b** — animated sim in `preview/`, GitHub Pages published
-- [x] **Phase 1c** — design review + responsive/touch iterations through v0.2.10
-- [ ] **Phase 2** — Pi implementation, CAN bus, GPIO, GPS ([plan](docs/phase-2-plan.md)) (← **next**)
+- [x] **Phase 1c** — design review + responsive/touch iterations through v0.2.11
+- [ ] **Phase 2** — Pi 4 production UI + local WebSocket connection layer ([plan](docs/phase-2-plan.md)) (← **next**)
 - [ ] **Phase 3** — vehicle integration
 
 ## Notes for future me

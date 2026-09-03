@@ -1,139 +1,121 @@
-# Phase 2 implementation plan
+# Phase 2 — UI and connection layer
 
-Phase 2 turns the approved 1920×720 browser design into a reliable Raspberry Pi
-dashboard. It is a bench implementation phase; connecting it permanently to the
-vehicle remains Phase 3.
+Phase 2 turns the approved browser design into the production dashboard for Avery's
+Raspberry Pi 4. This phase is deliberately limited to the UI and the local data
+connection that feeds it.
 
-## Recommended architecture
+Power control, automotive shutdown, wiring, GPS hardware, GPIO hardware, and CAN
+interface selection are outside this plan. The existing auto-shutdown script will
+be integrated later through a documented service boundary; it will not be replaced.
 
-- **Computer:** Raspberry Pi 5 (4 GB is sufficient), Raspberry Pi OS Lite 64-bit.
-- **Display:** native 1920×720 HDMI panel. Confirm the exact controller board and
-  brightness input before buying the remaining hardware.
-- **UI:** production web UI in Chromium kiosk mode. Rebuild the preview as
-  production components; do not run the simulator as the vehicle dashboard.
-- **Runtime:** Python service using SocketCAN, `gpsd`, and `libgpiod`. It owns the
-  vehicle state model and publishes normalized updates to the UI over a local
-  WebSocket.
-- **CAN:** Linux SocketCAN at 500 kbit/s. Prefer an isolated CAN interface. The
-  existing shared CAN contract is the source of truth for custom frames.
-- **Power:** automotive-rated, fused 12 V to regulated 5 V supply with ignition
-  sensing, load-dump/reverse-polarity protection, and controlled shutdown. Do not
-  power the Pi directly from an accessory wire or a generic buck converter.
-- **GPS:** USB or UART GNSS receiver exposed through `gpsd`.
-- **Inputs:** protected momentary switches through GPIO. Vehicle 12 V signals must
-  never connect directly to Pi GPIO.
+## Target architecture
 
-## Data path
+- **Computer:** existing Raspberry Pi 4 running Raspberry Pi OS 64-bit.
+- **UI:** lightweight HTML, CSS, and JavaScript in Chromium kiosk mode at 1920×720.
+- **State service:** a small Python process owns current vehicle state, timestamps,
+  source health, and stale-data detection.
+- **UI connection:** one local WebSocket endpoint sends a complete snapshot on
+  connect, then small state updates as values change.
+- **Input adapters:** simulator/replay first, SocketCAN next. Both produce the same
+  normalized state so the UI never parses raw CAN frames.
 
 ```text
-CAN interface ── SocketCAN ──┐
-GPS receiver ───── gpsd ─────┼─> state service ─> local WebSocket ─> kiosk UI
-GPIO buttons ─── libgpiod ───┘         │
-                                       └─> health/fault log
+simulator / CAN replay / SocketCAN
+                 │
+                 v
+       Python state service
+       - decode and normalize
+       - timestamps and quality
+       - stale-data detection
+                 │
+       ws://127.0.0.1:<port>/state
+                 │
+                 v
+        Chromium dashboard UI
 ```
 
-The UI is display-only by default. Commands that can change vehicle behavior need
-an explicit allowlist, validation, rate limiting, and a separate confirmation path.
+Keeping CAN decoding outside the browser means the same UI works with simulated,
+recorded, and live data. It also keeps the Pi 4 workload predictable and lets the
+dashboard reconnect without reloading Chromium.
 
-## Existing CAN contract
+## UI connection contract
 
-The current custom network uses standard 11-bit identifiers at 500 kbit/s. The
-production runtime should vendor a pinned copy of the shared contract and test its
-decoders against recorded frames. Frames already relevant to the dashboard include:
+Every update carries a monotonic sequence number and source timestamp. Values use
+display-independent units; formatting and unit labels remain UI concerns.
 
-- `0x100` taillight state
-- `0x200` master heartbeat
-- `0x202` tach/RPM state
-- `0x203` GPS state
-- `0x300` water/meth state
-- `0x302` water/meth fault
-- `0x303` extended engine sensors
-- `0x307` knock state
-- `0x308` knock fault
-
-OBD-II polling should be added only for values not available on the custom CAN
-network. Its bus load and supported PIDs must be measured on the actual ECU before
-it becomes a primary data source.
-
-## Repository layout for Phase 2
-
-```text
-hardware/
-  service/          Python state service and source adapters
-  ui/               Production dashboard UI
-  systemd/          Service and kiosk units
-  tests/            Decoder, replay, stale-data, and UI tests
-config/
-  display.yaml
-  can.yaml
-  gpio.yaml
-  gps.yaml
-  thresholds.yaml
-docs/
-  phase-2-plan.md
-  wiring/           Added after exact hardware is selected
+```json
+{
+  "type": "state",
+  "seq": 1842,
+  "timestamp_ms": 1788472800123,
+  "values": {
+    "engine.rpm": { "value": 3450, "quality": "live" },
+    "vehicle.speed_mph": { "value": 47, "quality": "live" },
+    "knock.energy": { "value": 20, "quality": "live" },
+    "knock.baseline": { "value": 15, "quality": "live" },
+    "knock.threshold": { "value": 180, "quality": "live" }
+  }
+}
 ```
+
+Quality is one of `live`, `stale`, `unavailable`, or `fault`. The UI must never
+leave an old number looking live. On disconnect it keeps the last snapshot only
+long enough to show the transition, marks affected values stale, and retries with
+bounded backoff. Reconnection always starts with a fresh full snapshot.
+
+The UI is read-only in this phase. Simulator controls stay confined to the preview
+and are not shipped in kiosk mode.
 
 ## Work packages
 
-### 2A — Contracts and desktop runtime
+### 2A — Finish and freeze the UI
 
-1. Define the normalized vehicle-state schema, units, timestamps, quality, and
-   stale-data rules.
-2. Add configuration schemas and validation.
-3. Implement SocketCAN readers against `vcan0` and recorded CAN logs.
-4. Implement the WebSocket state API and a deterministic simulator/replay source.
-5. Add decoder tests for every supported frame and failure tests for malformed or
-   stale data.
+1. Complete the remaining visual review, including the knock monitor.
+2. Define responsive behavior for the 1920×720 target and smaller development
+   viewports.
+3. Add explicit loading, disconnected, stale, and fault states.
+4. Measure animation smoothness and CPU usage with Chromium on a Pi 4.
 
-**Exit criterion:** the production UI runs on a development machine from replayed
-CAN data with no simulator code in the UI.
+**Exit criterion:** the approved dashboard is visually stable, touch controls work,
+and no simulated value can be mistaken for a live source.
 
-### 2B — Production UI and kiosk
+### 2B — Normalized state and WebSocket service
 
-1. Rebuild the approved v0.2.10 layout as production components.
-2. Bind every display value to the normalized state API.
-3. Add source-loss states; never leave a stale value looking live.
-4. Add day/night brightness control, startup splash, and clean reconnect behavior.
-5. Package Chromium kiosk and the state service as systemd units with automatic
-   restart and bounded logs.
+1. Define the state field names, units, types, timestamps, quality, and stale limits.
+2. Implement the local WebSocket snapshot/update protocol.
+3. Move simulation into a service adapter instead of generating it in the UI.
+4. Add deterministic replay fixtures for UI development and regression tests.
+5. Add SocketCAN decoding behind the same adapter interface.
 
-**Exit criterion:** cold boot reaches the dashboard automatically, the UI recovers
-from a service restart, and loss of CAN/GPS is visible within the configured timeout.
+**Exit criterion:** switching between simulator, replay, and live SocketCAN requires
+no UI code changes.
 
-### 2C — Pi bench integration
+### 2C — Bind and package the production UI
 
-1. Build the Pi OS image and pin package versions.
-2. Validate the display's exact timing, rotation, touch behavior, and brightness.
-3. Bring up isolated SocketCAN, then replay frames before attaching a live bench bus.
-4. Integrate GPS and protected GPIO buttons.
-5. Measure boot time, CPU/GPU temperature, memory, frame rate, and 12-hour stability.
+1. Bind every dashboard component to the normalized state client.
+2. Add reconnect handling, stale transitions, and visible source health.
+3. Package the state service and Chromium kiosk launcher as supervised services.
+4. Keep logs bounded and expose a simple local health endpoint.
+5. Provide a hook for the existing auto-shutdown script to stop the services cleanly.
 
-**Exit criterion:** 12-hour bench run without UI lockups, uncontrolled restarts, or
-unbounded logs; CAN and GPS disconnect/reconnect tests pass.
+**Exit criterion:** service restarts and data-source loss recover without manual UI
+reload, and the existing shutdown workflow can stop Frogdash cleanly.
 
-### 2D — Vehicle-ready package
+### 2D — Pi 4 validation
 
-1. Finalize the fused power/shutdown circuit and wiring diagram.
-2. Make the root filesystem resilient to abrupt power loss where practical.
-3. Add a read-only vehicle test mode and CAN logging procedure.
-4. Document rollback, recovery, and safe-disable procedures.
+1. Verify the exact display timing, scaling, touch input, and kiosk startup.
+2. Measure boot-to-dashboard time, frame rate, CPU temperature, memory, and Chromium
+   stability on the Pi 4.
+3. Run a 12-hour simulator/replay soak test.
+4. Test state-service restart, WebSocket disconnect, stale data, and clean shutdown.
 
-**Exit criterion:** the bench package is ready for a separately approved Phase 3
-vehicle installation. No permanent vehicle wiring is part of Phase 2.
+**Exit criterion:** the Pi 4 holds the target frame rate without UI lockups or
+unbounded memory/log growth and recovers from every tested connection failure.
 
-## Decisions required before hardware purchase
+## Immediate sequence
 
-- Exact display/controller board and its brightness-control interface
-- Pi 5 versus an already-owned suitable Pi
-- Isolated USB-CAN adapter versus an isolated Pi HAT
-- Automotive power/shutdown controller
-- GPS receiver and antenna placement
-- Physical button count and functions
-- Which ECU values require OBD-II versus the custom CAN network
-
-## First implementation task
-
-Start with **2A: normalized state schema plus a `vcan0` replay service**. It does not
-require hardware, proves the production architecture, and prevents UI code from
-becoming coupled to individual CAN frames.
+1. Approve the revised knock monitor and freeze the remaining visual design.
+2. Define the normalized state schema.
+3. Build the WebSocket service with simulator and replay adapters.
+4. Replace browser-owned simulation with the WebSocket client.
+5. Validate and tune the result on the Pi 4.

@@ -1,4 +1,4 @@
-// frogdash v0.2.10 — browser preview simulator (DESIGN REVIEW ONLY)
+// frogdash v0.2.11 — browser preview simulator (DESIGN REVIEW ONLY)
 // No hardware, no CAN, no GPIO, no GPS. All values are simulated.
 (() => {
   'use strict';
@@ -117,13 +117,18 @@
     knockOverlay: $('knock-overlay'),
     knockGraph: $('knock-graph'),
     knockBaseline: $('knock-baseline'),
-    knockBaselineArea: $('knock-baseline-area'),
+    knockEnergyArea: $('knock-energy-area'),
     knockEnergy: $('knock-energy'),
     knockThresh: $('knock-thresh'),
     knockThreshLabel: $('knock-thresh-label'),
+    knockDangerZone: $('knock-danger-zone'),
+    knockCurrentDot: $('knock-current-dot'),
     knockEventsGroup: $('knock-events'),
     knockEnergyNum: $('knock-energy-num'),
     knockBaselineNum: $('knock-baseline-num'),
+    knockThresholdNum: $('knock-threshold-num'),
+    knockHeadroomNum: $('knock-headroom-num'),
+    knockPeak: $('knock-peak'),
     knockEventsNum: $('knock-events-num'),
     knockLastRpm: $('knock-last-rpm'),
     knockLastBoost: $('knock-last-boost'),
@@ -366,11 +371,13 @@
     state.knockThreshold = Number(kThresh.value);
     kThreshVal.textContent = state.knockThreshold;
   });
-  // manual +1 event button (matches how the CCM would auto-fire when energy >= threshold)
+  let manualKnockEventPending = false;
+  // Manual event button also drops a marker into the visible graph history.
   $('sim-knock-event').addEventListener('click', () => {
     state.knockEvents = (state.knockEvents + 1) & 0xFF;
     state.knockLastRpm = Math.round(state.rpm / 100);
     state.knockLastBoost = Math.round(state.boost * 6.895); // psi → kPa
+    manualKnockEventPending = true;
   });
   // open the knock submenu (option a: modal overlay)
   const knockOverlay = $('knock-overlay');
@@ -418,21 +425,34 @@
   });
 
   // === knock live trace ===
-  // ring buffer: keep last 200 samples, push every animation frame
+  // A 200-sample window at 30 Hz shows the previous 6.7 seconds.
   const KNOCK_TRACE_LEN = 200;
+  const knockEventTrace = [];
+  let knockCurrentSample = state.knockEnergy;
   function pushKnockSample() {
-    state.knockTrace.push(state.knockEnergy);
+    // Give the design-review simulator a realistic live signal around the
+    // selected energy. Production values will arrive directly from CAN.
+    const signalNoise = Math.sin(state.t * 8.3) * 2.4 + Math.sin(state.t * 19.7) * 1.1;
+    knockCurrentSample = Math.round(clamp(state.knockEnergy + signalNoise, 0, 255));
+    state.knockTrace.push(knockCurrentSample);
+    knockEventTrace.push(false);
     if (state.knockTrace.length > KNOCK_TRACE_LEN) state.knockTrace.shift();
+    if (knockEventTrace.length > KNOCK_TRACE_LEN) knockEventTrace.shift();
   }
   // auto-fire a knock event when the simulated energy crosses the threshold
   // (mirrors how the CCM's adaptive threshold logic would push 0x308)
   let knockAboveThreshold = false;
   function maybeFireKnockEvent() {
-    const aboveThreshold = state.knockEnergy >= state.knockThreshold;
+    const aboveThreshold = knockCurrentSample >= state.knockThreshold;
     if (aboveThreshold && !knockAboveThreshold) {
       state.knockEvents = (state.knockEvents + 1) & 0xFF;
       state.knockLastRpm = Math.round(state.rpm / 100);
       state.knockLastBoost = Math.round(state.boost * 6.895);
+      knockEventTrace[knockEventTrace.length - 1] = true;
+    }
+    if (manualKnockEventPending) {
+      knockEventTrace[knockEventTrace.length - 1] = true;
+      manualKnockEventPending = false;
     }
     knockAboveThreshold = aboveThreshold;
   }
@@ -448,15 +468,18 @@
   }
 
   // === knock graph renderer ===
-  // SVG viewBox is 0..800 wide × 0..280 tall, but the y axis maps energy 0..255
-  // (so bigger energy is HIGHER on screen, smaller y). y = 280 - (v/255)*280.
+  // Fixed 0..255 vertical scale matches the CAN byte and keeps threshold,
+  // baseline, and energy directly comparable across the 6.7-second window.
   function renderKnock() {
     if (knockOverlay.hidden) return;
-    const w = 800, h = 280;
+    const x0 = 48, x1 = 936, y0 = 18, y1 = 270;
+    const yFor = (v) => y1 - (clamp(v, 0, 255) / 255) * (y1 - y0);
     const xy = (i, v) => {
-      const x = (i / (KNOCK_TRACE_LEN - 1)) * w;
-      const y = h - (clamp(v, 0, 255) / 255) * h;
-      return [x, y];
+      // Until the ring buffer fills, anchor the newest sample at NOW and grow
+      // history leftward instead of drawing an incomplete trace from the past.
+      const slot = KNOCK_TRACE_LEN - state.knockTrace.length + i;
+      const x = x0 + (slot / (KNOCK_TRACE_LEN - 1)) * (x1 - x0);
+      return [x, yFor(v)];
     };
     // energy line
     let d = '';
@@ -465,48 +488,61 @@
       d += (i === 0 ? `M ${x.toFixed(1)} ${y.toFixed(1)}` : ` L ${x.toFixed(1)} ${y.toFixed(1)}`);
     }
     els.knockEnergy.setAttribute('d', d);
-    // baseline line + area
+    const lastIdx = state.knockTrace.length - 1;
+    if (lastIdx >= 0) {
+      const [firstX] = xy(0, state.knockTrace[0]);
+      const [lastX] = xy(lastIdx, state.knockTrace[lastIdx]);
+      els.knockEnergyArea.setAttribute('d', `${d} L ${lastX.toFixed(1)} ${y1} L ${firstX.toFixed(1)} ${y1} Z`);
+    }
+    // Baseline remains a separate dashed reference trace.
     let db = '';
     for (let i = 0; i < baselineTrace.length; i++) {
       const [x, y] = xy(i, baselineTrace[i]);
       db += (i === 0 ? `M ${x.toFixed(1)} ${y.toFixed(1)}` : ` L ${x.toFixed(1)} ${y.toFixed(1)}`);
     }
     els.knockBaseline.setAttribute('d', db);
-    // area: baseline line + drop to bottom
-    const lastIdx = baselineTrace.length - 1;
-    if (lastIdx >= 0) {
-      const [x0, y0] = xy(0, baselineTrace[0]);
-      const [x1] = xy(lastIdx, baselineTrace[lastIdx]);
-      els.knockBaselineArea.setAttribute('d', `${db} L ${x1.toFixed(1)} ${h} L ${x0.toFixed(1)} ${h} Z`);
-    }
-    // threshold dashed line at current threshold value
-    const [, ty] = xy(0, state.knockThreshold);
+    // Threshold line and the lightly shaded danger region above it.
+    const ty = yFor(state.knockThreshold);
     els.knockThresh.setAttribute('y1', ty);
     els.knockThresh.setAttribute('y2', ty);
-    els.knockThreshLabel.setAttribute('y', ty - 4);
-    els.knockThreshLabel.textContent = `MAX ${state.knockThreshold}`;
-    // event markers: tiny vertical ticks where event_count incremented
-    // (we don't keep per-event history, so just pulse the right edge when an event fired recently)
+    els.knockThreshLabel.setAttribute('y', Math.max(y0 + 12, ty - 7));
+    els.knockThreshLabel.textContent = `THRESHOLD ${state.knockThreshold}`;
+    els.knockDangerZone.setAttribute('height', Math.max(0, ty - y0));
+    // Retain event locations as red flags across the visible time window.
     els.knockEventsGroup.innerHTML = '';
-    // right-edge pulse: a tall thin line at the very right when energy >= threshold
-    if (state.knockEnergy >= state.knockThreshold) {
+    for (let i = 0; i < knockEventTrace.length; i++) {
+      if (!knockEventTrace[i]) continue;
+      const [x] = xy(i, 0);
       const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      ln.setAttribute('x1', '798'); ln.setAttribute('x2', '798');
-      ln.setAttribute('y1', '0');   ln.setAttribute('y2', '280');
+      ln.setAttribute('x1', x); ln.setAttribute('x2', x);
+      ln.setAttribute('y1', y0); ln.setAttribute('y2', y0 + 19);
       ln.setAttribute('class', 'knock-event');
       els.knockEventsGroup.appendChild(ln);
+      const cap = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      cap.setAttribute('cx', x); cap.setAttribute('cy', y0 + 20); cap.setAttribute('r', '3');
+      cap.setAttribute('class', 'knock-event-cap');
+      els.knockEventsGroup.appendChild(cap);
     }
-    // readout text
-    els.knockEnergyNum.textContent = String(state.knockEnergy);
-    els.knockBaselineNum.textContent = `base ${state.knockBaseline}`;
+    const latestIndex = Math.max(0, state.knockTrace.length - 1);
+    const [currentX, currentY] = xy(latestIndex, knockCurrentSample);
+    els.knockCurrentDot.setAttribute('cx', currentX);
+    els.knockCurrentDot.setAttribute('cy', currentY);
+    // Readouts share the same severity state as the trace and current marker.
+    els.knockEnergyNum.textContent = String(knockCurrentSample);
+    els.knockBaselineNum.textContent = String(state.knockBaseline);
+    els.knockThresholdNum.textContent = String(state.knockThreshold);
+    els.knockHeadroomNum.textContent = String(state.knockThreshold - knockCurrentSample);
+    els.knockPeak.textContent = String(Math.max(...state.knockTrace));
     els.knockEventsNum.textContent = String(state.knockEvents);
     els.knockLastRpm.textContent  = state.knockLastRpm ? String(state.knockLastRpm * 100) : '—';
     els.knockLastBoost.textContent = state.knockLastBoost ? `${state.knockLastBoost} kPa` : '—';
     // status
-    const energyClass = state.knockEnergy >= state.knockThreshold ? 'crit' : (state.knockEnergy >= state.knockThreshold * 0.75 ? 'warn' : '');
-    els.knockEnergyNum.setAttribute('class', energyClass);
-    els.knockStatus.textContent = state.knockEnergy >= state.knockThreshold ? 'KNOCK!' : (state.knockEnergy >= state.knockThreshold * 0.75 ? 'NEAR' : 'OK');
-    els.knockStatus.className = 'kval' + (energyClass ? ' ' + energyClass : '');
+    const energyClass = knockCurrentSample >= state.knockThreshold ? 'crit' : (knockCurrentSample >= state.knockThreshold * 0.75 ? 'warn' : '');
+    els.knockEnergyNum.className = 'knock-big' + (energyClass ? ` ${energyClass}` : '');
+    els.knockEnergy.setAttribute('class', 'knock-energy' + (energyClass ? ` ${energyClass === 'warn' ? 'warning' : 'critical'}` : ''));
+    els.knockCurrentDot.setAttribute('class', 'knock-current-dot' + (energyClass ? ` ${energyClass}` : ''));
+    els.knockStatus.textContent = energyClass === 'crit' ? 'KNOCK' : (energyClass === 'warn' ? 'NEAR' : 'OK');
+    els.knockStatus.className = 'knock-status-pill' + (energyClass ? ` ${energyClass}` : '');
   }
 
   // wire knock sampling into the main loop. Add a sample every frame; the
