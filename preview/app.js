@@ -178,7 +178,7 @@
   // ---------- render ----------
   function render() {
     // RPM
-    els.rpmVal.textContent = Math.round(state.rpm).toLocaleString().replace(/,/g, ' ');
+    els.rpmVal.textContent = String(Math.round(state.rpm));
     els.rpmFill.style.width = clamp(state.rpm / 6000 * 100, 0, 100) + '%';
 
     els.speed.textContent = Math.round(state.speed);
@@ -196,6 +196,7 @@
     // Fuel (from sender resistance)
     els.fuelVal.textContent = Math.round(state.fuel);
     els.fuelFill.style.width = state.fuel + '%';
+    els.fuelFill.style.background = 'var(--accent)';
     els.topbarFuelPct.textContent = Math.round(state.fuel);
     if (state.fuel <= FUEL_LOW_PCT) {
       els.fuelVal.style.color = 'var(--warn)';

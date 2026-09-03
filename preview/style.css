@@ -153,8 +153,8 @@ body {
 /* center column */
 .col-center { position: absolute; left: 572px; right: 572px; top: 80px; height: 612px; display: flex; flex-direction: column; align-items: center; }
 .speed { position: relative; width: 100%; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.speed .digits { font-family: var(--font-num); font-weight: 800; line-height: 1; font-size: 320px; color: var(--text-0); letter-spacing: -8px; font-variant-numeric: tabular-nums; }
-.speed .unit { position: absolute; top: 38%; right: 0; font-size: 36px; color: var(--text-2); letter-spacing: 4px; }
+.speed .digits { display: inline-flex; align-items: baseline; gap: 16px; font-family: var(--font-num); font-weight: 800; line-height: 1; font-size: 280px; color: var(--text-0); letter-spacing: -6px; font-variant-numeric: tabular-nums; }
+.speed .unit { font-size: 36px; color: var(--text-2); letter-spacing: 4px; font-weight: 400; }
 .speed .src { position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%); font-size: 13px; color: var(--text-2); letter-spacing: 3px; }
 .speed .src .dot { display: inline-block; width: 8px; height: 8px; background: var(--ok); border-radius: 50%; margin-right: 8px; box-shadow: 0 0 8px var(--ok); }
 
