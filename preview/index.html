@@ -20,9 +20,8 @@
             <span class="chev"></span><span class="chev"></span><span class="chev"></span>
             <span class="turn-label">L</span>
           </div>
-          <span class="icon" id="icon-highbeam"  title="High beam">◉</span>
-          <span class="icon" id="icon-ecu"       title="Check engine">⚠ ECU</span>
-          <span class="icon" id="icon-park"      title="Parking brake">P</span>
+          <span class="icon" id="icon-highbeam"  title="High beam">HIGH</span>
+          <span class="icon" id="icon-ecu"       title="Check engine">ECU</span>
           <span class="icon" id="icon-brake"     title="Brake warning">BRAKE</span>
         </div>
         <div class="center">
@@ -136,12 +135,13 @@
 
         <div class="rbar-stack">
           <div class="rbar">
-            <div class="lab">Oil P</div>
-            <div class="val"><span class="n" id="oilp-val">62</span><span class="u">psi</span></div>
+            <div class="lab">Fuel P</div>
+            <div class="val"><span class="n" id="fuelp-val">39</span><span class="u">psi</span></div>
+            <div class="vbar"><div class="fill" id="fuelp-fill" style="width:65%; background:linear-gradient(90deg, var(--crit), var(--warn), var(--ok));"></div></div>
           </div>
           <div class="rbar">
-            <div class="lab">Oil T</div>
-            <div class="val"><span class="n" id="oilt-val">218</span><span class="u">°F</span></div>
+            <div class="lab">Oil P</div>
+            <div class="val"><span class="n" id="oilp-val">62</span><span class="u">psi</span></div>
           </div>
           <div class="rbar">
             <div class="lab">EGO</div>
@@ -166,6 +166,11 @@
       <label><input type="checkbox" id="sim-ecu">       Check engine</label>
       <label><input type="checkbox" id="sim-brake">     Brake warning</label>
     </div>
+    <div class="row">
+      <label class="slider-label">Fuel pressure
+        <input type="range" id="sim-fuelp" min="0" max="60" value="39">
+        <span id="sim-fuelp-val">39</span> psi
+      </label>
     <div class="row">
       <label class="slider-label">Fuel sensor Ω
         <input type="range" id="sim-fuel-r" min="10" max="73" value="42">

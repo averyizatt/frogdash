@@ -61,7 +61,7 @@ body {
 
 /* top status strip */
 .topbar { position: absolute; top: 18px; left: 32px; right: 32px; height: 44px; display: flex; align-items: center; justify-content: space-between; }
-.topbar .left, .topbar .center, .topbar .right { display: flex; align-items: center; gap: 28px; }
+.topbar .left, .topbar .center, .topbar .right { display: flex; align-items: center; gap: 22px; }
 .topbar .icon { font-size: 22px; color: var(--text-2); letter-spacing: 2px; }
 .topbar .icon.text { color: var(--text-2); font-size: 18px; letter-spacing: 3px; }
 .topbar .icon.amber { color: var(--warn); text-shadow: 0 0 10px rgba(255,178,64,.6); }
@@ -214,10 +214,14 @@ body {
 .rbar-stack { position: absolute; left: 0; right: 0; top: 380px; bottom: 0; display: flex; gap: 18px; }
 .rbar { position: relative; flex: 1; height: 220px; background: #0c1014; border: 1px solid var(--line-soft); border-radius: 12px; padding: 14px 16px; box-sizing: border-box; }
 .rbar .lab { color: var(--text-2); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
-.rbar .val { position: absolute; bottom: 14px; left: 16px; right: 16px; }
+.rbar .val { position: absolute; bottom: 40px; left: 16px; right: 16px; }
 .rbar .val .n { font-family: var(--font-num); font-size: 34px; font-weight: 600; color: var(--text-0); font-variant-numeric: tabular-nums; }
 .rbar .val .u { font-size: 14px; color: var(--text-2); margin-left: 4px; }
 .rbar .ico { position: absolute; top: 14px; right: 16px; color: var(--text-2); font-size: 18px; }
+.rbar .vbar { position: absolute; left: 16px; right: 16px; bottom: 14px; height: 6px; background: #161b21; border-radius: 3px; overflow: hidden; }
+.rbar .vbar .fill { position: absolute; top: 0; bottom: 0; left: 0; transition: width 0.2s ease, background 0.3s ease; }
+.rbar .vbar .fill.warn { background: var(--warn); }
+.rbar .vbar .fill.crit { background: var(--crit); }
 
 /* footer */
 .brand { position: absolute; bottom: 14px; left: 32px; color: var(--text-2); font-size: 11px; letter-spacing: 4px; }

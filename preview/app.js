@@ -62,7 +62,7 @@
     battery: 14.2,
     boost: 12.4,
     oilP: 62,
-    oilT: 218,
+    fuelP: 39,
     afr: 12.4,
     ego: 3.1,
     ext: 54,
@@ -94,7 +94,8 @@
     battVal: $('batt-val'),   battFill: $('batt-fill'),
     boostVal: $('boost-val'), boostFill: $('boost-fill'),
     oilpVal: $('oilp-val'),
-    oiltVal: $('oilt-val'),
+    fuelpVal: $('fuelp-val'),
+    fuelpFill: $('fuelp-fill'),
     egoVal: $('ego-val'),
     afrVal: $('afr-val'), afrLambda: $('afr-lambda'), afrState: $('afr-state'),
     afrPointer: $('afr-pointer'),
@@ -142,7 +143,6 @@
     state.iat = lerp(state.iat, state.ext + 30 + state.throttle * 15, 0.005);
     state.battery = lerp(state.battery, 14.0 + Math.sin(t * 0.3) * 0.3, 0.05);
     state.oilP = lerp(state.oilP, 25 + (state.rpm / 6000) * 55, 0.05);
-    state.oilT = lerp(state.oilT, 195 + (state.throttle) * 35, 0.005);
     state.sats = Math.round(lerp(state.sats, 10 + Math.sin(t * 0.2) * 2, 0.05));
     state.ext = Math.round(54 + Math.sin(t * 0.02) * 3);
 
@@ -183,7 +183,18 @@
     els.boostVal.textContent = fmt(state.boost, 1);
     els.boostFill.style.width = clamp(state.boost / 20 * 100, 0, 100) + '%';
     els.oilpVal.textContent = Math.round(state.oilP);
-    els.oiltVal.textContent = Math.round(state.oilT);
+    els.fuelpVal.textContent = Math.round(state.fuelP);
+    els.fuelpFill.style.width = clamp(state.fuelP / 60 * 100, 0, 100) + '%';
+    if (state.fuelP < 15) {
+      els.fuelpVal.style.color = 'var(--crit)';
+      els.fuelpFill.className = 'fill crit';
+    } else if (state.fuelP < 25) {
+      els.fuelpVal.style.color = 'var(--warn)';
+      els.fuelpFill.className = 'fill warn';
+    } else {
+      els.fuelpVal.style.color = 'var(--text-0)';
+      els.fuelpFill.className = 'fill';
+    }
     els.egoVal.textContent = (state.ego >= 0 ? '+' : '') + fmt(state.ego, 1);
 
     // AFR
@@ -299,6 +310,13 @@
   fuelR.addEventListener('input', () => {
     state.fuelR = Number(fuelR.value);
     fuelRVal.textContent = state.fuelR;
+  });
+
+  // fuel pressure slider drives value directly (0-60 psi)
+  const fuelp = $('sim-fuelp'), fuelpVal = $('sim-fuelp-val');
+  fuelp.addEventListener('input', () => {
+    state.fuelP = Number(fuelp.value);
+    fuelpVal.textContent = state.fuelP;
   });
 
   // meth controls
