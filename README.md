@@ -45,14 +45,18 @@ Or visit the GitHub Pages URL once Pages is enabled (see below).
 - Topbar: turn signals (L/R), high beam, check-engine, parking brake, brake warning, fuel %, ext temp, clock
 - Warning banner (e.g. coolant critical)
 - Menu overlay (M key, or sim control)
+- Knock Monitor — large bottom-right button, touch-friendly modal with live graph
 
-### Sim controls (bottom-left of page)
+### Sim controls (toggle button, bottom-left)
 
-For design review only. **Not part of the production dashboard.**
+For design review only. **Not part of the production dashboard.** Hidden by
+default since v0.2.8; tap the small `SHOW SIM CONTROLS` button at the bottom-left
+to expand it.
 
 - Checkboxes: turn signals, high beam, ECU, brake warning
-- Buttons: trigger coolant warning, clear warnings, open menu
-- Keyboard: `M` menu, `←/→` cycle gear, `T` toggle left turn
+- Sliders: fuel pressure, fuel resistance, knock energy/baseline/threshold, meth duty/tank
+- Buttons: trigger coolant warning, clear warnings, +1 knock event, open knock monitor
+- Keyboard: `M` menu, `←/→` cycle gear, `T` toggle left turn, `Esc` close overlays
 
 ## Design review checklist
 
