@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="data:,">
   <title>frogdash — browser preview (sim only)</title>
-  <link rel="stylesheet" href="style.css?v=0.2.7">
+  <link rel="stylesheet" href="style.css?v=0.2.8">
 </head>
 <body>
   <div class="frame-tag">1920×720 — design preview · SIM MODE · no hardware</div>
@@ -149,14 +149,16 @@
         </div>
       </div>
 
-      <div class="brand">FROGDASH · v0.2.7</div>
+      <div class="brand">FROGDASH · v0.2.8</div>
       <div class="sw-version">SIM MODE · GPS sim · CAN sim</div>
-      <button class="knock-launch" id="knock-launch" type="button" aria-haspopup="dialog">KNOCK MONITOR</button>
     </div>
   </div>
 
+  <button class="knock-launch" id="knock-launch" type="button" aria-haspopup="dialog">OPEN KNOCK MONITOR</button>
+
   <!-- SIM CONTROLS (not part of the production dashboard; for design review only) -->
-  <div class="sim-controls">
+  <button class="sim-toggle" id="sim-toggle" type="button" aria-controls="sim-controls" aria-expanded="false">SHOW SIM CONTROLS</button>
+  <div class="sim-controls" id="sim-controls" hidden>
     <div class="sim-controls-title">SIM CONTROLS (design review only — not in production)</div>
     <div class="row">
       <label><input type="checkbox" id="sim-turn-left">  Left turn</label>
@@ -281,6 +283,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=0.2.7"></script>
+  <script src="app.js?v=0.2.8"></script>
 </body>
 </html>

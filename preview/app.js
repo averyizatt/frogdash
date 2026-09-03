@@ -1,4 +1,4 @@
-// frogdash v0.2.7 — browser preview simulator (DESIGN REVIEW ONLY)
+// frogdash v0.2.8 — browser preview simulator (DESIGN REVIEW ONLY)
 // No hardware, no CAN, no GPIO, no GPS. All values are simulated.
 (() => {
   'use strict';
@@ -319,6 +319,15 @@
   requestAnimationFrame(frame);
 
   // ---------- sim controls ----------
+  const simControls = $('sim-controls');
+  const simToggle = $('sim-toggle');
+  simToggle.addEventListener('click', () => {
+    simControls.hidden = !simControls.hidden;
+    const expanded = !simControls.hidden;
+    simToggle.setAttribute('aria-expanded', String(expanded));
+    simToggle.textContent = expanded ? 'HIDE SIM CONTROLS' : 'SHOW SIM CONTROLS';
+  });
+
   $('sim-turn-left').addEventListener('change',  (e) => state.turnLeft  = e.target.checked);
   $('sim-turn-right').addEventListener('change', (e) => state.turnRight = e.target.checked);
   $('sim-highbeam').addEventListener('change',   (e) => state.highbeam  = e.target.checked);
