@@ -128,7 +128,7 @@ body {
 .warn-banner.meth    { background: rgba(255,66,66,.14); border-color: var(--crit); color: var(--crit); }
 
 /* left column */
-.col-left { position: absolute; left: 32px; top: 80px; width: 540px; bottom: 56px; }
+.col-left { position: absolute; left: 32px; top: 80px; width: 540px; bottom: 72px; }
 .tach { position: relative; width: 100%; height: 360px; }
 .tach .plate { position: absolute; inset: 0; border: 1px solid var(--line-soft); border-radius: 18px; background: linear-gradient(180deg, #0c1014 0%, #0a0d11 100%); }
 .tach .title { position: absolute; top: 18px; left: 24px; color: var(--text-2); font-size: 14px; letter-spacing: 3px; text-transform: uppercase; }
@@ -153,10 +153,10 @@ body {
 .vbar .bar .fill.crit { background: var(--crit); }
 
 /* center column */
-.col-center { position: absolute; left: 572px; right: 572px; top: 80px; bottom: 56px; display: flex; flex-direction: column; align-items: center; }
+.col-center { position: absolute; left: 572px; right: 572px; top: 80px; bottom: 72px; display: flex; flex-direction: column; align-items: center; }
 .speed { position: relative; width: 100%; flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.speed-readout { display: flex; align-items: baseline; justify-content: center; gap: 18px; }
-.speed .digits { font-family: var(--font-num); font-weight: 800; line-height: 1; font-size: clamp(140px, 18vw, 280px); color: var(--text-0); letter-spacing: -6px; font-variant-numeric: tabular-nums; }
+.speed-readout { display: flex; align-items: baseline; justify-content: center; }
+.speed .digits { display: inline-flex; align-items: baseline; gap: 8px; font-family: var(--font-num); font-weight: 800; line-height: 1; font-size: clamp(140px, 18vw, 280px); color: var(--text-0); letter-spacing: -6px; font-variant-numeric: tabular-nums; }
 .speed .unit { font-size: clamp(22px, 2.2vw, 36px); color: var(--text-2); letter-spacing: 4px; font-weight: 600; }
 .speed .src { position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%); font-size: 13px; color: var(--text-2); letter-spacing: 3px; }
 .speed .src .dot { display: inline-block; width: 8px; height: 8px; background: var(--ok); border-radius: 50%; margin-right: 8px; box-shadow: 0 0 8px var(--ok); }
@@ -204,13 +204,13 @@ body {
 }
 
 /* right column */
-.col-right { position: absolute; right: 32px; top: 80px; width: 540px; bottom: 56px; }
+.col-right { position: absolute; right: 32px; top: 80px; width: 540px; bottom: 72px; }
 .afr-card { position: relative; width: 100%; height: 360px; border: 1px solid var(--line-soft); border-radius: 18px; background: linear-gradient(180deg, #0c1014 0%, #0a0d11 100%); }
 .afr-card .title { position: absolute; top: 18px; left: 24px; color: var(--text-2); font-size: 14px; letter-spacing: 3px; text-transform: uppercase; }
 .afr-card .ring { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); }
-.afr-card .digits { position: absolute; left: 0; right: 0; top: 46%; text-align: center; font-family: var(--font-num); }
-.afr-card .digits .v { font-size: 88px; font-weight: 700; color: var(--text-0); font-variant-numeric: tabular-nums; }
-.afr-card .digits .u { font-size: 18px; color: var(--text-2); margin-left: 6px; }
+.afr-card .digits { position: absolute; left: 0; right: 0; top: 198px; display: flex; align-items: baseline; justify-content: center; gap: 6px; font-family: var(--font-num); line-height: 1; }
+.afr-card .digits .v { font-size: 68px; font-weight: 700; color: var(--text-0); font-variant-numeric: tabular-nums; }
+.afr-card .digits .u { font-size: 18px; color: var(--text-2); }
 .afr-card .sub { position: absolute; left: 0; right: 0; bottom: 24px; text-align: center; color: var(--text-2); font-size: 12px; letter-spacing: 2px; }
 .afr-card .sub .lambda { color: var(--text-1); font-size: 14px; letter-spacing: 1px; margin-left: 8px; }
 
@@ -233,7 +233,7 @@ body {
   position: absolute; right: 16px; bottom: 12px; z-index: 5;
   border: 1px solid var(--line-soft); border-radius: 8px;
   background: rgba(12,16,20,.85); color: var(--text-1);
-  min-width: 200px; min-height: 36px; padding: 8px 14px;
+  min-width: 210px; min-height: 52px; padding: 8px 14px;
   font: 700 12px/1 var(--font-lab); letter-spacing: 2px;
   cursor: pointer;
   backdrop-filter: blur(4px);
@@ -244,7 +244,7 @@ body {
 .sim-toggle {
   position: absolute; left: 16px; bottom: 12px; z-index: 5;
   background: rgba(12,16,20,.85); border: 1px solid #2a323b; border-radius: 8px;
-  color: #5fd07a; padding: 8px 12px;
+  color: #5fd07a; min-height: 52px; padding: 8px 12px;
   font: 700 11px/1 ui-monospace, monospace; letter-spacing: 1.5px; cursor: pointer;
   backdrop-filter: blur(4px);
 }

@@ -1,4 +1,4 @@
-// frogdash v0.2.8 — browser preview simulator (DESIGN REVIEW ONLY)
+// frogdash v0.2.10 — browser preview simulator (DESIGN REVIEW ONLY)
 // No hardware, no CAN, no GPIO, no GPS. All values are simulated.
 (() => {
   'use strict';
