@@ -250,14 +250,12 @@ body {
 .sim-controls button { background: #141a21; border: 1px solid #2a323b; color: #f4f7fa; padding: 4px 10px; border-radius: 4px; cursor: pointer; font: inherit; }
 .sim-controls button:hover { border-color: #5fd07a; }
 
-/* === MENU OVERLAY === */
+/* === MENU OVERLAY (re-used for knock submenu) === */
 .menu-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 30; pointer-events: none; }
 .menu-overlay[hidden] { display: none; }
-/* soft dim of just the dashboard area, behind the card */
 .menu-overlay::before {
   content: ''; position: absolute; inset: 0; pointer-events: auto;
   background: rgba(0,0,0,.25);
-  /* keep dashboard legible, no heavy grey-out */
 }
 .menu-card {
   position: relative; pointer-events: auto;
@@ -265,6 +263,43 @@ body {
   padding: 24px 32px; min-width: 460px;
   box-shadow: 0 30px 80px rgba(0,0,0,.7);
 }
+.menu-title { color: var(--text-2); font-size: 12px; letter-spacing: 4px; margin-bottom: 14px; }
+.menu-title span { color: var(--text-1); letter-spacing: 2px; }
+.menu-list { list-style: none; padding: 0; margin: 0; }
+.menu-list li { padding: 12px 16px; color: var(--text-1); font-size: 18px; border-radius: 8px; cursor: pointer; }
+.menu-list li:hover { background: #141a21; }
+.menu-list li.selected { background: #141a21; color: var(--accent); border: 1px solid var(--accent); }
+.menu-hint-small { margin-top: 14px; color: var(--text-2); font-size: 11px; letter-spacing: 2px; text-align: center; }
+
+/* === knock submenu === */
+.knock-card { min-width: 880px; padding: 20px 28px 18px; }
+.knock-graph-wrap {
+  width: 100%;
+  background: #05080b;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  padding: 0;
+  overflow: hidden;
+}
+.knock-graph { width: 100%; height: 280px; display: block; }
+.knock-grid line { stroke: #1a2129; stroke-width: 1; }
+.knock-axis text { fill: #5a6470; font: 10px/1 ui-monospace, monospace; }
+.knock-thresh { stroke: var(--crit); stroke-width: 1.2; stroke-dasharray: 6 4; opacity: 0.7; }
+.knock-thresh-label { fill: var(--crit); font: 700 10px/1 ui-monospace, monospace; letter-spacing: 1px; }
+.knock-baseline-area { fill: rgba(95,208,122,0.12); }
+.knock-baseline { fill: none; stroke: rgba(95,208,122,0.5); stroke-width: 1.4; }
+.knock-energy { fill: none; stroke: var(--cool); stroke-width: 1.6; }
+.knock-energy.warning { stroke: var(--warn); }
+.knock-energy.critical { stroke: var(--crit); }
+.knock-events line { stroke: var(--crit); stroke-width: 1.4; opacity: 0.8; }
+.knock-readout #knock-energy-num { fill: var(--text-0); font: 700 16px/1 var(--font-num); }
+.knock-readout-sub { fill: var(--text-2); font: 10px/1 ui-monospace, monospace; }
+.knock-stats { display: flex; gap: 16px; margin-top: 14px; }
+.kstat { flex: 1; background: #0a0d11; border: 1px solid var(--line-soft); border-radius: 8px; padding: 8px 12px; }
+.kstat .klab { color: var(--text-2); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+.kstat .kval { display: block; margin-top: 4px; color: var(--text-0); font: 700 18px/1 var(--font-num); font-variant-numeric: tabular-nums; }
+.kstat .kval.warn { color: var(--warn); }
+.kstat .kval.crit { color: var(--crit); }
 .menu-title { color: var(--text-2); font-size: 12px; letter-spacing: 4px; margin-bottom: 14px; }
 .menu-list { list-style: none; padding: 0; margin: 0; }
 .menu-list li { padding: 12px 16px; color: var(--text-1); font-size: 18px; border-radius: 8px; cursor: pointer; }

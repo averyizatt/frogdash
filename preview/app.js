@@ -67,6 +67,17 @@
     ego: 3.1,
     ext: 54,
     sats: 11,
+    // === knock (CCM EngineKnockState 0x307, DLC 8) ===
+    // B0 status_flags, B1 energy, B2 baseline, B3 threshold,
+    // B4 event_count, B5 last_event_rpm_div100, B6 last_event_boost_kpa
+    knockEnergy: 20,
+    knockBaseline: 15,
+    knockThreshold: 180,
+    knockEvents: 0,
+    knockLastRpm: 0,
+    knockLastBoost: 0,
+    // ring buffer of last N samples for the live trace
+    knockTrace: [],
     turnLeft: false,
     turnRight: false,
     highbeam: false,
@@ -103,10 +114,24 @@
     gpsSats: $('gps-sats'),
     clockTime: $('clock-time'),
     warnBanner: $('warn-banner'),
-    iconHigh: $('icon-highbeam'), iconEcu: $('icon-ecu'),
-    iconBrake: $('icon-brake'),
+    iconHigh: $('icon-highbeam'),
     turnLeft:  $('turn-left'),
     turnRight: $('turn-right'),
+    // knock overlay
+    knockOverlay: $('knock-overlay'),
+    knockGraph: $('knock-graph'),
+    knockBaseline: $('knock-baseline'),
+    knockBaselineArea: $('knock-baseline-area'),
+    knockEnergy: $('knock-energy'),
+    knockThresh: $('knock-thresh'),
+    knockThreshLabel: $('knock-thresh-label'),
+    knockEventsGroup: $('knock-events'),
+    knockEnergyNum: $('knock-energy-num'),
+    knockBaselineNum: $('knock-baseline-num'),
+    knockEventsNum: $('knock-events-num'),
+    knockLastRpm: $('knock-last-rpm'),
+    knockLastBoost: $('knock-last-boost'),
+    knockStatus: $('knock-status'),
     methStatePill: $('meth-state-pill'),
     methDutyVal: $('meth-duty-val'),
     methTankVal: $('meth-tank-val'),
@@ -292,6 +317,7 @@
     last = now;
     tickSim(dt);
     render();
+    knockTick(dt);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
@@ -318,6 +344,35 @@
     state.fuelP = Number(fuelp.value);
     fuelpVal.textContent = state.fuelP;
   });
+
+  // === knock sim controls ===
+  // sliders directly drive the corresponding state.energy / baseline / threshold
+  // values that the overlay reads.
+  const kEnergy = $('sim-knock-energy'), kEnergyVal = $('sim-knock-energy-val');
+  kEnergy.addEventListener('input', () => {
+    state.knockEnergy = Number(kEnergy.value);
+    kEnergyVal.textContent = state.knockEnergy;
+  });
+  const kBase = $('sim-knock-baseline'), kBaseVal = $('sim-knock-baseline-val');
+  kBase.addEventListener('input', () => {
+    state.knockBaseline = Number(kBase.value);
+    kBaseVal.textContent = state.knockBaseline;
+  });
+  const kThresh = $('sim-knock-threshold'), kThreshVal = $('sim-knock-threshold-val');
+  kThresh.addEventListener('input', () => {
+    state.knockThreshold = Number(kThresh.value);
+    kThreshVal.textContent = state.knockThreshold;
+  });
+  // manual +1 event button (matches how the CCM would auto-fire when energy >= threshold)
+  $('sim-knock-event').addEventListener('click', () => {
+    state.knockEvents = (state.knockEvents + 1) & 0xFF;
+    state.knockLastRpm = Math.round(state.rpm / 100);
+    state.knockLastBoost = Math.round(state.boost * 6.895); // psi → kPa
+  });
+  // open the knock submenu (option a: modal overlay)
+  const knockOverlay = $('knock-overlay');
+  $('sim-open-knock').addEventListener('click', () => { knockOverlay.hidden = false; });
+  knockOverlay.addEventListener('click', (e) => { if (e.target === knockOverlay) knockOverlay.hidden = true; });
 
   // meth controls
   $('sim-meth-state').addEventListener('change', (e) => { state.methState = e.target.value; });
@@ -351,5 +406,120 @@
   window.addEventListener('keydown', (e) => {
     if (e.key === 't' || e.key === 'T') { state.turnLeft = !state.turnLeft; $('sim-turn-left').checked = state.turnLeft; }
     if (e.key === 'y' || e.key === 'Y') { state.turnRight = !state.turnRight; $('sim-turn-right').checked = state.turnRight; }
+    if (e.key === 'k' || e.key === 'K') { knockOverlay.hidden = !knockOverlay.hidden; }
   });
-})();
+
+  // === knock live trace ===
+  // ring buffer: keep last 200 samples, push every animation frame
+  const KNOCK_TRACE_LEN = 200;
+  function pushKnockSample() {
+    state.knockTrace.push(state.knockEnergy);
+    if (state.knockTrace.length > KNOCK_TRACE_LEN) state.knockTrace.shift();
+  }
+  // auto-fire a knock event when the simulated energy crosses the threshold
+  // (mirrors how the CCM's adaptive threshold logic would push 0x308)
+  function maybeFireKnockEvent() {
+    if (state.knockEnergy >= state.knockThreshold) {
+      state.knockEvents = (state.knockEvents + 1) & 0xFF;
+      state.knockLastRpm = Math.round(state.rpm / 100);
+      state.knockLastBoost = Math.round(state.boost * 6.895);
+    }
+  }
+  // baseline trail (slower, lighter) so the noise floor is visible underneath energy
+  const KNOCK_BASELINE_LEN = 200;
+  const baselineTrace = [];
+  function pushBaselineSample() {
+    // baseline drifts slowly with throttle for visual interest
+    const drift = state.throttle * 6 + Math.sin(state.t * 0.3) * 2;
+    const v = clamp(state.knockBaseline + drift, 0, 255);
+    baselineTrace.push(v);
+    if (baselineTrace.length > KNOCK_BASELINE_LEN) baselineTrace.shift();
+  }
+
+  // === knock graph renderer ===
+  // SVG viewBox is 0..800 wide × 0..280 tall, but the y axis maps energy 0..255
+  // (so bigger energy is HIGHER on screen, smaller y). y = 280 - (v/255)*280.
+  function renderKnock() {
+    if (knockOverlay.hidden) return;
+    const w = 800, h = 280;
+    const xy = (i, v) => {
+      const x = (i / (KNOCK_TRACE_LEN - 1)) * w;
+      const y = h - (clamp(v, 0, 255) / 255) * h;
+      return [x, y];
+    };
+    // energy line
+    let d = '';
+    for (let i = 0; i < state.knockTrace.length; i++) {
+      const [x, y] = xy(i, state.knockTrace[i]);
+      d += (i === 0 ? `M ${x.toFixed(1)} ${y.toFixed(1)}` : ` L ${x.toFixed(1)} ${y.toFixed(1)}`);
+    }
+    els.knockEnergy.setAttribute('d', d);
+    // baseline line + area
+    let db = '';
+    for (let i = 0; i < baselineTrace.length; i++) {
+      const [x, y] = xy(i, baselineTrace[i]);
+      db += (i === 0 ? `M ${x.toFixed(1)} ${y.toFixed(1)}` : ` L ${x.toFixed(1)} ${y.toFixed(1)}`);
+    }
+    els.knockBaseline.setAttribute('d', db);
+    // area: baseline line + drop to bottom
+    const lastIdx = baselineTrace.length - 1;
+    if (lastIdx >= 0) {
+      const [x0, y0] = xy(0, baselineTrace[0]);
+      const [x1] = xy(lastIdx, baselineTrace[lastIdx]);
+      els.knockBaselineArea.setAttribute('d', `${db} L ${x1.toFixed(1)} ${h} L ${x0.toFixed(1)} ${h} Z`);
+    }
+    // threshold dashed line at current threshold value
+    const [, ty] = xy(0, state.knockThreshold);
+    els.knockThresh.setAttribute('y1', ty);
+    els.knockThresh.setAttribute('y2', ty);
+    els.knockThreshLabel.setAttribute('y', ty - 4);
+    els.knockThreshLabel.textContent = `MAX ${state.knockThreshold}`;
+    // event markers: tiny vertical ticks where event_count incremented
+    // (we don't keep per-event history, so just pulse the right edge when an event fired recently)
+    els.knockEventsGroup.innerHTML = '';
+    // right-edge pulse: a tall thin line at the very right when energy >= threshold
+    if (state.knockEnergy >= state.knockThreshold) {
+      const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      ln.setAttribute('x1', '798'); ln.setAttribute('x2', '798');
+      ln.setAttribute('y1', '0');   ln.setAttribute('y2', '280');
+      ln.setAttribute('class', 'knock-events');
+      els.knockEventsGroup.appendChild(ln);
+    }
+    // readout text
+    els.knockEnergyNum.textContent = String(state.knockEnergy);
+    els.knockBaselineNum.textContent = `base ${state.knockBaseline}`;
+    els.knockEventsNum.textContent = String(state.knockEvents);
+    els.knockLastRpm.textContent  = state.knockLastRpm ? String(state.knockLastRpm * 100) : '—';
+    els.knockLastBoost.textContent = state.knockLastBoost ? `${state.knockLastBoost} kPa` : '—';
+    // status
+    const energyClass = state.knockEnergy >= state.knockThreshold ? 'crit' : (state.knockEnergy >= state.knockThreshold * 0.75 ? 'warn' : '');
+    els.knockEnergyNum.className = energyClass;
+    els.knockStatus.textContent = state.knockEnergy >= state.knockThreshold ? 'KNOCK!' : (state.knockEnergy >= state.knockThreshold * 0.75 ? 'NEAR' : 'OK');
+    els.knockStatus.className = 'kval' + (energyClass ? ' ' + energyClass : '');
+  }
+
+  // wire knock sampling into the main loop. Add a sample every frame; the
+  // trace length caps at 200 so old samples age out.
+  let knockTickAccum = 0;
+  const KNOCK_SAMPLE_HZ = 30; // 30 Hz matches typical knock sample rate
+  function knockTick(dt) {
+    knockTickAccum += dt;
+    if (knockTickAccum < 1 / KNOCK_SAMPLE_HZ) return;
+    knockTickAccum = 0;
+    pushKnockSample();
+    pushBaselineSample();
+    maybeFireKnockEvent();
+    renderKnock();
+  }
+
+  // override the main loop to also tick the knock sampler
+  const _origFrame = frame;
+  // We can't easily override `frame` here, so we hook the requestAnimationFrame
+  // chain: just call knockTick from inside tickSim. Simpler: hook on each frame
+  // by calling knockTick from render. The render path is called every frame
+  // already, so we add knockTick() into the same call site.
+  // (Implementation note: doing it here keeps the knock trace in lockstep with
+  // the simulated energy slider changes, which is what we want for a sim.)
+  // === END knock sim controls ===
+
+  // (knockTick is invoked from inside render() — see below)
