@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, initial-scale=1">
+  <title>frogdash — browser preview (sim only)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="frame-tag">1920×720 — design preview · SIM MODE · no hardware</div>
+
+  <div class="display" id="display">
+    <div class="stage">
+
+      <!-- top status strip -->
+      <div class="topbar">
+        <div class="left">
+          <span class="icon" id="icon-leftturn"  title="Left turn">◀</span>
+          <span class="icon" id="icon-highbeam"  title="High beam">◉</span>
+          <span class="icon" id="icon-ecu"       title="Check engine">⚠ ECU</span>
+          <span class="icon" id="icon-park"      title="Parking brake">P</span>
+          <span class="icon" id="icon-brake"     title="Brake warning">BRAKE</span>
+        </div>
+        <div class="center">
+          <span class="icon text">FUEL  <span id="topbar-fuel-pct">38</span>%</span>
+          <span class="icon text">EXT  <span id="topbar-ext">54</span>°F</span>
+        </div>
+        <div class="right">
+          <span class="icon" id="icon-rightturn" title="Right turn">▶</span>
+          <span class="clock"><span id="clock-time">13:42</span><small id="clock-tz">EDT</small></span>
+        </div>
+      </div>
+
+      <!-- warning banner (slides in when active) -->
+      <div class="warn-banner" id="warn-banner" hidden>Coolant temperature critical — 235 °F</div>
+
+      <!-- left column: tach + bars -->
+      <div class="col-left">
+        <div class="tach">
+          <div class="plate"></div>
+          <div class="title">Engine speed</div>
+          <div class="digits">
+            <span class="v" id="rpm-value">3 450</span><span class="u">RPM</span>
+          </div>
+          <div class="bar">
+            <div class="fill" id="rpm-bar-fill" style="width:55%;"></div>
+            <div class="marker" style="left:96%;" title="redline 6000"></div>
+            <div class="label" style="left:96%; color:var(--accent-2);">6.0K</div>
+            <div class="label" style="left:75%;">4.5K</div>
+            <div class="label" style="left:50%;">3.0K</div>
+          </div>
+        </div>
+
+        <div class="vbar-stack">
+          <div class="vbar">
+            <div class="lab">Coolant</div>
+            <div class="bar"><div class="fill warm" id="coolant-fill" style="width:78%;"></div></div>
+            <div class="val"><span class="n" id="coolant-val" style="color:var(--warn);">235</span><span class="u">°F</span></div>
+          </div>
+          <div class="vbar">
+            <div class="lab">IAT</div>
+            <div class="bar"><div class="fill warm" id="iat-fill" style="width:42%;"></div></div>
+            <div class="val"><span class="n" id="iat-val">92</span><span class="u">°F</span></div>
+          </div>
+          <div class="vbar">
+            <div class="lab">Fuel</div>
+            <div class="bar"><div class="fill" id="fuel-fill" style="width:38%; background:var(--accent);"></div></div>
+            <div class="val"><span class="n" id="fuel-val">38</span><span class="u">%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- center column: huge speed + center cluster -->
+      <div class="col-center">
+        <div class="speed">
+          <div class="digits" id="speed-digits">47</div>
+          <div class="unit">MPH</div>
+          <div class="src"><span class="dot"></span>SPEED · GPS · <span id="gps-sats">FIX 11 SAT</span></div>
+        </div>
+
+        <div class="center-cluster">
+          <div class="cluster-cell" style="flex:1.4;">
+            <div class="lab">Boost / MAP</div>
+            <div class="val"><span id="boost-val">12.4</span><span class="u">psi</span></div>
+            <div class="vbar"><div class="fill" id="boost-fill" style="width:62%; background:linear-gradient(90deg, var(--cool), var(--ok), var(--warn));"></div></div>
+          </div>
+          <div class="cluster-cell">
+            <div class="gear" id="gear-pill">N</div>
+            <div class="lab" style="margin-top:30px;">Gear</div>
+            <div class="val" id="gear-sub" style="font-size:48px; margin-top:0;">—</div>
+          </div>
+          <div class="cluster-cell">
+            <div class="lab">Battery</div>
+            <div class="val"><span id="batt-val">14.2</span><span class="u">V</span></div>
+            <div class="vbar"><div class="fill" id="batt-fill" style="width:78%; background:var(--ok);"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- right column: AFR + bars -->
+      <div class="col-right">
+        <div class="afr-card">
+          <div class="title">Air / Fuel</div>
+          <svg class="ring" width="240" height="240" viewBox="0 0 240 240">
+            <circle cx="120" cy="120" r="100" fill="none" stroke="#161b21" stroke-width="14"/>
+            <!-- lean right (red), rich left (green), stoich top (amber) -->
+            <path d="M 120 20 A 100 100 0 0 1 220 120" fill="none" stroke="#ff4242" stroke-width="14" stroke-linecap="butt" opacity="0.85"/>
+            <path d="M 120 20 A 100 100 0 0 0 20 120"  fill="none" stroke="#5fd07a" stroke-width="14" stroke-linecap="butt" opacity="0.85"/>
+            <path d="M 120 20 A 100 100 0 0 1 120 20" fill="none" stroke="#e8b53d" stroke-width="14"/>
+            <!-- pointer, rotated by JS -->
+            <g id="afr-pointer" transform="rotate(15 120 120)">
+              <line x1="120" y1="40" x2="120" y2="70" stroke="#f4f7fa" stroke-width="3"/>
+              <circle cx="120" cy="120" r="8" fill="#f4f7fa"/>
+            </g>
+            <text x="120" y="14"  text-anchor="middle" fill="#7d8893" font-size="11" font-family="Inter, Arial">14.7</text>
+            <text x="34"  y="128" text-anchor="middle" fill="#7d8893" font-size="11" font-family="Inter, Arial">11.0</text>
+            <text x="206" y="128" text-anchor="middle" fill="#7d8893" font-size="11" font-family="Inter, Arial">16.0</text>
+          </svg>
+          <div class="digits"><span class="v" id="afr-val">12.4</span><span class="u">AFR</span></div>
+          <div class="sub">λ <span class="lambda" id="afr-lambda">0.84</span>  ·  target 14.7  ·  <span id="afr-state">rich</span></div>
+        </div>
+
+        <div class="rbar-stack">
+          <div class="rbar">
+            <div class="lab">Oil P</div>
+            <div class="val"><span class="n" id="oilp-val">62</span><span class="u">psi</span></div>
+          </div>
+          <div class="rbar">
+            <div class="lab">Oil T</div>
+            <div class="val"><span class="n" id="oilt-val">218</span><span class="u">°F</span></div>
+          </div>
+          <div class="rbar">
+            <div class="lab">EGO</div>
+            <div class="val"><span class="n" id="ego-val">+3.1</span><span class="u">%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="brand">FROGDASH · v0.1</div>
+      <div class="sw-version">SIM MODE · ECU sim · GPS sim</div>
+      <div class="menu-hint">☰ MENU — hold top button</div>
+    </div>
+  </div>
+
+  <!-- SIM CONTROLS (not part of the production dashboard; for design review only) -->
+  <div class="sim-controls">
+    <div class="sim-controls-title">SIM CONTROLS (design review only — not in production)</div>
+    <div class="row">
+      <label><input type="checkbox" id="sim-turn-left">  Left turn</label>
+      <label><input type="checkbox" id="sim-turn-right"> Right turn</label>
+      <label><input type="checkbox" id="sim-highbeam">  High beam</label>
+      <label><input type="checkbox" id="sim-ecu">       Check engine</label>
+      <label><input type="checkbox" id="sim-brake">     Brake warning</label>
+    </div>
+    <div class="row">
+      <button id="sim-warn-coolant">Trigger coolant warning</button>
+      <button id="sim-clear-warn">Clear warnings</button>
+      <button id="sim-toggle-menu">Open menu</button>
+    </div>
+  </div>
+
+  <!-- Off-screen menu overlay -->
+  <div class="menu-overlay" id="menu-overlay" hidden>
+    <div class="menu-card">
+      <div class="menu-title">MENU</div>
+      <ul class="menu-list">
+        <li class="selected">Trip · 0.0 mi</li>
+        <li>Fuel economy · — mpg</li>
+        <li>Diagnostics · no codes</li>
+        <li>Display · brightness 80%</li>
+        <li>Settings</li>
+      </ul>
+      <div class="menu-hint-small">Hold top button to close</div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

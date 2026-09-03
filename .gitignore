@@ -1,0 +1,25 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Build / node
+node_modules/
+dist/
+build/
+
+# Python (for Pi-side later)
+__pycache__/
+*.pyc
+
+# Logs / tmp
+*.log
+*.tmp
+.tmp/
+
+# Secrets — never commit
+*.env
+credentials/
+secrets/
