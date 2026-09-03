@@ -34,7 +34,7 @@
             <span class="turn-label">R</span>
             <span class="chev"></span><span class="chev"></span><span class="chev"></span>
           </div>
-          <span class="clock"><span id="clock-time">13:42</span><small id="clock-tz">EDT</small></span>
+          <span class="clock"><span id="clock-time">1:42</span><small id="clock-tz">PM</small></span>
         </div>
       </div>
 
@@ -173,7 +173,6 @@
       </label>
       <button id="sim-warn-coolant">Trigger coolant warning</button>
       <button id="sim-clear-warn">Clear warnings</button>
-      <button id="sim-toggle-menu">Open menu</button>
     </div>
     <div class="row">
       <label class="select-label">Meth state
@@ -209,23 +208,6 @@
       <label><input type="checkbox" id="sim-meth-fault-sensor"> SENSOR_FAIL</label>
       <label><input type="checkbox" id="sim-meth-fault-overtemp"> OVER_TEMP</label>
       <label><input type="checkbox" id="sim-meth-fault-can"> CAN_TIMEOUT</label>
-    </div>
-  </div>
-
-  <!-- Off-screen menu overlay -->
-  <div class="menu-overlay" id="menu-overlay" hidden>
-    <div class="menu-card">
-      <div class="menu-title">MENU</div>
-      <ul class="menu-list">
-        <li class="selected">Trip · 0.0 mi</li>
-        <li>Fuel economy · — mpg</li>
-        <li>Gear · — (T5, no sensor)</li>
-        <li>Water/Meth · see center cell</li>
-        <li>Diagnostics · no codes</li>
-        <li>Display · brightness 80%</li>
-        <li>Settings</li>
-      </ul>
-      <div class="menu-hint-small">Hold top button to close</div>
     </div>
   </div>
 

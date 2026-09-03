@@ -200,9 +200,11 @@
     els.topbarExt.textContent = state.ext;
     els.gpsSats.textContent = `FIX ${state.sats} SAT`;
 
-    // clock
+    // clock — 12-hour format
     const now = new Date();
-    els.clockTime.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    let h12 = now.getHours() % 12;
+    if (h12 === 0) h12 = 12;
+    els.clockTime.textContent = `${h12}:${String(now.getMinutes()).padStart(2,'0')}`;
 
     // turn signals (chevron ticker)
     els.turnLeft.dataset.on  = state.turnLeft  ? 'true' : 'false';
@@ -327,14 +329,8 @@
   bindFault('sim-meth-fault-overtemp', 0x06);
   bindFault('sim-meth-fault-can',      0x07);
 
-  // menu
-  const menu = $('menu-overlay');
-  $('sim-toggle-menu').addEventListener('click', () => { menu.hidden = !menu.hidden; });
-  menu.addEventListener('click', (e) => { if (e.target === menu) menu.hidden = true; });
-
   // keyboard
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'm' || e.key === 'M') { menu.hidden = !menu.hidden; }
     if (e.key === 't' || e.key === 'T') { state.turnLeft = !state.turnLeft; $('sim-turn-left').checked = state.turnLeft; }
     if (e.key === 'y' || e.key === 'Y') { state.turnRight = !state.turnRight; $('sim-turn-right').checked = state.turnRight; }
   });
