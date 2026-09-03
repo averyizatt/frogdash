@@ -15,7 +15,11 @@
       <!-- top status strip -->
       <div class="topbar">
         <div class="left">
-          <span class="icon" id="icon-leftturn"  title="Left turn">◀</span>
+          <!-- turn signals: chevron ticker, 3 chevrons each side, animated by JS/CSS -->
+          <div class="turn-cluster left" id="turn-left" data-on="false">
+            <span class="chev"></span><span class="chev"></span><span class="chev"></span>
+            <span class="turn-label">L</span>
+          </div>
           <span class="icon" id="icon-highbeam"  title="High beam">◉</span>
           <span class="icon" id="icon-ecu"       title="Check engine">⚠ ECU</span>
           <span class="icon" id="icon-park"      title="Parking brake">P</span>
@@ -26,7 +30,10 @@
           <span class="icon text">EXT  <span id="topbar-ext">54</span>°F</span>
         </div>
         <div class="right">
-          <span class="icon" id="icon-rightturn" title="Right turn">▶</span>
+          <div class="turn-cluster right" id="turn-right" data-on="false">
+            <span class="turn-label">R</span>
+            <span class="chev"></span><span class="chev"></span><span class="chev"></span>
+          </div>
           <span class="clock"><span id="clock-time">13:42</span><small id="clock-tz">EDT</small></span>
         </div>
       </div>
@@ -84,10 +91,19 @@
             <div class="val"><span id="boost-val">12.4</span><span class="u">psi</span></div>
             <div class="vbar"><div class="fill" id="boost-fill" style="width:62%; background:linear-gradient(90deg, var(--cool), var(--ok), var(--warn));"></div></div>
           </div>
-          <div class="cluster-cell">
-            <div class="gear" id="gear-pill">N</div>
-            <div class="lab" style="margin-top:30px;">Gear</div>
-            <div class="val" id="gear-sub" style="font-size:48px; margin-top:0;">—</div>
+          <!-- water/meth cell, replaces gear pill (T5, no gear sensor) -->
+          <div class="cluster-cell meth-cell" id="meth-cell">
+            <div class="meth-state-pill" id="meth-state-pill" data-state="OFF">OFF</div>
+            <div class="lab" style="margin-top:6px;">Water/Meth</div>
+            <div class="val meth-duty"><span id="meth-duty-val">0</span><span class="u">%</span></div>
+            <div class="meth-meta">
+              <div class="meth-tank">
+                <span class="lab-mini">TANK</span>
+                <span id="meth-tank-val">50</span><span class="u">%</span>
+              </div>
+              <div class="meth-flow" id="meth-flow-pill" data-flow="UNKNOWN">—</div>
+            </div>
+            <div class="meth-faults" id="meth-faults"></div>
           </div>
           <div class="cluster-cell">
             <div class="lab">Battery</div>
@@ -103,11 +119,9 @@
           <div class="title">Air / Fuel</div>
           <svg class="ring" width="240" height="240" viewBox="0 0 240 240">
             <circle cx="120" cy="120" r="100" fill="none" stroke="#161b21" stroke-width="14"/>
-            <!-- lean right (red), rich left (green), stoich top (amber) -->
             <path d="M 120 20 A 100 100 0 0 1 220 120" fill="none" stroke="#ff4242" stroke-width="14" stroke-linecap="butt" opacity="0.85"/>
             <path d="M 120 20 A 100 100 0 0 0 20 120"  fill="none" stroke="#5fd07a" stroke-width="14" stroke-linecap="butt" opacity="0.85"/>
             <path d="M 120 20 A 100 100 0 0 1 120 20" fill="none" stroke="#e8b53d" stroke-width="14"/>
-            <!-- pointer, rotated by JS -->
             <g id="afr-pointer" transform="rotate(15 120 120)">
               <line x1="120" y1="40" x2="120" y2="70" stroke="#f4f7fa" stroke-width="3"/>
               <circle cx="120" cy="120" r="8" fill="#f4f7fa"/>
@@ -136,8 +150,8 @@
         </div>
       </div>
 
-      <div class="brand">FROGDASH · v0.1</div>
-      <div class="sw-version">SIM MODE · ECU sim · GPS sim</div>
+      <div class="brand">FROGDASH · v0.2</div>
+      <div class="sw-version">SIM MODE · ECU sim · GPS sim · CAN sim</div>
       <div class="menu-hint">☰ MENU — hold top button</div>
     </div>
   </div>
@@ -153,9 +167,48 @@
       <label><input type="checkbox" id="sim-brake">     Brake warning</label>
     </div>
     <div class="row">
+      <label class="slider-label">Fuel sensor Ω
+        <input type="range" id="sim-fuel-r" min="10" max="73" value="42">
+        <span id="sim-fuel-r-val">42</span>
+      </label>
       <button id="sim-warn-coolant">Trigger coolant warning</button>
       <button id="sim-clear-warn">Clear warnings</button>
       <button id="sim-toggle-menu">Open menu</button>
+    </div>
+    <div class="row">
+      <label class="select-label">Meth state
+        <select id="sim-meth-state">
+          <option value="OFF">OFF</option>
+          <option value="ARMED" selected>ARMED</option>
+          <option value="SPRAYING">SPRAYING</option>
+          <option value="FAULT">FAULT</option>
+          <option value="TEST">TEST</option>
+        </select>
+      </label>
+      <label class="select-label">Flow
+        <select id="sim-meth-flow">
+          <option value="UNKNOWN">UNKNOWN</option>
+          <option value="OK" selected>OK</option>
+          <option value="LOW_FLOW">LOW_FLOW</option>
+          <option value="NO_FLOW">NO_FLOW</option>
+        </select>
+      </label>
+      <label class="slider-label">Meth duty %
+        <input type="range" id="sim-meth-duty" min="0" max="100" value="0">
+        <span id="sim-meth-duty-val">0</span>
+      </label>
+      <label class="slider-label">Meth tank %
+        <input type="range" id="sim-meth-tank" min="0" max="100" value="50">
+        <span id="sim-meth-tank-val">50</span>
+      </label>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="sim-meth-fault-low-tank"> LOW_TANK</label>
+      <label><input type="checkbox" id="sim-meth-fault-no-flow"> NO_FLOW</label>
+      <label><input type="checkbox" id="sim-meth-fault-pump-oc"> PUMP_OVERCURRENT</label>
+      <label><input type="checkbox" id="sim-meth-fault-sensor"> SENSOR_FAIL</label>
+      <label><input type="checkbox" id="sim-meth-fault-overtemp"> OVER_TEMP</label>
+      <label><input type="checkbox" id="sim-meth-fault-can"> CAN_TIMEOUT</label>
     </div>
   </div>
 
@@ -166,6 +219,8 @@
       <ul class="menu-list">
         <li class="selected">Trip · 0.0 mi</li>
         <li>Fuel economy · — mpg</li>
+        <li>Gear · — (T5, no sensor)</li>
+        <li>Water/Meth · see center cell</li>
         <li>Diagnostics · no codes</li>
         <li>Display · brightness 80%</li>
         <li>Settings</li>
