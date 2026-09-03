@@ -1,11 +1,14 @@
 # hardware/
 
-Phase 2 placeholder. This folder will hold the Raspberry Pi implementation:
+This folder will hold the Raspberry Pi implementation described in
+[`docs/phase-2-plan.md`](../docs/phase-2-plan.md):
 
-- QML or web-based UI (TBD — pending design review)
-- CAN bus reader (socketcan / python-can)
-- GPIO handler for physical buttons
-- GPS reader (gpsd)
-- Data aggregator → feeds the UI at 30–60 Hz
+- Production web UI in Chromium kiosk mode
+- Python state service and local WebSocket API
+- SocketCAN readers and frame decoders
+- `libgpiod` input handler for protected physical buttons
+- `gpsd` receiver
+- systemd services, health reporting, replay tools, and tests
 
-For Phase 1 (design preview only) this folder is empty.
+Implementation starts with a desktop `vcan0` replay service; hardware selection and
+vehicle wiring are deliberately deferred until the interfaces are confirmed.
