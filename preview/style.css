@@ -37,7 +37,7 @@ body {
 .display {
   position: relative;
   width: 1920px; height: 720px;
-  background: radial-gradient(ellipse at 50% 80%, #0c1116 0%, #07090c 60%, #050608 100%);
+  background: #06080a;
   color: var(--text-0);
   overflow: hidden; user-select: none;
   box-shadow: 0 0 0 1px #1a2129, 0 30px 80px rgba(0,0,0,.6);
@@ -51,9 +51,15 @@ body {
 .display::before {
   content: ''; position: absolute; inset: 0;
   background-image:
-    linear-gradient(transparent 95%, rgba(255,255,255,.025) 95%),
-    linear-gradient(90deg, transparent 95%, rgba(255,255,255,.02) 95%);
-  background-size: 4px 4px, 4px 4px;
+    linear-gradient(30deg, #11171c 12%, transparent 12.5%, transparent 87%, #11171c 87.5%, #11171c),
+    linear-gradient(150deg, #11171c 12%, transparent 12.5%, transparent 87%, #11171c 87.5%, #11171c),
+    linear-gradient(30deg, #11171c 12%, transparent 12.5%, transparent 87%, #11171c 87.5%, #11171c),
+    linear-gradient(150deg, #11171c 12%, transparent 12.5%, transparent 87%, #11171c 87.5%, #11171c),
+    linear-gradient(60deg, #090d10 25%, transparent 25.5%, transparent 75%, #090d10 75%, #090d10),
+    linear-gradient(60deg, #090d10 25%, transparent 25.5%, transparent 75%, #090d10 75%, #090d10);
+  background-position: 0 0, 0 0, 24px 42px, 24px 42px, 0 0, 24px 42px;
+  background-size: 48px 84px;
+  opacity: .42;
   pointer-events: none;
 }
 
