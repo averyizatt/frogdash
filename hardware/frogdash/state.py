@@ -5,6 +5,7 @@ import time
 from .protocol import ANALOG_BITS, EVENT_IDS, TIMEOUTS, decode
 from .controls import Controls
 from .race import Race
+from .driving import Driving
 
 ALIASES = {
     "engine.rpm": ("ecu.rpm", "tach.rpm"),
@@ -29,11 +30,18 @@ class State:
         self.gps = None
         self.recorder = None
         self.race = Race(clock=clock, wall=wall)
+        self.driving = Driving(self)
+        self.health = None
+        self.can_errors = {'frames': 0, 'bus_off': 0, 'restarts': 0}
         self.controls = Controls(self)
 
     def ingest(self, can_id, data, extended=False, remote=False, error=False):
         now, stamp = self.clock(), int(self.wall() * 1000)
         self.received += 1
+        if error:
+            self.can_errors['frames'] += 1
+            self.can_errors['bus_off'] += bool(can_id & 0x40)
+            self.can_errors['restarts'] += bool(can_id & 0x100)
         raw_key = f"{'err' if error else 'ext' if extended else 'std'}:{can_id:X}"
         self.raw[raw_key] = {"id": can_id, "data": data.hex().upper(), "dlc": len(data),
                              "extended": extended, "remote": remote, "error": error,
@@ -108,6 +116,8 @@ class State:
             # to a different receiver on CAN when the USB receiver loses fix.
             values.update(self.gps.values())
         race = self.race.snapshot()
+        values['dash.bookmark_id'] = {'value': self.driving.marker_seq, 'quality': 'live', 'source_id': None,
+                                       'source': 'Drive review', 'timestamp_ms': int(self.wall() * 1000)}
         race_quality = 'fault' if race['phase'] == 'invalid' else 'unavailable' if race['phase'] == 'idle' else 'live'
         race_values = {'phase': race['phase'], 'elapsed_s': race['elapsed'], 'distance_m': race['distance_m'],
                        'lap_count': race['lap_count'], 'best_lap_s': race['best_lap'], **race['splits']}
@@ -125,4 +135,6 @@ class State:
                 "gps": {"status": self.gps.status, "tx_status": self.gps.tx_status,
                         "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
                 "controls": self.controls.status(), "events": list(self.events), "race": race,
+                "drive": self.driving.snapshot(), "system": dict(self.health.status) if self.health else None,
+                "can_errors": dict(self.can_errors),
                 "recording": dict(self.recorder.status) if self.recorder else {"enabled": False, "state": "disabled"}}

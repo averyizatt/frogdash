@@ -43,6 +43,7 @@
       catch { $('appearance-feedback').textContent = 'Applied for now, but browser storage is full or unavailable. Remove an image to save.'; }
     }
   }
+  window.FrogdashAppearance = {readableAccent};
   function hideSplash() { clearTimeout(splashTimer); $('splash-dialog').close(); }
   function showSplash(preview = false) {
     if (prefs.splash === 'off') { $('appearance-feedback').textContent = 'Choose a splash style to preview it.'; return; }
@@ -115,6 +116,7 @@
   function renderRace(r = latest.race || {}) {
     const demo = latest.mode === 'demo';
     if (demo) r = demoRace;
+    window.frogdashRaceView = r;
     const active = ['armed', 'running'].includes(r.phase);
     $('race-phase').textContent = `${demo ? 'DEMO · ' : ''}${r.phase || 'idle'}`.toUpperCase();
     $('race-phase').dataset.phase = r.phase;

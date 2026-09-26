@@ -7,6 +7,7 @@
   <link rel="icon" href="data:,">
   <title>Frogdash · Driver display</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="review.css">
 </head>
 <body>
 <noscript>JavaScript is required to display live vehicle data.</noscript>
@@ -19,6 +20,7 @@
       <div class="turn-cluster" id="turn-right" data-on="false" aria-label="Right turn"><svg viewBox="0 0 40 28" aria-hidden="true"><path d="M38 14 24 2v7H3v10h21v7Z"/></svg></div>
     </div>
     <div class="header-status"><span class="recording-badge" id="recording-badge">LOG OFF</span><span class="connection-badge" id="connection-summary">CONNECTING</span><time id="clock-time">—</time><span id="clock-tz" hidden></span></div>
+    <div class="drive-quick"><button id="bookmark-launch" type="button" title="Bookmark this moment (B)">Mark log</button><button id="alerts-launch" type="button">Alerts <b id="alert-count">0</b></button></div>
   </header>
 
   <section class="primary-instruments" aria-label="Primary driving instruments">
@@ -31,6 +33,7 @@
         <line x1="101.46" y1="299.98" x2="113.67" y2="295.54" class="tach-tick "/><text x="136.23" y="287.33" class="tach-number ">0</text><line x1="95.42" y1="280.05" x2="101.25" y2="278.62" class="tach-tick "/><line x1="91.59" y1="259.57" x2="97.54" y2="258.79" class="tach-tick "/><line x1="90.04" y1="238.79" x2="96.04" y2="238.67" class="tach-tick "/><line x1="90.76" y1="217.97" x2="96.74" y2="218.51" class="tach-tick "/><line x1="93.77" y1="197.35" x2="106.51" y2="199.93" class="tach-tick "/><text x="130.03" y="204.68" class="tach-number ">1</text><line x1="99.01" y1="177.19" x2="104.72" y2="179.01" class="tach-tick "/><line x1="106.43" y1="157.72" x2="111.91" y2="160.16" class="tach-tick "/><line x1="115.93" y1="139.18" x2="121.11" y2="142.21" class="tach-tick "/><line x1="127.41" y1="121.79" x2="132.23" y2="125.37" class="tach-tick "/><line x1="140.72" y1="105.77" x2="150.25" y2="114.61" class="tach-tick "/><text x="167.84" y="130.93" class="tach-number ">2</text><line x1="155.71" y1="91.29" x2="159.63" y2="95.83" class="tach-tick "/><line x1="172.19" y1="78.55" x2="175.59" y2="83.49" class="tach-tick "/><line x1="189.96" y1="67.69" x2="192.81" y2="72.97" class="tach-tick "/><line x1="208.82" y1="58.84" x2="211.07" y2="64.40" class="tach-tick "/><line x1="228.54" y1="52.10" x2="232.06" y2="64.62" class="tach-tick "/><text x="238.56" y="87.72" class="tach-number ">3</text><line x1="248.87" y1="47.57" x2="249.86" y2="53.49" class="tach-tick "/><line x1="269.58" y1="45.29" x2="269.91" y2="51.28" class="tach-tick "/><line x1="290.42" y1="45.29" x2="290.09" y2="51.28" class="tach-tick "/><line x1="311.13" y1="47.57" x2="310.14" y2="53.49" class="tach-tick "/><line x1="331.46" y1="52.10" x2="327.94" y2="64.62" class="tach-tick "/><text x="321.44" y="87.72" class="tach-number ">4</text><line x1="351.18" y1="58.84" x2="348.93" y2="64.40" class="tach-tick "/><line x1="370.04" y1="67.69" x2="367.19" y2="72.97" class="tach-tick "/><line x1="387.81" y1="78.55" x2="384.41" y2="83.49" class="tach-tick "/><line x1="404.29" y1="91.29" x2="400.37" y2="95.83" class="tach-tick "/><line x1="419.28" y1="105.77" x2="409.75" y2="114.61" class="tach-tick "/><text x="392.16" y="130.93" class="tach-number ">5</text><line x1="432.59" y1="121.79" x2="427.77" y2="125.37" class="tach-tick "/><line x1="444.07" y1="139.18" x2="438.89" y2="142.21" class="tach-tick "/><line x1="453.57" y1="157.72" x2="448.09" y2="160.16" class="tach-tick "/><line x1="460.99" y1="177.19" x2="455.28" y2="179.01" class="tach-tick "/><line x1="466.23" y1="197.35" x2="453.49" y2="199.93" class="tach-tick red"/><text x="429.97" y="204.68" class="tach-number red">6</text><line x1="469.24" y1="217.97" x2="463.26" y2="218.51" class="tach-tick red"/><line x1="469.96" y1="238.79" x2="463.96" y2="238.67" class="tach-tick red"/><line x1="468.41" y1="259.57" x2="462.46" y2="258.79" class="tach-tick red"/><line x1="464.58" y1="280.05" x2="458.75" y2="278.62" class="tach-tick red"/><line x1="458.54" y1="299.98" x2="446.33" y2="295.54" class="tach-tick red"/><text x="423.77" y="287.33" class="tach-number red">7</text>
       </svg>
       <div class="tach-readout"><span id="rpm-value">—</span><span class="unit">RPM</span></div>
+      <div id="shift-lights" aria-label="Shift lights" hidden><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       <span class="tach-caption">RPM × 1000 <i></i> 6.0K REDLINE</span>
     </article>
 
@@ -38,6 +41,7 @@
       <h2 class="speed-label">Vehicle speed</h2>
       <div class="warn-banner" id="warn-banner" role="status" hidden></div>
       <div class="speed-readout"><span id="speed-digits">—</span><span class="unit">MPH</span></div>
+      <div id="track-lap-readout" hidden><span>LAST LAP <b id="track-last">—</b></span><span>BEST <b id="track-best">—</b></span></div>
       <div class="speed-source"><span class="status-dot"></span><span id="gps-sats">GPS · NO FIX</span><span class="quality-label">No signal</span></div>
     </article>
 
@@ -96,6 +100,7 @@
     </button>
     <div class="module-strip" id="module-strip" aria-label="Module connection health"></div>
     <nav class="dashboard-nav" aria-label="Dashboard views">
+      <button id="drive-launch" type="button">Drive</button>
       <button id="race-launch" type="button">Race</button>
       <button id="appearance-launch" type="button">Appearance</button>
       <button id="controls-launch" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M9 4v6M15 14v6"/></svg>Controls</button>
@@ -311,7 +316,27 @@
   </div>
 </dialog>
 <dialog id="splash-dialog" class="workspace-dialog splash-dialog" aria-label="Startup screen"><img id="splash-image" alt="Custom startup artwork" hidden><div class="splash-wordmark"><span class="eyebrow">DRIVER DISPLAY</span><strong id="splash-title">FROGDASH</strong><span>READY FOR THE ROAD</span></div><button id="splash-skip" class="close-button" type="button">Skip</button></dialog>
+<dialog id="drive-dialog" class="workspace-dialog" aria-labelledby="drive-title">
+  <header class="dialog-header"><div><span class="eyebrow">DRIVING / TUNING / REVIEW</span><h2 id="drive-title">Drive workspace</h2><p id="drive-summary">Display preferences, advisory alerts and recorded sessions</p></div><button id="drive-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
+  <div class="control-workspace">
+    <nav class="control-tabs driver-tabs" aria-label="Drive sections"><button data-driver-tab="display" aria-selected="true" type="button">Display modes</button><button data-driver-tab="alerts" aria-selected="false" type="button">Alerts</button><button data-driver-tab="review" aria-selected="false" type="button">Drive review</button><button data-driver-tab="health" aria-selected="false" type="button">Dash health</button></nav>
+    <div class="driver-panels">
+      <section data-driver-panel="display" class="driver-panel control-section">
+        <div class="settings-grid">
+          <div class="setting-card"><h3>Street / tuning / track</h3><div class="control-row layout-buttons"><button data-layout="street" type="button">STREET</button><button data-layout="tuning" type="button">TUNING</button><button data-layout="track" type="button">TRACK</button></div><p class="control-note">Select the six lower instruments for this layout. Each layout remembers its own arrangement.</p><div id="layout-instruments" class="layout-instruments"></div><label class="compact-label">Shift light RPM <input id="shift-rpm" type="number" min="2000" max="9000" step="100" value="5800"></label><button id="layout-reset" type="button">RESET THIS LAYOUT</button></div>
+          <div class="setting-card"><h3>Day / night display</h3><label for="lighting-mode">Lighting mode</label><select id="lighting-mode"><option value="auto">Automatic · running lights</option><option value="day">Always day</option><option value="night">Always night</option></select><div class="brightness-settings"><label>Day brightness <input id="day-brightness" type="range" min="35" max="100" value="100"><output id="day-brightness-value">100%</output></label><label>Night brightness <input id="night-brightness" type="range" min="20" max="100" value="55"><output id="night-brightness-value">55%</output></label></div><label class="compact-label">Night accent <input id="night-accent" type="color" value="#ffc77d"></label><p id="lighting-status" class="control-note"></p><p class="control-note">Software dimming; display backlight stays unchanged. If the lighting signal is lost, automatic mode returns to day brightness. Day colors come from Appearance.</p><p id="display-save-status" class="control-note" role="status"></p></div>
+        </div>
+      </section>
+      <section data-driver-panel="alerts" class="driver-panel control-section" hidden><div class="alert-workspace"><form id="alert-settings" class="setting-card"><h3>Advisory alert thresholds</h3><div id="alert-fields"></div><label class="check-label"><input id="alert-chime" type="checkbox"> Optional alert chime</label><div class="control-row"><button type="submit">SAVE ALERT SETTINGS</button><button id="test-chime" type="button">TEST CHIME</button></div><p id="alert-settings-status" class="control-note" role="status">Starting values should be adjusted for your engine. Protection remains in the ECU and module controllers.</p></form><div class="setting-card alert-status-card"><div class="alert-status-heading"><h3>Current &amp; latched alerts</h3><button id="ack-all" type="button">ACKNOWLEDGE ALL</button></div><div id="driver-alerts"></div><p id="alert-capture" class="control-note">Select an alert to view the readings captured when it occurred.</p><p id="audio-status" class="control-note">Chime requires this display to be open with working audio.</p></div></div></section>
+      <section data-driver-panel="review" class="driver-panel" hidden><div id="drive-review" class="review-host"></div></section>
+      <section data-driver-panel="health" class="driver-panel" hidden><div id="health-cards" class="health-cards"></div><p id="health-detail" class="control-note"></p><p id="health-notes" class="control-note"></p></section>
+    </div>
+  </div>
+  <p id="driver-feedback" class="command-result" role="status">Bookmarks and fault captures are saved with your drive review.</p>
+</dialog>
+<script src="review.js"></script>
 <script src="personalize.js"></script>
+<script src="driving.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

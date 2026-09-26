@@ -10,7 +10,7 @@
     'meth.state': 'OFF', 'meth.duty_pct': 0, 'meth.tank_pct': 85,
     'meth.flow': 'OK', 'meth.fault_flags': 0,
     'lighting.turn_left': false, 'lighting.turn_right': false,
-    'lighting.brake': false, 'lighting.running': true, 'lighting.reverse': false,
+    'lighting.brake': false, 'lighting.running': false, 'lighting.reverse': false,
     'lighting.brightness': 180, 'lighting.left_state': 'RUNNING', 'lighting.right_state': 'RUNNING',
     'knock.energy': 23, 'knock.baseline': 18, 'knock.threshold': 50,
     'knock.enabled': true, 'knock.learned': true, 'knock.warning': false,
@@ -23,7 +23,7 @@
   // Explicit test/review hooks. The production client has no demo switch.
   window.frogdashDemo = {
     scenario(name) {
-      if (!['normal', 'warning', 'offline', 'vacuum'].includes(name)) throw new Error('Unknown demo scenario');
+      if (!['normal', 'warning', 'offline', 'vacuum', 'night'].includes(name)) throw new Error('Unknown demo scenario');
       scenario = name;
     }
   };
@@ -37,6 +37,9 @@
     publish() {
       tick++;
       const current = {...readings,
+        'lighting.running': scenario === 'night',
+        'lighting.left_state': scenario === 'night' ? 'RUNNING' : 'OFF',
+        'lighting.right_state': scenario === 'night' ? 'RUNNING' : 'OFF',
         'knock.energy': scenario === 'warning' ? 75 : Math.round(23 + Math.sin(tick / 7) * 5),
         'knock.warning': scenario === 'warning',
         'engine.coolant_c': scenario === 'warning' ? 115 : readings['engine.coolant_c'],

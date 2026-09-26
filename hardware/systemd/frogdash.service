@@ -6,6 +6,8 @@ Wants=gpsd.socket
 [Service]
 Type=simple
 DynamicUser=yes
+# Read-only vcgencmd diagnostics use the Raspberry Pi video device group.
+SupplementaryGroups=video
 WorkingDirectory=/opt/frogdash
 Environment="FROGDASH_ARGS=--interface can0 --gpsd --log-dir /var/lib/frogdash/logs"
 EnvironmentFile=-/etc/default/frogdash
@@ -19,7 +21,7 @@ NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
-RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_CAN
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_CAN AF_NETLINK
 LogRateLimitIntervalSec=30s
 LogRateLimitBurst=20
 

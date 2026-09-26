@@ -10,6 +10,7 @@ Phase 2 documentation lives here:
 - [MCP2515 wiring and boot configuration](mcp2515.md)
 - [Wi-Fi hotspot and log downloads](wifi-access.md)
 - [Race timing, appearance, and splash screens](race-and-appearance.md)
+- [Driving tools: lighting, layouts, alerts, bookmarks, review and health](driving-tools.md)
 - Component datasheets
 - Wiring diagrams
 - Pi pinout reference

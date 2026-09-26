@@ -124,3 +124,8 @@ race phase, elapsed time, distance, acceleration splits, eighth/quarter-mile
 times and crossing speeds, lap count and best lap. Invalid race measurements
 carry fault quality and NaN. Completed session history and detailed lap results
 are also available as a separate JSON export in the Race screen.
+
+[Drive review](driving-tools.md) adds a Bookmark ID counter to new logs and
+stores manual/fault captures with approximate MLG time references in separate
+bounded review JSON files. Its lower-rate graphs and retention are independent
+of MLG recording. The same read-only review is available over the Wi-Fi portal.

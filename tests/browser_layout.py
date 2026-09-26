@@ -61,6 +61,15 @@ async def main(browser_path=None, url=None):
             await inspect(page, '#controls-dialog', '.control-panels')
             await page.set_viewport_size({'width': width, 'height': height})
             await page.keyboard.press('Escape')
+            await page.locator('#drive-launch').click()
+            for tab in ('display', 'alerts', 'review', 'health'):
+                await page.locator(f'[data-driver-tab="{tab}"]').click()
+                if tab == 'review':
+                    await page.locator('#drive-review .review-toolbar select option').first.wait_for(state='attached')
+                await inspect(page, '#drive-dialog', f'[data-driver-panel="{tab}"]')
+                if (width, height) in ((1980, 720), (1280, 480)):
+                    await page.screenshot(path=str(ROOT / '.tmp' / f'menu-drive-{tab}-{width}x{height}.png'))
+            await page.locator('#drive-close').click()
             for launch, dialog, scroll in [('knock-launch', 'knock-overlay', '.knock-body'),
                                            ('race-launch', 'race-dialog', '.race-body'),
                                            ('appearance-launch', 'appearance-dialog', '.appearance-body'),
@@ -76,7 +85,7 @@ async def main(browser_path=None, url=None):
                 assert await page.locator(f'#{launch}').evaluate('(el) => document.activeElement === el')
         assert not errors, errors
         await browser.close()
-    print('All 8 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
+    print('All 12 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
 
 
 if __name__ == '__main__':

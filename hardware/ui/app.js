@@ -75,7 +75,7 @@
       `GPS SPEED${live('gps.satellites') === null ? '' : ' · ' + live('gps.satellites') + ' SAT'}`;
     const temp = n => n * 9 / 5 + 32;
     bar('coolant-fill', display('coolant-val', 'engine.coolant_c', 0, temp), 100, 250);
-    document.querySelector('[data-signal="engine.coolant_c"]').dataset.tone = live('engine.coolant_c') !== null && live('engine.coolant_c') >= 112 ? 'danger' : 'normal';
+    document.querySelector('[data-signal="engine.coolant_c"]').dataset.tone = live('engine.coolant_c') !== null && live('engine.coolant_c') >= (snapshot.drive?.settings?.coolant_c ?? 112) ? 'danger' : 'normal';
     bar('iat-fill', display('iat-val', 'engine.iat_c', 0, temp), 0, 200);
     bar('fuel-fill', display('fuel-val', 'vehicle.fuel_pct'), 0, 100);
     const boost = display('boost-val', 'engine.boost_kpa', 1, n => n * .145037738);
@@ -122,11 +122,14 @@
     if (!connected) warnings.push('DATA CONNECTION LOST');
     else if (!snapshot.transport.connected) warnings.push('CAN OFFLINE');
     if (snapshot.gps?.conflict) warnings.push('GPS TRANSMITTER CONFLICT');
-    if (live('knock.critical')) warnings.push('KNOCK CRITICAL');
-    else if (live('knock.warning')) warnings.push('KNOCK WARNING');
-    if (flags || live('meth.state') === 'FAULT') warnings.push('WATER/METH FAULT');
-    if (live('engine.coolant_c') !== null && live('engine.coolant_c') >= 112) warnings.push('COOLANT HIGH');
-    const bad = Object.entries(snapshot.values).filter(([, v]) => v.quality === 'fault').length;
+    if (snapshot.drive) warnings.push(...snapshot.drive.alerts.filter(a => a.active || a.latched).map(a => a.title));
+    else {
+      if (live('knock.critical')) warnings.push('KNOCK CRITICAL');
+      else if (live('knock.warning')) warnings.push('KNOCK WARNING');
+      if (flags || live('meth.state') === 'FAULT') warnings.push('WATER/METH FAULT');
+      if (live('engine.coolant_c') !== null && live('engine.coolant_c') >= 112) warnings.push('COOLANT HIGH');
+    }
+    const bad = Object.entries(snapshot.values).filter(([key, v]) => !key.startsWith('race.') && v.quality === 'fault').length;
     if (bad) warnings.push('SENSOR FAULT');
     $('warn-banner').hidden = warnings.length === 0;
     $('warn-banner').textContent = warnings.join(' · ');

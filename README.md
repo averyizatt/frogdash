@@ -32,6 +32,12 @@ exports, custom accents/backgrounds, and configurable startup splash screens.
 Race timing continues on the Pi with the menu closed and is included in MLG logs.
 Appearance preferences and uploaded artwork save on the current display.
 
+[Driving tools](docs/driving-tools.md) add automatic day/night software dimming,
+saved Street/Tuning/Track layouts, conditional latched alerts, optional chimes,
+one-touch log bookmarks, synchronized drive-review graphs on the dash and Wi-Fi
+page, and read-only Pi/CAN health diagnostics. The existing power/shutdown service
+and its GPIO assignments stay separate.
+
 ## Browser preview
 
 Open [preview/index.html](preview/index.html) in your browser, or use the GitHub Pages preview. It works directly from disk without dependencies or network access.
@@ -70,6 +76,7 @@ python -m pip install playwright
 python -m playwright install chromium
 python tests/browser_smoke.py
 python tests/browser_personalize.py
+python tests/browser_driving.py
 python tests/browser_layout.py
 # Or pass --browser /path/to/chromium
 ```

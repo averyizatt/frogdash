@@ -48,7 +48,7 @@ class TransferPortal:
                 raise web.HTTPForbidden()
             if request.method not in {'GET', 'HEAD'} and request.headers.get('Origin') != f'{request.scheme}://{request.host}':
                 raise web.HTTPForbidden(text='Same-origin requests only')
-            public = request.path in {'/', '/transfer.js', '/transfer.css', '/session'}
+            public = request.path in {'/', '/transfer.js', '/transfer.css', '/review.js', '/review.css', '/session'}
             cookie = request.cookies.get('frogdash_session', '')
             if not public and not (cookie.isascii() and secrets.compare_digest(cookie, self.session)):
                 raise web.HTTPUnauthorized(text='Enter the code shown on the dash')
@@ -61,6 +61,9 @@ class TransferPortal:
 
         async def asset(request):
             return web.FileResponse(TRANSFER_UI / request.match_info.get('name', 'index.html'))
+
+        async def review_asset(request):
+            return web.FileResponse(TRANSFER_UI.parent / 'ui' / request.match_info['name'])
 
         async def login(request):
             now = time.monotonic()
@@ -83,7 +86,16 @@ class TransferPortal:
 
         async def status(request):
             snapshot = self.state.snapshot()
-            return web.json_response({key: snapshot[key] for key in ('transport', 'modules', 'gps', 'recording', 'mode')})
+            return web.json_response({key: snapshot[key] for key in ('transport', 'modules', 'gps', 'recording', 'mode', 'system', 'can_errors')})
+
+        async def drives(request):
+            return web.json_response({'drives': await self.state.driving.get_reviews()})
+
+        async def review(request):
+            try:
+                return web.json_response(await self.state.driving.get_review(request.match_info['name']))
+            except (OSError, ValueError, TypeError):
+                raise web.HTTPNotFound(text='Drive review unavailable')
 
         async def logs(request):
             files = await asyncio.to_thread(self.state.recorder.files) if self.state.recorder else []
@@ -102,7 +114,9 @@ class TransferPortal:
                 'Content-Disposition': f'attachment; filename="{name}"'})
 
         app.add_routes([web.get('/', asset), web.get('/{name:transfer\\.js|transfer\\.css}', asset),
+                        web.get('/{name:review\\.js|review\\.css}', review_asset),
                         web.post('/session', login), web.get('/api/status', status), web.get('/api/logs', logs),
+                        web.get('/api/drives', drives), web.get('/api/drives/{name}', review),
                         web.get('/logs/{name}', download)])
         return app
 

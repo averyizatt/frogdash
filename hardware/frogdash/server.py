@@ -13,6 +13,8 @@ from .gps import GPS, gpsd
 from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
 from .connectivity import Connectivity, require_local
 from .race import Race
+from .driving import Driving
+from .health import Health
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
 
@@ -24,6 +26,8 @@ def create_app(state, adapter=None, connectivity=None):
     async def lifecycle(app):
         tasks = [asyncio.create_task(adapter())] if adapter else []
         race_task = asyncio.create_task(state.race.run())
+        drive_task = asyncio.create_task(state.driving.run())
+        health_task = asyncio.create_task(state.health.run()) if state.health else None
         if state.gps:
             state.gps.on_report = state.race.feed
             tasks.append(asyncio.create_task(gpsd(state.gps)))
@@ -35,8 +39,8 @@ def create_app(state, adapter=None, connectivity=None):
         await state.controls.close()
         if connectivity:
             await connectivity.close()
-        if state.recorder:
-            await state.recorder.close()
+        if state.health:
+            state.health.stopping = True
         for task in tasks:
             task.cancel()
         for task in tasks:
@@ -44,6 +48,12 @@ def create_app(state, adapter=None, connectivity=None):
                 await task
         state.race.stopping = True
         await race_task
+        state.driving.stopping = True
+        await drive_task
+        if health_task:
+            await health_task
+        if state.recorder:
+            await state.recorder.close()
         await asyncio.gather(*(ws.close(code=1001, message=b"Service stopping") for ws in list(clients)))
 
     async def websocket(request):
@@ -106,7 +116,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def health(request):
         snapshot = state.snapshot()
-        return web.json_response({"mode": state.mode, "transport": snapshot["transport"], "modules": snapshot["modules"], "gps": snapshot["gps"], "recording": snapshot["recording"]})
+        return web.json_response({key: snapshot[key] for key in ('mode', 'transport', 'modules', 'gps', 'recording', 'system', 'can_errors')})
 
     async def logs(request):
         files = await asyncio.to_thread(state.recorder.files) if state.recorder else []
@@ -146,6 +156,45 @@ def create_app(state, adapter=None, connectivity=None):
         return web.json_response({'version': 1, 'gate': state.race.gate, 'history': state.race.history},
             headers={'Cache-Control': 'no-store', 'Content-Disposition': 'attachment; filename="frogdash-race-results.json"'})
 
+    async def drive_settings(request):
+        require_local(request)
+        if request.method == 'POST':
+            try:
+                state.driving.configure(await request.json())
+            except (ValueError, TypeError) as exc:
+                raise web.HTTPBadRequest(text=str(exc))
+            await state.driving.save()
+        return web.json_response(state.driving.snapshot(), headers={'Cache-Control': 'no-store'})
+
+    async def drive_action(request):
+        require_local(request)
+        try:
+            body = await request.json()
+            if not isinstance(body, dict):
+                raise ValueError('Expected an object')
+            if request.match_info['action'] == 'mark' and set(body) <= {'label'}:
+                result = state.driving.bookmark(body.get('label', 'Driver bookmark'))
+            elif request.match_info['action'] == 'ack' and set(body) == {'key'} and isinstance(body['key'], str):
+                state.driving.acknowledge(body['key'])
+                result = state.driving.snapshot()
+            else:
+                raise ValueError('Unknown action or fields')
+        except (ValueError, TypeError) as exc:
+            raise web.HTTPBadRequest(text=str(exc))
+        return web.json_response(result, headers={'Cache-Control': 'no-store'})
+
+    async def drives(request):
+        require_local(request)
+        return web.json_response({'drives': await state.driving.get_reviews()}, headers={'Cache-Control': 'no-store'})
+
+    async def drive_review(request):
+        require_local(request)
+        try:
+            data = await state.driving.get_review(request.match_info['name'])
+        except (OSError, ValueError, TypeError):
+            raise web.HTTPNotFound(text='Drive review unavailable')
+        return web.json_response(data, headers={'Cache-Control': 'no-store'})
+
     async def wifi_status(request):
         require_local(request)
         return web.json_response(dict(connectivity.status) if connectivity else
@@ -169,7 +218,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "personalize.js"}:
+        if name not in {"index.html", "app.js", "style.css", "personalize.js", "driving.js", "review.js", "review.css"}:
             raise web.HTTPNotFound()
         return web.FileResponse(WEB / name, headers={"Cache-Control": "no-store"})
 
@@ -178,6 +227,9 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get("/raw", raw), web.get('/logs', logs), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
+                    web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),
+                    web.post('/drive/{action:mark|ack}', drive_action),
+                    web.get('/drives', drives), web.get('/drives/{name}', drive_review),
                     web.get("/", asset), web.get("/{name}", asset)])
     return app
 
@@ -199,6 +251,7 @@ def main():
     parser.add_argument('--log-min-free-mib', type=int, default=256)
     parser.add_argument('--hotspot-socket', type=Path, help='Enable the optional local Wi-Fi helper socket')
     parser.add_argument('--race-file', type=Path, default=Path('/var/lib/frogdash/race.json'), help='Saved start/finish and last 50 race sessions')
+    parser.add_argument('--data-dir', type=Path, default=Path('/var/lib/frogdash'), help='Alert settings and bounded drive reviews')
     args = parser.parse_args()
     if args.loop and not args.replay:
         parser.error("--loop requires --replay")
@@ -210,6 +263,8 @@ def main():
         parser.error("GPS options require --gpsd")
     state = State("replay" if args.replay else "socketcan")
     state.race = Race(args.race_file if not args.replay else None)
+    state.driving = Driving(state, args.data_dir / 'replay' if args.replay else args.data_dir)
+    state.health = Health(state, args.interface, args.log_dir or args.data_dir)
     if args.log_dir:
         try:
             config = LogConfig(args.log_dir.resolve(), args.log_hz, args.log_minutes * 60,

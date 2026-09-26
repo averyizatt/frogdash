@@ -16,6 +16,9 @@
       $('login').hidden = true; $('content').hidden = false;
       $('status').textContent = `${status.transport.connected ? 'CAN connected' : 'CAN offline'} · ${status.mode} · ${Object.entries(status.modules).map(([name, quality]) => `${name}: ${quality}`).join(' · ')}`;
       $('recording').textContent = `Recording: ${status.recording.state}${status.recording.error ? ' · ' + status.recording.error : ''}`;
+      const system = status.system;
+      $('system-status').textContent = system ? `System: ${system.cpu_c == null ? 'temperature unavailable' : system.cpu_c.toFixed(1) + ' °C'} · ${system.disk ? (system.disk.free_bytes / 1073741824).toFixed(1) + ' GiB free' : 'storage unavailable'} · CAN ${system.can?.state || 'diagnostics unavailable'}` : 'System diagnostics unavailable';
+      await review.load();
       $('files').replaceChildren(...listing.files.map(file => {
         const row = document.createElement('li'), name = document.createElement(file.active ? 'span' : 'a'), detail = document.createElement('small');
         name.textContent = file.name;
@@ -38,4 +41,11 @@
     finally { button.disabled = false; }
   };
   $('refresh').onclick = refresh;
+  const review = new FrogdashReview($('phone-review'), {
+    list: () => reviewRequest('/api/drives'), read: name => reviewRequest('/api/drives/' + encodeURIComponent(name))
+  });
+  async function reviewRequest(path) {
+    try { return await request(path); }
+    catch (error) { if (error.status === 401) { $('login').hidden = false; $('content').hidden = true; } throw error; }
+  }
 })();
