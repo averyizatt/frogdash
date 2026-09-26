@@ -3,260 +3,208 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090f13">
   <link rel="icon" href="data:,">
-  <title>frogdash — browser preview (sim only)</title>
-  <link rel="stylesheet" href="style.css?v=0.2.12">
+  <title>Frogdash · Simulated design preview</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="frame-tag">1920×720 — design preview · SIM MODE · no hardware</div>
+<noscript>JavaScript is required to display live vehicle data.</noscript>
+<main class="display" id="display" aria-label="Vehicle instrument cluster">
+  <header class="topbar">
+    <div class="identity"><span class="brand-mark" aria-hidden="true">F<span>_</span></span><div><span class="wordmark">FROGDASH</span><span class="vehicle-label">FOXBODY / DRIVER DISPLAY</span></div></div>
+    <div class="indicators" aria-label="Vehicle indicators">
+      <div class="turn-cluster" id="turn-left" data-on="false" aria-label="Left turn"><svg viewBox="0 0 40 28" aria-hidden="true"><path d="M2 14 16 2v7h21v10H16v7Z"/></svg></div>
+      <span class="indicator" id="icon-highbeam">HIGH</span><span class="indicator" id="icon-brake">BRAKE</span><span class="indicator" id="icon-running">LIGHTS</span><span class="indicator" id="icon-reverse">REV</span>
+      <div class="turn-cluster" id="turn-right" data-on="false" aria-label="Right turn"><svg viewBox="0 0 40 28" aria-hidden="true"><path d="M38 14 24 2v7H3v10h21v7Z"/></svg></div>
+    </div>
+    <div class="header-status"><span class="connection-badge" id="connection-summary">CONNECTING</span><time id="clock-time">—</time><span id="clock-tz" hidden></span></div>
+  </header>
 
-  <div class="display" id="display">
-    <div class="stage">
+  <section class="primary-instruments" aria-label="Primary driving instruments">
+    <article class="tach" data-signal="engine.rpm">
+      <div class="card-heading"><h2>Engine speed</h2><span class="quality-label">No signal</span></div>
+      <svg class="tach-dial" viewBox="0 0 560 330" aria-label="RPM scale zero to seven thousand">
+        <path class="tach-track" d="M86.42,305.46 A206,206 0 1 1 473.58,305.46"/>
+        <path class="tach-redzone" d="M481.92,194.18 A206,206 0 0 1 473.58,305.46"/>
+        <path class="tach-progress" id="rpm-bar-fill" d="M86.42,305.46 A206,206 0 1 1 473.58,305.46" pathLength="100" stroke-dasharray="0 100"/>
+        <line x1="101.46" y1="299.98" x2="113.67" y2="295.54" class="tach-tick "/><text x="136.23" y="287.33" class="tach-number ">0</text><line x1="95.42" y1="280.05" x2="101.25" y2="278.62" class="tach-tick "/><line x1="91.59" y1="259.57" x2="97.54" y2="258.79" class="tach-tick "/><line x1="90.04" y1="238.79" x2="96.04" y2="238.67" class="tach-tick "/><line x1="90.76" y1="217.97" x2="96.74" y2="218.51" class="tach-tick "/><line x1="93.77" y1="197.35" x2="106.51" y2="199.93" class="tach-tick "/><text x="130.03" y="204.68" class="tach-number ">1</text><line x1="99.01" y1="177.19" x2="104.72" y2="179.01" class="tach-tick "/><line x1="106.43" y1="157.72" x2="111.91" y2="160.16" class="tach-tick "/><line x1="115.93" y1="139.18" x2="121.11" y2="142.21" class="tach-tick "/><line x1="127.41" y1="121.79" x2="132.23" y2="125.37" class="tach-tick "/><line x1="140.72" y1="105.77" x2="150.25" y2="114.61" class="tach-tick "/><text x="167.84" y="130.93" class="tach-number ">2</text><line x1="155.71" y1="91.29" x2="159.63" y2="95.83" class="tach-tick "/><line x1="172.19" y1="78.55" x2="175.59" y2="83.49" class="tach-tick "/><line x1="189.96" y1="67.69" x2="192.81" y2="72.97" class="tach-tick "/><line x1="208.82" y1="58.84" x2="211.07" y2="64.40" class="tach-tick "/><line x1="228.54" y1="52.10" x2="232.06" y2="64.62" class="tach-tick "/><text x="238.56" y="87.72" class="tach-number ">3</text><line x1="248.87" y1="47.57" x2="249.86" y2="53.49" class="tach-tick "/><line x1="269.58" y1="45.29" x2="269.91" y2="51.28" class="tach-tick "/><line x1="290.42" y1="45.29" x2="290.09" y2="51.28" class="tach-tick "/><line x1="311.13" y1="47.57" x2="310.14" y2="53.49" class="tach-tick "/><line x1="331.46" y1="52.10" x2="327.94" y2="64.62" class="tach-tick "/><text x="321.44" y="87.72" class="tach-number ">4</text><line x1="351.18" y1="58.84" x2="348.93" y2="64.40" class="tach-tick "/><line x1="370.04" y1="67.69" x2="367.19" y2="72.97" class="tach-tick "/><line x1="387.81" y1="78.55" x2="384.41" y2="83.49" class="tach-tick "/><line x1="404.29" y1="91.29" x2="400.37" y2="95.83" class="tach-tick "/><line x1="419.28" y1="105.77" x2="409.75" y2="114.61" class="tach-tick "/><text x="392.16" y="130.93" class="tach-number ">5</text><line x1="432.59" y1="121.79" x2="427.77" y2="125.37" class="tach-tick "/><line x1="444.07" y1="139.18" x2="438.89" y2="142.21" class="tach-tick "/><line x1="453.57" y1="157.72" x2="448.09" y2="160.16" class="tach-tick "/><line x1="460.99" y1="177.19" x2="455.28" y2="179.01" class="tach-tick "/><line x1="466.23" y1="197.35" x2="453.49" y2="199.93" class="tach-tick red"/><text x="429.97" y="204.68" class="tach-number red">6</text><line x1="469.24" y1="217.97" x2="463.26" y2="218.51" class="tach-tick red"/><line x1="469.96" y1="238.79" x2="463.96" y2="238.67" class="tach-tick red"/><line x1="468.41" y1="259.57" x2="462.46" y2="258.79" class="tach-tick red"/><line x1="464.58" y1="280.05" x2="458.75" y2="278.62" class="tach-tick red"/><line x1="458.54" y1="299.98" x2="446.33" y2="295.54" class="tach-tick red"/><text x="423.77" y="287.33" class="tach-number red">7</text>
+      </svg>
+      <div class="tach-readout"><span id="rpm-value">—</span><span class="unit">RPM</span></div>
+      <span class="tach-caption">RPM × 1000 <i></i> 6.0K REDLINE</span>
+    </article>
 
-      <!-- top status strip -->
-      <div class="topbar">
-        <div class="left">
-          <!-- turn signals: chevron ticker, 3 chevrons each side, animated by JS/CSS -->
-          <div class="turn-cluster left" id="turn-left" data-on="false">
-            <span class="chev"></span><span class="chev"></span><span class="chev"></span>
-            <span class="turn-label">L</span>
-          </div>
-          <span class="icon" id="icon-highbeam"  title="High beam">HIGH</span>
+    <article class="speed" data-signal="vehicle.speed_kph">
+      <h2 class="speed-label">Vehicle speed</h2>
+      <div class="warn-banner" id="warn-banner" role="status" hidden></div>
+      <div class="speed-readout"><span id="speed-digits">—</span><span class="unit">MPH</span></div>
+      <div class="speed-source"><span class="status-dot"></span><span id="gps-sats">GPS · NO FIX</span><span class="quality-label">No signal</span></div>
+    </article>
+
+    <div class="secondary-instruments">
+      <article class="boost-gauge" data-signal="engine.boost_kpa">
+        <div class="metric-top"><div><h2>Manifold pressure</h2><span class="metric-caption" id="boost-state">VACUUM / BOOST</span></div><div class="metric-reading"><span id="boost-val">—</span><span class="unit">psi</span></div></div>
+        <div class="track boost-track"><div class="fill" id="boost-fill"></div><span class="zero-mark"></span></div>
+        <div class="scale-labels"><span>−15</span><span>0</span><span>15</span><span>30</span></div>
+      </article>
+      <article class="afr-gauge" data-signal="engine.afr">
+        <div class="metric-top"><div><h2>Air / fuel ratio</h2><span class="metric-caption" id="afr-state">NO SIGNAL</span></div><div class="metric-reading"><span id="afr-val">—</span><span class="unit">AFR</span></div></div>
+        <div class="track afr-track"><span id="afr-pointer" class="gauge-pointer" hidden></span><span id="afr-target-marker" class="target-marker" hidden></span></div>
+        <div class="afr-meta"><span>10 <i>RICH</i></span><span>TARGET <b id="afr-target">—</b></span><span>λ <b id="afr-lambda">—</b></span><span>EGO <b id="ego-val">—</b>%</span><span><i>LEAN</i> 18</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="sensor-row" aria-label="Engine and fuel sensors"><article class="sensor-card" data-signal="engine.coolant_c">
+  <div class="card-heading"><h2>Coolant</h2><span class="quality-label">No signal</span></div>
+  <div class="sensor-reading"><span id="coolant-val">—</span><span class="unit">°F</span></div>
+  <div class="track"><div class="fill" id="coolant-fill"></div></div>
+  <div class="scale-labels"><span>100</span><span>250</span></div>
+</article><article class="sensor-card" data-signal="engine.oil_pressure_psi">
+  <div class="card-heading"><h2>Oil pressure</h2><span class="quality-label">No signal</span></div>
+  <div class="sensor-reading"><span id="oilp-val">—</span><span class="unit">psi</span></div>
+  <div class="track"><div class="fill" id="oilp-fill"></div></div>
+  <div class="scale-labels"><span>0</span><span>100</span></div>
+</article><article class="sensor-card" data-signal="engine.fuel_pressure_psi">
+  <div class="card-heading"><h2>Fuel pressure</h2><span class="quality-label">No signal</span></div>
+  <div class="sensor-reading"><span id="fuelp-val">—</span><span class="unit">psi</span></div>
+  <div class="track"><div class="fill" id="fuelp-fill"></div></div>
+  <div class="scale-labels"><span>0</span><span>100</span></div>
+</article><article class="sensor-card" data-signal="engine.iat_c">
+  <div class="card-heading"><h2>Intake air</h2><span class="quality-label">No signal</span></div>
+  <div class="sensor-reading"><span id="iat-val">—</span><span class="unit">°F</span></div>
+  <div class="track"><div class="fill" id="iat-fill"></div></div>
+  <div class="scale-labels"><span>0</span><span>200</span></div>
+</article><article class="sensor-card" data-signal="vehicle.battery_v">
+  <div class="card-heading"><h2>Battery</h2><span class="quality-label">No signal</span></div>
+  <div class="sensor-reading"><span id="batt-val">—</span><span class="unit">V</span></div>
+  <div class="track"><div class="fill" id="batt-fill"></div></div>
+  <div class="scale-labels"><span>10</span><span>16</span></div>
+</article><article class="sensor-card" data-signal="vehicle.fuel_pct">
+  <div class="card-heading"><h2>Fuel level</h2><span class="quality-label">No signal</span></div>
+  <div class="sensor-reading"><span id="fuel-val">—</span><span class="unit">%</span></div>
+  <div class="track"><div class="fill" id="fuel-fill"></div></div>
+  <div class="scale-labels"><span>E</span><span>F</span></div>
+</article></section>
+
+  <footer class="dashboard-footer">
+    <button class="meth-summary" id="meth-cell" type="button" aria-label="Open water/meth controls">
+      <span class="meth-label">WATER / METH<span class="meth-state-pill" id="meth-state-pill" data-state="UNKNOWN">—</span></span>
+      <span class="meth-reading"><b id="meth-duty-val">—</b><span>%<small>PUMP</small></span></span>
+      <span class="meth-detail">TANK <b><span id="meth-tank-val">—</span>%</b><span id="meth-flow-pill">—</span></span>
+      <span class="meth-faults" id="meth-faults"></span><span class="open-chevron" aria-hidden="true">›</span>
+    </button>
+    <div class="module-strip" id="module-strip" aria-label="Module connection health"></div>
+    <nav class="dashboard-nav" aria-label="Dashboard views">
+      <button id="controls-launch" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M9 4v6M15 14v6"/></svg>Controls</button>
+      <button id="knock-launch" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 13h5l3-8 4 15 3-7h5"/></svg>Knock monitor</button>
+      <button id="diagnostics-launch" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-5M12 20V9M19 20V3"/></svg>Sensors</button>
+    </nav>
+  </footer>
+</main>
+
+<dialog id="controls-dialog" class="workspace-dialog" aria-labelledby="controls-title">
+  <header class="dialog-header"><div><span class="eyebrow">VEHICLE MANAGEMENT</span><h2 id="controls-title">Controls</h2><p id="control-connection"></p></div><button id="controls-close" class="close-button" type="button" aria-label="Close vehicle controls">Close <span aria-hidden="true">×</span></button></header>
+  <div class="control-workspace">
+    <div class="control-tabs" role="tablist" aria-label="Control category" aria-orientation="vertical">
+      <button id="tab-meth" role="tab" aria-selected="true" aria-controls="panel-meth" tabindex="0" data-tab="meth"><span>01</span>Water / meth</button>
+      <button id="tab-knock" role="tab" aria-selected="false" aria-controls="panel-knock" tabindex="-1" data-tab="knock"><span>02</span>Knock monitor</button>
+      <button id="tab-lighting" role="tab" aria-selected="false" aria-controls="panel-lighting" tabindex="-1" data-tab="lighting"><span>03</span>Lighting</button>
+      <p>Live readings come from the vehicle. Changes are confirmed where supported.</p>
+    </div>
+    <div class="control-panels">
+      <section class="control-section" id="panel-meth" role="tabpanel" aria-labelledby="tab-meth">
+        <p id="meth-live-summary">Waiting for controller</p>
+        <p id="meth-control-reason" class="control-note"></p>
+        <div class="control-row">
+          <button type="button" data-action="meth.arm" data-value="1">ARM</button>
+          <button type="button" class="stop-control" data-action="meth.arm" data-value="0">DISARM</button>
+          <button type="button" data-action="meth.clear_faults">CLEAR FAULTS</button>
         </div>
-        <div class="center">
-          <span class="clock"><span id="clock-time">1:42</span><small id="clock-tz">PM</small></span>
+        <div class="settings-grid"><div class="setting-card"><h3>Injection threshold</h3><label>Boost start (gauge kPa)
+          <input id="meth-boost-input" type="number" min="0" max="250" step="1" value="25">
+        </label>
+        <button type="button" data-action="meth.boost" data-input="meth-boost-input">APPLY BOOST START</button>
+        <p class="control-note">Adjust while disarmed. 25 kPa ≈ 3.6 psi. The field is a requested value, not a readback.</p>
+        </div><div class="setting-card">
+        <h4>Pump test</h4>
+        <label>Test duty (%) <input id="meth-test-duty" type="number" min="1" max="100" step="1" value="10"></label>
+        <div class="control-row">
+          <button type="button" data-action="meth.test" data-input="meth-test-duty">RUN 3-SECOND TEST</button>
+          <button type="button" class="stop-control" data-action="meth.stop">STOP TEST</button>
         </div>
-        <div class="right">
-          <div class="turn-cluster right" id="turn-right" data-on="false">
-            <span class="turn-label">R</span>
-            <span class="chev"></span><span class="chev"></span><span class="chev"></span>
-          </div>
+        <p id="test-control-reason" class="control-note">Requires disarmed, fresh telemetry, no faults, and sufficient tank level.</p>
+      </div></div></section>
+      <section class="control-section" id="panel-knock" role="tabpanel" aria-labelledby="tab-knock" hidden>
+        <p id="knock-live-summary"></p>
+        <div class="control-row">
+          <button type="button" data-action="knock.enable" data-value="1">ENABLE</button>
+          <button type="button" data-action="knock.enable" data-value="0">DISABLE</button>
         </div>
-      </div>
-
-      <!-- warning banner (slides in when active) -->
-      <div class="warn-banner" id="warn-banner" hidden>Coolant temperature critical — 235 °F</div>
-
-      <!-- left column: tach + bars -->
-      <div class="col-left">
-        <div class="tach">
-          <div class="plate"></div>
-          <div class="title">Engine speed</div>
-          <div class="digits">
-            <span class="v" id="rpm-value">3450</span><span class="u">RPM</span>
+        <div class="settings-grid">
+          <div class="setting-card"><h3>Detection threshold</h3>
+            <label>Threshold offset <input id="knock-offset-input" type="number" min="0" max="200" step="1" value="20"></label>
+            <button type="button" data-action="knock.threshold" data-input="knock-offset-input">APPLY OFFSET</button>
           </div>
-          <div class="bar">
-            <div class="fill" id="rpm-bar-fill" style="width:55%;"></div>
-            <div class="marker" style="left:96%;" title="redline 6000"></div>
-            <div class="label" style="left:96%; color:var(--accent-2);">6.0K</div>
-            <div class="label" style="left:75%;">4.5K</div>
-            <div class="label" style="left:50%;">3.0K</div>
-          </div>
-        </div>
-
-        <div class="vbar-stack">
-          <div class="vbar">
-            <div class="lab">Coolant</div>
-            <div class="bar"><div class="fill warm" id="coolant-fill" style="width:78%;"></div></div>
-            <div class="val"><span class="n" id="coolant-val" style="color:var(--warn);">235</span><span class="u">°F</span></div>
-          </div>
-          <div class="vbar">
-            <div class="lab">IAT</div>
-            <div class="bar"><div class="fill warm" id="iat-fill" style="width:42%;"></div></div>
-            <div class="val"><span class="n" id="iat-val">92</span><span class="u">°F</span></div>
-          </div>
-          <div class="vbar">
-            <div class="lab">Fuel</div>
-            <div class="bar"><div class="fill" id="fuel-fill" style="width:38%; background:var(--accent);"></div></div>
-            <div class="val"><span class="n" id="fuel-val">38</span><span class="u">%</span></div>
+          <div class="setting-card"><h3>Adaptive sensitivity</h3>
+            <label>Multiplier <input id="knock-multiplier-input" type="number" min="1.2" max="3.8" step="0.1" value="2.0"></label>
+            <button type="button" data-action="knock.multiplier" data-input="knock-multiplier-input" data-scale="10">APPLY MULTIPLIER</button>
           </div>
         </div>
-      </div>
-
-      <!-- center column: huge speed + center cluster -->
-      <div class="col-center">
-        <div class="speed">
-          <div class="speed-readout">
-            <div class="digits"><span id="speed-digits">47</span><span class="unit">MPH</span></div>
-          </div>
-          <div class="src"><span class="dot"></span>SPEED · GPS · <span id="gps-sats">FIX 11 SAT</span></div>
+        <div class="control-row">
+          <button type="button" data-action="knock.refresh">READ SETTINGS</button>
+          <button type="button" data-action="knock.clear_events">CLEAR EVENTS</button>
         </div>
-
-        <div class="center-cluster">
-          <div class="cluster-cell" style="flex:1.4;">
-            <div class="lab">Boost / MAP</div>
-            <div class="val"><span id="boost-val">12.4</span><span class="u">psi</span></div>
-            <div class="vbar"><div class="fill" id="boost-fill" style="width:62%; background:linear-gradient(90deg, var(--cool), var(--ok), var(--warn));"></div></div>
+        <p class="control-note">Live settings above come from the controller; input fields are requested values.</p>
+      </section>
+      <section class="control-section" id="panel-lighting" role="tabpanel" aria-labelledby="tab-lighting" hidden>
+        <p id="lighting-live-summary"></p>
+        <div class="settings-grid">
+          <div class="setting-card"><h3>Light output</h3>
+            <label>Brightness (0–255) <input id="lighting-brightness-input" type="number" min="0" max="255" step="1" value="255"></label>
+            <button type="button" data-action="lighting.brightness" data-input="lighting-brightness-input">APPLY BRIGHTNESS</button>
+            <p class="control-note">The live reading above shows actual light output.</p>
           </div>
-          <!-- water/meth cell, replaces gear pill (T5, no gear sensor) -->
-          <div class="cluster-cell meth-cell" id="meth-cell">
-            <div class="meth-state-pill" id="meth-state-pill" data-state="OFF">OFF</div>
-            <div class="lab" style="margin-top:6px;">Water/Meth</div>
-            <div class="val meth-duty"><span id="meth-duty-val">0</span><span class="u">%</span></div>
-            <div class="meth-meta">
-              <div class="meth-tank">
-                <span class="lab-mini">TANK</span>
-                <span id="meth-tank-val">50</span><span class="u">%</span>
-              </div>
-              <div class="meth-flow" id="meth-flow-pill" data-flow="UNKNOWN">—</div>
+          <div class="setting-card"><h3>Turn signal pattern</h3>
+            <div class="control-row">
+              <button type="button" data-action="lighting.mode" data-value="0">STOCK</button>
+              <button type="button" data-action="lighting.mode" data-value="1">SEQUENTIAL</button>
             </div>
-            <div class="meth-faults" id="meth-faults"></div>
-          </div>
-          <div class="cluster-cell">
-            <div class="lab">Battery</div>
-            <div class="val"><span id="batt-val">14.2</span><span class="u">V</span></div>
-            <div class="vbar"><div class="fill" id="batt-fill" style="width:78%; background:var(--ok);"></div></div>
+            <p class="control-note">Mode changes have no controller confirmation. Verify the lights after applying.</p>
           </div>
         </div>
-      </div>
-
-      <!-- right column: AFR + bars -->
-      <div class="col-right">
-        <div class="afr-card">
-          <div class="title">Air / Fuel</div>
-          <svg class="ring" width="240" height="240" viewBox="0 0 240 240">
-            <circle cx="120" cy="120" r="100" fill="none" stroke="#161b21" stroke-width="14"/>
-            <path d="M 120 20 A 100 100 0 0 1 220 120" fill="none" stroke="#ff4242" stroke-width="14" stroke-linecap="butt" opacity="0.85"/>
-            <path d="M 120 20 A 100 100 0 0 0 20 120"  fill="none" stroke="#5fd07a" stroke-width="14" stroke-linecap="butt" opacity="0.85"/>
-            <path d="M 120 20 A 100 100 0 0 1 120 20" fill="none" stroke="#e8b53d" stroke-width="14"/>
-            <g id="afr-pointer" transform="rotate(15 120 120)">
-              <line x1="120" y1="40" x2="120" y2="70" stroke="#f4f7fa" stroke-width="3"/>
-              <circle cx="120" cy="120" r="8" fill="#f4f7fa"/>
-            </g>
-            <text x="120" y="14"  text-anchor="middle" fill="#7d8893" font-size="11" font-family="Inter, Arial">14.7</text>
-            <text x="34"  y="128" text-anchor="middle" fill="#7d8893" font-size="11" font-family="Inter, Arial">11.0</text>
-            <text x="206" y="128" text-anchor="middle" fill="#7d8893" font-size="11" font-family="Inter, Arial">16.0</text>
-          </svg>
-          <div class="digits"><span class="v" id="afr-val">12.4</span><span class="u">AFR</span></div>
-          <div class="sub">λ <span class="lambda" id="afr-lambda">0.84</span>  ·  target 14.7  ·  <span id="afr-state">rich</span></div>
-        </div>
-
-        <div class="rbar-stack">
-          <div class="rbar">
-            <div class="lab">Fuel P</div>
-            <div class="val"><span class="n" id="fuelp-val">39</span><span class="u">psi</span></div>
-            <div class="vbar"><div class="fill" id="fuelp-fill" style="width:65%; background:var(--ok);"></div></div>
-          </div>
-          <div class="rbar">
-            <div class="lab">Oil P</div>
-            <div class="val"><span class="n" id="oilp-val">62</span><span class="u">psi</span></div>
-          </div>
-          <div class="rbar">
-            <div class="lab">EGO</div>
-            <div class="val"><span class="n" id="ego-val">+3.1</span><span class="u">%</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="brand">FROGDASH · v0.2.10</div>
-      <div class="sw-version">SIM MODE · GPS sim · CAN sim</div>
-    </div>
-
-    <button class="knock-launch" id="knock-launch" type="button" aria-haspopup="dialog">OPEN KNOCK MONITOR</button>
-
-    <!-- SIM CONTROLS (not part of the production dashboard; for design review only) -->
-    <button class="sim-toggle" id="sim-toggle" type="button" aria-controls="sim-controls" aria-expanded="false">SHOW SIM CONTROLS</button>
-  </div>
-
-  <div class="sim-controls" id="sim-controls" hidden>
-    <div class="sim-controls-title">SIM CONTROLS (design review only — not in production)</div>
-    <div class="row">
-      <label><input type="checkbox" id="sim-turn-left">  Left turn</label>
-      <label><input type="checkbox" id="sim-turn-right"> Right turn</label>
-      <label><input type="checkbox" id="sim-highbeam">  High beam</label>
-      <button id="sim-open-knock">Open knock monitor</button>
-    </div>
-    <div class="row">
-      <label class="slider-label">Knock energy
-        <input type="range" id="sim-knock-energy" min="0" max="255" value="20">
-        <span id="sim-knock-energy-val">20</span>
-      </label>
-      <label class="slider-label">Knock baseline
-        <input type="range" id="sim-knock-baseline" min="0" max="255" value="15">
-        <span id="sim-knock-baseline-val">15</span>
-      </label>
-      <label class="slider-label">Threshold (max)
-        <input type="range" id="sim-knock-threshold" min="0" max="255" value="180">
-        <span id="sim-knock-threshold-val">180</span>
-      </label>
-      <button id="sim-knock-event">+1 knock event</button>
-    </div>
-    <div class="row">
-      <label class="slider-label">Fuel pressure
-        <input type="range" id="sim-fuelp" min="0" max="60" value="39">
-        <span id="sim-fuelp-val">39</span> psi
-      </label>
-    </div>
-    <div class="row">
-      <label class="slider-label">Fuel sensor Ω
-        <input type="range" id="sim-fuel-r" min="10" max="73" value="42">
-        <span id="sim-fuel-r-val">42</span>
-      </label>
-      <button id="sim-warn-coolant">Trigger coolant warning</button>
-      <button id="sim-clear-warn">Clear warnings</button>
-    </div>
-    <div class="row">
-      <label class="select-label">Meth state
-        <select id="sim-meth-state">
-          <option value="OFF">OFF</option>
-          <option value="ARMED" selected>ARMED</option>
-          <option value="SPRAYING">SPRAYING</option>
-          <option value="FAULT">FAULT</option>
-          <option value="TEST">TEST</option>
-        </select>
-      </label>
-      <label class="select-label">Flow
-        <select id="sim-meth-flow">
-          <option value="UNKNOWN">UNKNOWN</option>
-          <option value="OK" selected>OK</option>
-          <option value="LOW_FLOW">LOW_FLOW</option>
-          <option value="NO_FLOW">NO_FLOW</option>
-        </select>
-      </label>
-      <label class="slider-label">Meth duty %
-        <input type="range" id="sim-meth-duty" min="0" max="100" value="0">
-        <span id="sim-meth-duty-val">0</span>
-      </label>
-      <label class="slider-label">Meth tank %
-        <input type="range" id="sim-meth-tank" min="0" max="100" value="50">
-        <span id="sim-meth-tank-val">50</span>
-      </label>
-    </div>
-    <div class="row">
-      <label><input type="checkbox" id="sim-meth-fault-low-tank"> LOW_TANK</label>
-      <label><input type="checkbox" id="sim-meth-fault-no-flow"> NO_FLOW</label>
-      <label><input type="checkbox" id="sim-meth-fault-pump-oc"> PUMP_OVERCURRENT</label>
-      <label><input type="checkbox" id="sim-meth-fault-sensor"> SENSOR_FAIL</label>
-      <label><input type="checkbox" id="sim-meth-fault-overtemp"> OVER_TEMP</label>
-      <label><input type="checkbox" id="sim-meth-fault-can"> CAN_TIMEOUT</label>
+      </section>
     </div>
   </div>
+  <p id="command-result" class="command-result" role="status">Select a control to adjust your vehicle.</p>
+</dialog>
 
-  <!-- Knock submenu (modal overlay) -->
-  <div class="menu-overlay" id="knock-overlay" hidden>
-    <div class="menu-card knock-card" role="dialog" aria-modal="true" aria-labelledby="knock-title">
-      <button class="knock-close" id="knock-close" type="button" aria-label="Close knock monitor">×</button>
-      <div class="knock-header">
-        <div>
-          <div class="menu-title" id="knock-title">KNOCK MONITOR</div>
-          <div class="knock-source" id="knock-source">LIVE SIGNAL · CAN 0x307</div>
-        </div>
-        <div class="knock-live"><span></span>LIVE · 30 HZ</div>
-      </div>
+<dialog id="diagnostics" class="workspace-dialog" aria-labelledby="diagnostics-title">
+  <header class="dialog-header"><div><span class="eyebrow">VEHICLE TELEMETRY</span><h2 id="diagnostics-title">Sensors &amp; connections</h2><p id="module-health"></p></div><button id="diagnostics-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
+  <div class="diagnostics-toolbar"><label for="signal-filter">Find a signal</label><input id="signal-filter" type="search" placeholder="Search name, e.g. oil or GPS" autocomplete="off"><span>LIVE / STALE / FAULT / NO SIGNAL</span></div>
+  <div class="diagnostics-body">
+    <table><thead><tr><th>Signal</th><th>Reading</th><th>Quality</th><th>Source</th></tr></thead><tbody id="signals"></tbody></table>
+    <details><summary>Connection details</summary><p id="connection">Connecting</p><p id="source-health">Waiting for data</p></details>
+    <details><summary>Event history</summary><p>Received events since startup, not a list of currently active faults.</p><pre id="fault-history"></pre></details>
+    <details><summary>Raw CAN traffic</summary><pre id="raw-frames"></pre></details>
+  </div>
+</dialog>
 
-      <div class="knock-summary">
+<dialog class="workspace-dialog knock-dialog" id="knock-overlay" aria-labelledby="knock-title">
+  <header class="dialog-header"><div><span class="eyebrow">ENGINE MONITORING</span><h2 id="knock-title">Knock monitor</h2><p id="knock-source">Waiting for signal</p></div><button class="close-button" id="knock-close" type="button">Close <span aria-hidden="true">×</span></button></header>
+  <div class="knock-body">      <div class="knock-summary">
         <div class="knock-primary">
-          <span class="klab">Energy</span>
-          <span class="knock-big" id="knock-energy-num">0</span>
+          <span class="klab">Signal energy</span>
+          <span class="knock-big" id="knock-energy-num">—</span>
         </div>
-        <div class="knock-summary-item"><span class="klab">Baseline</span><strong id="knock-baseline-num">0</strong></div>
-        <div class="knock-summary-item"><span class="klab">Threshold</span><strong id="knock-threshold-num">0</strong></div>
-        <div class="knock-summary-item"><span class="klab">Headroom</span><strong id="knock-headroom-num">0</strong></div>
-        <div class="knock-status-pill" id="knock-status">OK</div>
+        <div class="knock-summary-item"><span class="klab">Baseline</span><strong id="knock-baseline-num">—</strong></div>
+        <div class="knock-summary-item"><span class="klab">Threshold</span><strong id="knock-threshold-num">—</strong></div>
+        <div class="knock-summary-item"><span class="klab">Headroom</span><strong id="knock-headroom-num">—</strong></div>
+        <div class="knock-status-pill" id="knock-status">—</div>
       </div>
 
       <div class="knock-graph-wrap">
-        <svg class="knock-graph" id="knock-graph" viewBox="0 0 960 300" preserveAspectRatio="none" aria-label="Live knock energy history">
+        <svg class="knock-graph" id="knock-graph" viewBox="0 0 960 300" preserveAspectRatio="xMidYMid meet" aria-label="Live knock energy history">
           <rect id="knock-danger-zone" class="knock-danger-zone" x="48" y="18" width="888" height="0" />
           <g class="knock-grid">
             <line x1="48" y1="18"  x2="936" y2="18" />
@@ -280,28 +228,27 @@
             <text x="492" y="292" text-anchor="middle">−3.3s</text>
             <text x="936" y="292" text-anchor="end">NOW</text>
           </g>
-          <line id="knock-thresh" class="knock-thresh" x1="48" y1="0" x2="936" y2="0" />
-          <text id="knock-thresh-label" class="knock-thresh-label" x="928" y="0" text-anchor="end">THRESHOLD 0</text>
+          <line id="knock-thresh" visibility="hidden" class="knock-thresh" x1="48" y1="0" x2="936" y2="0" />
+          <text id="knock-thresh-label" class="knock-thresh-label" x="928" y="0" text-anchor="end">THRESHOLD —</text>
           <path id="knock-energy-area" class="knock-energy-area" d="" />
           <path id="knock-baseline"      class="knock-baseline"      d="" />
           <path id="knock-energy"        class="knock-energy"        d="" />
           <g id="knock-events"></g>
-          <circle id="knock-current-dot" class="knock-current-dot" cx="936" cy="270" r="4" />
+          <circle id="knock-current-dot" visibility="hidden" class="knock-current-dot" cx="936" cy="270" r="4" />
         </svg>
         <div class="knock-legend"><span class="energy">ENERGY</span><span class="baseline">BASELINE</span><span class="threshold">THRESHOLD</span></div>
       </div>
 
       <div class="knock-stats">
-        <div class="kstat"><span class="klab">Event count</span><span class="kval" id="knock-events-num">0</span></div>
-        <div class="kstat"><span class="klab">Last @ RPM</span><span class="kval" id="knock-last-rpm">—</span></div>
-        <div class="kstat"><span class="klab">Last @ boost</span><span class="kval" id="knock-last-boost">—</span></div>
-        <div class="kstat"><span class="klab">Peak (window)</span><span class="kval" id="knock-peak">0</span></div>
+        <div class="kstat"><span class="klab">Event count</span><span class="kval" id="knock-events-num">—</span></div>
+        <div class="kstat"><span class="klab">Last event / RPM</span><span class="kval" id="knock-last-rpm">—</span></div>
+        <div class="kstat"><span class="klab">Last event / boost</span><span class="kval" id="knock-last-boost">—</span></div>
+        <div class="kstat"><span class="klab">Peak (window)</span><span class="kval" id="knock-peak">—</span></div>
       </div>
 
-      <div class="menu-hint-small">Close: × · click outside · K or Esc</div>
-    </div>
-  </div>
-
-  <script src="app.js?v=0.2.12"></script>
+</div>
+</dialog>
+<script src="demo.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
