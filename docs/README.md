@@ -7,6 +7,8 @@ Phase 2 documentation lives here:
 - [Phase 2 implementation plan](phase-2-plan.md)
 - [UI design, gauge scales, and preview review](ui-design.md)
 - [Rotating MLG data logs and MegaLogViewer](data-logging.md)
+- [MCP2515 wiring and boot configuration](mcp2515.md)
+- [Wi-Fi hotspot and log downloads](wifi-access.md)
 - Component datasheets
 - Wiring diagrams
 - Pi pinout reference

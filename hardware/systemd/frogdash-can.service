@@ -1,0 +1,19 @@
+[Unit]
+Description=Configure Frogdash MCP2515 SocketCAN at 500 kbit/s
+BindsTo=sys-subsystem-net-devices-can0.device
+After=sys-subsystem-net-devices-can0.device
+Before=frogdash.service
+JobTimeoutSec=10s
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/ip link set dev can0 up type can bitrate 500000 restart-ms 100
+ExecStop=/usr/sbin/ip link set dev can0 down
+CapabilityBoundingSet=CAP_NET_ADMIN
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

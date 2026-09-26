@@ -6,16 +6,17 @@ from collections import deque
 from contextlib import suppress
 from pathlib import Path
 
-from aiohttp import web, WSMsgType
+from aiohttp import web, WSMsgType, ClientError
 from .adapters import read_replay, replay, socketcan
 from .state import State
 from .gps import GPS, gpsd
 from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
+from .connectivity import Connectivity, require_local
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
 
 
-def create_app(state, adapter=None):
+def create_app(state, adapter=None, connectivity=None):
     app = web.Application()
     clients = set()
 
@@ -25,8 +26,12 @@ def create_app(state, adapter=None):
             tasks.append(asyncio.create_task(gpsd(state.gps)))
         if state.recorder:
             state.recorder.start()
+        if connectivity:
+            await connectivity.start()
         yield
         await state.controls.close()
+        if connectivity:
+            await connectivity.close()
         if state.recorder:
             await state.recorder.close()
         for task in tasks:
@@ -118,6 +123,27 @@ def create_app(state, adapter=None):
     async def raw(request):
         return web.json_response(list(state.raw.values()))
 
+    async def wifi_status(request):
+        require_local(request)
+        return web.json_response(dict(connectivity.status) if connectivity else
+            {'configured': False, 'enabled': False, 'error': 'Wi-Fi setup is not enabled in this service.'},
+            headers={'Cache-Control': 'no-store'})
+
+    async def wifi_toggle(request):
+        require_local(request)
+        if not connectivity or state.mode == 'replay':
+            raise web.HTTPServiceUnavailable(text='Wi-Fi control unavailable')
+        try:
+            body = await request.json()
+            if not isinstance(body, dict) or set(body) != {'enabled'} or type(body['enabled']) is not bool:
+                raise ValueError()
+        except (ValueError, TypeError):
+            raise web.HTTPBadRequest(text='Expected enabled: true or false')
+        try:
+            return web.json_response(await connectivity.update(body['enabled']))
+        except (OSError, TimeoutError, ClientError):
+            raise web.HTTPServiceUnavailable(text='Could not update hotspot')
+
     async def asset(request):
         name = request.match_info.get("name", "index.html")
         if name not in {"index.html", "app.js", "style.css"}:
@@ -127,6 +153,7 @@ def create_app(state, adapter=None):
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
                     web.get("/raw", raw), web.get('/logs', logs), web.get('/logs/{name}', download_log),
+                    web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.get("/", asset), web.get("/{name}", asset)])
     return app
 
@@ -146,11 +173,14 @@ def main():
     parser.add_argument('--log-file-mib', type=int, default=32)
     parser.add_argument('--log-total-mib', type=int, default=2048)
     parser.add_argument('--log-min-free-mib', type=int, default=256)
+    parser.add_argument('--hotspot-socket', type=Path, help='Enable the optional local Wi-Fi helper socket')
     args = parser.parse_args()
     if args.loop and not args.replay:
         parser.error("--loop requires --replay")
     if args.replay and args.gpsd:
         parser.error("--gpsd cannot be combined with replay")
+    if args.replay and args.hotspot_socket:
+        parser.error('--hotspot-socket cannot be combined with replay')
     if (args.gps_device or args.gps_no_transmit) and not args.gpsd:
         parser.error("GPS options require --gpsd")
     state = State("replay" if args.replay else "socketcan")
@@ -171,7 +201,8 @@ def main():
         adapter = lambda: replay(state, frames, args.loop)
     else:
         adapter = lambda: socketcan(state, args.interface)
-    web.run_app(create_app(state, adapter), host="127.0.0.1", port=args.port, access_log=None, shutdown_timeout=3)
+    connectivity = Connectivity(state, args.hotspot_socket) if args.hotspot_socket else None
+    web.run_app(create_app(state, adapter, connectivity), host="127.0.0.1", port=args.port, access_log=None, shutdown_timeout=3)
 
 
 if __name__ == "__main__":

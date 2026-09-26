@@ -8,9 +8,9 @@ sensor readings. Named, validated vehicle commands are available through the
 
 ## Run on Raspberry Pi OS
 
-Install the SocketCAN driver for your actual USB CAN adapter or CAN HAT first.
-The app uses Linux SocketCAN; it does not assume an MCP2515 oscillator or GPIO
-pin assignment. All three project modules use **500000 bit/s, standard 11-bit
+For the planned MCP2515, use the [wiring and persistent CAN setup guide](mcp2515.md).
+The app uses Linux SocketCAN; the driver needs the board's actual oscillator and
+GPIO assignment. All three project modules use **500000 bit/s, standard 11-bit
 classical CAN**.
 
 ```sh
@@ -28,7 +28,8 @@ chromium --kiosk http://127.0.0.1:8080/
 The bitrate is configured by Linux, not by the app. Persist that configuration
 using the network manager already installed on the Pi. CAN reception reconnects
 after interface errors; absent modules become stale independently. The app binds
-HTTP only to localhost. `/health` reports transport/module/GPS health, `/state`
+the full dashboard only to localhost. Optional [Wi-Fi log access](wifi-access.md)
+uses a separate transfer site. `/health` reports transport/module/GPS health, `/state`
 is a WebSocket, and `/raw` lists the most recent frame per identifier (max 256).
 Raw extended, remote, and error frames are diagnostic-only; they cannot overwrite
 the standard-frame decoder. Raw traffic is not a persistent trip recorder.

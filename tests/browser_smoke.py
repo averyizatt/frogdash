@@ -16,6 +16,36 @@ from hardware.frogdash.state import State
 from hardware.frogdash.gps import GPS
 from hardware.frogdash.recorder import Recorder, Config
 from tools.inspect_mlg import inspect as inspect_mlg
+from hardware.frogdash.connectivity import TransferPortal
+
+
+async def check_transfer(browser, state, errors):
+    portal = TransferPortal(state)
+    runner = web.AppRunner(portal.app('127.0.0.0/8'), access_log=None)
+    await runner.setup()
+    site = web.TCPSite(runner, '127.0.0.1', 0)
+    await site.start()
+    port = site._server.sockets[0].getsockname()[1]
+    page = await browser.new_page(viewport={'width': 390, 'height': 844})
+    page.on('pageerror', lambda error: errors.append(str(error)))
+    try:
+        await page.goto(f'http://127.0.0.1:{port}')
+        await page.locator('#code').fill(portal.code)
+        await page.locator('#login-form button').click()
+        await page.locator('#content').wait_for(state='visible')
+        await page.locator('#files a').first.wait_for()
+        async with page.expect_download() as download_info:
+            await page.locator('#files a').first.click()
+        await (await download_info.value).save_as('.tmp/phone-download.mlg')
+        assert inspect_mlg('.tmp/phone-download.mlg')['data_records'] > 0
+        assert await page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        await page.screenshot(path='.tmp/phone-log-transfer.png', full_page=True)
+        await portal.close()
+        await page.locator('#refresh').click()
+        await page.locator('#login').wait_for(state='visible')
+    finally:
+        await page.close()
+        await runner.cleanup()
 
 
 async def check_preview(browser, errors):
@@ -64,6 +94,13 @@ async def check_preview(browser, errors):
     await page.locator('[data-action="lighting.brightness"]').click()
     await page.wait_for_function("document.getElementById('lighting-live-summary').textContent.includes('128 / 255')")
     await page.screenshot(path='.tmp/dashboard-lighting.png')
+    await page.keyboard.press('Escape')
+    await page.locator('#controls-launch').click()
+    await page.locator('#tab-wifi').click()
+    await page.locator('#wifi-on').click()
+    assert await page.locator('#wifi-summary').inner_text() == 'DEMO · Hotspot on'
+    assert await page.locator('#wifi-code').inner_text() == '12345678'
+    await page.locator('#wifi-off').click()
     await page.keyboard.press('Escape')
     await page.locator('#diagnostics-launch').click()
     await page.locator('#signal-filter').fill('oil')
@@ -195,6 +232,7 @@ async def main(browser_path=None):
             assert bounds['width'] <= 1281 and bounds['height'] <= 721
             await page.screenshot(path='.tmp/dashboard-1280.png')
             await check_preview(browser, errors)
+            await check_transfer(browser, state, errors)
             assert not errors, errors
             await browser.close()
     finally:
@@ -204,7 +242,7 @@ async def main(browser_path=None):
         task.cancel()
         await asyncio.gather(task, return_exceptions=True)
         await runner.cleanup()
-    print('Browser integration passed: live telemetry, ACKs, pump stop, reconnect, resize, recording status and valid MLG download; standalone preview and controls; no JS errors or preview network access.')
+    print('Browser integration passed: telemetry, controls, recording, Wi-Fi preview, phone portal login and MLG downloads, session expiry; no JS errors or preview network access.')
 
 
 if __name__ == '__main__':

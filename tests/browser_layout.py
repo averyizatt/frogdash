@@ -51,7 +51,7 @@ async def main(browser_path=None, url=None):
         for width, height in SIZES:
             await page.set_viewport_size({'width': width, 'height': height})
             await page.locator('#meth-cell').click()
-            for tab in ('meth', 'knock', 'lighting'):
+            for tab in ('meth', 'knock', 'lighting', 'wifi'):
                 await page.locator(f'#tab-{tab}').click()
                 await inspect(page, '#controls-dialog', '.control-panels')
                 if (width, height) in ((1980, 720), (1280, 480)):
@@ -74,7 +74,7 @@ async def main(browser_path=None, url=None):
                 assert await page.locator(f'#{launch}').evaluate('(el) => document.activeElement === el')
         assert not errors, errors
         await browser.close()
-    print('All 5 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
+    print('All 6 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
 
 
 if __name__ == '__main__':

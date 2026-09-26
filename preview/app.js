@@ -313,7 +313,39 @@
       $(`panel-${button.dataset.tab}`).hidden = !active;
     }
     document.querySelector('.control-panels').scrollTop = 0;
+    if (name === 'wifi') loadWifi();
   }
+  let wifiBusy = false, demoWifi = false;
+  function renderWifi(status) {
+    const demo = snapshot.mode === 'demo';
+    $('wifi-summary').textContent = demo ? `DEMO · Hotspot ${status.enabled ? 'on' : 'off'}` : status.enabled ? `Hotspot on · ${Math.ceil(status.remaining_seconds / 60)} minutes remaining` : 'Hotspot off';
+    $('wifi-ssid').textContent = status.ssid || '—';
+    $('wifi-password').textContent = status.enabled ? status.password || '—' : '—';
+    $('wifi-url').textContent = status.enabled ? status.url || '—' : '—';
+    $('wifi-code').textContent = status.enabled ? status.access_code || '—' : '—';
+    $('wifi-feedback').textContent = status.error || (demo ? 'Preview only — no Wi-Fi network is created.' : status.configured ? 'Ready. Access switches off automatically after 20 minutes.' : 'Configure the Pi Wi-Fi helper to enable hotspot access.');
+    $('wifi-on').disabled = wifiBusy || !status.configured || status.enabled;
+    $('wifi-off').disabled = wifiBusy || !status.configured || !status.enabled;
+  }
+  async function loadWifi(enabled) {
+    if (wifiBusy) return;
+    if (snapshot.mode === 'demo') {
+      if (enabled !== undefined) demoWifi = enabled;
+      renderWifi({configured: true, enabled: demoWifi, ssid: 'Frogdash (preview)', password: 'Preview only', url: 'Available on the Pi', access_code: '12345678'});
+      return;
+    }
+    wifiBusy = true; $('wifi-on').disabled = $('wifi-off').disabled = true;
+    if (enabled !== undefined) $('wifi-feedback').textContent = 'Updating hotspot…';
+    try {
+      const options = enabled === undefined ? {} : {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({enabled})};
+      const response = await fetch('/connectivity', {...options, signal: AbortSignal.timeout(28000)});
+      if (!response.ok) throw new Error('Could not update Wi-Fi. Check the Pi hotspot service.');
+      const status = await response.json(); wifiBusy = false; renderWifi(status);
+    } catch (error) { wifiBusy = false; renderWifi({configured: false, enabled: false, error: error.message}); }
+  }
+  $('wifi-on').onclick = () => loadWifi(true);
+  $('wifi-off').onclick = () => loadWifi(false);
+  setInterval(() => { if ($('controls-dialog').open && !$('panel-wifi').hidden) loadWifi(); }, 3000);
   for (const tab of document.querySelectorAll('[data-tab]')) {
     tab.onclick = () => selectControlTab(tab.dataset.tab);
     tab.onkeydown = event => {

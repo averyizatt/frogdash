@@ -36,4 +36,4 @@ Open `preview/index.html`. Its badge and control feedback identify simulated dat
 
 Run `python tests/browser_smoke.py` for saved screenshots and interaction checks. Review readability on the physical panel, including sunlight and night conditions, before vehicle use; browser screenshots alone cannot establish panel brightness or viewing-angle performance.
 
-Run `python tests/browser_layout.py` to check all five submenu views at native 1920/1980 × 720 and scaled sizes. It verifies that menus stay inside the dashboard, controls remain unobscured, and resizing an open submenu preserves the layout. Pass `--url` to run the same checks against the hosted preview.
+Run `python tests/browser_layout.py` to check all six submenu views at native 1920/1980 × 720 and scaled sizes. It verifies that menus stay inside the dashboard, controls remain unobscured, and resizing an open submenu preserves the layout. Pass `--url` to run the same checks against the hosted preview.

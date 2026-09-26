@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#090f13">
   <link rel="icon" href="data:,">
   <title>Frogdash · Simulated design preview</title>
-  <link rel="stylesheet" href="style.css?v=1ef723aac122">
+  <link rel="stylesheet" href="style.css?v=cd5a2f7a42ca">
 </head>
 <body>
 <noscript>JavaScript is required to display live vehicle data.</noscript>
@@ -110,6 +110,7 @@
       <button id="tab-meth" role="tab" aria-selected="true" aria-controls="panel-meth" tabindex="0" data-tab="meth"><span>01</span>Water / meth</button>
       <button id="tab-knock" role="tab" aria-selected="false" aria-controls="panel-knock" tabindex="-1" data-tab="knock"><span>02</span>Knock monitor</button>
       <button id="tab-lighting" role="tab" aria-selected="false" aria-controls="panel-lighting" tabindex="-1" data-tab="lighting"><span>03</span>Lighting</button>
+      <button id="tab-wifi" role="tab" aria-selected="false" aria-controls="panel-wifi" tabindex="-1" data-tab="wifi"><span>04</span>Wi-Fi</button>
       <p>Live readings come from the vehicle. Changes are confirmed where supported.</p>
     </div>
     <div class="control-panels">
@@ -172,6 +173,20 @@
             </div>
             <p class="control-note">Mode changes have no controller confirmation. Verify the lights after applying.</p>
           </div>
+        </div>
+      </section>
+      <section class="control-section" id="panel-wifi" role="tabpanel" aria-labelledby="tab-wifi" hidden>
+        <p id="wifi-summary">Hotspot off</p>
+        <div class="settings-grid">
+          <div class="setting-card"><h3>Wireless access</h3><p class="control-note">Make the dash discoverable to your phone or laptop. Access turns off after 20 minutes.</p>
+            <div class="control-row"><button id="wifi-on" type="button">TURN ON HOTSPOT</button><button id="wifi-off" type="button" class="stop-control">TURN OFF</button></div>
+            <p id="wifi-feedback" class="control-note" role="status"></p>
+            <p class="control-note">The Pi's built-in Wi-Fi switches away from its current network while the hotspot is on.</p>
+          </div>
+          <div class="setting-card"><h3>Connect &amp; download</h3><dl class="wifi-details">
+            <dt>Network</dt><dd id="wifi-ssid">—</dd><dt>Wi-Fi password</dt><dd id="wifi-password">—</dd>
+            <dt>Open in browser</dt><dd id="wifi-url">—</dd><dt>Dash access code</dt><dd id="wifi-code">—</dd>
+          </dl><p class="control-note">Download completed logs and check system status. Vehicle controls stay on the dash.</p></div>
         </div>
       </section>
     </div>
@@ -250,6 +265,6 @@
 </div>
 </dialog>
 <script src="demo.js?v=0a5b8d404f6d"></script>
-<script src="app.js?v=4ee2acf4f5cc"></script>
+<script src="app.js?v=ccf4f957e35f"></script>
 </body>
 </html>

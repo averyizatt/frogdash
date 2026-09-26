@@ -69,7 +69,8 @@ The header shows `REC 20 Hz`, `LOG OFF`, or `LOG ERROR`. Open **Sensors → Save
 data logs** and refresh the list to download completed files. The current file
 is identified as recording; it becomes downloadable after rotation. A stopped
 service's final file can be copied directly from `/var/lib/frogdash/logs`.
-The web service remains bound to localhost; use the Pi browser or an SSH tunnel.
+The driver web service remains bound to localhost; use the Pi browser, an SSH
+tunnel, or install the separate [Wi-Fi transfer page](wifi-access.md).
 
 - `GET /logs`: recorder status and file inventory.
 - `GET /logs/<filename>`: download a completed managed log; active files return 409.

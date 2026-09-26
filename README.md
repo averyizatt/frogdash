@@ -21,6 +21,11 @@ MegaLogViewer: 20 Hz, 30-minute/32 MiB files, and a 2 GiB retention budget by
 default. Recording continues with the browser closed. Completed logs are available
 under **Sensors → Saved data logs** or in `/var/lib/frogdash/logs`.
 
+[MCP2515 setup](docs/mcp2515.md) supplies the SPI wiring plan and persistent
+500 kbit/s CAN service. Optional [Wi-Fi access](docs/wifi-access.md) adds a
+20-minute hotspot toggle under **Controls → Wi-Fi** and a phone-friendly page for
+downloading logs and checking system status.
+
 ## Browser preview
 
 Open [preview/index.html](preview/index.html) in your browser, or use the GitHub Pages preview. It works directly from disk without dependencies or network access.
