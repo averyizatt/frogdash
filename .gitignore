@@ -16,10 +16,14 @@ __pycache__/
 
 # Logs / tmp
 *.log
+*.mlg
 *.tmp
 .tmp/
 
 # Secrets — never commit
 *.env
+!config/frogdash.env
 credentials/
 secrets/
+.sources/
+.venv/

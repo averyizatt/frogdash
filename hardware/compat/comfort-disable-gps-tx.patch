@@ -1,0 +1,22 @@
+--- a/src/can/can_manager.cpp
++++ b/src/can/can_manager.cpp
+@@ -59,6 +59,10 @@
+ 
+ #ifndef CCM_CAN_TACH_TX_MS
+ #define CCM_CAN_TACH_TX_MS 50
++#endif
++
++#ifndef CCM_CAN_GPS_TX_ENABLED
++#define CCM_CAN_GPS_TX_ENABLED 1
+ #endif
+ 
+ #ifndef CCM_CAN_GPS_TX_MS
+@@ -1201,7 +1205,7 @@
+     lastTachTxMs_ = nowMs;
+   }
+ 
+-  if ((nowMs - lastGpsTxMs_) >= kCanGpsTxMs) {
++  if (CCM_CAN_GPS_TX_ENABLED && (nowMs - lastGpsTxMs_) >= kCanGpsTxMs) {
+     can_protocol::CanFrame gps{};
+     packGpsState(snapshot, gps);
+     sendFrame(gps);

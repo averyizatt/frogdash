@@ -1,0 +1,178 @@
+"""Local HTTP + WebSocket service, independently paced per browser client."""
+import argparse
+import asyncio
+import json
+from collections import deque
+from contextlib import suppress
+from pathlib import Path
+
+from aiohttp import web, WSMsgType
+from .adapters import read_replay, replay, socketcan
+from .state import State
+from .gps import GPS, gpsd
+from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
+
+WEB = Path(__file__).resolve().parents[1] / "ui"
+
+
+def create_app(state, adapter=None):
+    app = web.Application()
+    clients = set()
+
+    async def lifecycle(app):
+        tasks = [asyncio.create_task(adapter())] if adapter else []
+        if state.gps:
+            tasks.append(asyncio.create_task(gpsd(state.gps)))
+        if state.recorder:
+            state.recorder.start()
+        yield
+        await state.controls.close()
+        if state.recorder:
+            await state.recorder.close()
+        for task in tasks:
+            task.cancel()
+        for task in tasks:
+            with suppress(asyncio.CancelledError):
+                await task
+        await asyncio.gather(*(ws.close(code=1001, message=b"Service stopping") for ws in list(clients)))
+
+    async def websocket(request):
+        if request.url.host not in {'127.0.0.1', 'localhost', '::1'}:
+            raise web.HTTPForbidden(text="Local dashboard only")
+        origin = request.headers.get("Origin")
+        if origin and origin != f"{request.scheme}://{request.host}":
+            raise web.HTTPForbidden(text="Same-origin clients only")
+        ws = web.WebSocketResponse(heartbeat=10, max_msg_size=1024)
+        await ws.prepare(request)
+        clients.add(ws)
+
+        async def publish():
+            while not ws.closed:
+                await asyncio.wait_for(ws.send_json(state.snapshot()), timeout=2)
+                await asyncio.sleep(.1)
+
+        task = asyncio.create_task(publish())
+        task.add_done_callback(lambda _: asyncio.create_task(ws.close()) if not ws.closed else None)
+        requests, seen = set(), deque(maxlen=64)
+
+        async def command(message):
+            request_id = message['request_id']
+            try:
+                result = await state.controls.execute(message.get('action'), message.get('value'), owner=ws)
+            except (ValueError, TypeError) as exc:
+                result = {'status': 'rejected', 'message': str(exc)}
+            if not ws.closed:
+                with suppress(ConnectionError):
+                    await ws.send_json({'type': 'command_result', 'request_id': request_id, **result})
+
+        try:
+            async for incoming in ws:
+                if incoming.type != WSMsgType.TEXT: continue
+                try:
+                    message = json.loads(incoming.data)
+                    if not isinstance(message, dict) or message.get('type') != 'command':
+                        raise ValueError('Expected a command object')
+                    request_id = message.get('request_id')
+                    if not isinstance(request_id, str) or not 1 <= len(request_id) <= 64:
+                        raise ValueError('Invalid request ID')
+                    if request_id in seen: raise ValueError('Duplicate command; not resent')
+                    if len(requests) >= 4: raise ValueError('Too many pending commands')
+                    seen.append(request_id)
+                    pending = asyncio.create_task(command(message))
+                    requests.add(pending)
+                    pending.add_done_callback(requests.discard)
+                except (ValueError, TypeError) as exc:
+                    await ws.send_json({'type': 'command_result', 'status': 'rejected', 'message': str(exc)})
+        finally:
+            # Cancel unsent/in-flight requests before releasing the test lease.
+            for pending in requests: pending.cancel()
+            await asyncio.gather(*requests, return_exceptions=True)
+            await state.controls.release(ws)
+            task.cancel()
+            with suppress(asyncio.CancelledError, ConnectionError, TimeoutError):
+                await task
+            clients.discard(ws)
+        return ws
+
+    async def health(request):
+        snapshot = state.snapshot()
+        return web.json_response({"mode": state.mode, "transport": snapshot["transport"], "modules": snapshot["modules"], "gps": snapshot["gps"], "recording": snapshot["recording"]})
+
+    async def logs(request):
+        files = await asyncio.to_thread(state.recorder.files) if state.recorder else []
+        return web.json_response({'recording': dict(state.recorder.status) if state.recorder else {'state': 'disabled', 'enabled': False}, 'files': files},
+                                 headers={'Cache-Control': 'no-store'})
+
+    async def download_log(request):
+        name = request.match_info['name']
+        if not state.recorder or not LOG_NAME.fullmatch(name):
+            raise web.HTTPNotFound()
+        path = state.recorder.config.directory / name
+        if path == state.recorder.writer.path:
+            raise web.HTTPConflict(text='This log is still recording; download it after rotation or shutdown.')
+        if path.is_symlink() or not path.is_file():
+            raise web.HTTPNotFound()
+        return web.FileResponse(path, headers={'Content-Type': 'application/octet-stream',
+                                               'Content-Disposition': f'attachment; filename="{name}"', 'Cache-Control': 'no-store'})
+
+    async def raw(request):
+        return web.json_response(list(state.raw.values()))
+
+    async def asset(request):
+        name = request.match_info.get("name", "index.html")
+        if name not in {"index.html", "app.js", "style.css"}:
+            raise web.HTTPNotFound()
+        return web.FileResponse(WEB / name, headers={"Cache-Control": "no-store"})
+
+    app.cleanup_ctx.append(lifecycle)
+    app.add_routes([web.get("/state", websocket), web.get("/health", health),
+                    web.get("/raw", raw), web.get('/logs', logs), web.get('/logs/{name}', download_log),
+                    web.get("/", asset), web.get("/{name}", asset)])
+    return app
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Frogdash CAN dashboard with optional USB GPS broadcast")
+    parser.add_argument("--interface", default="can0")
+    parser.add_argument("--port", type=int, default=8080)
+    parser.add_argument("--replay", type=Path)
+    parser.add_argument("--loop", action="store_true")
+    parser.add_argument("--gpsd", action="store_true", help="Use local gpsd USB GPS and broadcast 0x203")
+    parser.add_argument("--gps-device", help="gpsd device path; otherwise lock to first receiver")
+    parser.add_argument("--gps-no-transmit", action="store_true", help="Use USB GPS locally without CAN GPS transmission")
+    parser.add_argument('--log-dir', type=Path, help='Enable rotating MLG recording in this dedicated directory')
+    parser.add_argument('--log-hz', type=float, default=20)
+    parser.add_argument('--log-minutes', type=float, default=30)
+    parser.add_argument('--log-file-mib', type=int, default=32)
+    parser.add_argument('--log-total-mib', type=int, default=2048)
+    parser.add_argument('--log-min-free-mib', type=int, default=256)
+    args = parser.parse_args()
+    if args.loop and not args.replay:
+        parser.error("--loop requires --replay")
+    if args.replay and args.gpsd:
+        parser.error("--gpsd cannot be combined with replay")
+    if (args.gps_device or args.gps_no_transmit) and not args.gpsd:
+        parser.error("GPS options require --gpsd")
+    state = State("replay" if args.replay else "socketcan")
+    if args.log_dir:
+        try:
+            config = LogConfig(args.log_dir.resolve(), args.log_hz, args.log_minutes * 60,
+                               args.log_file_mib * MIB, args.log_total_mib * MIB, args.log_min_free_mib * MIB)
+        except ValueError as exc:
+            parser.error(str(exc))
+        state.recorder = Recorder(state, config)
+    if args.gpsd:
+        state.gps = GPS(device=args.gps_device, transmit=not args.gps_no_transmit)
+    if args.replay:
+        try:
+            frames = read_replay(args.replay)
+        except (ValueError, OSError) as exc:
+            parser.error(str(exc))
+        adapter = lambda: replay(state, frames, args.loop)
+    else:
+        adapter = lambda: socketcan(state, args.interface)
+    web.run_app(create_app(state, adapter), host="127.0.0.1", port=args.port, access_log=None, shutdown_timeout=3)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,27 @@
+[Unit]
+Description=Frogdash CAN and GPS state service
+After=network.target gpsd.socket
+Wants=gpsd.socket
+
+[Service]
+Type=simple
+DynamicUser=yes
+WorkingDirectory=/opt/frogdash
+Environment="FROGDASH_ARGS=--interface can0 --gpsd --log-dir /var/lib/frogdash/logs"
+EnvironmentFile=-/etc/default/frogdash
+ExecStart=/opt/frogdash/.venv/bin/python -m hardware.frogdash.server $FROGDASH_ARGS
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=15
+StateDirectory=frogdash
+StateDirectoryMode=0750
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_CAN
+LogRateLimitIntervalSec=30s
+LogRateLimitBurst=20
+
+[Install]
+WantedBy=multi-user.target

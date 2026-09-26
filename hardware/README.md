@@ -1,14 +1,16 @@
 # hardware/
 
-This folder will hold the Raspberry Pi implementation described in
-[`docs/phase-2-plan.md`](../docs/phase-2-plan.md):
+The Raspberry Pi implementation is now here. See the
+[CAN and USB GPS setup guide](../docs/can-integration.md).
 
-- Production web UI in Chromium kiosk mode
-- Python state service and local WebSocket API
-- SocketCAN readers and frame decoders
-- `libgpiod` input handler for protected physical buttons
-- `gpsd` receiver
-- systemd services, health reporting, replay tools, and tests
+- `frogdash/`: Python state service, SocketCAN decoder, gpsd USB receiver,
+  GPS CAN broadcast, local WebSocket API, health endpoint, replay adapter, and
+  [rotating binary MLG recorder](../docs/data-logging.md).
+- `ui/`: production dashboard, quality indicators, knock monitor, CAN inspector,
+  and water/meth/knock/lighting controls.
+- `systemd/`: daemon and graphical-session kiosk service templates.
+- `compat/`: CCM patches to transfer GPS and engine-control ownership to the Pi.
 
-Implementation starts with a desktop `vcan0` replay service; hardware selection and
-vehicle wiring are deliberately deferred until the interfaces are confirmed.
+Run `python -m hardware.frogdash.server --interface can0 --gpsd` from the repo
+root after installation. GPIO, fuel-level sensing, power control, and physical
+CAN adapter setup remain hardware-specific integration work.

@@ -1,84 +1,66 @@
-# frogdash
+# Frogdash
 
-Custom car dash UI on Linux. Tach/speed/fuel/temp/OBD2/CAN-bus, headless Linux driving a small TFT or HDMI panel mounted in-dash.
+A Raspberry Pi instrument cluster for a Foxbody Mustang, designed for a 1920 × 720, 12.3-inch display. Runs on Linux with SocketCAN, USB GPS through gpsd, and local vehicle controls.
 
-A 1920×720 automotive dashboard UI for a 12.3" LCD, themed for a Foxbody Mustang.
+**Start here:** [CAN + USB GPS installation](docs/can-integration.md) and [water/meth, knock, and lighting controls](docs/controls.md). Desktop tests cover the integration; Raspberry Pi and vehicle validation are still pending.
 
-> **Phase 1 status:** browser preview only. No hardware integration yet.
-> Pi/CAN/GPIO/GPS implementation is planned but **not started** — this repo currently
-> contains the design preview for review.
+## Driver display
 
-## Repo layout
+- Large, bold GPS speed and arc tachometer, with a quiet dark background and mint accents.
+- Zero-centered vacuum/boost gauge and AFR gauge with the ECU's actual target.
+- Matched coolant, oil pressure, fuel pressure, intake air, battery, and fuel cards.
+- Taillight turn, brake, running, and reverse inputs; module connection health.
+- Water/meth summary opens its controls directly. Separate tabs for injection, knock settings, and lighting.
+- Knock history graph, searchable sensor readings, connection details, and raw CAN traffic.
+- Explicit stale, fault, and unavailable states. Fuel remains unavailable until its CAN source is defined.
 
-```
-frogdash/
-├── preview/         Browser-only design preview (HTML/CSS/JS, simulated data)
-│   ├── index.html
-│   ├── style.css
-│   └── app.js
-├── config/          Future hardware/calibration config (placeholder, Phase 2)
-├── hardware/        Future Pi-side implementation (placeholder, Phase 2)
-├── docs/            Design notes, decisions, datasheets (placeholder, Phase 2)
-└── .github/
-    └── workflows/
-        └── pages.yml   GitHub Pages: publish preview/
-```
+See [UI design and gauge behavior](docs/ui-design.md) for display scales and review details.
 
-## Browser preview (design review)
+The Pi service also records [rotating MLG data logs](docs/data-logging.md) for
+MegaLogViewer: 20 Hz, 30-minute/32 MiB files, and a 2 GiB retention budget by
+default. Recording continues with the browser closed. Completed logs are available
+under **Sensors → Saved data logs** or in `/var/lib/frogdash/logs`.
 
-A self-contained 1920×720 simulated dashboard. No hardware calls. Open it locally:
+## Browser preview
+
+Open [preview/index.html](preview/index.html) in your browser, or use the GitHub Pages preview. It works directly from disk without dependencies or network access.
+
+The persistent **DEMO · SIMULATED** badge identifies generated readings. Controls only change the simulated state. `M` opens controls, `K` opens the knock monitor, and `Esc` closes a dialog. Use the arrow keys to change control tabs. The production UI receives its readings exclusively from the local CAN/GPS service.
+
+The preview uses copies of the production design with a separate demo transport. After editing `hardware/ui/`, regenerate it:
 
 ```bash
-xdg-open preview/index.html
-# or just double-click preview/index.html
+python tools/update_preview.py
+python tools/update_preview.py --check
 ```
 
-Or visit the GitHub Pages URL once Pages is enabled (see below).
+## Repository
 
-### What's in the preview
+| Path | Contents |
+| --- | --- |
+| `hardware/frogdash/` | Linux CAN/GPS service, protocol decoding, control commands |
+| `hardware/ui/` | Authoritative production dashboard |
+| `preview/` | Standalone simulated design preview; published by GitHub Pages |
+| `hardware/systemd/` | Raspberry Pi service templates |
+| `hardware/compat/` | Comfort controller patches for GPS/control ownership |
+| `config/` | Production service environment |
+| `tests/` | Protocol, GPS, control, service, replay, and browser checks |
+| `docs/` | Installation, protocol provenance, controls, and design |
 
-- Tachometer (RPM, 800–6000)
-- Huge center speed (MPH, GPS-sourced)
-- Boost / MAP gauge
-- AFR ring gauge (rich/stoich/lean, λ readout)
-- Coolant, IAT, fuel, oil pressure, oil temp, battery, EGO
-- Topbar: turn signals (L/R), high beam, check-engine, parking brake, brake warning, fuel %, ext temp, clock
-- Warning banner (e.g. coolant critical)
-- Menu overlay (M key, or sim control)
-- Knock Monitor — large bottom-right button, touch-friendly modal with live graph
+## Validation
 
-### Sim controls (toggle button, bottom-left)
+```bash
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
+python tools/update_preview.py --check
 
-For design review only. **Not part of the production dashboard.** Hidden by
-default since v0.2.8; tap the small `SHOW SIM CONTROLS` button at the bottom-left
-to expand it.
+# Optional real browser integration and visual review
+python -m pip install playwright
+python -m playwright install chromium
+python tests/browser_smoke.py
+# Or pass --browser /path/to/chromium
+```
 
-- Checkboxes: turn signals, high beam, ECU, brake warning
-- Sliders: fuel pressure, fuel resistance, knock energy/baseline/threshold, meth duty/tank
-- Buttons: trigger coolant warning, clear warnings, +1 knock event, open knock monitor
-- Keyboard: `M` menu, `←/→` cycle gear, `T` toggle left turn, `Esc` close overlays
+The browser check saves screenshots in `.tmp/` and exercises live telemetry, command acknowledgements, stopping pump tests, reconnects, dialog navigation, warnings, offline states, and the isolated design preview.
 
-## Design review checklist
-
-When reviewing the preview, please comment on:
-
-1. **Layout / proportions** — does 1920×720 feel right for a 12.3" display? Anything too cramped / too sparse?
-2. **Information density** — too much, too little, right amount?
-3. **Color/contrast** — readable in bright daylight? At night?
-4. **Warning states** — does the coolant warning grab attention without being obnoxious?
-5. **Menus** — layout of the menu overlay
-6. **Foxbody theming** — accent color, typography, any other "feel" tweaks?
-
-## Roadmap
-
-- [x] **Phase 1a** — static HTML prototype (`frogdash-prototype-v1.html`, pre-repo)
-- [x] **Phase 1b** — animated sim in `preview/`, GitHub Pages published
-- [x] **Phase 1c** — design review + responsive/touch iterations through v0.2.11
-- [ ] **Phase 2** — Pi 4 production UI + local WebSocket connection layer ([plan](docs/phase-2-plan.md)) (← **next**)
-- [ ] **Phase 3** — vehicle integration
-
-## Notes for future me
-
-- Repo is on `main`, SSH alias `github-frogdash`, deploy key `~/.ssh/frogdash_deploy`
-- Browser preview is **design review only** — Pi implementation is authoritative
-- `preview/` is intentionally a separate, self-contained folder; do not import from it into the production app
+Vehicle commissioning still requires confirming controller firmware ownership, the fuel sender protocol, and the display on the actual Pi. The [original phase plan](docs/phase-2-plan.md) is retained for reference.

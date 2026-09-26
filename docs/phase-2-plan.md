@@ -1,5 +1,12 @@
 # Phase 2 — UI and connection layer
 
+Implementation update: the production CAN/GPS service and UI now live in
+`hardware/`. See [installation and protocol details](can-integration.md).
+The user's expanded scope adds USB GPS via gpsd and transmission of GPS frame
+0x203. The later control expansion adds [water/meth, knock, and lighting controls](controls.md).
+The document below is
+the original plan; Pi performance/soak and vehicle validation are still pending.
+
 Phase 2 turns the approved browser design into the production dashboard for Avery's
 Raspberry Pi 4. This phase is deliberately limited to the UI and the local data
 connection that feeds it.

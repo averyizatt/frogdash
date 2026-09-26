@@ -1,0 +1,25 @@
+--- a/src/can/can_manager.cpp
++++ b/src/can/can_manager.cpp
+@@ -67,6 +67,10 @@
+ 
+ #ifndef CCM_CAN_ENGINE_RUNTIME_TX_MS
+ #define CCM_CAN_ENGINE_RUNTIME_TX_MS 50
++#endif
++
++#ifndef CCM_CAN_METH_CONTROL_ENABLED
++#define CCM_CAN_METH_CONTROL_ENABLED 1
+ #endif
+ 
+ #ifndef CCM_CAN_METH_CONFIG_TX_MS
+@@ -710,6 +714,11 @@
+ }
+ 
+ bool CanManager::sendFrame(const can_protocol::CanFrame& frame) {
++  // Set to 0 when Frogdash owns water/meth and knock controls.
++  // Keep receiving telemetry and transmitting heartbeat/runtime/GPS normally.
++  if (!CCM_CAN_METH_CONTROL_ENABLED &&
++      (frame.id == can_protocol::ID_ENGINE_METH_COMMAND ||
++       frame.id == can_protocol::ID_METH_CONFIG_BROADCAST)) return false;
+   // This node is a passive consumer of ECU telemetry. Refuse any frame whose
+   // identifier belongs to the MicroSquirt broadcast windows, even if a future
+   // caller accidentally constructs one.
