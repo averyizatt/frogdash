@@ -12,6 +12,7 @@ from .state import State
 from .gps import GPS, gpsd
 from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
 from .connectivity import Connectivity, require_local
+from .race import Race
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
 
@@ -22,7 +23,9 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def lifecycle(app):
         tasks = [asyncio.create_task(adapter())] if adapter else []
+        race_task = asyncio.create_task(state.race.run())
         if state.gps:
+            state.gps.on_report = state.race.feed
             tasks.append(asyncio.create_task(gpsd(state.gps)))
         if state.recorder:
             state.recorder.start()
@@ -39,6 +42,8 @@ def create_app(state, adapter=None, connectivity=None):
         for task in tasks:
             with suppress(asyncio.CancelledError):
                 await task
+        state.race.stopping = True
+        await race_task
         await asyncio.gather(*(ws.close(code=1001, message=b"Service stopping") for ws in list(clients)))
 
     async def websocket(request):
@@ -123,6 +128,24 @@ def create_app(state, adapter=None, connectivity=None):
     async def raw(request):
         return web.json_response(list(state.raw.values()))
 
+    async def race_command(request):
+        require_local(request)
+        try:
+            body = await request.json()
+            if not isinstance(body, dict) or set(body) != {'action'} or not isinstance(body['action'], str):
+                raise ValueError('Expected a race action')
+            if not state.gps or state.mode == 'replay':
+                raise ValueError('Race timing requires the local USB GPS (--gpsd)')
+            state.race.command(body['action'])
+        except (ValueError, TypeError) as exc:
+            raise web.HTTPBadRequest(text=str(exc))
+        return web.json_response(state.race.snapshot(), headers={'Cache-Control': 'no-store'})
+
+    async def race_results(request):
+        require_local(request)
+        return web.json_response({'version': 1, 'gate': state.race.gate, 'history': state.race.history},
+            headers={'Cache-Control': 'no-store', 'Content-Disposition': 'attachment; filename="frogdash-race-results.json"'})
+
     async def wifi_status(request):
         require_local(request)
         return web.json_response(dict(connectivity.status) if connectivity else
@@ -146,7 +169,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css"}:
+        if name not in {"index.html", "app.js", "style.css", "personalize.js"}:
             raise web.HTTPNotFound()
         return web.FileResponse(WEB / name, headers={"Cache-Control": "no-store"})
 
@@ -154,6 +177,7 @@ def create_app(state, adapter=None, connectivity=None):
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
                     web.get("/raw", raw), web.get('/logs', logs), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
+                    web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get("/", asset), web.get("/{name}", asset)])
     return app
 
@@ -174,6 +198,7 @@ def main():
     parser.add_argument('--log-total-mib', type=int, default=2048)
     parser.add_argument('--log-min-free-mib', type=int, default=256)
     parser.add_argument('--hotspot-socket', type=Path, help='Enable the optional local Wi-Fi helper socket')
+    parser.add_argument('--race-file', type=Path, default=Path('/var/lib/frogdash/race.json'), help='Saved start/finish and last 50 race sessions')
     args = parser.parse_args()
     if args.loop and not args.replay:
         parser.error("--loop requires --replay")
@@ -184,6 +209,7 @@ def main():
     if (args.gps_device or args.gps_no_transmit) and not args.gpsd:
         parser.error("GPS options require --gpsd")
     state = State("replay" if args.replay else "socketcan")
+    state.race = Race(args.race_file if not args.replay else None)
     if args.log_dir:
         try:
             config = LogConfig(args.log_dir.resolve(), args.log_hz, args.log_minutes * 60,

@@ -26,6 +26,12 @@ under **Sensors → Saved data logs** or in `/var/lib/frogdash/logs`.
 20-minute hotspot toggle under **Controls → Wi-Fi** and a phone-friendly page for
 downloading logs and checking system status.
 
+[Race mode and appearance](docs/race-and-appearance.md) add GPS acceleration
+splits, eighth/quarter-mile timing, automatic or manual laps, saved session
+exports, custom accents/backgrounds, and configurable startup splash screens.
+Race timing continues on the Pi with the menu closed and is included in MLG logs.
+Appearance preferences and uploaded artwork save on the current display.
+
 ## Browser preview
 
 Open [preview/index.html](preview/index.html) in your browser, or use the GitHub Pages preview. It works directly from disk without dependencies or network access.
@@ -63,6 +69,8 @@ python tools/update_preview.py --check
 python -m pip install playwright
 python -m playwright install chromium
 python tests/browser_smoke.py
+python tests/browser_personalize.py
+python tests/browser_layout.py
 # Or pass --browser /path/to/chromium
 ```
 

@@ -9,6 +9,7 @@ Phase 2 documentation lives here:
 - [Rotating MLG data logs and MegaLogViewer](data-logging.md)
 - [MCP2515 wiring and boot configuration](mcp2515.md)
 - [Wi-Fi hotspot and log downloads](wifi-access.md)
+- [Race timing, appearance, and splash screens](race-and-appearance.md)
 - Component datasheets
 - Wiring diagrams
 - Pi pinout reference

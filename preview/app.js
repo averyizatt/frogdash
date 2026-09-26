@@ -36,6 +36,7 @@
     $(id).style.width = `${value === null ? 0 : clamp((value - min) / (max - min) * 100, 0, 100)}%`;
   }
   function render() {
+    window.dispatchEvent(new CustomEvent('frogdash-state', {detail: {snapshot, connected}}));
     const replay = snapshot.mode === 'replay';
     const demo = snapshot.mode === 'demo';
     $('connection').textContent = !connected ? 'DISCONNECTED — reconnecting' :

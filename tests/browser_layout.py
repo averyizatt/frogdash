@@ -62,6 +62,8 @@ async def main(browser_path=None, url=None):
             await page.set_viewport_size({'width': width, 'height': height})
             await page.keyboard.press('Escape')
             for launch, dialog, scroll in [('knock-launch', 'knock-overlay', '.knock-body'),
+                                           ('race-launch', 'race-dialog', '.race-body'),
+                                           ('appearance-launch', 'appearance-dialog', '.appearance-body'),
                                            ('diagnostics-launch', 'diagnostics', None)]:
                 await page.locator(f'#{launch}').click()
                 await inspect(page, f'#{dialog}', scroll)
@@ -74,7 +76,7 @@ async def main(browser_path=None, url=None):
                 assert await page.locator(f'#{launch}').evaluate('(el) => document.activeElement === el')
         assert not errors, errors
         await browser.close()
-    print('All 6 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
+    print('All 8 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
 
 
 if __name__ == '__main__':

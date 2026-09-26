@@ -96,6 +96,8 @@
     </button>
     <div class="module-strip" id="module-strip" aria-label="Module connection health"></div>
     <nav class="dashboard-nav" aria-label="Dashboard views">
+      <button id="race-launch" type="button">Race</button>
+      <button id="appearance-launch" type="button">Appearance</button>
       <button id="controls-launch" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M9 4v6M15 14v6"/></svg>Controls</button>
       <button id="knock-launch" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 13h5l3-8 4 15 3-7h5"/></svg>Knock monitor</button>
       <button id="diagnostics-launch" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-5M12 20V9M19 20V3"/></svg>Sensors</button>
@@ -264,6 +266,52 @@
 
 </div>
 </dialog>
+<dialog id="race-dialog" class="workspace-dialog" aria-labelledby="race-title">
+  <header class="dialog-header"><div><span class="eyebrow">PERFORMANCE / CLOSED COURSE</span><h2 id="race-title">Race mode</h2><p id="race-source">USB GPS timing · independent of the display</p></div><button id="race-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
+  <div class="race-body">
+    <section class="race-main control-section">
+      <div class="race-heading"><span id="race-phase" class="eyebrow">IDLE</span><span id="race-quality">Waiting for GPS</span></div>
+      <div class="race-timer"><strong id="race-elapsed">0.00</strong><span>SECONDS</span></div>
+      <p id="race-message" role="status">Choose acceleration or laps</p>
+      <div class="control-row race-actions"><button data-race="accel" type="button">ARM ACCELERATION</button><button data-race="laps" type="button">START LAPS</button><button data-race="stop" type="button" class="stop-control">STOP</button></div>
+      <div class="control-row"><button data-race="gate" type="button">SET START / FINISH HERE</button><button data-race="clear_gate" type="button">CLEAR GATE</button><button data-race="lap" type="button">MARK LAP</button><button data-race="reset" type="button">RESET</button></div>
+      <p id="race-gate" class="control-note">No GPS start/finish saved · manual lap marks available</p>
+      <p class="control-note">Acceleration starts at the last stationary GPS sample. No rollout correction. Lap gate: 20 m radius; leave by 40 m to rearm. Minimum lap: 15 s.</p>
+      <p id="race-feedback" class="control-note" role="status"></p>
+    </section>
+    <section class="race-results">
+      <div class="race-splits">
+        <div><span>0–30 MPH</span><strong id="race-0_30">—</strong></div><div><span>0–60 MPH</span><strong id="race-0_60">—</strong></div><div><span>0–100 KM/H</span><strong id="race-0_100kph">—</strong></div>
+        <div><span>⅛ MILE</span><strong id="race-eighth">—</strong><small id="race-eighth-mph">GPS crossing speed</small></div><div><span>¼ MILE</span><strong id="race-quarter">—</strong><small id="race-quarter-mph">GPS crossing speed</small></div><div><span>DISTANCE</span><strong id="race-distance">0 m</strong></div>
+        <div><span>LAST LAP</span><strong id="race-last-lap">—</strong></div><div><span>BEST LAP</span><strong id="race-best-lap">—</strong></div><div><span>LAPS / DELTA TO BEST</span><strong id="race-lap-count">0</strong><small id="race-lap-delta">—</small></div>
+      </div>
+      <div class="race-history-heading"><h3>Recent sessions</h3><button id="race-export" class="close-button" type="button">Export results</button></div>
+      <ol id="race-history" class="race-history"><li>No sessions recorded yet.</li></ol>
+    </section>
+  </div>
+</dialog>
+
+<dialog id="appearance-dialog" class="workspace-dialog" aria-labelledby="appearance-title">
+  <header class="dialog-header"><div><span class="eyebrow">MAKE IT YOURS</span><h2 id="appearance-title">Appearance</h2><p>Saved on this display · live changes across the dash</p></div><button id="appearance-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
+  <div class="appearance-body control-section">
+    <section class="setting-card"><h3>Color &amp; finish</h3>
+      <label for="appearance-accent">Instrument accent</label><div class="swatches" role="group" aria-label="Accent presets"><button type="button" data-accent="#8befc4" style="--swatch:#8befc4" aria-label="Mint"></button><button type="button" data-accent="#8fcfff" style="--swatch:#8fcfff" aria-label="Ice blue"></button><button type="button" data-accent="#ffc77d" style="--swatch:#ffc77d" aria-label="Amber"></button><button type="button" data-accent="#c6a6ff" style="--swatch:#c6a6ff" aria-label="Violet"></button><input id="appearance-accent" type="color" value="#8befc4" aria-label="Custom accent color"></div>
+      <label for="appearance-finish">Background finish</label><select id="appearance-finish"><option value="midnight">Midnight</option><option value="graphite">Graphite</option><option value="carbon">Carbon weave</option><option value="glow">Accent glow</option><option value="image">Custom image</option></select>
+      <label for="appearance-background">Background image</label><input id="appearance-background" type="file" accept="image/png,image/jpeg,image/webp">
+      <button id="appearance-clear-background" type="button">REMOVE IMAGE</button><p class="control-note">Images are dimmed behind opaque instruments. Warning and fault colors keep their meaning.</p>
+    </section>
+    <section class="setting-card"><h3>Startup screen</h3>
+      <label for="appearance-splash">Splash style</label><select id="appearance-splash"><option value="off">Off · show dash immediately</option><option value="wordmark">Frogdash wordmark</option><option value="image">Custom image</option></select>
+      <label for="appearance-title-input">Splash title</label><input id="appearance-title-input" type="text" maxlength="32" value="FROGDASH">
+      <label for="appearance-splash-image">Splash image</label><input id="appearance-splash-image" type="file" accept="image/png,image/jpeg,image/webp">
+      <div class="appearance-inline"><label for="appearance-duration">Duration <select id="appearance-duration"><option value="1">1 second</option><option value="2">2 seconds</option><option value="3">3 seconds</option><option value="5">5 seconds</option></select></label><button id="appearance-preview" type="button">PREVIEW SPLASH</button></div>
+      <button id="appearance-clear-splash" type="button">REMOVE SPLASH IMAGE</button>
+    </section>
+    <section class="setting-card appearance-sample"><h3>Your display</h3><div class="theme-preview"><span class="eyebrow">FROGDASH</span><strong>76 <small>MPH</small></strong><div class="theme-preview-track"></div><span>REFINED. READABLE. YOURS.</span></div><p id="appearance-feedback" class="control-note" role="status">Settings save automatically in this browser.</p><p class="control-note">PNG, JPEG or WebP, up to 10 MB. Images are resized for this display. Splash opens when the dash loads and can be skipped.</p><button id="appearance-reset" type="button">RESTORE DEFAULT STYLE</button></section>
+  </div>
+</dialog>
+<dialog id="splash-dialog" class="workspace-dialog splash-dialog" aria-label="Startup screen"><img id="splash-image" alt="Custom startup artwork" hidden><div class="splash-wordmark"><span class="eyebrow">DRIVER DISPLAY</span><strong id="splash-title">FROGDASH</strong><span>READY FOR THE ROAD</span></div><button id="splash-skip" class="close-button" type="button">Skip</button></dialog>
+<script src="personalize.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

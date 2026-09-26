@@ -4,6 +4,7 @@ import time
 
 from .protocol import ANALOG_BITS, EVENT_IDS, TIMEOUTS, decode
 from .controls import Controls
+from .race import Race
 
 ALIASES = {
     "engine.rpm": ("ecu.rpm", "tach.rpm"),
@@ -27,6 +28,7 @@ class State:
         self.received = self.malformed = self.ignored = self.seq = 0
         self.gps = None
         self.recorder = None
+        self.race = Race(clock=clock, wall=wall)
         self.controls = Controls(self)
 
     def ingest(self, can_id, data, extended=False, remote=False, error=False):
@@ -105,6 +107,13 @@ class State:
             # USB GPS is authoritative when configured; do not silently switch
             # to a different receiver on CAN when the USB receiver loses fix.
             values.update(self.gps.values())
+        race = self.race.snapshot()
+        race_quality = 'fault' if race['phase'] == 'invalid' else 'unavailable' if race['phase'] == 'idle' else 'live'
+        race_values = {'phase': race['phase'], 'elapsed_s': race['elapsed'], 'distance_m': race['distance_m'],
+                       'lap_count': race['lap_count'], 'best_lap_s': race['best_lap'], **race['splits']}
+        for key, value in race_values.items():
+            values['race.' + key] = {'value': value, 'quality': 'live' if key == 'phase' else race_quality if value is not None else 'unavailable',
+                                    'source_id': None, 'source': 'GPS timer', 'timestamp_ms': int(self.wall() * 1000)}
         modules = {}
         for name, source in (("taillights", 0x100), ("comfort", 0x200), ("watermeth", 0x300), ("knock", 0x307)):
             matching = [v for v in values.values() if v["source_id"] == source]
@@ -115,5 +124,5 @@ class State:
                               "received": self.received, "malformed": self.malformed, "ignored": self.ignored},
                 "gps": {"status": self.gps.status, "tx_status": self.gps.tx_status,
                         "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
-                "controls": self.controls.status(), "events": list(self.events),
+                "controls": self.controls.status(), "events": list(self.events), "race": race,
                 "recording": dict(self.recorder.status) if self.recorder else {"enabled": False, "state": "disabled"}}

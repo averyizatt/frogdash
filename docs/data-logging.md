@@ -118,3 +118,9 @@ The writer uses the documented big-endian header, 89-byte field definitions,
 10-microsecond rolling timestamps and payload byte-sum checksum. The sample
 confirms an 8-bit counter wrapping through 255 to 0. An explicit Time channel
 preserves long gaps and elapsed time beyond the short timestamp wrap.
+
+[Race mode](race-and-appearance.md) adds GPS timing channels to new MLG files:
+race phase, elapsed time, distance, acceleration splits, eighth/quarter-mile
+times and crossing speeds, lap count and best lap. Invalid race measurements
+carry fault quality and NaN. Completed session history and detailed lap results
+are also available as a separate JSON export in the Race screen.

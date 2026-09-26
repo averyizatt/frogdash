@@ -16,6 +16,7 @@ class GPS:
         self.conflict = False
         self.tx_count = 0
         self.tx_status = "waiting for CAN" if transmit else "disabled"
+        self.on_report = None
 
     def update(self, report):
         kind = report.get("class")
@@ -26,6 +27,8 @@ class GPS:
             return
         if device and not self.device:
             self.device = device
+        if self.on_report:
+            self.on_report(report)
         now, stamp = self.clock(), int(self.wall() * 1000)
 
         def put(name, value):

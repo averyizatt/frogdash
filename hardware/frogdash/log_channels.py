@@ -9,6 +9,7 @@ from .state import ALIASES, UNAVAILABLE
 
 QUALITY = {'unavailable': 0, 'live': 1, 'stale': 2, 'fault': 3}
 ENUMS = {
+    'race.phase': 'idle armed running complete stopped invalid'.split(),
     'meth.state': 'OFF ARMED SPRAYING FAULT TEST'.split(),
     'meth.flow': 'UNKNOWN OK LOW_FLOW NO_FLOW'.split(),
     'comfort.state': 'BOOT RUN WARN FAULT CONFIG'.split(),
@@ -79,6 +80,13 @@ def channels():
         Channel('gps.longitude', 'Longitude', 'deg', digits=6),
         Channel('gps.track_deg', 'Heading', 'deg'),
         Channel('gps.satellites', 'GPS.SatelliteCount', digits=0),
+        Channel('race.phase', 'Race state', digits=0),
+        Channel('race.elapsed_s', 'Race elapsed', 's'), Channel('race.distance_m', 'Race distance', 'm'),
+        Channel('race.0_30', 'Race 0-30 MPH', 's'), Channel('race.0_60', 'Race 0-60 MPH', 's'),
+        Channel('race.0_100kph', 'Race 0-100 KPH', 's'),
+        Channel('race.eighth', 'Race eighth mile', 's'), Channel('race.quarter', 'Race quarter mile', 's'),
+        Channel('race.eighth_mph', 'Race eighth crossing speed', 'MPH'), Channel('race.quarter_mph', 'Race quarter crossing speed', 'MPH'),
+        Channel('race.lap_count', 'Race lap count', digits=0), Channel('race.best_lap_s', 'Race best lap', 's'),
     ]
     # Enumerate the decoder's schema with valid, synthetic definition frames only.
     # Values from these frames NEVER enter a recording. This includes diagnostics,
@@ -115,7 +123,7 @@ def row_values(snapshot, elapsed, dropped=0):
 
 def info(mode, rate):
     return '\n'.join([
-        f'Frogdash schema 1; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
+        f'Frogdash schema 2; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
         'Time = monotonic seconds since this file started. Q fields: 0=unavailable,1=live,2=stale,3=fault.',
         'Non-live values are IEEE NaN. Drop count is cumulative for this recorder process.',
         'Temperatures MAT/CLT in F; other *_c fields in C. GPS F32 precision is approximately one meter.',
