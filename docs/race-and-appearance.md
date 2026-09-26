@@ -80,8 +80,20 @@ track map is claimed; delta compares the latest completed lap to session best.
 
 ## Appearance and splash screens
 
+- **Appearance → Preset gallery** offers six coordinated looks: Frogdash (mint),
+  Glacier (ice blue), Heritage (amber), After hours (violet), Apex (platinum),
+  and Expedition (sage). Each applies instrument accents, panel colors,
+  borders and a background immediately. The selected look is marked with a tick.
+- Eight built-in backgrounds: midnight, graphite, carbon weave, accent glow,
+  horizon, blueprint, contours and dusk. Mix any background with any look;
+  the label shows when a look has been customized. These are static local CSS
+  patterns, with no downloads, animation or additional image storage.
+- **Customize & splash** retains the individual controls and image uploads.
+  Applying a preset keeps uploaded artwork and splash settings, and does not
+  change your Street/Tuning/Track layout. Select **Custom image** again to reuse
+  an uploaded background. Day/night mode still uses the brightness and night
+  accent set in the Drive workspace; preset colors return in day mode.
 - Mint, ice blue, amber and violet accents, plus a custom color picker.
-- Midnight, graphite, carbon weave, accent glow and custom-image backgrounds.
 - Optional Frogdash/custom-title splash or uploaded splash image; duration of
   1, 2, 3 or 5 seconds, with **Preview splash** and **Skip** controls.
 - PNG, JPEG and WebP uploads up to 10 MB, resized to fit 1920 × 720. Uploaded
@@ -111,5 +123,7 @@ failure/duplicate handling, stationary launch, lap gate rearming, persistence,
 MLG quality values and local API boundaries. `tests/browser_personalize.py`
 exercises actual HTTP commands, timing while the menu is closed, exports,
 reload, local appearance persistence, image uploads and splash previews.
-`tests/browser_layout.py` checks all eight submenu views at seven viewport sizes.
+`tests/browser_layout.py` checks all thirteen submenu views at seven viewport sizes.
+Appearance browser checks include every preset/background, persistence,
+day/night interaction, keyboard tab navigation and retaining uploaded artwork.
 Physical GPS and Raspberry Pi validation are still pending.

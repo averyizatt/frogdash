@@ -10,6 +10,13 @@ The cluster scales proportionally from 1920 × 720 to fit the display, including
 
 Fonts are local: DejaVu Sans on Linux, with Segoe UI and Arial fallbacks. No font download is required. Reduced-motion preferences disable gauge transitions.
 
+Appearance has a six-look gallery and eight mixable CSS backgrounds, with
+thumbnail previews and a visible selection marker. Presets coordinate accent,
+panel and border colors while keeping warning/fault colors and opaque instrument
+surfaces. The gallery and custom/splash controls occupy separate full-width tabs
+within the same dialog; Left/Right, Home and End navigate those tabs. Existing
+appearance preferences load without losing saved images or splash settings.
+
 ## Instrument semantics
 
 | Instrument | Display behavior |
@@ -36,4 +43,4 @@ Open `preview/index.html`. Its badge and control feedback identify simulated dat
 
 Run `python tests/browser_smoke.py` for saved screenshots and interaction checks. Review readability on the physical panel, including sunlight and night conditions, before vehicle use; browser screenshots alone cannot establish panel brightness or viewing-angle performance.
 
-Run `python tests/browser_layout.py` to check all six submenu views at native 1920/1980 × 720 and scaled sizes. It verifies that menus stay inside the dashboard, controls remain unobscured, and resizing an open submenu preserves the layout. Pass `--url` to run the same checks against the hosted preview.
+Run `python tests/browser_layout.py` to check all thirteen submenu views at native 1920/1980 × 720 and scaled sizes. It verifies that menus stay inside the dashboard, controls remain unobscured, and resizing an open submenu preserves the layout. Pass `--url` to run the same checks against the hosted preview.

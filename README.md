@@ -31,6 +31,8 @@ splits, eighth/quarter-mile timing, automatic or manual laps, saved session
 exports, custom accents/backgrounds, and configurable startup splash screens.
 Race timing continues on the Pi with the menu closed and is included in MLG logs.
 Appearance preferences and uploaded artwork save on the current display.
+The appearance gallery includes six coordinated looks and eight mixable preset
+backgrounds, alongside custom colors, image uploads and splash screens.
 
 [Driving tools](docs/driving-tools.md) add automatic day/night software dimming,
 saved Street/Tuning/Track layouts, conditional latched alerts, optional chimes,

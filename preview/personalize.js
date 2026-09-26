@@ -2,7 +2,16 @@
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
-  const defaults = {accent: '#8befc4', finish: 'midnight', background: '', splash: 'off', splashImage: '', title: 'FROGDASH', duration: 2};
+  const looks = {
+    original: {name: 'Frogdash', note: 'Signature mint · midnight', accent: '#8befc4', finish: 'midnight', surface: '#111a20', raised: '#18232b', line: '#2b3943'},
+    glacier: {name: 'Glacier', note: 'Ice blue · alpine horizon', accent: '#8fcfff', finish: 'horizon', surface: '#111c29', raised: '#1b2c3c', line: '#34485c'},
+    heritage: {name: 'Heritage', note: 'Warm amber · graphite', accent: '#ffc77d', finish: 'graphite', surface: '#211c17', raised: '#2c251e', line: '#4b4035'},
+    afterhours: {name: 'After hours', note: 'Soft violet · dusk', accent: '#c6a6ff', finish: 'dusk', surface: '#1b1726', raised: '#292137', line: '#443853'},
+    apex: {name: 'Apex', note: 'Platinum · carbon weave', accent: '#e3e9ee', finish: 'carbon', surface: '#191d22', raised: '#272c32', line: '#434a53'},
+    expedition: {name: 'Expedition', note: 'Sage green · contours', accent: '#b9dfa2', finish: 'contour', surface: '#192018', raised: '#263024', line: '#3e4c39'}
+  };
+  const finishes = {midnight: 'Midnight', graphite: 'Graphite', carbon: 'Carbon weave', glow: 'Accent glow', horizon: 'Horizon', grid: 'Blueprint', contour: 'Contours', dusk: 'Dusk', image: 'Custom image'};
+  const defaults = {look: 'original', accent: '#8befc4', finish: 'midnight', background: '', splash: 'off', splashImage: '', title: 'FROGDASH', duration: 2};
   const key = 'frogdash.appearance.v1';
   const validImage = value => typeof value === 'string' && value.length < 1500000 && /^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(value);
   let prefs = {...defaults}, splashTimer, splashPreview = false;
@@ -10,7 +19,8 @@
     const stored = JSON.parse(localStorage.getItem(key));
     if (stored && typeof stored === 'object') {
       if (/^#[0-9a-f]{6}$/i.test(stored.accent)) prefs.accent = stored.accent;
-      if (['midnight', 'graphite', 'carbon', 'glow', 'image'].includes(stored.finish)) prefs.finish = stored.finish;
+      if (Object.hasOwn(looks, stored.look)) prefs.look = stored.look;
+      if (Object.hasOwn(finishes, stored.finish)) prefs.finish = stored.finish;
       if (['off', 'wordmark', 'image'].includes(stored.splash)) prefs.splash = stored.splash;
       if (validImage(stored.background)) prefs.background = stored.background;
       if (validImage(stored.splashImage)) prefs.splashImage = stored.splashImage;
@@ -18,6 +28,46 @@
       if ([1, 2, 3, 5].includes(stored.duration)) prefs.duration = stored.duration;
     }
   } catch { /* Unavailable storage falls back to a fully usable dash. */ }
+
+  function appearanceMessage(message) {
+    $('appearance-feedback').textContent = message;
+    $('appearance-gallery-feedback').textContent = message;
+  }
+  function selectAppearanceTab(name) {
+    for (const button of document.querySelectorAll('[data-appearance-tab]')) {
+      const selected = button.dataset.appearanceTab === name;
+      button.setAttribute('aria-selected', String(selected)); button.tabIndex = selected ? 0 : -1;
+      $(button.getAttribute('aria-controls')).hidden = !selected;
+    }
+  }
+  const tabs = [...document.querySelectorAll('[data-appearance-tab]')];
+  tabs.forEach((button, index) => {
+    button.onclick = () => selectAppearanceTab(button.dataset.appearanceTab);
+    button.onkeydown = event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const next = tabs[event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length];
+      next.click(); next.focus();
+    };
+  });
+  for (const [id, look] of Object.entries(looks)) {
+    const button = document.createElement('button'); button.type = 'button'; button.dataset.look = id;
+    button.className = 'look-card'; button.setAttribute('aria-label', `Apply ${look.name} look`);
+    button.style.setProperty('--accent', look.accent); button.style.setProperty('--surface', look.surface);
+    // Static, local catalogue text only; uploaded artwork never enters markup.
+    button.innerHTML = `<span class="look-art" data-scene="${look.finish}" aria-hidden="true"><span class="mini-gauge"></span><span class="mini-speed">76<small>MPH</small></span><span class="mini-bars"></span></span><span class="look-caption"><strong>${look.name}</strong><span class="look-check" aria-hidden="true">✓</span><small>${look.note}</small></span>`;
+    button.onclick = () => { prefs.look = id; prefs.accent = look.accent; prefs.finish = look.finish; applyAppearance(); };
+    $('appearance-looks').append(button);
+  }
+  $('appearance-finish').replaceChildren();
+  for (const [id, name] of Object.entries(finishes)) {
+    const option = document.createElement('option'); option.value = id; option.textContent = name; $('appearance-finish').append(option);
+    if (id === 'image') continue;
+    const button = document.createElement('button'); button.type = 'button'; button.dataset.background = id;
+    button.innerHTML = `<span data-scene="${id}" aria-hidden="true"></span><strong>${name}</strong>`;
+    button.onclick = () => { prefs.finish = id; applyAppearance(); };
+    $('appearance-backgrounds').append(button);
+  }
 
   function readableAccent(hex) {
     const rgb = hex.slice(1).match(/../g).map(v => parseInt(v, 16));
@@ -28,9 +78,12 @@
   function applyAppearance(save = true) {
     prefs.accent = readableAccent(prefs.accent);
     const root = document.documentElement;
+    const look = looks[prefs.look];
     root.style.setProperty('--accent', prefs.accent);
+    for (const token of ['surface', 'raised', 'line']) root.style.setProperty(`--${token}`, look[token]);
     root.style.setProperty('--bg', prefs.finish === 'graphite' ? '#191d22' : '#090f13');
     root.dataset.finish = prefs.finish;
+    root.dataset.scene = prefs.finish;
     root.style.setProperty('--custom-background', prefs.background ? `url("${prefs.background}")` : 'none');
     $('appearance-accent').value = prefs.accent;
     $('appearance-finish').value = prefs.finish;
@@ -38,9 +91,13 @@
     $('appearance-title-input').value = prefs.title;
     $('appearance-duration').value = prefs.duration;
     for (const button of document.querySelectorAll('[data-accent]')) button.setAttribute('aria-pressed', String(button.dataset.accent === prefs.accent));
+    const exact = prefs.accent === look.accent && prefs.finish === look.finish;
+    $('appearance-current').textContent = `${look.name}${exact ? '' : ' · customized'} / ${finishes[prefs.finish]}`;
+    for (const button of document.querySelectorAll('button[data-look]')) button.setAttribute('aria-pressed', String(button.dataset.look === prefs.look && exact));
+    for (const button of document.querySelectorAll('button[data-background]')) button.setAttribute('aria-pressed', String(button.dataset.background === prefs.finish));
     if (save) {
-      try { localStorage.setItem(key, JSON.stringify(prefs)); $('appearance-feedback').textContent = 'Saved on this display. Dark accents are lifted for readability.'; }
-      catch { $('appearance-feedback').textContent = 'Applied for now, but browser storage is full or unavailable. Remove an image to save.'; }
+      try { localStorage.setItem(key, JSON.stringify(prefs)); appearanceMessage('Saved on this display. Night mode uses your Drive workspace colors and brightness.'); }
+      catch { appearanceMessage('Applied for now, but browser storage is full or unavailable. Remove an image to save.'); }
     }
   }
   window.FrogdashAppearance = {readableAccent};

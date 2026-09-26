@@ -78,6 +78,10 @@ async def main(browser_path=None, url=None):
                 await inspect(page, f'#{dialog}', scroll)
                 if (width, height) in ((1980, 720), (1280, 480)):
                     await page.screenshot(path=str(ROOT / '.tmp' / f'menu-{dialog}-{width}x{height}.png'))
+                if dialog == 'appearance-dialog':
+                    await page.locator('#appearance-tab-custom').click()
+                    await inspect(page, '#appearance-dialog', '.appearance-body')
+                    await page.locator('#appearance-tab-gallery').click()
                 if dialog == 'diagnostics':
                     await page.locator('.diagnostics-body').evaluate('(el) => { el.scrollTop = el.scrollHeight; }')
                     await inspect(page, '#diagnostics')
@@ -85,7 +89,7 @@ async def main(browser_path=None, url=None):
                 assert await page.locator(f'#{launch}').evaluate('(el) => document.activeElement === el')
         assert not errors, errors
         await browser.close()
-    print('All 12 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
+    print('All 13 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
 
 
 if __name__ == '__main__':

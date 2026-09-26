@@ -29,16 +29,51 @@ async def preview(browser):
     # Footer buttons must remain inside the panel even with the extra destinations.
     assert await page.locator('.dashboard-nav').evaluate('(el) => el.getBoundingClientRect().right <= document.getElementById("display").getBoundingClientRect().right')
     await page.locator('#appearance-launch').click()
+    # Catalogue choices affect the actual dash, survive reload, and compose
+    # with independent backgrounds without touching splash or driving layout.
+    warning_color = await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--warn")')
+    for look, finish in [('original', 'midnight'), ('glacier', 'horizon'), ('heritage', 'graphite'), ('afterhours', 'dusk'), ('apex', 'carbon'), ('expedition', 'contour')]:
+        await page.locator(f'button[data-look="{look}"]').click()
+        assert await page.locator('html').get_attribute('data-finish') == finish
+        assert await page.locator('button[data-look][aria-pressed="true"]').count() == 1
+        assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--warn")') == warning_color
+    for finish in ['midnight', 'graphite', 'carbon', 'glow', 'horizon', 'grid', 'contour', 'dusk']:
+        await page.locator(f'button[data-background="{finish}"]').click()
+        assert await page.locator('html').get_attribute('data-scene') == finish
+    assert 'customized' in await page.locator('#appearance-current').inner_text()
+    assert await page.locator('button[data-look][aria-pressed="true"]').count() == 0
+    await page.reload()
+    assert await page.evaluate('JSON.parse(localStorage.getItem("frogdash.appearance.v1")).look') == 'expedition'
+    assert await page.locator('html').get_attribute('data-finish') == 'dusk'
+    assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--surface").trim()') == '#192018'
+    await page.evaluate("frogdashDemo.scenario('night')")
+    await page.wait_for_function('document.documentElement.dataset.lighting === "night"')
+    assert await page.locator('#display').evaluate('(el) => getComputedStyle(el).getPropertyValue("--accent").trim()') == '#ffc77d'
+    await page.evaluate("frogdashDemo.scenario('normal')")
+    await page.wait_for_function('document.documentElement.dataset.lighting === "day"')
+    assert await page.locator('#display').evaluate('(el) => getComputedStyle(el).getPropertyValue("--accent").trim()') == '#b9dfa2'
+    await page.locator('#appearance-launch').click()
+    await page.locator('#appearance-tab-gallery').focus()
+    await page.keyboard.press('ArrowRight')
+    assert await page.locator('#appearance-custom').is_visible()
+    await page.locator('#appearance-tab-custom').click()
     await page.get_by_role('button', name='Violet', exact=True).click()
     await page.locator('#appearance-finish').select_option('carbon')
     await page.reload()
     assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()') == '#c6a6ff'
     assert await page.locator('html').get_attribute('data-finish') == 'carbon'
     await page.locator('#appearance-launch').click()
+    await page.locator('#appearance-tab-custom').click()
     await page.locator('#appearance-background').set_input_files(str(ROOT / '.tmp/appearance-test-upload.png'))
     await page.wait_for_function('document.documentElement.dataset.finish === "image"')
     await page.locator('#appearance-splash-image').set_input_files(str(ROOT / '.tmp/appearance-test-upload.png'))
     await page.wait_for_function('document.getElementById("appearance-splash").value === "image"')
+    await page.locator('#appearance-tab-gallery').click()
+    await page.locator('button[data-look="glacier"]').click()
+    await page.locator('#appearance-tab-custom').click()
+    await page.locator('#appearance-finish').select_option('image')
+    assert await page.evaluate('JSON.parse(localStorage.getItem("frogdash.appearance.v1")).background.startsWith("data:image/")')
+    assert await page.locator('#appearance-splash').input_value() == 'image'
     await page.locator('#appearance-duration').select_option('5')
     await page.locator('#appearance-preview').click()
     assert await page.locator('#splash-image').is_visible()
@@ -55,8 +90,10 @@ async def preview(browser):
     # Moving telemetry dismisses the configured startup splash automatically.
     await page.wait_for_function('!document.getElementById("splash-dialog").open')
     await page.locator('#appearance-launch').click()
+    await page.locator('#appearance-tab-custom').click()
     assert await page.locator('#appearance-title-input').input_value() == 'FOXBODY / 5.0'
     await page.locator('#appearance-reset').click()
+    assert await page.evaluate('JSON.parse(localStorage.getItem("frogdash.appearance.v1")).look') == 'original'
     await page.locator('#appearance-close').click()
     await page.locator('#race-launch').click()
     await page.locator('[data-race="accel"]').click()

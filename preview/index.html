@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#090f13">
   <link rel="icon" href="data:,">
   <title>Frogdash · Simulated design preview</title>
-  <link rel="stylesheet" href="style.css?v=63df8d5075b6">
+  <link rel="stylesheet" href="style.css?v=77629f29cb56">
   <link rel="stylesheet" href="review.css?v=4131615d94e6">
 </head>
 <body>
@@ -297,8 +297,15 @@
 </dialog>
 
 <dialog id="appearance-dialog" class="workspace-dialog" aria-labelledby="appearance-title">
-  <header class="dialog-header"><div><span class="eyebrow">MAKE IT YOURS</span><h2 id="appearance-title">Appearance</h2><p>Saved on this display · live changes across the dash</p></div><button id="appearance-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
-  <div class="appearance-body control-section">
+  <header class="dialog-header"><div><span class="eyebrow">MAKE IT YOURS</span><h2 id="appearance-title">Appearance</h2><p>Saved on this display · live changes across the dash</p></div><nav class="appearance-tabs" role="tablist" aria-label="Appearance sections"><button id="appearance-tab-gallery" data-appearance-tab="gallery" type="button" role="tab" aria-selected="true" aria-controls="appearance-gallery">Preset gallery</button><button id="appearance-tab-custom" data-appearance-tab="custom" type="button" role="tab" aria-selected="false" aria-controls="appearance-custom" tabindex="-1">Customize &amp; splash</button></nav><button id="appearance-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
+  <section id="appearance-gallery" class="appearance-gallery" role="tabpanel" aria-labelledby="appearance-tab-gallery">
+    <div class="gallery-heading"><div><h3>Choose your look</h3><p>Coordinated instruments, panels and backgrounds. Tap to apply.</p></div><strong id="appearance-current"></strong></div>
+    <div id="appearance-looks" class="look-grid" role="group" aria-label="Preset looks"></div>
+    <div class="gallery-heading"><h3>Make it your own</h3><p>Mix any look with a background below, or upload your own in Customize.</p></div>
+    <div id="appearance-backgrounds" class="background-grid" role="group" aria-label="Preset backgrounds"></div>
+    <p id="appearance-gallery-feedback" class="control-note" role="status">Settings save automatically on this display. Splash and driving layout are independent.</p>
+  </section>
+  <div id="appearance-custom" class="appearance-body control-section" role="tabpanel" aria-labelledby="appearance-tab-custom" hidden>
     <section class="setting-card"><h3>Color &amp; finish</h3>
       <label for="appearance-accent">Instrument accent</label><div class="swatches" role="group" aria-label="Accent presets"><button type="button" data-accent="#8befc4" style="--swatch:#8befc4" aria-label="Mint"></button><button type="button" data-accent="#8fcfff" style="--swatch:#8fcfff" aria-label="Ice blue"></button><button type="button" data-accent="#ffc77d" style="--swatch:#ffc77d" aria-label="Amber"></button><button type="button" data-accent="#c6a6ff" style="--swatch:#c6a6ff" aria-label="Violet"></button><input id="appearance-accent" type="color" value="#8befc4" aria-label="Custom accent color"></div>
       <label for="appearance-finish">Background finish</label><select id="appearance-finish"><option value="midnight">Midnight</option><option value="graphite">Graphite</option><option value="carbon">Carbon weave</option><option value="glow">Accent glow</option><option value="image">Custom image</option></select>
@@ -335,7 +342,7 @@
   <p id="driver-feedback" class="command-result" role="status">Bookmarks and fault captures are saved with your drive review.</p>
 </dialog>
 <script src="review.js?v=c6ec99c5fdab"></script>
-<script src="personalize.js?v=520a8af57bed"></script>
+<script src="personalize.js?v=d2107d3691cf"></script>
 <script src="driving.js?v=75fdee0f1094"></script>
 <script src="demo.js?v=bfc820c518ba"></script>
 <script src="app.js?v=b7b1e74ff3e3"></script>
