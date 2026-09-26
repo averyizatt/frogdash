@@ -125,11 +125,12 @@ body[data-speed-live="true"] .speed-source .status-dot { background:var(--accent
 .dashboard-nav button:first-child { color:var(--accent); background:#1a3028; border-color:#426854; }
 .dashboard-nav svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
 
-/* Shared modal shell: fixed header and feedback; independently scrolling content. */
-.workspace-dialog { width:min(1540px,calc(100vw - 48px)); height:calc(100vh - 48px); max-width:none; max-height:none; background:var(--bg); color:var(--text); border:1px solid #526773; border-radius:18px; padding:0; overflow:hidden; box-shadow:0 24px 80px #0009; }
+/* Submenus share the cluster's 1920 × 720 design space, including in the top layer.
+   Native dialogs do not inherit the dashboard element's transform. */
+.workspace-dialog { position:fixed; inset:auto; left:50%; top:50%; margin:0; width:1864px; height:680px; max-width:none; max-height:none; transform:translate(-50%,-50%) scale(var(--panel-scale,1)); transform-origin:center; background:var(--bg); color:var(--text); border:1px solid #526773; border-radius:18px; padding:0; overflow:hidden; box-shadow:0 24px 80px #0009; }
 .workspace-dialog[open] { display:flex; flex-direction:column; }
 dialog::backdrop { background:#020609d9; }
-.dialog-header { padding:24px 30px; display:flex; flex:none; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); background:#101a21; gap:20px; }
+.dialog-header { padding:16px 28px; display:flex; flex:none; justify-content:space-between; align-items:center; border-bottom:1px solid var(--line); background:#101a21; gap:20px; }
 .eyebrow { color:var(--accent); font-size:11px; letter-spacing:2px; font-weight:800; }
 .dialog-header h2 { font-size:32px; font-weight:800; letter-spacing:-.6px; margin:5px 0 6px; }
 .dialog-header p { font-size:14px; color:var(--muted); line-height:1.4; }
@@ -142,7 +143,7 @@ dialog::backdrop { background:#020609d9; }
 .control-tabs button span { font-size:12px; color:var(--dim); }
 .control-tabs button[aria-selected="true"] { background:#1a3028; border-color:#3a6b55; color:var(--accent); }
 .control-tabs p { padding:20px 14px; color:var(--muted); font-size:13px; line-height:1.6; }
-.control-panels { overflow:auto; flex:1; padding:22px 28px; }
+.control-panels { overflow:auto; flex:1; min-width:0; padding:18px 28px; }
 .control-section > p:first-of-type { font-size:22px; font-weight:750; margin:0 0 10px; }
 .control-section button { background:#243742; color:var(--text); border:1px solid #526b7a; border-radius:8px; padding:12px 18px; min-height:48px; font-size:14px; font-weight:800; }
 .control-section button:not(:disabled):hover { border-color:var(--accent); background:#304951; }
@@ -150,19 +151,19 @@ dialog::backdrop { background:#020609d9; }
 .control-section .stop-control { background:#40262a; color:#ffb5b0; border-color:#955c5c; }
 .control-row { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0 18px; }
 .control-note { font-size:13px; color:var(--muted); line-height:1.55; margin:10px 0; }
-.settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:16px; }
+.settings-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin-top:16px; }
 .setting-card { border:1px solid var(--line); border-radius:12px; padding:20px; background:var(--surface); }
 .setting-card h3,.setting-card h4 { font-size:19px; font-weight:800; margin:0 0 14px; }
 .control-section label { display:block; font-size:15px; font-weight:700; color:var(--muted); margin:14px 0 10px; }
 .control-section input { display:inline-block; margin:8px 14px 8px 0; width:132px; background:#0a1116; color:var(--text); border:1px solid #536d7a; padding:8px 12px; border-radius:8px; font-size:26px; font-weight:750; min-height:52px; }
 .setting-card label input { display:block; }
-.command-result { flex:none; background:#13231f; border-top:1px solid #36584b; color:#c5e8d8; margin:0; padding:17px 28px; font-size:15px; font-weight:700; line-height:1.5; min-height:58px; }
+.command-result { flex:none; background:#13231f; border-top:1px solid #36584b; color:#c5e8d8; margin:0; padding:17px 28px; font-size:15px; font-weight:700; line-height:1.5; min-height:58px; max-height:90px; overflow:auto; overflow-wrap:anywhere; }
 .command-result[data-status="rejected"],.command-result[data-status="unknown"] { color:var(--warn); border-color:#756038; background:#282319; }
 .diagnostics-toolbar { display:flex; align-items:center; gap:16px; padding:16px 30px; border-bottom:1px solid var(--line); flex:none; }
 .diagnostics-toolbar label { font-size:15px; font-weight:750; }
 .diagnostics-toolbar input { padding:10px 14px; background:var(--raised); border:1px solid #536d7a; border-radius:8px; color:white; font-size:16px; width:360px; }
 .diagnostics-toolbar > span { color:var(--muted); font-size:11px; font-weight:750; margin-left:auto; }
-.diagnostics-body { padding:0 30px 24px; overflow:auto; }
+.diagnostics-body { padding:0 30px 24px; overflow:auto; flex:1; min-height:0; }
 table { border-collapse:collapse; width:100%; text-align:left; font-size:15px; }
 th { color:var(--muted); text-transform:uppercase; font-size:11px; letter-spacing:1px; background:#132029; position:sticky; top:0; padding:16px; }
 td { padding:13px 16px; border-bottom:1px solid var(--line); }
@@ -199,11 +200,4 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 .knock-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; flex:none; }
 .kstat { border-left:2px solid var(--line); padding-left:16px; }
 .kval { font-size:24px; font-weight:800; }
-@media(max-width:1000px) {
-  .workspace-dialog { width:calc(100vw - 24px); height:calc(100vh - 24px); }
-  .dialog-header { padding:16px 20px; }.dialog-header h2 { font-size:26px; }
-  .control-tabs { flex-basis:180px; padding:16px 8px; }.control-tabs button { font-size:15px; gap:8px; }
-  .control-panels { padding:16px; }.settings-grid { grid-template-columns:1fr; }
-  .diagnostics-toolbar > span { display:none; }.knock-summary { gap:20px; }
-}
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none !important; } }
