@@ -12,6 +12,10 @@ Physical key-on startup time has not yet been measured.
 [CAN compatibility and ECU setup](docs/can-compatibility.md) covers both
 MicroSquirt broadcast modes and the shared fuel/GPS firmware contract.
 
+[Steering-wheel navigation](docs/steering-wheel.md) supports five CCM buttons
+over CAN, with visible focus, menu selection, value editing and hold-to-go-back.
+Arrow keys and Enter provide the same navigation in the preview.
+
 ## Driver display
 
 - Large, bold GPS speed and arc tachometer, with a quiet dark background and mint accents.

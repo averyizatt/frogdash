@@ -1,4 +1,4 @@
-# Shared CAN contract: schema 2 plus fuel extension 1
+# Shared CAN contract: schema 2 plus Frogdash extension 2
 
 `include/can_contract/can_protocol.h` preserves the complete existing CCM and
 taillight schema-2 header and appends the Frogdash extension. Existing IDs,
@@ -55,3 +55,10 @@ python -m unittest tests.test_can_contract -v
 
 No other repository or flashed device is updated by installing this package.
 See [compatibility and ownership](../../docs/can-compatibility.md) before flashing.
+
+## Steering-wheel input
+
+Extension 2 adds `packSteeringButtons(mask, sequence)` for CCM ID 0x205.
+The five logical bits are in `steering_button`; report version 1 is separate
+from the unchanged schema-2 command ACK version. See [steering-wheel integration](../../docs/steering-wheel.md)
+for the payload, timing, GPIO integration hook and incremental upgrade patch.

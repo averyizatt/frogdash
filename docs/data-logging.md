@@ -135,7 +135,7 @@ fuel flow/inventory/range, and instant/average US MPG to new files. Fuel values
 require calibration and remain explicitly estimates; unavailable values use
 NaN and their quality flag. Older files retain their own embedded field schema.
 
-[CAN fuel level](fuel-can.md) is included in schema 7: percentage, controller status and
+[CAN fuel level](fuel-can.md) is included in schema 8: percentage, controller status and
 quality fields. The local resistance channel from schema 5 is removed from new
 files; older recordings retain their embedded schema. Faults and stale readings
 retain NaN/quality semantics. Display unit selection does not change recorded units.
@@ -143,3 +143,6 @@ retain NaN/quality semantics. Display unit selection does not change recorded un
 Schema 7 also expands the MS2/Extra CAN channels and corrects status-word and
 dwell decoding. See [CAN compatibility](can-compatibility.md). Older files keep
 their embedded channel definitions and remain readable.
+
+Schema 8 includes the CCM steering button mask and report sequence. Replaying
+a CAN capture never executes wheel navigation actions. See [steering-wheel input](steering-wheel.md).

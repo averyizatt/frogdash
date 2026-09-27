@@ -24,7 +24,7 @@ def assets():
     css = (source / 'style.css').read_text(encoding='utf-8')
     demo = (ROOT / 'preview' / 'demo.js').read_text(encoding='utf-8')
     personalize = (source / 'personalize.js').read_text(encoding='utf-8')
-    extra = {name: (source / name).read_text(encoding='utf-8') for name in ('driving.js', 'trip.js', 'operations.js', 'units.js', 'review.js', 'review.css')}
+    extra = {name: (source / name).read_text(encoding='utf-8') for name in ('navigation.js', 'driving.js', 'trip.js', 'operations.js', 'units.js', 'review.js', 'review.css')}
     # A published HTML update must not reuse cached CSS/JS from the previous design.
     for name, content in [('style.css', css), ('app.js', js), ('demo.js', demo), ('personalize.js', personalize), *extra.items()]:
         version = sha256(content.encode('utf-8')).hexdigest()[:12]

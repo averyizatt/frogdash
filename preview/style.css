@@ -412,3 +412,9 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 .driver-panel .chime-volume { display:flex; align-items:center; gap:12px; margin:0; font-size:13px; }
 .driver-panel .chime-volume input { width:160px; min-height:32px; margin:0; padding:0; accent-color:var(--accent); }
 .chime-volume output { min-width:42px; font-variant-numeric:tabular-nums; }
+
+/* Visible wheel focus uses the existing accent and stays inside the panel. */
+.wheel-focus { outline:3px solid var(--accent) !important; outline-offset:-3px; box-shadow:inset 0 0 0 6px #0008; }
+.wheel-editing { outline-style:dashed !important; background:var(--accent) !important; color:#07100e !important; }
+#wheel-hint { position:fixed; bottom:4px; left:50%; transform:translateX(-50%); z-index:100; pointer-events:none; padding:3px 10px; border-radius:6px; background:#07100ef0; color:#e8fff6; font:600 12px system-ui; white-space:nowrap; }
+#wheel-hint[hidden] { display:none; }

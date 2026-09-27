@@ -57,6 +57,7 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
             'meth_config_ack': {'meth.ack.version':7, 'meth.ack.ratio_pct':50},
             'command_ack': {'engine.ack.command':65, 'engine.ack.applied_value':20, 'engine.ack.schema':2},
             'knock_fault': {'knock.last_fault.severity':2},
+            'wheel': {'wheel.buttons_mask':8, 'wheel.sequence':255},
             'fuel': {'vehicle.fuel_pct':50}, 'gps': {'vehicle.speed_kph':75.6, 'gps.altitude_m':-10},
         }
         for name, values in expected.items():

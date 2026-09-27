@@ -17,6 +17,7 @@ and the [MCP2515 setup](mcp2515.md) provide the Pi transport. IDs below are hex.
 | CCM | 200, 202, 309 | Heartbeat, tach status, RPM/MAP runtime for the Nano |
 | CCM or Pi, one owner | 203 | GPS speed, altitude, satellites and validity |
 | External fuel controller | 204 | Fuel percentage and validity, new additive contract |
+| CCM wheel input task | 205 | Five debounced button levels and report sequence, new additive contract |
 | Water/meth Nano | 300, 302, 303, 306, 307, 308, 30A-30D | Meth, sensors, knock, configuration replies and acknowledgements |
 | Configuration requester | 305 | Meth configuration request |
 | Control owner | 101, 301 | Lighting and meth/knock commands |
@@ -111,3 +112,7 @@ module inputs, exercise parked commands and ACKs, and test stale/fault recovery.
 Check fuel empty/full/fault frames and GPS ownership after flashing the CCM.
 These tests verify software layouts; physical bus/device operation remains to
 be checked on the Pi. The existing ACC/shutdown system is unchanged.
+
+[Steering-wheel navigation](steering-wheel.md) adds 0x205 in shared extension 2.
+It requires integrating the new CCM button scan/transmit task; the old heartbeat
+input flags are unchanged. New MLG recordings use schema 8 with wheel diagnostics.

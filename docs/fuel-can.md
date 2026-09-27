@@ -56,7 +56,7 @@ messages cannot refresh it. Disconnects, unavailable status and faults stop the
 gauge from showing a live percentage. If manual inventory remains valid, the
 trip computer may use it as the explicitly labelled estimated fallback.
 
-MLG schema 7 records fuel percentage, controller status and their quality fields.
+MLG schema 8 records fuel percentage, controller status and their quality fields.
 Non-live measurements are NaN, preserving the distinction between missing fuel
 and an empty tank. `fuel.level_status` records the received status code; consult
 `vehicle.fuel_pct` quality for the measurement's validity. The removed local

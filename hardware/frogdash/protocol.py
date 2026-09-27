@@ -14,11 +14,11 @@ class Signal:
     quality: str = "live"
 
 
-LENGTHS = {0x100: 7, 0x102: 4, 0x200: 8, 0x202: 8, 0x203: 8, 0x204: 3,
+LENGTHS = {0x100: 7, 0x102: 4, 0x200: 8, 0x202: 8, 0x203: 8, 0x204: 3, 0x205: 3,
            0x300: 8, 0x302: 4, 0x303: 8, 0x304: 8, 0x305: 1,
            0x306: 4, 0x307: 8, 0x308: 4, 0x309: 4, 0x30A: 4,
            0x30B: 8, 0x30C: 8, 0x30D: 8}
-TIMEOUTS = {0x100: .5, 0x200: 1.5, 0x202: .5, 0x203: 2, 0x204: 2,
+TIMEOUTS = {0x100: .5, 0x200: 1.5, 0x202: .5, 0x203: 2, 0x204: 2, 0x205: .35,
             0x300: .5, 0x303: 1.5, 0x304: 3, 0x307: .5,
             0x309: .5, 0x30B: 1, 0x30C: 5, 0x30D: 5}
 EVENT_IDS = {0x102, 0x302, 0x308, 0x305, 0x306, 0x30A}
@@ -86,6 +86,10 @@ def decode(can_id, data):
         q = 'unavailable' if d[2] == 0 else 'live' if d[2] == 1 and u(0) <= 1000 else 'fault'
         put('vehicle.fuel_pct', u(0) / 10 if q == 'live' else None, q)
         put('fuel.level_status', d[2])
+    elif can_id == 0x205:
+        if d[2] != 1 or d[0] & ~0x1F:
+            raise ValueError("0x205 invalid wheel input version or reserved bits")
+        fields("wheel", "buttons_mask sequence", d[:2])
     elif can_id == 0x300:
         enum("meth.state", d[0], "OFF ARMED SPRAYING FAULT TEST")
         for key, value in (("meth.duty_pct", d[1]), ("meth.tank_pct", d[2])):

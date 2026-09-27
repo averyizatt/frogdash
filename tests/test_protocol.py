@@ -14,6 +14,8 @@ class ProtocolTests(unittest.TestCase):
             data = bytearray(length)
             if identifier == 0x30A:
                 data[3] = 2
+            if identifier == 0x205:
+                data[2] = 1
             self.assertTrue(decode(identifier, data), hex(identifier))
             with self.assertRaises(ValueError):
                 decode(identifier, data[:-1])

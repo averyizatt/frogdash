@@ -1,0 +1,39 @@
+--- a/shared/can_contract/include/can_contract/can_protocol.h
++++ b/shared/can_contract/include/can_contract/can_protocol.h
+@@ -860,7 +860,7 @@
+ 
+ // BEGIN FROGDASH ADDITIVE EXTENSION
+ // Existing schema-2 IDs, layouts and ACK schema remain unchanged.
+-constexpr uint8_t FROGDASH_EXTENSION_VERSION = 1;
++constexpr uint8_t FROGDASH_EXTENSION_VERSION = 2;
+ constexpr uint16_t ID_FUEL_LEVEL_STATE = 0x204;
+ constexpr uint8_t FUEL_LEVEL_DLC = 3;
+ constexpr uint32_t FUEL_LEVEL_TX_MS = 500;
+@@ -910,6 +910,27 @@
+   frame.data[7] = value.satellites_in_view;
+   return frame;
+ }
++// CCM steering pad: debounced levels on change and every 50 ms. Counter
++// advances on every report, including idle. Never reuse heartbeat input_flag.
++constexpr uint16_t ID_STEERING_BUTTONS = 0x205;
++constexpr uint8_t STEERING_BUTTONS_VERSION = 1;
++constexpr uint32_t STEERING_BUTTONS_TX_MS = 50;
++namespace steering_button {
++constexpr uint8_t UP = 1 << 0;
++constexpr uint8_t DOWN = 1 << 1;
++constexpr uint8_t LEFT = 1 << 2;
++constexpr uint8_t RIGHT = 1 << 3;
++constexpr uint8_t OK = 1 << 4;
++}
++inline CanFrame packSteeringButtons(uint8_t pressedMask, uint8_t sequence) {
++  CanFrame frame{};
++  frame.id = ID_STEERING_BUTTONS;
++  frame.dlc = 3;
++  frame.data[0] = pressedMask;
++  frame.data[1] = sequence;
++  frame.data[2] = STEERING_BUTTONS_VERSION;
++  return frame;
++}
+ // END FROGDASH ADDITIVE EXTENSION
+ 
+ }  // namespace can_protocol

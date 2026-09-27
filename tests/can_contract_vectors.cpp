@@ -57,6 +57,7 @@ int main() {
   emit("knock.refresh", packEngineKnockConfigRequest());
   emit("lighting.brightness", packTaillightBrightness(128));
   emit("lighting.mode", packTaillightMode(1));
+  emit("wheel", packSteeringButtons(steering_button::RIGHT, 255));
   FuelLevelState fuel{}; fuel.percent_x10=500; fuel.status=FuelLevelStatus::VALID;
   CanFrame frame=packFuelLevelState(fuel); emit("fuel",frame);
   FuelLevelState received{}; assert(unpackFuelLevelState(frame,received)); assert(received.percent_x10==500);

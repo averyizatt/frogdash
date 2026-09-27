@@ -99,6 +99,8 @@ def channels():
     definitions.update({i: 8 for start, end in ((0x5E8, 0x5ED), (0x5F0, 0x630), (0x700, 0x740)) for i in range(start, end)})
     for can_id, length in definitions.items():
         frame = bytes(length) if can_id != 0x30A else bytes([0, 0, 0, 2])
+        if can_id == 0x205:
+            frame = bytes([0, 0, 1])
         keys.update(decode(can_id, frame))
     covered = {c.key for c in primary}
     units = {'_us': 'us', '_g_s': 'g/s', '_rpm_s': 'RPM/s', '_pct_s': '%/s', '_kpa_s': 'kPa/s', '_c': 'C', '_kpa': 'kPa', '_psi': 'psi', '_pct': '%', '_ms': 'ms',
@@ -126,7 +128,7 @@ def row_values(snapshot, elapsed, dropped=0):
 
 def info(mode, rate):
     return '\n'.join([
-        f'Frogdash schema 7; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
+        f'Frogdash schema 8; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
         'trip.* = tracked GPS counters; fuel.level_status = MCU status; other fuel.* = calibrated estimates, MPG uses US gallons.',
         'Time = monotonic seconds since this file started. Q fields: 0=unavailable,1=live,2=stale,3=fault.',
         'Non-live values are IEEE NaN. Drop count is cumulative for this recorder process.',

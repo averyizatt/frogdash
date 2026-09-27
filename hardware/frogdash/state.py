@@ -9,6 +9,7 @@ from .driving import Driving
 from .trip import Trip
 from .operations import Operations
 from .backlight import Backlight
+from .wheel import SteeringWheel
 
 ALIASES = {
     "engine.rpm": ("ecu.rpm", "tach.rpm"),
@@ -37,6 +38,7 @@ class State:
         self.trip = Trip(self)
         self.operations = Operations(self)
         self.backlight = Backlight()
+        self.wheel = SteeringWheel(clock)
         self.health = None
         self.can_errors = {'frames': 0, 'bus_off': 0, 'restarts': 0}
         self.controls = Controls(self)
@@ -62,6 +64,8 @@ class State:
             signals = decode(can_id, data)
         except ValueError as exc:
             self.malformed += 1
+            if can_id == 0x205:
+                self.wheel.reset()
             self.status = str(exc)
             for (name, source), sample in self.samples.items():
                 if source == can_id:
@@ -71,6 +75,8 @@ class State:
             self.samples[name, can_id] = {"value": signal.value, "quality": signal.quality,
                                          "source_id": can_id, "timestamp_ms": stamp,
                                          "seen": now}
+        if can_id == 0x205 and self.mode == "socketcan" and self.connected:
+            self.wheel.observe(data)
         self.controls.observe(can_id, data)
         if can_id in EVENT_IDS:
             self.events.append({"id": can_id, "timestamp_ms": stamp, "data": data.hex().upper(),
@@ -146,4 +152,5 @@ class State:
                 "drive": self.driving.snapshot(), "trip": self.trip.snapshot(),
                 "operations": self.operations.status(), "system": dict(self.health.status) if self.health else None,
                 "can_errors": dict(self.can_errors),
+                "wheel": self.wheel.snapshot(self.connected and self.mode == "socketcan"),
                 "recording": dict(self.recorder.status) if self.recorder else {"enabled": False, "state": "disabled"}}
