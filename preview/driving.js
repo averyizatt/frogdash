@@ -20,18 +20,19 @@
     lastlap: ['Last lap', '@last', 's', 0, 180, 2], bestlap: ['Best lap', '@best', 's', 0, 180, 2]
   };
   const layouts = {street: ['coolant', 'oil', 'fuelp', 'iat', 'batt', 'fuel'], tuning: ['afr', 'target', 'boost', 'fuelp', 'meth', 'tank'], track: ['coolant', 'oil', 'iat', 'boost', 'lastlap', 'bestlap']};
-  let prefs = {layout: 'street', layouts: structuredClone(layouts), lighting: 'auto', day: 100, night: 55, nightAccent: '#ffc77d', shift: 5800};
+  let prefs = {layout: 'street', layouts: structuredClone(layouts), lighting: 'auto', day: 100, night: 55, nightAccent: '#ffc77d', shift: 5800, chimeVolume: 50};
   try {
     const p = JSON.parse(localStorage.getItem('frogdash.driving.v1'));
     if (p && typeof p === 'object') {
       if (Object.hasOwn(layouts, p.layout)) prefs.layout = p.layout;
       if (['auto', 'day', 'night'].includes(p.lighting)) prefs.lighting = p.lighting;
       for (const key of ['street', 'tuning', 'track']) if (Array.isArray(p.layouts?.[key]) && p.layouts[key].length === 6 && p.layouts[key].every(k => Object.hasOwn(metricDefs, k))) prefs.layouts[key] = p.layouts[key];
-      for (const [key, lo, hi] of [['day', 35, 100], ['night', 20, 100], ['shift', 2000, 9000]]) if (Number.isFinite(p[key]) && p[key] >= lo && p[key] <= hi) prefs[key] = p[key];
+      for (const [key, lo, hi] of [['day', 35, 100], ['night', 20, 100], ['shift', 2000, 9000], ['chimeVolume', 0, 100]]) if (Number.isFinite(p[key]) && p[key] >= lo && p[key] <= hi) prefs[key] = p[key];
       if (/^#[0-9a-f]{6}$/i.test(p.nightAccent)) prefs.nightAccent = p.nightAccent;
     }
   } catch { /* Use defaults when browser storage is unavailable. */ }
-  let latest = {values: {}}, online = false, loadedSettings = false, alertSignature = '', ackBusy = false, markBusy = false, audio, lastChime = 0, seenAlerts = null;
+  let latest = {values: {}}, online = false, loadedSettings = false, alertSignature = '', ackBusy = false, markBusy = false;
+  let audio, audioAttempted = false, audioError = false, lastChime = -Infinity, seenAlerts = null, pendingChime = 0, pendingTest = 0;
   const get = key => online && latest.values?.[key]?.quality === 'live' ? latest.values[key].value : null;
   const el = (tag, text, cls) => { const n = document.createElement(tag); if (text !== undefined) n.textContent = text; if (cls) n.className = cls; return n; };
   const row = el('section', undefined, 'sensor-row profile-sensors'); row.id = 'profile-sensors'; row.hidden = true;
@@ -53,6 +54,7 @@
     prefs.layouts[prefs.layout].forEach((v, i) => { $(`layout-slot-${i}`).value = v; });
     $('lighting-mode').value = prefs.lighting; $('day-brightness').value = prefs.day; $('night-brightness').value = prefs.night;
     $('night-accent').value = prefs.nightAccent; $('shift-rpm').value = prefs.shift;
+    $('alert-volume').value = prefs.chimeVolume; $('alert-volume-value').textContent = `${prefs.chimeVolume}%`;
     $('day-brightness-value').textContent = `${prefs.day}%`; $('night-brightness-value').textContent = `${prefs.night}%`;
     for (const b of document.querySelectorAll('button[data-layout]')) b.setAttribute('aria-pressed', String(b.dataset.layout === prefs.layout));
   }
@@ -180,22 +182,62 @@
       if (latest.mode === 'demo') demo.settings = settings;
       else { const result = await request('/drive/settings', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(settings)}); latest.drive = result; if (result.error) throw new Error(result.error); }
       $('alert-settings-status').textContent = latest.mode === 'demo' ? 'Simulated alert settings applied.' : 'Alert settings saved on the Pi.';
-      if (settings.chime) await enableAudio();
+      if (settings.chime) enableAudio();
     } catch (error) { $('alert-settings-status').textContent = error.message; }
     finally { button.disabled = false; }
   };
-  async function enableAudio() {
-    try { audio ||= new (window.AudioContext || window.webkitAudioContext)(); await audio.resume(); $('audio-status').textContent = audio.state === 'running' ? 'Chime ready on this display.' : 'Audio blocked; tap Test chime.'; }
-    catch { $('audio-status').textContent = 'Audio unavailable; visual alerts remain active.'; }
+  function audioStatus() {
+    const status = audioError ? 'Audio unavailable; visual alerts remain active.'
+      : prefs.chimeVolume === 0 ? 'Chime volume muted on this display.'
+      : !currentDrive().settings?.chime ? 'Warning chimes off. Test chime checks the selected volume.'
+      : audio?.state === 'running' ? 'Browser audio ready. Test chime to verify the screen speakers and Linux output.'
+      : 'Audio needs activation; tap Test chime. Visual alerts remain active.';
+    if ($('audio-status').textContent !== status) $('audio-status').textContent = status;
   }
-  async function chime(test = false) {
-    if (test) await enableAudio();
-    if (!audio || audio.state !== 'running' || !test && performance.now() - lastChime < 3000) return;
-    lastChime = performance.now();
-    for (const delay of [0, .2]) { const o = audio.createOscillator(), g = audio.createGain(), start = audio.currentTime + delay; o.frequency.value = 880; g.gain.setValueAtTime(.0001, start); g.gain.exponentialRampToValueAtTime(.10, start + .015); g.gain.exponentialRampToValueAtTime(.0001, start + .15); o.connect(g); g.connect(audio.destination); o.start(start); o.stop(start + .16); o.onended = () => { o.disconnect(); g.disconnect(); }; }
+  function enableAudio() {
+    audioAttempted = true;
+    try {
+      audioError = false;
+      if (!audio || audio.state === 'closed') {
+        audio = new (window.AudioContext || window.webkitAudioContext)();
+        audio.addEventListener('statechange', flushAudio);
+      }
+      // A blocked resume may remain pending indefinitely. Never block settings or startup on it.
+      audio.resume().then(flushAudio).catch(() => { audioError = true; audioStatus(); });
+      flushAudio();
+    } catch { audioError = true; audioStatus(); }
   }
-  $('test-chime').onclick = () => chime(true);
-  document.addEventListener('pointerdown', () => { if (currentDrive().settings?.chime && audio?.state !== 'running') enableAudio(); }, {passive: true});
+  function soundChime() {
+    try {
+      for (const delay of [0, .2]) {
+        const o = audio.createOscillator(), g = audio.createGain(), start = audio.currentTime + delay;
+        o.frequency.value = 880;
+        g.gain.setValueAtTime(.0001, start);
+        g.gain.exponentialRampToValueAtTime(.2 * prefs.chimeVolume / 100, start + .015);
+        g.gain.exponentialRampToValueAtTime(.0001, start + .15);
+        o.connect(g); g.connect(audio.destination); o.start(start); o.stop(start + .16);
+        o.onended = () => { o.disconnect(); g.disconnect(); };
+      }
+      lastChime = performance.now();
+    } catch { audioError = true; }
+  }
+  function flushAudio() {
+    const now = performance.now(), d = currentDrive();
+    const active = online && (d.alerts || []).some(a => a.active && !a.acknowledged && a.condition === 'active');
+    if (!d.settings?.chime || !active || prefs.chimeVolume === 0 || pendingChime < now) pendingChime = 0;
+    if (prefs.chimeVolume === 0 || pendingTest < now) pendingTest = 0;
+    if (audio?.state === 'running' && !audioError && (pendingTest || pendingChime && now - lastChime >= 3000)) {
+      pendingTest = pendingChime = 0; soundChime();
+    }
+    audioStatus();
+  }
+  $('alert-volume').oninput = e => {
+    prefs.chimeVolume = Number(e.target.value); saveDisplay(); flushAudio();
+  };
+  $('test-chime').onclick = () => { pendingTest = performance.now() + 2000; enableAudio(); };
+  function unlockAudio() { if (currentDrive().settings?.chime && (!audio || audio.state !== 'running' || audioError)) enableAudio(); }
+  document.addEventListener('pointerdown', unlockAudio, {passive: true});
+  document.addEventListener('keydown', unlockAudio, {passive: true});
   async function ack(key) {
     if (ackBusy) return; ackBusy = true;
     try {
@@ -244,8 +286,12 @@
       }));
       if (!alerts.length) $('driver-alerts').append(el('p', 'No active or unacknowledged alerts.', 'control-note'));
     }
-    if (seenAlerts !== null && d.alert_seq > seenAlerts && d.settings?.chime) chime();
-    seenAlerts = d.alert_seq || 0;
+    if (online && Number.isFinite(d.alert_seq)) {
+      if ((seenAlerts === null || d.alert_seq > seenAlerts) && d.settings?.chime) pendingChime = performance.now() + 5000;
+      seenAlerts = d.alert_seq;
+      if (d.settings?.chime && !audioAttempted) enableAudio();
+    }
+    flushAudio();
     $('drive-summary').textContent = `${latest.mode === 'demo' ? 'DEMO · ' : ''}${d.current ? `Recording drive · ${Math.round(d.current.duration_s)} s · ${d.current.event_count} events` : 'Display preferences, advisory alerts and recorded sessions'}`;
     if (d.error) $('driver-feedback').textContent = d.error;
     if ($('drive-dialog').open && !document.querySelector('[data-driver-panel="health"]').hidden) renderHealth();

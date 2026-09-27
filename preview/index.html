@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#090f13">
   <link rel="icon" href="data:,">
   <title>Frogdash · Simulated design preview</title>
-  <link rel="stylesheet" href="style.css?v=2236a9dfaf5b">
+  <link rel="stylesheet" href="style.css?v=ac4b23800166">
   <link rel="stylesheet" href="review.css?v=4131615d94e6">
 </head>
 <body>
@@ -349,7 +349,7 @@
         <div class="fuel-workspace"><form id="fuel-settings" class="setting-card"><h3>Fuel estimate calibration</h3><p class="control-note">15.4 US gal &middot; 4 &times; 440 cc/min. Confirmed: 2 squirts, alternating, four-stroke = 0.5 pulses/rev. Verify bank split and dead time.</p><div id="fuel-fields" class="fuel-fields"></div><label class="check-label"><input id="fuel-enabled" type="checkbox"> Calibration verified &middot; enable injector estimates</label><div class="control-row"><button type="submit">SAVE FUEL SETUP</button></div><p id="fuel-settings-status" class="control-note" role="status"></p></form>
         <div class="setting-card fuel-inventory"><h3>Known fuel in the tank</h3><p class="control-note">Until the calibrated fuel sender is fitted, enter the amount currently in your tank. Estimated use is subtracted while the dash records.</p><form id="fuel-amount-form"><label for="fuel-amount">Total remaining &middot; US gallons</label><input id="fuel-amount" type="number" min="0" max="66" step="0.01" required><div class="control-row"><button type="submit">SET AMOUNT</button><button id="fuel-full" type="button">TANK IS FULL</button></div></form><p id="fuel-inventory-status" class="control-note" role="status"></p><p class="control-note">Reconfirm after a service restart or missing fuel data. The calibrated ADC sender takes priority. Range learns after at least 0.62 mi with fuel data.</p><p class="control-note">Four-stroke batch fire: pulses/rev = squirts per cycle &divide; 2 (simultaneous), or &divide; 4 (alternating). PW2 count is the number of injectors represented by bank 2.</p></div></div>
       </section>
-      <section data-driver-panel="alerts" class="driver-panel control-section" hidden><div class="alert-workspace"><form id="alert-settings" class="setting-card"><h3>Advisory alert thresholds</h3><div id="alert-fields"></div><label class="check-label"><input id="alert-chime" type="checkbox"> Optional alert chime</label><div class="control-row"><button type="submit">SAVE ALERT SETTINGS</button><button id="test-chime" type="button">TEST CHIME</button></div><p id="alert-settings-status" class="control-note" role="status">Starting values should be adjusted for your engine. Protection remains in the ECU and module controllers.</p></form><div class="setting-card alert-status-card"><div class="alert-status-heading"><h3>Current &amp; latched alerts</h3><button id="ack-all" type="button">ACKNOWLEDGE ALL</button></div><div id="driver-alerts"></div><p id="alert-capture" class="control-note">Select an alert to view the readings captured when it occurred.</p><p id="audio-status" class="control-note">Chime requires this display to be open with working audio.</p></div></div></section>
+      <section data-driver-panel="alerts" class="driver-panel control-section" hidden><div class="alert-workspace"><form id="alert-settings" class="setting-card"><h3>Advisory alert thresholds</h3><div id="alert-fields"></div><div class="chime-controls"><label class="check-label"><input id="alert-chime" type="checkbox"> Warning chimes</label><label class="chime-volume" for="alert-volume">Volume <input id="alert-volume" type="range" min="0" max="100" step="5" value="50"><output id="alert-volume-value" for="alert-volume">50%</output></label></div><div class="control-row"><button type="submit">SAVE ALERT SETTINGS</button><button id="test-chime" type="button">TEST CHIME</button></div><p id="alert-settings-status" class="control-note" role="status">Starting values should be adjusted for your engine. Protection remains in the ECU and module controllers.</p></form><div class="setting-card alert-status-card"><div class="alert-status-heading"><h3>Current &amp; latched alerts</h3><button id="ack-all" type="button">ACKNOWLEDGE ALL</button></div><div id="driver-alerts"></div><p id="alert-capture" class="control-note">Select an alert to view the readings captured when it occurred.</p><p id="audio-status" class="control-note">Chime requires this display to be open with working audio.</p></div></div></section>
       <section data-driver-panel="review" class="driver-panel" hidden><div id="drive-review" class="review-host"></div></section>
       <section data-driver-panel="health" class="driver-panel" hidden><div id="health-cards" class="health-cards"></div><p id="health-detail" class="control-note"></p><p id="health-notes" class="control-note"></p></section>
     </div>
@@ -360,7 +360,7 @@
 <script src="review.js?v=c6ec99c5fdab"></script>
 <script src="personalize.js?v=d2107d3691cf"></script>
 <script src="trip.js?v=6b67863f329b"></script>
-<script src="driving.js?v=f67febf4577a"></script>
+<script src="driving.js?v=e8ee701a294d"></script>
 <script src="operations.js?v=12d24c8b71db"></script>
 <script src="demo.js?v=497bb211b262"></script>
 <script src="app.js?v=c005c4072892"></script>

@@ -49,6 +49,8 @@ saved Street/Tuning/Track layouts, conditional latched alerts, optional chimes,
 one-touch log bookmarks, synchronized drive-review graphs on the dash and Wi-Fi
 page, and read-only Pi/CAN health diagnostics. The existing power/shutdown service
 and its GPIO assignments stay separate.
+[Screen speakers](docs/screen-audio.md) support warning chimes through Linux audio,
+with saved display volume, a test sound and automatic activation in the kiosk.
 
 [Dash management](docs/ownership-and-service.md) adds a setup checklist, optional
 16-ohm-empty / 158-ohm-full ADS1115 fuel input, portable backup/restore, service

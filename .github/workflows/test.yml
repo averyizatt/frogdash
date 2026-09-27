@@ -23,3 +23,4 @@ jobs:
       - run: python tests/browser_driving.py
       - run: python tests/browser_trip.py
       - run: python tests/browser_operations.py
+      - run: python tests/browser_audio.py

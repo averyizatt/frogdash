@@ -406,3 +406,9 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 .service-item h4 { margin:0; font-size:20px; }
 .configuration-locked { opacity:.55; }
 #operations-result { flex-shrink:0; }
+
+/* Compact speaker controls stay inside the fixed 1920 x 720 alert workspace. */
+.chime-controls { display:flex; align-items:center; justify-content:space-between; gap:20px; }
+.driver-panel .chime-volume { display:flex; align-items:center; gap:12px; margin:0; font-size:13px; }
+.driver-panel .chime-volume input { width:160px; min-height:32px; margin:0; padding:0; accent-color:var(--accent); }
+.chime-volume output { min-width:42px; font-variant-numeric:tabular-nums; }

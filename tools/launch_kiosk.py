@@ -33,13 +33,15 @@ def http_probe(port):
     return probe
 
 
-def browser_args(binary, port=8080, wayland=False, profile=None):
+def browser_args(binary, port=8080, wayland=False, profile=None, allow_audio=False):
     args = [binary, '--kiosk', '--no-first-run', '--no-default-browser-check',
             '--disable-session-crashed-bubble']
     if wayland:
         args.append('--ozone-platform=wayland')
     if profile:
         args.append(f'--user-data-dir={profile}')
+    if allow_audio:
+        args.append('--autoplay-policy=no-user-gesture-required')
     return args + [f'http://127.0.0.1:{port}/']
 
 
@@ -103,6 +105,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--wayland', action='store_true')
     parser.add_argument('--dedicated-profile', action='store_true', help='Use ~/.config/frogdash-chromium; keep preferences on disk')
+    parser.add_argument('--allow-audio', action='store_true', help='Allow enabled warning chimes without a startup tap in this kiosk')
     parser.add_argument('--browser', help='Chromium executable; otherwise discover chromium/chromium-browser')
     parser.add_argument('--port', type=int, default=8080)
     args = parser.parse_args()
@@ -125,7 +128,7 @@ def main():
         parser.exit(1, f'{exc}; systemd will retry. Check journalctl -u frogdash.\n')
     print(f'Frogdash kiosk: HTTP ready; launching Chromium ({boot_stamp()})', flush=True)
     token = uuid4().hex
-    command = browser_args(binary, args.port, args.wayland, profile)
+    command = browser_args(binary, args.port, args.wayland, profile, args.allow_audio)
     command[-1] += '?kiosk=' + token
     raise SystemExit(supervise(command, args.port, token))
 

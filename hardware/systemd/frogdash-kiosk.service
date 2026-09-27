@@ -5,7 +5,7 @@ After=graphical-session.target
 PartOf=graphical-session.target
 
 [Service]
-ExecStart=/usr/bin/python3 /opt/frogdash/tools/launch_kiosk.py
+ExecStart=/usr/bin/python3 /opt/frogdash/tools/launch_kiosk.py --allow-audio
 Restart=always
 RestartSec=3
 

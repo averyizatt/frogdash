@@ -52,11 +52,14 @@ Acknowledge does not hide a condition that is still active. Losing telemetry
 does not clear an incident: its status becomes SIGNAL LOST. A fresh recurrence
 creates a new capture. Selecting an alert shows its captured values/qualities.
 
-Optional chimes sound on this browser for new incidents, at most once per three
-seconds. Enable chime and tap Test chime to confirm the Pi's audio output and
-unlock browser audio. A closed browser cannot produce a chime, but service-side
-alerts/captures continue. These are advisory; ECU/module protection remains in
-those controllers.
+Optional chimes announce current incidents on this browser, at most once per
+three seconds. Enable **Warning chimes**, save, set the display's **Volume** and
+use **Test chime** to confirm the speakers. Supplied kiosk units allow startup
+playback without a tap; normal browsers may need audio activation. Volume zero
+mutes warnings and tests. See [screen speakers and Linux audio](screen-audio.md)
+for HDMI output selection, deployment and acceptance checks. A closed browser
+cannot produce a chime, but service-side alerts/captures continue. These are
+advisory; ECU/module protection remains in those controllers.
 
 Settings persist as `<data-dir>/alerts.json`. The default data directory is
 `/var/lib/frogdash`; override with `--data-dir`. Disk errors are shown, and

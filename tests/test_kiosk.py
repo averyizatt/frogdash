@@ -29,6 +29,8 @@ class KioskTests(unittest.TestCase):
         self.assertNotIn('--incognito', args)
         self.assertEqual(args[-1], 'http://127.0.0.1:8080/')
         self.assertFalse(any(arg.startswith('--user-data-dir') for arg in browser_args('chromium')))
+        self.assertNotIn('--autoplay-policy=no-user-gesture-required', args)
+        self.assertIn('--autoplay-policy=no-user-gesture-required', browser_args('chromium', allow_audio=True))
 
     def test_health_probe_ignores_proxy_and_retries_connection_errors(self):
         with patch('tools.launch_kiosk.urllib.request.build_opener') as opener:

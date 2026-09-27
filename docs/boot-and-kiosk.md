@@ -60,7 +60,7 @@ user, with the backend running and no desktop compositor owning the display:
 
 ```sh
 sudo systemctl start frogdash
-dbus-run-session -- cage -s -- python3 /opt/frogdash/tools/launch_kiosk.py --wayland --dedicated-profile
+dbus-run-session -- cage -s -- python3 /opt/frogdash/tools/launch_kiosk.py --wayland --dedicated-profile --allow-audio
 ```
 
 For automatic startup, copy the session files and enable **your actual username**
@@ -98,6 +98,11 @@ To stop automatic console launch:
 ```sh
 sudo systemctl disable --now frogdash-console@YOUR_USER.service
 ```
+
+For monitor speakers, the supplied units enable startup audio in Chromium.
+Select the HDMI output in Linux, enable warning chimes in Drive > Alerts and
+verify audibility following [screen audio setup](screen-audio.md). No audio
+readiness wait is added to the boot path.
 
 ## Measure and optimize
 
