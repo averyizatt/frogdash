@@ -6,6 +6,10 @@ self-contained dashboard to Chromium at `http://127.0.0.1:8080`. The original
 sensor readings. Named, validated vehicle commands are available through the
 [controls panel](controls.md); arbitrary CAN frame injection is not exposed.
 
+For the verified module contract, both MicroSquirt broadcast modes, and firmware
+ownership steps, see [CAN compatibility](can-compatibility.md). The reusable
+[C++ contract package](../hardware/can_contract/README.md) includes fuel and GPS.
+
 ## Run on Raspberry Pi OS
 
 For the planned MCP2515, use the [wiring and persistent CAN setup guide](mcp2515.md).
@@ -113,7 +117,7 @@ The decoder was checked against these exact source revisions:
 | 307 / 308 / 309 | knock energy/baseline/threshold/status/events, knock faults, engine runtime |
 | 30A / 30B / 30C / 30D | schema-checked command ACK, knock live diagnostics, configuration pages |
 | 5E8–5EC | MicroSquirt simplified dash broadcast |
-| 5F0–62F and 700–73F | MicroSquirt realtime groups supported by the CCM decoder; other groups remain raw |
+| 5F0–62F and 700–73F | Supported MS2/Extra realtime fields; other groups remain raw |
 
 The new external [fuel-controller contract](fuel-can.md) adds standard ID
 **0x204, DLC 3** for percentage and validity. It must be implemented by that

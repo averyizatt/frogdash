@@ -55,6 +55,35 @@ class ProtocolTests(unittest.TestCase):
             self.assertAlmostEqual(d['ecu.iat_c'].value, (-10 - 32) * 5 / 9)
         self.assertEqual(decode(0x5EA, bytes.fromhex('937C03E800000000'))['ecu.ego_correction_pct'].value, 100)
 
+    def test_ms2_status_word_offsets_and_unsigned_dwell(self):
+        for base in (0x5F0, 0x700):
+            values = decode(base + 10, bytes.fromhex('01020304FFFE0607'))
+            self.assertEqual([values[f'ecu.status{i}'].value for i in range(1, 8)],
+                             [1, 2, 3, 4, -2, 6, 7])
+            values = decode(base + 9, struct.pack('>hhHH', 125, -25, 40000, 65535))
+            self.assertEqual(values['ecu.ego1_v'].value, 1.25)
+            self.assertEqual(values['ecu.ego2_v'].value, -.25)
+            self.assertEqual(values['ecu.dwell_ms'].value, 4000)
+            self.assertEqual(values['ecu.trailing_dwell_ms'].value, 6553.5)
+
+    def test_ms2_diagnostic_scaling_and_supported_fields(self):
+        cases = [
+            (1, bytes.fromhex('FF9C1234937C0000'), {'spark_deg': -10, 'injection_flags': 18, 'engine_flags': 52, 'afr_target': 14.7, 'afr2_target': 12.4}),
+            (7, struct.pack('>hhhh', -15, -125, -20, -300), {'cold_advance_deg': -1.5, 'tps_rate_pct_s': -12.5, 'map_rate_kpa_s': -20, 'rpm_rate_rpm_s': -3000}),
+            (12, struct.pack('>ii', 123456, -123456), {'wall_fuel1_us': 1234.56, 'wall_fuel2_us': -1234.56}),
+            (13, struct.pack('>hhhh', 123, -456, 789, 0), {'sensor1': 12.3, 'sensor2': -45.6, 'sensor3': 78.9, 'sensor4': 0}),
+            (18, struct.pack('>hhhh', 1500, 2500, 3500, 4500), {'pwseq1_ms': 1.5, 'pwseq2_ms': 2.5, 'pwseq3_ms': 3.5, 'pwseq4_ms': 4.5}),
+            (43, bytes.fromhex('FE020000000000F6'), {'sync_loss_count': 254, 'sync_loss_reason': 2, 'timing_error_pct': -10}),
+        ]
+        for base in (0x5F0, 0x700):
+            for group, payload, expected in cases:
+                actual = decode(base + group, payload)
+                for key, value in expected.items():
+                    self.assertEqual(actual['ecu.' + key].value, value, (base, group, key))
+        self.assertEqual(decode(0x5EC, bytes(8)), {})  # MS3 VSS is not MS2 speed.
+        self.assertNotIn('ecu.sensor11', decode(0x5F0 + 15, bytes(8)))
+        self.assertEqual(decode(0x5EB, bytes.fromhex('008A007BFE381900'))['ecu.knock_retard_deg'].value, 2.5)
+
     def test_fuel_controller_percentage_and_invalid_reports(self):
         for raw, pct in ((0, 0), (1, .1), (500, 50), (1000, 100)):
             d = decode(0x204, raw.to_bytes(2, 'big') + b'\x01')
@@ -137,6 +166,22 @@ class FreshnessTests(unittest.TestCase):
         self.assertEqual(self.values()['vehicle.fuel_pct']['quality'], 'stale')
         self.state.trip.sample(self.state.snapshot())
         self.assertIsNone(self.state.trip.snapshot()['remaining_l'])
+
+    def test_dash_and_realtime_expire_independently(self):
+        self.state.ingest(0x5E8, struct.pack('>hHhh', 1000, 2000, 1800, 0))
+        self.now = .2
+        self.state.ingest(0x700, struct.pack('>HHHH', 10, 1500, 1500, 2500))
+        self.assertEqual(self.values()['engine.rpm']['value'], 2500)
+        self.now = .4
+        self.state.ingest(0x5E8, struct.pack('>hHhh', 1000, 3000, 1800, 0))
+        self.assertEqual(self.values()['engine.rpm']['value'], 3000)
+        self.now = .8
+        self.state.ingest(0x701, bytes(8))
+        self.assertEqual(self.values()['engine.rpm']['quality'], 'live')
+        self.assertEqual(self.values()['ecu.pw1_ms']['quality'], 'stale')
+        self.now = 1
+        self.state.ingest(0x701, bytes(8))
+        self.assertEqual(self.values()['engine.rpm']['quality'], 'stale')
 
     def test_ecu_priority_and_fallback(self):
         self.state.ingest(0x5E8, bytes.fromhex('03840D7A08020000'))

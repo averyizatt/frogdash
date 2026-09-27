@@ -1,0 +1,61 @@
+--- a/shared/can_contract/include/can_contract/can_protocol.h
++++ b/shared/can_contract/include/can_contract/can_protocol.h
+@@ -858,4 +858,58 @@
+   return frame;
+ }
+ 
++// BEGIN FROGDASH ADDITIVE EXTENSION
++// Existing schema-2 IDs, layouts and ACK schema remain unchanged.
++constexpr uint8_t FROGDASH_EXTENSION_VERSION = 1;
++constexpr uint16_t ID_FUEL_LEVEL_STATE = 0x204;
++constexpr uint8_t FUEL_LEVEL_DLC = 3;
++constexpr uint32_t FUEL_LEVEL_TX_MS = 500;
++constexpr uint32_t FUEL_LEVEL_TIMEOUT_MS = 2000;
++enum class FuelLevelStatus : uint8_t { UNAVAILABLE = 0, VALID = 1, FAULT = 2 };
++struct FuelLevelState {
++  uint16_t percent_x10 = 0;
++  FuelLevelStatus status = FuelLevelStatus::UNAVAILABLE;
++};
++inline CanFrame packFuelLevelState(const FuelLevelState& value) {
++  CanFrame frame{};
++  frame.id = ID_FUEL_LEVEL_STATE;
++  frame.dlc = FUEL_LEVEL_DLC;
++  uint8_t status = static_cast<uint8_t>(value.status);
++  if (status > 2 || (status == 1 && value.percent_x10 > 1000)) status = 2;
++  encodeU16BE(status == 1 ? value.percent_x10 : 0, frame.data[0], frame.data[1]);
++  frame.data[2] = status;
++  return frame;
++}
++inline bool unpackFuelLevelState(const CanFrame& frame, FuelLevelState& out) {
++  if (frame.id != ID_FUEL_LEVEL_STATE || frame.dlc != FUEL_LEVEL_DLC || frame.data[2] > 2) return false;
++  const uint16_t level = static_cast<uint16_t>((static_cast<uint16_t>(frame.data[0]) << 8) | frame.data[1]);
++  if (frame.data[2] == 1 && level > 1000) return false;
++  out.percent_x10 = frame.data[2] == 1 ? level : 0;
++  out.status = static_cast<FuelLevelStatus>(frame.data[2]);
++  return true;
++}
++// Shared builder for the existing 0x203 layout used by the CCM and Pi GPS.
++// Status bit 0 = live RX, bit 4 = fix valid, bit 5 = dead reckoning (not live).
++struct GpsState {
++  uint16_t speed_kph_x10 = 0;
++  int16_t altitude_m = 0;
++  uint8_t satellites = 0;
++  uint8_t fix_type = 0;
++  uint8_t status_flags = 0;
++  uint8_t satellites_in_view = 0;
++};
++inline CanFrame packGpsState(const GpsState& value) {
++  CanFrame frame{};
++  frame.id = ID_GPS_STATE;
++  frame.dlc = 8;
++  encodeU16BE(value.speed_kph_x10, frame.data[0], frame.data[1]);
++  encodeU16BE(static_cast<uint16_t>(value.altitude_m), frame.data[2], frame.data[3]);
++  frame.data[4] = value.satellites;
++  frame.data[5] = value.fix_type;
++  frame.data[6] = value.status_flags;
++  frame.data[7] = value.satellites_in_view;
++  return frame;
++}
++// END FROGDASH ADDITIVE EXTENSION
++
+ }  // namespace can_protocol

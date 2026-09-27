@@ -40,6 +40,9 @@ the payload is `{uint8_t(level10 >> 8), uint8_t(level10), 1}`. Check the range
 before sending. The transmitter owns calibration, fault detection and filtering.
 The Pi sends no commands to this module and has no fuel-level transmitter.
 
+Use the [shared C++ builder](../hardware/can_contract/README.md) to generate this
+payload from firmware without duplicating its byte layout.
+
 ## Gauge, range and recordings
 
 The decoder produces `vehicle.fuel_pct` for the main gauge, custom instruments
@@ -53,7 +56,7 @@ messages cannot refresh it. Disconnects, unavailable status and faults stop the
 gauge from showing a live percentage. If manual inventory remains valid, the
 trip computer may use it as the explicitly labelled estimated fallback.
 
-MLG schema 6 records fuel percentage, controller status and their quality fields.
+MLG schema 7 records fuel percentage, controller status and their quality fields.
 Non-live measurements are NaN, preserving the distinction between missing fuel
 and an empty tank. `fuel.level_status` records the received status code; consult
 `vehicle.fuel_pct` quality for the measurement's validity. The removed local

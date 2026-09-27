@@ -101,7 +101,7 @@ def channels():
         frame = bytes(length) if can_id != 0x30A else bytes([0, 0, 0, 2])
         keys.update(decode(can_id, frame))
     covered = {c.key for c in primary}
-    units = {'_c': 'C', '_kpa': 'kPa', '_psi': 'psi', '_pct': '%', '_ms': 'ms',
+    units = {'_us': 'us', '_g_s': 'g/s', '_rpm_s': 'RPM/s', '_pct_s': '%/s', '_kpa_s': 'kPa/s', '_c': 'C', '_kpa': 'kPa', '_psi': 'psi', '_pct': '%', '_ms': 'ms',
              '_hz': 'Hz', '_v': 'V', '_rpm': 'RPM', '_kph': 'km/h', '_mm': 'mm', '_deg': 'deg'}
     for key in sorted(keys - covered):
         unit = next((unit for suffix, unit in units.items() if key.endswith(suffix)), '')
@@ -126,7 +126,7 @@ def row_values(snapshot, elapsed, dropped=0):
 
 def info(mode, rate):
     return '\n'.join([
-        f'Frogdash schema 6; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
+        f'Frogdash schema 7; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
         'trip.* = tracked GPS counters; fuel.level_status = MCU status; other fuel.* = calibrated estimates, MPG uses US gallons.',
         'Time = monotonic seconds since this file started. Q fields: 0=unavailable,1=live,2=stale,3=fault.',
         'Non-live values are IEEE NaN. Drop count is cumulative for this recorder process.',

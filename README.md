@@ -9,6 +9,9 @@ The optional Cage service starts a minimal UI session and opens Chromium as soon
 as the local backend is ready, without waiting for CAN, GPS fix or Wi-Fi.
 Physical key-on startup time has not yet been measured.
 
+[CAN compatibility and ECU setup](docs/can-compatibility.md) covers both
+MicroSquirt broadcast modes and the shared fuel/GPS firmware contract.
+
 ## Driver display
 
 - Large, bold GPS speed and arc tachometer, with a quiet dark background and mint accents.
@@ -82,6 +85,7 @@ python tools/update_preview.py --check
 | `hardware/ui/` | Authoritative production dashboard |
 | `preview/` | Standalone simulated design preview; published by GitHub Pages |
 | `hardware/systemd/` | Raspberry Pi service templates |
+| `hardware/can_contract/` | Shared schema-2 firmware header with fuel/GPS extension |
 | `hardware/compat/` | Comfort controller patches for GPS/control ownership |
 | `config/` | Production service environment |
 | `tests/` | Protocol, GPS, control, service, replay, and browser checks |
