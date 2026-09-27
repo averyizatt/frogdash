@@ -11,12 +11,17 @@ its trip data resets on page reload and never contacts the Pi.
 ## Your configuration
 
 The production defaults contain the supplied **15.4 US gallon tank (58.295 L)**
-and **four 440 cc/min injectors**, with fuel estimation **disabled**. In
+and **four 440 cc/min injectors**, with fuel estimation **disabled**. The supplied
+TunerStudio screen confirms **2 squirts per cycle, alternating, four-stroke,
+untimed injection**, so the pulse-rate default is **0.5 per injector per crank
+revolution** (one pulse per 720 degrees). Older disabled configurations with a
+zero/unconfigured pulse rate adopt this value; other saved pulse rates are kept.
+The screen's **8.8 ms Required Fuel is not injector dead time**. In
 **Drive → Fuel setup**, verify these values and enter:
 
 - Pulses per injector per crank revolution. For a four-stroke engine, use
   TunerStudio's squirts per engine cycle / 2 for simultaneous injection or / 4
-  for alternating injection. “Batch fire” alone does not specify this rate.
+  for alternating injection. Your confirmed setting is 2 / 4 = 0.5.
 - Number of injectors represented by PW2; the remainder uses PW1. Zero uses
   PW1 for every injector. Check the actual wiring and tune before enabling.
 - Effective injector dead time in milliseconds, appropriate to the operating

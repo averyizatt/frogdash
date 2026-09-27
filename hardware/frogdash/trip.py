@@ -8,7 +8,7 @@ from pathlib import Path
 from .driving import atomic_write
 
 DEFAULTS = dict(enabled=False, capacity_l=15.4 * 3.785411784, reserve_l=3, injector_cc_min=440,
-                injectors=4, pw2_injectors=0, pulses_per_rev=0, dead_ms=0, correction=1)
+                injectors=4, pw2_injectors=0, pulses_per_rev=.5, dead_ms=0, correction=1)
 LIMITS = dict(capacity_l=(0, 250), reserve_l=(0, 50), injector_cc_min=(0, 5000),
               injectors=(0, 16), pw2_injectors=(0, 16), pulses_per_rev=(0, 8), dead_ms=(0, 5), correction=(.25, 4))
 SIGNALS = {'trip.a_km': 'km', 'trip.b_km': 'km', 'trip.total_km': 'km',
@@ -61,6 +61,10 @@ class Trip:
             try:
                 data = json.loads(self.path.read_text(encoding='utf-8'))
                 settings = validate(data['settings'])
+                # Earlier installations saved zero as an unconfigured pulse rate.
+                # The supplied tune confirms 2 squirts, alternating, four-stroke.
+                if not settings['enabled'] and settings['pulses_per_rev'] == 0:
+                    settings['pulses_per_rev'] = DEFAULTS['pulses_per_rev']
                 counters = data['counters']
                 if data['version'] != 1 or set(counters) != {'a', 'b', 'total'}:
                     raise ValueError('Invalid trip file')

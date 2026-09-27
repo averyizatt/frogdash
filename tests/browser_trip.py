@@ -33,6 +33,7 @@ async def preview(browser):
     assert before == await page.locator('#trip-b-distance').inner_text()
     await page.locator('[data-driver-tab="fuel"]').click()
     assert await page.locator('#fuel-capacity_l').input_value() == '15.4'
+    assert await page.locator('#fuel-pulses_per_rev').input_value() == '0.5'
     await page.locator('#fuel-pulses_per_rev').fill('0')
     await page.locator('#fuel-settings button').click()
     await page.wait_for_function('document.getElementById("fuel-settings-status").textContent.includes("pulse rate")')
@@ -78,6 +79,7 @@ async def live(browser):
             await page.locator('[data-driver-tab="fuel"]').click()
             await page.wait_for_function('document.getElementById("fuel-injector_cc_min").value === "440"')
             assert not await page.locator('#fuel-enabled').is_checked()
+            assert await page.locator('#fuel-pulses_per_rev').input_value() == '0.5'
             await page.locator('#fuel-pulses_per_rev').fill('1')
             await page.locator('#fuel-pw2_injectors').fill('2')
             await page.locator('#fuel-dead_ms').fill('1')

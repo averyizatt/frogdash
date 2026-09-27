@@ -12,7 +12,7 @@
   let tripMessage = '', messageUntil = 0;
   const freshBucket = () => ({km: 0, moving_s: 0, engine_s: 0, fuel_l: 0, paired_km: 0, paired_l: 0, missing_s: 0});
   const simulated = {
-    settings: {enabled: true, capacity_l: 15.4 * GAL, reserve_l: 3, injector_cc_min: 440, injectors: 4, pw2_injectors: 2, pulses_per_rev: 1, dead_ms: 1, correction: 1},
+    settings: {enabled: true, capacity_l: 15.4 * GAL, reserve_l: 3, injector_cc_min: 440, injectors: 4, pw2_injectors: 2, pulses_per_rev: .5, dead_ms: 1, correction: 1},
     counters: {a: {...freshBucket(), km: 84.2, moving_s: 3988, engine_s: 4200, fuel_l: 7.2, paired_km: 84.2, paired_l: 7.2}, b: {...freshBucket(), km: 286.1, moving_s: 13120, engine_s: 14000, fuel_l: 24.1, paired_km: 286.1, paired_l: 24.1}, total: {...freshBucket(), km: 1284.8}},
     learned: {km: 84.2, litres: 7.2}, remaining_l: 32, fuel_source: 'Simulated fuel amount', error: ''
   };
