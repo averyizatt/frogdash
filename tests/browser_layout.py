@@ -13,6 +13,8 @@ SIZES = [(1920, 720), (1980, 720), (1280, 480), (960, 360),
 
 
 async def inspect(page, selector, scroll_selector=None):
+    # Viewport RPC completion can precede Chromium's resize event by one frame.
+    await page.wait_for_function("Math.abs(document.getElementById('display').getBoundingClientRect().width - Math.min(innerWidth, innerHeight * 1920 / 720)) < 1")
     problems = await page.locator(selector).evaluate('''(dialog, scrollSelector) => {
       const errors = [];
       const frame = document.getElementById('display').getBoundingClientRect();

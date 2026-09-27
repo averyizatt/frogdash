@@ -231,6 +231,7 @@ async def main(browser_path=None):
             task = asyncio.create_task(feed())
             await page.wait_for_function("document.getElementById('rpm-value').textContent === '3450'")
             await page.set_viewport_size({'width': 1280, 'height': 720})
+            await page.wait_for_function("Math.abs(document.getElementById('display').getBoundingClientRect().width - 1280) < 1")
             bounds = await page.locator('#display').bounding_box()
             assert bounds['width'] <= 1281 and bounds['height'] <= 721
             await page.screenshot(path='.tmp/dashboard-1280.png')
