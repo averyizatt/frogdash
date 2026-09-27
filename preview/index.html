@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#090f13">
   <link rel="icon" href="data:,">
   <title>Frogdash · Simulated design preview</title>
-  <link rel="stylesheet" href="style.css?v=77629f29cb56">
+  <link rel="stylesheet" href="style.css?v=3e4cdb1a47ef">
   <link rel="stylesheet" href="review.css?v=4131615d94e6">
 </head>
 <body>
@@ -326,13 +326,28 @@
 <dialog id="drive-dialog" class="workspace-dialog" aria-labelledby="drive-title">
   <header class="dialog-header"><div><span class="eyebrow">DRIVING / TUNING / REVIEW</span><h2 id="drive-title">Drive workspace</h2><p id="drive-summary">Display preferences, advisory alerts and recorded sessions</p></div><button id="drive-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
   <div class="control-workspace">
-    <nav class="control-tabs driver-tabs" aria-label="Drive sections"><button data-driver-tab="display" aria-selected="true" type="button">Display modes</button><button data-driver-tab="alerts" aria-selected="false" type="button">Alerts</button><button data-driver-tab="review" aria-selected="false" type="button">Drive review</button><button data-driver-tab="health" aria-selected="false" type="button">Dash health</button></nav>
+    <nav class="control-tabs driver-tabs" aria-label="Drive sections"><button data-driver-tab="display" aria-selected="true" type="button">Display modes</button><button data-driver-tab="trip" aria-selected="false" type="button">Trips &amp; economy</button><button data-driver-tab="fuel" aria-selected="false" type="button">Fuel setup</button><button data-driver-tab="alerts" aria-selected="false" type="button">Alerts</button><button data-driver-tab="review" aria-selected="false" type="button">Drive review</button><button data-driver-tab="health" aria-selected="false" type="button">Dash health</button></nav>
     <div class="driver-panels">
       <section data-driver-panel="display" class="driver-panel control-section">
         <div class="settings-grid">
           <div class="setting-card"><h3>Street / tuning / track</h3><div class="control-row layout-buttons"><button data-layout="street" type="button">STREET</button><button data-layout="tuning" type="button">TUNING</button><button data-layout="track" type="button">TRACK</button></div><p class="control-note">Select the six lower instruments for this layout. Each layout remembers its own arrangement.</p><div id="layout-instruments" class="layout-instruments"></div><label class="compact-label">Shift light RPM <input id="shift-rpm" type="number" min="2000" max="9000" step="100" value="5800"></label><button id="layout-reset" type="button">RESET THIS LAYOUT</button></div>
           <div class="setting-card"><h3>Day / night display</h3><label for="lighting-mode">Lighting mode</label><select id="lighting-mode"><option value="auto">Automatic · running lights</option><option value="day">Always day</option><option value="night">Always night</option></select><div class="brightness-settings"><label>Day brightness <input id="day-brightness" type="range" min="35" max="100" value="100"><output id="day-brightness-value">100%</output></label><label>Night brightness <input id="night-brightness" type="range" min="20" max="100" value="55"><output id="night-brightness-value">55%</output></label></div><label class="compact-label">Night accent <input id="night-accent" type="color" value="#ffc77d"></label><p id="lighting-status" class="control-note"></p><p class="control-note">Software dimming; display backlight stays unchanged. If the lighting signal is lost, automatic mode returns to day brightness. Day colors come from Appearance.</p><p id="display-save-status" class="control-note" role="status"></p></div>
         </div>
+      </section>
+      <section data-driver-panel="trip" class="driver-panel control-section" hidden>
+        <div class="trip-workspace"><div class="trip-counters">
+          <article class="setting-card trip-card"><div class="trip-card-heading"><h3>Trip A</h3><button type="button" data-trip-reset="a">RESET A</button></div><strong id="trip-a-distance" class="trip-distance">0.0 <small>mi</small></strong><p id="trip-a-detail"></p></article>
+          <article class="setting-card trip-card"><div class="trip-card-heading"><h3>Trip B</h3><button type="button" data-trip-reset="b">RESET B</button></div><strong id="trip-b-distance" class="trip-distance">0.0 <small>mi</small></strong><p id="trip-b-detail"></p></article>
+          <p id="trip-total" class="control-note"></p>
+        </div><div class="trip-economy">
+          <article class="setting-card range-card"><span class="eyebrow">ESTIMATED RANGE &middot; RESERVE EXCLUDED</span><strong id="trip-range" class="trip-distance">&mdash; <small>mi</small></strong><p id="trip-fuel-source"></p></article>
+          <div class="economy-cards"><article class="setting-card"><h3>Instant economy</h3><strong id="trip-instant">&mdash;</strong><span id="trip-flow">US MPG &middot; estimated</span></article><article class="setting-card"><h3>Learned average</h3><strong id="trip-average">&mdash;</strong><span>US MPG &middot; sampled driving</span></article></div>
+          <p id="trip-quality" class="control-note"></p><p id="trip-status" class="control-note" role="status"></p>
+        </div></div>
+      </section>
+      <section data-driver-panel="fuel" class="driver-panel control-section" hidden>
+        <div class="fuel-workspace"><form id="fuel-settings" class="setting-card"><h3>Fuel estimate calibration</h3><p class="control-note">15.4 US gal &middot; four 440 cc/min injectors &middot; batch fire. Verify pulse rate, bank split and dead time from your tune.</p><div id="fuel-fields" class="fuel-fields"></div><label class="check-label"><input id="fuel-enabled" type="checkbox"> Calibration verified &middot; enable injector estimates</label><div class="control-row"><button type="submit">SAVE FUEL SETUP</button></div><p id="fuel-settings-status" class="control-note" role="status"></p></form>
+        <div class="setting-card fuel-inventory"><h3>Known fuel in the tank</h3><p class="control-note">Until the CAN fuel sender is fitted, enter the amount currently in your tank. Estimated use is subtracted while the dash records.</p><form id="fuel-amount-form"><label for="fuel-amount">Total remaining &middot; US gallons</label><input id="fuel-amount" type="number" min="0" max="66" step="0.01" required><div class="control-row"><button type="submit">SET AMOUNT</button><button id="fuel-full" type="button">TANK IS FULL</button></div></form><p id="fuel-inventory-status" class="control-note" role="status"></p><p class="control-note">Reconfirm after a service restart or missing fuel data. A future calibrated CAN sender takes priority. Range learns after at least 0.62 mi with fuel data.</p><p class="control-note">Four-stroke batch fire: pulses/rev = squirts per cycle &divide; 2 (simultaneous), or &divide; 4 (alternating). PW2 count is the number of injectors represented by bank 2.</p></div></div>
       </section>
       <section data-driver-panel="alerts" class="driver-panel control-section" hidden><div class="alert-workspace"><form id="alert-settings" class="setting-card"><h3>Advisory alert thresholds</h3><div id="alert-fields"></div><label class="check-label"><input id="alert-chime" type="checkbox"> Optional alert chime</label><div class="control-row"><button type="submit">SAVE ALERT SETTINGS</button><button id="test-chime" type="button">TEST CHIME</button></div><p id="alert-settings-status" class="control-note" role="status">Starting values should be adjusted for your engine. Protection remains in the ECU and module controllers.</p></form><div class="setting-card alert-status-card"><div class="alert-status-heading"><h3>Current &amp; latched alerts</h3><button id="ack-all" type="button">ACKNOWLEDGE ALL</button></div><div id="driver-alerts"></div><p id="alert-capture" class="control-note">Select an alert to view the readings captured when it occurred.</p><p id="audio-status" class="control-note">Chime requires this display to be open with working audio.</p></div></div></section>
       <section data-driver-panel="review" class="driver-panel" hidden><div id="drive-review" class="review-host"></div></section>
@@ -343,7 +358,8 @@
 </dialog>
 <script src="review.js?v=c6ec99c5fdab"></script>
 <script src="personalize.js?v=d2107d3691cf"></script>
-<script src="driving.js?v=75fdee0f1094"></script>
+<script src="trip.js?v=e8c85f62b48f"></script>
+<script src="driving.js?v=bf10cbe402d2"></script>
 <script src="demo.js?v=bfc820c518ba"></script>
 <script src="app.js?v=b7b1e74ff3e3"></script>
 </body>

@@ -129,3 +129,8 @@ are also available as a separate JSON export in the Race screen.
 stores manual/fault captures with approximate MLG time references in separate
 bounded review JSON files. Its lower-rate graphs and retention are independent
 of MLG recording. The same read-only review is available over the Wi-Fi portal.
+
+[Trip and fuel](trip-and-fuel.md) adds schema-4 trip distance counters, estimated
+fuel flow/inventory/range, and instant/average US MPG to new files. Fuel values
+require calibration and remain explicitly estimates; unavailable values use
+NaN and their quality flag. Older files retain their own embedded field schema.

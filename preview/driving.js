@@ -12,6 +12,11 @@
     boost: ['Boost', 'engine.boost_kpa', 'psi', -15, 30, 1, n => n * .145037738],
     meth: ['Injection', 'meth.duty_pct', '%', 0, 100, 0], tank: ['Meth tank', 'meth.tank_pct', '%', 0, 100, 0],
     knock: ['Knock energy', 'knock.energy', '', 0, 255, 0],
+    tripa: ['Trip A', 'trip.a_km', 'mi', 0, 500, 1, n => n / 1.609344],
+    tripb: ['Trip B', 'trip.b_km', 'mi', 0, 500, 1, n => n / 1.609344],
+    range: ['Est. range', 'fuel.range_km', 'mi', 0, 400, 0, n => n / 1.609344],
+    economy: ['Est. economy', 'fuel.instant_mpg', 'US MPG', 0, 60, 1],
+    average: ['Avg. economy', 'fuel.average_mpg', 'US MPG', 0, 60, 1],
     lastlap: ['Last lap', '@last', 's', 0, 180, 2], bestlap: ['Best lap', '@best', 's', 0, 180, 2]
   };
   const layouts = {street: ['coolant', 'oil', 'fuelp', 'iat', 'batt', 'fuel'], tuning: ['afr', 'target', 'boost', 'fuelp', 'meth', 'tank'], track: ['coolant', 'oil', 'iat', 'boost', 'lastlap', 'bestlap']};
@@ -86,7 +91,7 @@
       const raw = signal === '@last' ? online ? last : null : signal === '@best' ? online ? best : null : get(signal);
       const valid = Number.isFinite(raw), v = valid ? (convert ? convert(raw) : raw) : null;
       tile.title.textContent = title; tile.unit.textContent = unit; tile.lo.textContent = min; tile.hi.textContent = max;
-      tile.value.textContent = valid ? v.toFixed(digits) : '—'; tile.quality.textContent = valid ? 'Live' : online ? latest.values?.[signal]?.quality || 'No signal' : 'Stale';
+      tile.value.textContent = valid ? v.toFixed(digits) : '—'; tile.quality.textContent = valid ? signal.startsWith('fuel.') ? 'Estimated' : signal.startsWith('trip.') ? 'Tracked' : 'Live' : online ? latest.values?.[signal]?.quality || 'No signal' : 'Stale';
       tile.card.dataset.quality = valid ? 'live' : !online ? 'stale' : latest.values?.[signal]?.quality || 'unavailable';
       tile.fill.style.width = valid ? `${Math.max(0, Math.min(100, (v - min) / (max - min) * 100))}%` : '0%';
     });
@@ -157,7 +162,7 @@
     button.id = `drive-tab-${key}`; button.setAttribute('role', 'tab'); button.setAttribute('aria-controls', `drive-panel-${key}`);
     panel.id = `drive-panel-${key}`; panel.setAttribute('role', 'tabpanel'); panel.setAttribute('aria-labelledby', button.id);
     button.onclick = () => selectTab(button.dataset.driverTab);
-    button.onkeydown = e => { const buttons = [...document.querySelectorAll('[data-driver-tab]')], i = buttons.indexOf(button); const n = e.key === 'ArrowDown' ? (i + 1) % 4 : e.key === 'ArrowUp' ? (i + 3) % 4 : e.key === 'Home' ? 0 : e.key === 'End' ? 3 : null; if (n !== null) { e.preventDefault(); buttons[n].click(); buttons[n].focus(); } };
+    button.onkeydown = e => { const buttons = [...document.querySelectorAll('[data-driver-tab]')], i = buttons.indexOf(button); const n = e.key === 'ArrowDown' ? (i + 1) % buttons.length : e.key === 'ArrowUp' ? (i + buttons.length - 1) % buttons.length : e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1 : null; if (n !== null) { e.preventDefault(); buttons[n].click(); buttons[n].focus(); } };
   }
   $('drive-launch').onclick = () => { $('drive-dialog').showModal(); render(); };
   $('drive-close').onclick = () => $('drive-dialog').close();

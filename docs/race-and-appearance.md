@@ -123,7 +123,7 @@ failure/duplicate handling, stationary launch, lap gate rearming, persistence,
 MLG quality values and local API boundaries. `tests/browser_personalize.py`
 exercises actual HTTP commands, timing while the menu is closed, exports,
 reload, local appearance persistence, image uploads and splash previews.
-`tests/browser_layout.py` checks all thirteen submenu views at seven viewport sizes.
+`tests/browser_layout.py` checks all fifteen submenu views at seven viewport sizes.
 Appearance browser checks include every preset/background, persistence,
 day/night interaction, keyboard tab navigation and retaining uploaded artwork.
 Physical GPS and Raspberry Pi validation are still pending.

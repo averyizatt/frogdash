@@ -6,6 +6,7 @@ from .protocol import ANALOG_BITS, EVENT_IDS, TIMEOUTS, decode
 from .controls import Controls
 from .race import Race
 from .driving import Driving
+from .trip import Trip
 
 ALIASES = {
     "engine.rpm": ("ecu.rpm", "tach.rpm"),
@@ -31,6 +32,7 @@ class State:
         self.recorder = None
         self.race = Race(clock=clock, wall=wall)
         self.driving = Driving(self)
+        self.trip = Trip(self)
         self.health = None
         self.can_errors = {'frames': 0, 'bus_off': 0, 'restarts': 0}
         self.controls = Controls(self)
@@ -102,7 +104,8 @@ class State:
         # The comfort heartbeat carries defaults and no battery validity bit;
         # keep that value diagnostic-only rather than treating it as measured.
         for name in UNAVAILABLE:
-            values[name] = dict(missing)
+            if name != 'vehicle.fuel_pct' or name not in values:
+                values[name] = dict(missing)
         boost = values.get("engine.boost_kpa")
         map_value, baro = values.get("ecu.map_kpa", missing), values.get("ecu.baro_kpa", missing)
         if map_value["quality"] == baro["quality"] == "live":
@@ -116,6 +119,7 @@ class State:
             # to a different receiver on CAN when the USB receiver loses fix.
             values.update(self.gps.values())
         race = self.race.snapshot()
+        values.update(self.trip.values())
         values['dash.bookmark_id'] = {'value': self.driving.marker_seq, 'quality': 'live', 'source_id': None,
                                        'source': 'Drive review', 'timestamp_ms': int(self.wall() * 1000)}
         race_quality = 'fault' if race['phase'] == 'invalid' else 'unavailable' if race['phase'] == 'idle' else 'live'
@@ -135,6 +139,6 @@ class State:
                 "gps": {"status": self.gps.status, "tx_status": self.gps.tx_status,
                         "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
                 "controls": self.controls.status(), "events": list(self.events), "race": race,
-                "drive": self.driving.snapshot(), "system": dict(self.health.status) if self.health else None,
+                "drive": self.driving.snapshot(), "trip": self.trip.snapshot(), "system": dict(self.health.status) if self.health else None,
                 "can_errors": dict(self.can_errors),
                 "recording": dict(self.recorder.status) if self.recorder else {"enabled": False, "state": "disabled"}}

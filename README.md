@@ -34,6 +34,11 @@ Appearance preferences and uploaded artwork save on the current display.
 The appearance gallery includes six coordinated looks and eight mixable preset
 backgrounds, alongside custom colors, image uploads and splash screens.
 
+[Trips and fuel economy](docs/trip-and-fuel.md) add persistent Trip A/B and
+tracked distance, calibrated injector fuel estimates, US MPG and fuel range.
+The 15.4-gallon tank and four 440 cc/min injectors are prefilled; verify the
+remaining calibration in **Drive → Fuel setup** before enabling estimates.
+
 [Driving tools](docs/driving-tools.md) add automatic day/night software dimming,
 saved Street/Tuning/Track layouts, conditional latched alerts, optional chimes,
 one-touch log bookmarks, synchronized drive-review graphs on the dash and Wi-Fi

@@ -15,6 +15,7 @@ from .connectivity import Connectivity, require_local
 from .race import Race
 from .driving import Driving
 from .health import Health
+from .trip import Trip
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
 
@@ -27,6 +28,7 @@ def create_app(state, adapter=None, connectivity=None):
         tasks = [asyncio.create_task(adapter())] if adapter else []
         race_task = asyncio.create_task(state.race.run())
         drive_task = asyncio.create_task(state.driving.run())
+        trip_task = asyncio.create_task(state.trip.run())
         health_task = asyncio.create_task(state.health.run()) if state.health else None
         if state.gps:
             state.gps.on_report = state.race.feed
@@ -50,6 +52,8 @@ def create_app(state, adapter=None, connectivity=None):
         await race_task
         state.driving.stopping = True
         await drive_task
+        state.trip.stopping = True
+        await trip_task
         if health_task:
             await health_task
         if state.recorder:
@@ -187,6 +191,26 @@ def create_app(state, adapter=None, connectivity=None):
         require_local(request)
         return web.json_response({'drives': await state.driving.get_reviews()}, headers={'Cache-Control': 'no-store'})
 
+    async def trip(request):
+        require_local(request)
+        if request.method == 'POST':
+            try:
+                body = await request.json()
+                if not isinstance(body, dict):
+                    raise ValueError('Expected a trip command')
+                if set(body) == {'settings'}:
+                    state.trip.configure(body['settings'])
+                elif set(body) == {'reset'} and isinstance(body['reset'], str):
+                    state.trip.reset(body['reset'])
+                elif set(body) == {'remaining_l'}:
+                    state.trip.set_fuel(body['remaining_l'])
+                else:
+                    raise ValueError('Unknown trip command or fields')
+            except (ValueError, TypeError) as exc:
+                raise web.HTTPBadRequest(text=str(exc))
+            await state.trip.save(force=True)
+        return web.json_response(state.trip.snapshot(), headers={'Cache-Control': 'no-store'})
+
     async def drive_review(request):
         require_local(request)
         try:
@@ -218,7 +242,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "personalize.js", "driving.js", "review.js", "review.css"}:
+        if name not in {"index.html", "app.js", "style.css", "personalize.js", "driving.js", "trip.js", "review.js", "review.css"}:
             raise web.HTTPNotFound()
         return web.FileResponse(WEB / name, headers={"Cache-Control": "no-store"})
 
@@ -230,6 +254,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),
                     web.post('/drive/{action:mark|ack}', drive_action),
                     web.get('/drives', drives), web.get('/drives/{name}', drive_review),
+                    web.get('/trip', trip), web.post('/trip', trip),
                     web.get("/", asset), web.get("/{name}", asset)])
     return app
 
@@ -264,6 +289,7 @@ def main():
     state = State("replay" if args.replay else "socketcan")
     state.race = Race(args.race_file if not args.replay else None)
     state.driving = Driving(state, args.data_dir / 'replay' if args.replay else args.data_dir)
+    state.trip = Trip(state, (args.data_dir / 'replay' if args.replay else args.data_dir) / 'trip.json')
     state.health = Health(state, args.interface, args.log_dir or args.data_dir)
     if args.log_dir:
         try:

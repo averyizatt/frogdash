@@ -6,6 +6,7 @@ import math
 from .mlg import Field
 from .protocol import LENGTHS, decode
 from .state import ALIASES, UNAVAILABLE
+from .trip import SIGNALS as TRIP_SIGNALS
 
 QUALITY = {'unavailable': 0, 'live': 1, 'stale': 2, 'fault': 3}
 ENUMS = {
@@ -89,6 +90,7 @@ def channels():
         Channel('race.eighth_mph', 'Race eighth crossing speed', 'MPH'), Channel('race.quarter_mph', 'Race quarter crossing speed', 'MPH'),
         Channel('race.lap_count', 'Race lap count', digits=0), Channel('race.best_lap_s', 'Race best lap', 's'),
     ]
+    primary.extend(Channel(key, key, units) for key, units in TRIP_SIGNALS.items())
     # Enumerate the decoder's schema with valid, synthetic definition frames only.
     # Values from these frames NEVER enter a recording. This includes diagnostics,
     # config replies and fault/event channels even if they haven't arrived yet.
@@ -124,7 +126,8 @@ def row_values(snapshot, elapsed, dropped=0):
 
 def info(mode, rate):
     return '\n'.join([
-        f'Frogdash schema 3; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
+        f'Frogdash schema 4; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
+        'trip.* = tracked GPS counters; fuel.* = calibrated estimates, MPG uses US gallons.',
         'Time = monotonic seconds since this file started. Q fields: 0=unavailable,1=live,2=stale,3=fault.',
         'Non-live values are IEEE NaN. Drop count is cumulative for this recorder process.',
         'Temperatures MAT/CLT in F; other *_c fields in C. GPS F32 precision is approximately one meter.',

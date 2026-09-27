@@ -62,7 +62,7 @@ async def main(browser_path=None, url=None):
             await page.set_viewport_size({'width': width, 'height': height})
             await page.keyboard.press('Escape')
             await page.locator('#drive-launch').click()
-            for tab in ('display', 'alerts', 'review', 'health'):
+            for tab in ('display', 'trip', 'fuel', 'alerts', 'review', 'health'):
                 await page.locator(f'[data-driver-tab="{tab}"]').click()
                 if tab == 'review':
                     await page.locator('#drive-review .review-toolbar select option').first.wait_for(state='attached')
@@ -89,7 +89,7 @@ async def main(browser_path=None, url=None):
                 assert await page.locator(f'#{launch}').evaluate('(el) => document.activeElement === el')
         assert not errors, errors
         await browser.close()
-    print('All 13 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
+    print('All 15 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
 
 
 if __name__ == '__main__':
