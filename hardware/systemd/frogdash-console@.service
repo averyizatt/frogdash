@@ -1,0 +1,35 @@
+# Optional SYSTEM service: instance is an existing normal Linux username.
+# Requires Cage/logind, native Wayland Chromium and hardware/pam/frogdash-kiosk.
+# Uses tty7 so the normal tty1 console stays available for maintenance.
+[Unit]
+Description=Frogdash console kiosk for %i
+Wants=frogdash.service dbus.socket systemd-logind.service
+After=systemd-user-sessions.service dbus.socket systemd-logind.service getty@tty7.service
+Conflicts=getty@tty7.service
+ConditionPathExists=/dev/tty0
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=%i
+PAMName=frogdash-kiosk
+Environment=XDG_SESSION_TYPE=wayland
+Environment=XDG_SESSION_DESKTOP=frogdash
+Environment=LIBSEAT_BACKEND=logind
+TTYPath=/dev/tty7
+StandardInput=tty-fail
+StandardOutput=journal
+StandardError=journal
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+UtmpIdentifier=tty7
+UtmpMode=user
+ExecStart=/usr/bin/dbus-run-session -- /usr/bin/cage -s -- /usr/bin/python3 /opt/frogdash/tools/launch_kiosk.py --wayland --dedicated-profile
+ExecStartPost=+/usr/bin/chvt 7
+Restart=always
+RestartSec=1
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

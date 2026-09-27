@@ -164,7 +164,9 @@ not configure network interfaces or serial drivers. The supplied service also
 records rotating MLG files in `/var/lib/frogdash/logs`; see [data logging](data-logging.md)
 for retention settings, downloads and MegaLogViewer compatibility.
 
-The kiosk template is a **user service**, run in the Pi's graphical login session:
+For console-only Linux, use the separate [Cage console kiosk](boot-and-kiosk.md)
+after checking the installed distribution. The original kiosk template below is
+a **user service**, run in the Pi's existing graphical login session:
 
 ```sh
 mkdir -p ~/.config/systemd/user
@@ -174,8 +176,10 @@ systemctl --user daemon-reload
 systemctl --user enable --now frogdash-kiosk
 ```
 
-Adjust `/usr/bin/chromium` if the distribution uses a different executable and
-configure graphical autologin/session startup separately. The existing shutdown
+The readiness launcher discovers `chromium` or `chromium-browser` and waits for
+local HTTP before opening it. Use a service override with launcher `--browser`
+for a different executable. Configure graphical autologin/session startup
+separately for this desktop option. The existing shutdown
 workflow can stop the user's kiosk and then `sudo systemctl stop frogdash` before
 poweroff. No replacement power controller or shutdown script is introduced.
 

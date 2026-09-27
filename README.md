@@ -4,6 +4,11 @@ A Raspberry Pi instrument cluster for a Foxbody Mustang, designed for a 1920 × 
 
 **Start here:** [CAN + USB GPS installation](docs/can-integration.md) and [water/meth, knock, and lighting controls](docs/controls.md). Desktop tests cover the integration; Raspberry Pi and vehicle validation are still pending.
 
+For a console Linux installation, see [console kiosk and boot timing](docs/boot-and-kiosk.md).
+The optional Cage service starts a minimal UI session and opens Chromium as soon
+as the local backend is ready, without waiting for CAN, GPS fix or Wi-Fi.
+Physical key-on startup time has not yet been measured.
+
 ## Driver display
 
 - Large, bold GPS speed and arc tachometer, with a quiet dark background and mint accents.

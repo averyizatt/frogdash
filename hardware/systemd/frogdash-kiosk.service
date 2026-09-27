@@ -5,7 +5,7 @@ After=graphical-session.target
 PartOf=graphical-session.target
 
 [Service]
-ExecStart=/usr/bin/chromium --kiosk --no-first-run --disable-session-crashed-bubble http://127.0.0.1:8080/
+ExecStart=/usr/bin/python3 /opt/frogdash/tools/launch_kiosk.py
 Restart=always
 RestartSec=3
 
