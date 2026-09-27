@@ -59,7 +59,7 @@ actual fuel used / estimated fuel used for comparable, completely recorded trips
 
 ## Fuel amount and range
 
-Until the optional ADC sender is commissioned, use **Set amount** to enter
+Until CAN fuel level is available, use **Set amount** to enter
 the total fuel currently in the tank, or **Tank is full** after filling it.
 This is an absolute amount, not fuel added. The service subtracts estimated use.
 It never presents this inventory as a measured fuel-level percentage.
@@ -67,8 +67,8 @@ It never presents this inventory as a measured fuel-level percentage.
 After a service restart, a sampling gap above one second, or missing required
 fuel telemetry while the engine could be running, the manual inventory must be
 reconfirmed. The last tracked amount is shown as a reference, but range stays
-unavailable. The [ADS1115 sender](ownership-and-service.md) supplies calibrated `vehicle.fuel_pct`
-and takes priority when fresh; no sender CAN frame is invented.
+unavailable. The [external fuel controller](fuel-can.md) supplies `vehicle.fuel_pct` over CAN
+and takes priority when fresh. Calibration and filtering live on the controller.
 
 Range = max(0, remaining litres − reserve litres) / learned litres per km.
 Learning requires at least 1 km (0.62 mi) and 0.02 L of paired fresh speed/fuel

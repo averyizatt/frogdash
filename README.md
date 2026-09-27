@@ -17,7 +17,7 @@ Physical key-on startup time has not yet been measured.
 - Taillight turn, brake, running, and reverse inputs; module connection health.
 - Water/meth summary opens its controls directly. Separate tabs for injection, knock settings, and lighting.
 - Knock history graph, searchable sensor readings, connection details, and raw CAN traffic.
-- Explicit stale, fault, and unavailable states. Fuel remains unavailable until its optional ADC interface is commissioned.
+- Explicit stale, fault, and unavailable states. Fuel level arrives from the external controller over CAN.
 
 See [UI design and gauge behavior](docs/ui-design.md) for display scales and review details.
 
@@ -52,12 +52,12 @@ and its GPIO assignments stay separate.
 [Screen speakers](docs/screen-audio.md) support warning chimes through Linux audio,
 with saved display volume, a test sound and automatic activation in the kiosk.
 
-[Dash management](docs/ownership-and-service.md) adds a setup checklist, optional
-16-ohm-empty / 158-ohm-full ADS1115 fuel input, portable backup/restore, service
+[Dash management](docs/ownership-and-service.md) adds a setup checklist,
+CAN fuel-level status, portable backup/restore, service
 reminders/history, diagnostic exports, US/metric instruments, supported LCD
 backlight control, parked configuration gates, watchdog recovery and versioned
-installation/rollback. Open **Drive > Dash management**. Physical ADC wiring and
-vehicle commissioning still need confirmation; no power/shutdown changes are made.
+installation/rollback. Open **Drive > Dash management**. The [external fuel controller](docs/fuel-can.md) owns sender calibration;
+vehicle commissioning remains pending; no power/shutdown changes are made.
 
 ## Browser preview
 
@@ -108,4 +108,4 @@ python tests/browser_operations.py
 
 The browser check saves screenshots in `.tmp/` and exercises live telemetry, command acknowledgements, stopping pump tests, reconnects, dialog navigation, warnings, offline states, and the isolated design preview.
 
-Vehicle commissioning still requires confirming controller firmware ownership, the ADC/sender interface, and the display on the actual Pi. The [original phase plan](docs/phase-2-plan.md) is retained for reference.
+Vehicle commissioning still requires confirming controller firmware ownership, the external fuel-controller CAN format, and the display on the actual Pi. The [original phase plan](docs/phase-2-plan.md) is retained for reference.

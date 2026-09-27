@@ -29,14 +29,11 @@ async def preview(browser):
     await page.wait_for_function("document.getElementById('speed-digits').textContent === '47'")
     await page.locator('#drive-launch').click()
     await page.locator('#operations-launch').click()
-    await page.locator('[data-ops-tab="sender"]').click()
-    assert await page.locator('#sender-form').evaluate('(n) => n.inert')
+    assert await page.locator('[data-ops-tab="sender"], #sender-form').count() == 0
+    await page.locator('[data-ops-tab="service"]').click()
+    assert await page.locator('#maintenance-form').evaluate('(n) => n.inert')
     await page.locator('#demo-park').click()
-    await page.wait_for_function("!document.getElementById('sender-form').inert")
-    assert await page.locator('#sender-empty').input_value() == '16'
-    assert await page.locator('#sender-full').input_value() == '158'
-    assert await page.locator('#sender-pullup').input_value() == '100'
-    assert not await page.locator('#sender-enabled').is_checked()
+    await page.wait_for_function("!document.getElementById('maintenance-form').inert")
     await page.locator('[data-ops-tab="display"]').click()
     await page.locator('#units-system').select_option('metric')
     await page.locator('#operations-close').click()
@@ -59,6 +56,7 @@ async def live(browser):
         state = State(clock=lambda: 0)
         state.connected = True
         state.samples['ecu.rpm', 1520] = dict(value=0, quality='live', seen=0, source_id=1520, timestamp_ms=0)
+        state.ingest(0x204, bytes.fromhex('01F401'))
         state.operations = Operations(state, path)
         state.trip = Trip(state, path / 'trip.json')
         state.driving = Driving(state, path)
@@ -71,6 +69,11 @@ async def live(browser):
         page.on('pageerror', lambda e: errors.append(str(e)))
         try:
             await page.goto(f'http://127.0.0.1:{site._server.sockets[0].getsockname()[1]}/?kiosk=' + 'f' * 32)
+            await page.wait_for_function("document.getElementById('fuel-val').textContent === '50'")
+            state.ingest(0x204, bytes.fromhex('000002'))
+            await page.wait_for_function("document.querySelector('[data-signal=\"vehicle.fuel_pct\"]').dataset.quality === 'fault'")
+            assert await page.locator('#fuel-val').inner_text() != '0'
+            state.ingest(0x204, bytes.fromhex('01F401'))
             await page.locator('#drive-launch').click()
             await page.locator('#operations-launch').click()
             await page.locator('[data-ops-tab="service"]').click()
@@ -94,8 +97,8 @@ async def live(browser):
                 await page.locator('#backup-download').click()
             await (await event.value).save_as(path / 'backup.json')
             backup = json.loads((path / 'backup.json').read_text())
-            assert backup['sender']['points'] == [[16, 0], [158, 100]]
-            assert backup['sender']['pullup_ohms'] == 100
+            assert 'sender' not in backup
+            assert backup['version'] == 2
             assert backup['trip']['settings']['capacity_l'] == 15.4 * 3.785411784
             state.operations.data['maintenance'].clear()
             await page.locator('#backup-file').set_input_files(path / 'backup.json')
@@ -120,7 +123,7 @@ async def main(path):
             await live(browser)
         finally:
             await browser.close()
-    print('Management: parked locks, sender defaults, metric conversion, maintenance/history, diagnostics, backup/restore and render heartbeat passed.')
+    print('Management: parked locks, CAN fuel display, metric conversion, maintenance/history, diagnostics, backup/restore and render heartbeat passed.')
 
 
 if __name__ == '__main__':

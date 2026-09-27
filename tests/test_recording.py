@@ -33,6 +33,19 @@ def read(path):
 
 
 class MLGTests(unittest.TestCase):
+    def test_can_fuel_level_logs_quality_without_local_resistance(self):
+        state = State(clock=lambda: 0)
+        state.connected = True
+        state.ingest(0x204, bytes.fromhex('01F401'))
+        values = dict(zip((f.name for f in FIELDS), row_values(state.snapshot(), 0)))
+        self.assertEqual(values['vehicle.fuel_pct'], 50)
+        self.assertEqual(values['Q vehicle.fuel_pct'], 1)
+        self.assertNotIn('fuel.sender_ohms', {c.key for c in CHANNELS})
+        state.ingest(0x204, bytes.fromhex('000002'))
+        values = dict(zip((f.name for f in FIELDS), row_values(state.snapshot(), 0)))
+        self.assertTrue(math.isnan(values['vehicle.fuel_pct']))
+        self.assertEqual(values['Q vehicle.fuel_pct'], 3)
+
     def test_documented_wire_vector_and_256_counter_wrap(self):
         encoder = Encoder([Field('Time', 's')], 0)
         self.assertEqual(encoder.header[:24], struct.pack('>6sHIIIHH', b'MLVLG\0', 2, 0, 113, 122, 4, 1))

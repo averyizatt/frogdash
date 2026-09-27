@@ -77,11 +77,11 @@ class TripTests(unittest.TestCase):
         self.assertEqual(self.trip.counters['total']['km'], total)
         with self.assertRaises(ValueError): self.trip.reset('total')
 
-    def test_sender_priority_and_reserve_floor_and_stale_sampler(self):
+    def test_can_level_priority_and_reserve_floor_and_stale_sampler(self):
         for t in range(61): self.sample(t)
         self.trip.set_fuel(40)
         self.sample(61, **{'vehicle.fuel_pct': 1})
-        self.assertEqual(self.trip.snapshot()['fuel_source'], 'Calibrated fuel sender')
+        self.assertEqual(self.trip.snapshot()['fuel_source'], 'CAN fuel level')
         self.assertEqual(self.trip.snapshot()['range_km'], 0)
         self.sample(62, **{'vehicle.fuel_pct': None})
         self.assertTrue(self.trip.snapshot()['fuel_source'].startswith('Manual'))

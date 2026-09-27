@@ -10,7 +10,6 @@ import sys
 from uuid import uuid4
 
 from .driving import atomic_write, validate_settings
-from .fuel import validate as validate_sender
 from .parking import parked, require_parked
 from .trip import validate as validate_trip, bucket, number
 from .race import Race
@@ -109,8 +108,7 @@ class Operations:
                     capabilities=[
                         dict(module='Water / meth', command='Acknowledged by 0x30A', readback='Live mode/duty/faults', persistence='Not guaranteed by current firmware'),
                         dict(module='Knock', command='Acknowledged by 0x30A', readback='Configuration refresh supported', persistence='Not guaranteed by current firmware'),
-                        dict(module='Taillights', command='Sent only; no ACK defined', readback='Lighting state and brightness telemetry', persistence='Not confirmed'),
-                        dict(module='Fuel sender', command='Local read-only ADC', readback=self.state.fuel.snapshot()['message'], persistence='Calibration stored on Pi')])
+                        dict(module='Taillights', command='Sent only; no ACK defined', readback='Lighting state and brightness telemetry', persistence='Not confirmed')])
 
     async def change(self, body):
         require_parked(self.state)
@@ -159,21 +157,28 @@ class Operations:
 
     def backup(self, ui=None):
         trip = self.state.trip
-        return deepcopy(dict(format='frogdash-backup', version=1, software=VERSION,
+        return deepcopy(dict(format='frogdash-backup', version=2, software=VERSION,
              created_ms=int(self.state.wall() * 1000), operations={**self.data, 'ui': validate_ui(ui) if ui is not None else self.data['ui']},
-             alerts=self.state.driving.settings, sender=self.state.fuel.settings,
+             alerts=self.state.driving.settings,
              trip=dict(settings=trip.settings, counters=trip.counters, learned=trip.learned, manual_l=trip.manual_l),
              race=dict(gate=self.state.race.gate, history=self.state.race.history)))
 
     def validate_backup(self, data):
-        if not isinstance(data, dict) or set(data) != {'format', 'version', 'software', 'created_ms', 'operations', 'alerts', 'sender', 'trip', 'race'} or data['format'] != 'frogdash-backup' or data['version'] != 1:
+        keys = {'format', 'version', 'software', 'created_ms', 'operations', 'alerts', 'trip', 'race'}
+        if not isinstance(data, dict) or data.get('format') != 'frogdash-backup':
+            raise ValueError('Unsupported Frogdash backup')
+        # Version 1 included the removed local ADC. Discard its settings even if
+        # enabled, including when replaying an interrupted legacy restore journal.
+        expected = keys | {'sender'} if data.get('version') == 1 else keys
+        if type(data.get('version')) is not int or data['version'] not in (1, 2) or set(data) != expected:
             raise ValueError('Unsupported Frogdash backup')
         if len(json.dumps(data, allow_nan=False)) > 6000000:
             raise ValueError('Backup too large')
         result = deepcopy(data)
         result['operations'] = validate_ops(data['operations'])
         result['alerts'] = validate_settings(data['alerts'])
-        result['sender'] = validate_sender(data['sender'])
+        result.pop('sender', None)
+        result['version'] = 2
         trip = result['trip']
         if not isinstance(trip, dict) or set(trip) != {'settings', 'counters', 'learned', 'manual_l'}:
             raise ValueError('Invalid trip backup')
@@ -213,7 +218,6 @@ class Operations:
             try:
                 self.data = data['operations']
                 self.state.driving.configure(data['alerts'])
-                self.state.fuel.configure(data['sender'])
                 trip = self.state.trip
                 trip.configure(data['trip']['settings'])
                 trip.counters = data['trip']['counters']
@@ -229,8 +233,6 @@ class Operations:
                 await self.state.driving.save(force=True)
                 if trip.error or self.state.driving.settings_error:
                     raise OSError('Could not persist restored settings')
-                if self.directory:
-                    await asyncio.to_thread(atomic_write, self.directory / 'sender.json', data['sender'])
                 async with self.state.race.save_lock:
                     if self.state.race.path:
                         await asyncio.to_thread(atomic_write, self.state.race.path, dict(version=1, **data['race']))
@@ -256,7 +258,7 @@ class Operations:
         return dict(format='frogdash-diagnostics', version=1, timestamp=datetime.now(timezone.utc).isoformat(),
                     software=self.status(), transport=snapshot['transport'], modules=snapshot['modules'],
                     health=snapshot['system'], gps=snapshot['gps'], recording=snapshot['recording'], can_errors=snapshot['can_errors'],
-                    sender=self.state.fuel.snapshot(), trip_quality={k: snapshot['trip'][k] for k in ('gps_live', 'fuel_live', 'fuel_source', 'error')},
+                    trip_quality={k: snapshot['trip'][k] for k in ('gps_live', 'fuel_live', 'fuel_source', 'error')},
                     signal_quality={k: v['quality'] for k, v in snapshot['values'].items()},
                     controller_capabilities=self.status()['capabilities'], recent_controller_result=self.state.controls.last,
                     alert_settings=self.state.driving.settings, fuel_estimate_settings=self.state.trip.settings,

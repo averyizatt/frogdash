@@ -182,7 +182,7 @@ class Trip:
         remaining = None
         source = 'No fuel amount'
         if p['capacity_l'] > 0 and level is not None:
-            remaining, source = level * p['capacity_l'] / 100, 'Calibrated fuel sender'
+            remaining, source = level * p['capacity_l'] / 100, 'CAN fuel level'
         elif self.manual_valid and fresh:
             remaining, source = self.manual_l, 'Manual amount minus estimated use'
         elif self.manual_l is not None:

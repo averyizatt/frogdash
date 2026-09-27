@@ -109,8 +109,8 @@ protocol meaning; they are not evidence that a fault is currently active.
 This is a sampled log of what reaches Frogdash, not a complete serial ECU capture
 or raw CAN dump. A 20 Hz recorder does not create 20 Hz sensor updates. Fields
 available only over TunerStudio's serial protocol are not fabricated, and this file
-does not embed your MSQ/tune. Fuel level remains unavailable until its optional ADC sender
-is commissioned. F32 measurements have normal float precision; GPS coordinates
+does not embed your MSQ/tune. Fuel level remains unavailable until the external controller sends a valid
+[CAN fuel percentage](fuel-can.md). F32 measurements have normal float precision; GPS coordinates
 are approximately meter-resolution. Raw CAN diagnostics remain available through
 the existing inspector, but raw frame traffic is not stored in this MLG file.
 
@@ -135,7 +135,7 @@ fuel flow/inventory/range, and instant/average US MPG to new files. Fuel values
 require calibration and remain explicitly estimates; unavailable values use
 NaN and their quality flag. Older files retain their own embedded field schema.
 
-[Fuel sender support](ownership-and-service.md) adds schema-5 resistance in ohms
-and its quality flag. Valid calibrated ADC readings supply Fuel Level; faults and
-stale readings retain NaN/quality semantics. Display unit selection does not change
-recorded channel units.
+[CAN fuel level](fuel-can.md) uses schema 6: percentage, controller status and
+quality fields. The local resistance channel from schema 5 is removed from new
+files; older recordings retain their embedded schema. Faults and stale readings
+retain NaN/quality semantics. Display unit selection does not change recorded units.

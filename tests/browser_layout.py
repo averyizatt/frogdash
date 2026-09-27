@@ -74,7 +74,7 @@ async def main(browser_path=None, url=None):
                 if (width, height) in ((1980, 720), (1280, 480)):
                     await page.screenshot(path=str(ROOT / '.tmp' / f'menu-drive-{tab}-{width}x{height}.png'))
             await page.locator('#operations-launch').click()
-            for tab in ('setup', 'sender', 'service', 'backup', 'display', 'support'):
+            for tab in ('setup', 'service', 'backup', 'display', 'support'):
                 await page.locator(f'[data-ops-tab="{tab}"]').click()
                 await inspect(page, '#operations-dialog')
                 if (width, height) == (1980, 720):
@@ -100,7 +100,7 @@ async def main(browser_path=None, url=None):
                 assert await page.locator(f'#{launch}').evaluate('(el) => document.activeElement === el')
         assert not errors, errors
         await browser.close()
-    print('All 21 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
+    print('All 20 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
 
 
 if __name__ == '__main__':

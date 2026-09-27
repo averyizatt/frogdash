@@ -17,7 +17,6 @@ from .driving import Driving
 from .health import Health
 from .trip import Trip
 from .operations import Operations
-from .driving import atomic_write
 from .parking import require_parked
 from .backlight import Backlight
 from .supervision import watchdog
@@ -30,7 +29,7 @@ def create_app(state, adapter=None, connectivity=None):
     async def recovery_guard(request, handler):
         if request.method == 'POST' and state.operations.restoring:
             raise web.HTTPServiceUnavailable(text='Restore recovery pending; restart service to finish')
-        if request.method == 'POST' and request.path not in {'/operations/settings', '/operations/restore', '/operations/sender'}:
+        if request.method == 'POST' and request.path not in {'/operations/settings', '/operations/restore'}:
             async with state.operations.lock:
                 if state.operations.restoring:
                     raise web.HTTPServiceUnavailable(text='Restore recovery pending; restart service to finish')
@@ -42,7 +41,6 @@ def create_app(state, adapter=None, connectivity=None):
     async def lifecycle(app):
         await state.operations.recover()
         notify_task = asyncio.create_task(watchdog())
-        fuel_task = asyncio.create_task(state.fuel.run())
         tasks = [asyncio.create_task(adapter())] if adapter else []
         race_task = asyncio.create_task(state.race.run())
         drive_task = asyncio.create_task(state.driving.run())
@@ -59,8 +57,6 @@ def create_app(state, adapter=None, connectivity=None):
         notify_task.cancel()
         with suppress(asyncio.CancelledError):
             await notify_task
-        state.fuel.stopping = True
-        await fuel_task
         await state.controls.close()
         if connectivity:
             await connectivity.close()
@@ -290,20 +286,6 @@ def create_app(state, adapter=None, connectivity=None):
             if action == 'settings' and request.method == 'POST':
                 await state.operations.change(await request.json())
                 return web.json_response(state.operations.status())
-            if action == 'sender' and request.method == 'POST':
-                require_parked(state)
-                if state.operations.restoring:
-                    raise ValueError('Restore recovery pending')
-                from .fuel import validate
-                settings = validate(await request.json())
-                async with state.operations.lock:
-                    require_parked(state)
-                    if state.operations.restoring:
-                        raise ValueError('Restore recovery pending')
-                    if state.operations.directory:
-                        await asyncio.to_thread(atomic_write, state.operations.directory / 'sender.json', settings)
-                    state.fuel.configure(settings)
-                return web.json_response(state.fuel.snapshot())
             if action == 'backlight' and request.method == 'POST':
                 body = await request.json()
                 if not isinstance(body, dict) or set(body) != {'percent'}:
@@ -379,12 +361,6 @@ def main():
     state.driving = Driving(state, args.data_dir / 'replay' if args.replay else args.data_dir)
     state.trip = Trip(state, (args.data_dir / 'replay' if args.replay else args.data_dir) / 'trip.json')
     state.operations = Operations(state, args.data_dir / 'replay' if args.replay else args.data_dir)
-    sender_file = state.operations.directory / 'sender.json'
-    if sender_file.exists() and not args.replay:
-        try:
-            state.fuel.configure(json.loads(sender_file.read_text()))
-        except (OSError, ValueError, TypeError):
-            state.operations.error = 'Sender configuration could not be loaded; input disabled'
     state.backlight = Backlight(args.backlight_name)
     state.health = Health(state, args.interface, args.log_dir or args.data_dir)
     if args.log_dir:

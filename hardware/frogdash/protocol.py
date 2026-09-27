@@ -14,11 +14,11 @@ class Signal:
     quality: str = "live"
 
 
-LENGTHS = {0x100: 7, 0x102: 4, 0x200: 8, 0x202: 8, 0x203: 8,
+LENGTHS = {0x100: 7, 0x102: 4, 0x200: 8, 0x202: 8, 0x203: 8, 0x204: 3,
            0x300: 8, 0x302: 4, 0x303: 8, 0x304: 8, 0x305: 1,
            0x306: 4, 0x307: 8, 0x308: 4, 0x309: 4, 0x30A: 4,
            0x30B: 8, 0x30C: 8, 0x30D: 8}
-TIMEOUTS = {0x100: .5, 0x200: 1.5, 0x202: .5, 0x203: 2,
+TIMEOUTS = {0x100: .5, 0x200: 1.5, 0x202: .5, 0x203: 2, 0x204: 2,
             0x300: .5, 0x303: 1.5, 0x304: 3, 0x307: .5,
             0x309: .5, 0x30B: 1, 0x30C: 5, 0x30D: 5}
 EVENT_IDS = {0x102, 0x302, 0x308, 0x305, 0x306, 0x30A}
@@ -80,6 +80,12 @@ def decode(can_id, data):
         put("vehicle.speed_kph", u(0) / 10, q)
         put("gps.altitude_m", s(2), q)
         fields("gps", "satellites fix_type status_flags satellites_in_view", d[4:])
+    elif can_id == 0x204:
+        # Frogdash fuel-controller contract; docs/fuel-can.md. Calibration,
+        # resistance conversion and slosh filtering belong to the transmitter.
+        q = 'unavailable' if d[2] == 0 else 'live' if d[2] == 1 and u(0) <= 1000 else 'fault'
+        put('vehicle.fuel_pct', u(0) / 10 if q == 'live' else None, q)
+        put('fuel.level_status', d[2])
     elif can_id == 0x300:
         enum("meth.state", d[0], "OFF ARMED SPRAYING FAULT TEST")
         for key, value in (("meth.duty_pct", d[1]), ("meth.tank_pct", d[2])):

@@ -115,6 +115,10 @@ The decoder was checked against these exact source revisions:
 | 5E8–5EC | MicroSquirt simplified dash broadcast |
 | 5F0–62F and 700–73F | MicroSquirt realtime groups supported by the CCM decoder; other groups remain raw |
 
+The new external [fuel-controller contract](fuel-can.md) adds standard ID
+**0x204, DLC 3** for percentage and validity. It must be implemented by that
+controller; it is not part of the imported firmware revisions above.
+
 IDs above are hexadecimal. Known frames require their documented DLC.
 Every decoded field is available in **CAN / SENSORS**, even when it has no
 dedicated main gauge. Fault events are a bounded history (100), not assumed
@@ -137,9 +141,9 @@ Key compatibility details:
 - RPM prefers fresh ECU data, then a valid physical/CAN tach source. TEST/DEMO
   tach sources are unavailable. Each field expires from its own source frame.
 - EGO displays ECU correction minus 100%; 100% correction displays as 0%.
-- **Fuel level, high beam, and oil temperature remain unavailable** because no
-  confirmed CAN signal is defined. Fuel pressure is not fuel level. When the fuel
-  sender exists, define its ID, bytes, units, validity, and period before binding it.
+- **High beam and oil temperature remain unavailable** because no confirmed CAN
+  signal is defined. Fuel pressure is not fuel level. Fuel level uses the new
+  [external-controller contract](fuel-can.md) and stays unavailable until received.
 
 No CAN IDs for the car's unrelated OEM traffic are guessed. The receiver can show
 that traffic raw; additional gauges require a documented matching decoder.

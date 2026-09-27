@@ -4,12 +4,10 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch, Mock
-from types import SimpleNamespace
+from unittest.mock import patch
 
 from aiohttp.test_utils import TestClient, TestServer
 from hardware.frogdash.state import State
-from hardware.frogdash.fuel import DEFAULTS, validate, resistance, percentage, read_ads1115
 from hardware.frogdash.operations import Operations
 from hardware.frogdash.parking import parked
 from hardware.frogdash.server import create_app
@@ -26,55 +24,7 @@ def stationary(state):
     state.samples['ecu.rpm', 1520] = dict(value=0, quality='live', seen=state.clock(), timestamp_ms=0, source_id=1520)
 
 
-class SenderTests(unittest.TestCase):
-    def test_linux_adc_register_configuration_and_signed_conversion(self):
-        fcntl = SimpleNamespace(ioctl=Mock())
-        with patch.dict('sys.modules', {'fcntl': fcntl}), patch('hardware.frogdash.fuel.os.open', return_value=42), \
-                patch('hardware.frogdash.fuel.os.close') as close, patch('hardware.frogdash.fuel.os.write') as write, \
-                patch('hardware.frogdash.fuel.os.read', side_effect=[b'\x80\0', b'\xff\xff', b'\x80\0', b'\x67\x20']):
-            voltage, supply = read_ads1115(1, 72)
-        self.assertAlmostEqual(voltage, -.000125)
-        self.assertAlmostEqual(supply, 3.3)
-        self.assertIn(((42, b'\x01\xc3\x83'),), write.call_args_list)
-        self.assertIn(((42, b'\x01\xd3\x83'),), write.call_args_list)
-        fcntl.ioctl.assert_called_once_with(42, 0x0703, 72)
-        close.assert_called_once_with(42)
-
-    def test_resistance_endpoints_supply_compensation_and_tank_curve(self):
-        for supply in (3, 3.3, 3.5):
-            for ohms, percent in ((16, 0), (87, 50), (158, 100)):
-                reading = resistance(supply * ohms / (100 + ohms), supply, 100)
-                self.assertAlmostEqual(reading, ohms)
-                self.assertAlmostEqual(percentage(reading, DEFAULTS['points']), percent)
-        self.assertEqual(percentage(87, [[16, 0], [87, 30], [158, 100]]), 30)
-        for voltage, supply in ((0, 3.3), (3.3, 3.3), (1, 5), (float('nan'), 3.3)):
-            with self.assertRaises(ValueError): resistance(voltage, supply, 100)
-        for points in ([[158, 0], [16, 100]], [[16, 5], [158, 100]], [[16, 0], [20, 60], [30, 40], [158, 100]]):
-            with self.assertRaises(ValueError): validate({**DEFAULTS, 'points': points})
-
-    def test_smoothing_fault_staleness_and_reconfiguration(self):
-        now = [0.]
-        state = State(clock=lambda: now[0])
-        sender = state.fuel
-        self.assertEqual(sender.values(), {})
-        sender.configure({**DEFAULTS, 'enabled': True})
-        sender.feed(3.3 * 16 / 116, 3.3)
-        self.assertAlmostEqual(sender.ohms, 16)
-        self.assertAlmostEqual(sender.level, 0)
-        now[0] = .5
-        sender.feed(3.3 * 158 / 258, 3.3)
-        self.assertAlmostEqual(sender.ohms, 158)
-        self.assertGreater(sender.level, 0)
-        self.assertLess(sender.level, 10)
-        self.assertEqual(state.snapshot()['values']['vehicle.fuel_pct']['quality'], 'live')
-        now[0] = 4
-        self.assertEqual(sender.values()['vehicle.fuel_pct']['quality'], 'stale')
-        sender.feed(0, 3.3)
-        self.assertIsNone(sender.level)
-        self.assertEqual(sender.snapshot()['quality'], 'fault')
-        sender.configure(DEFAULTS)
-        self.assertEqual(sender.values(), {})
-
+class PlatformTests(unittest.TestCase):
     def test_parking_rejects_motion_even_with_engine_off_and_stale_data(self):
         state = State(clock=lambda: 1)
         self.assertFalse(parked(state))
@@ -140,8 +90,36 @@ class OperationsTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(Trip(state, path / 'trip.json').counters, state.trip.counters)
             self.assertEqual(Operations(state, path).data, ops.data)
             report = ops.diagnostic()
-            self.assertIn('sender', report)
+            self.assertNotIn('sender', report)
+            self.assertNotIn('sender', backup)
+            self.assertEqual(backup['version'], 2)
+            self.assertFalse(hasattr(state, 'fuel'))
             self.assertNotIn('raw', report)
+
+    async def test_legacy_backups_and_recovery_discard_local_sender_settings(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state = State(clock=lambda: 0); stationary(state)
+            ops = state.operations = Operations(state, directory)
+            legacy = ops.backup()
+            legacy['version'] = 1
+            legacy['sender'] = {'enabled': True, 'bus': 1, 'address': 72}
+            legacy['operations']['ui'] = {'frogdash.units.v1': {'system': 'metric'}}
+            legacy['trip']['counters']['a']['km'] = 123
+            await ops.restore(legacy)
+            self.assertEqual(state.trip.counters['a']['km'], 123)
+            self.assertEqual(ops.data['ui']['frogdash.units.v1']['system'], 'metric')
+            self.assertNotIn('sender', ops.backup())
+            self.assertFalse((Path(directory) / 'sender.json').exists())
+            # An upgrade can encounter an interrupted version-1 restore.
+            legacy['trip']['counters']['a']['km'] = 456
+            journal = Path(directory) / 'restore-pending.json'
+            journal.write_text(json.dumps(legacy))
+            await ops.recover()
+            self.assertEqual(state.trip.counters['a']['km'], 456)
+            self.assertFalse(journal.exists())
+            self.assertFalse(hasattr(state, 'fuel'))
+            malformed = {**legacy, 'version': 2}
+            with self.assertRaises(ValueError): ops.validate_backup(malformed)
 
     async def test_interrupted_restore_has_recovery_journal_and_replays(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -160,9 +138,9 @@ class OperationsTests(unittest.IsolatedAsyncioTestCase):
     async def test_local_api_motion_gate_report_and_heartbeat(self):
         state = State(clock=lambda: 0)
         async with TestClient(TestServer(create_app(state))) as client:
-            self.assertEqual((await client.post('/operations/sender', json=DEFAULTS)).status, 400)
+            self.assertEqual((await client.post('/operations/sender', json={'enabled': True})).status, 404)
             stationary(state)
-            self.assertEqual((await client.post('/operations/sender', json=DEFAULTS)).status, 200)
+            self.assertEqual((await client.post('/operations/sender', json={'enabled': True})).status, 404)
             self.assertEqual((await client.post('/operations/settings', json={'check': 'boot'})).status, 200)
             self.assertEqual((await client.get('/operations/diagnostic')).status, 200)
             self.assertEqual((await client.post('/operations/settings', json={'check': 'crank'}, headers={'Origin': 'https://evil.example'})).status, 403)

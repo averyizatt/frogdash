@@ -55,6 +55,17 @@ class ProtocolTests(unittest.TestCase):
             self.assertAlmostEqual(d['ecu.iat_c'].value, (-10 - 32) * 5 / 9)
         self.assertEqual(decode(0x5EA, bytes.fromhex('937C03E800000000'))['ecu.ego_correction_pct'].value, 100)
 
+    def test_fuel_controller_percentage_and_invalid_reports(self):
+        for raw, pct in ((0, 0), (1, .1), (500, 50), (1000, 100)):
+            d = decode(0x204, raw.to_bytes(2, 'big') + b'\x01')
+            self.assertEqual(d['vehicle.fuel_pct'].value, pct)
+            self.assertEqual(d['vehicle.fuel_pct'].quality, 'live')
+        for frame, quality in [('FFFF00', 'unavailable'), ('000002', 'fault'),
+                               ('01F403', 'fault'), ('03E901', 'fault'), ('FFFF01', 'fault')]:
+            sample = decode(0x204, bytes.fromhex(frame))['vehicle.fuel_pct']
+            self.assertEqual(sample.quality, quality)
+            self.assertIsNone(sample.value)
+
     def test_kernel_frame_flags(self):
         frame = unpack_frame(CAN_FRAME.pack(0x80000100, 7, bytes(8)))
         self.assertEqual(frame, (0x100, bytes(7), True, False, False))
@@ -107,6 +118,25 @@ class FreshnessTests(unittest.TestCase):
         for _ in range(110):
             self.state.ingest(0x308, bytes([1, 2, 3, 4]))
         self.assertEqual(len(self.state.events), 100)
+
+    def test_fuel_can_freshness_fault_and_recovery(self):
+        self.state.ingest(0x204, bytes.fromhex('01F401'))
+        self.assertEqual(self.values()['vehicle.fuel_pct']['value'], 50)
+        self.now = 2.1
+        self.state.ingest(0x200, bytes(8))
+        self.assertEqual(self.values()['vehicle.fuel_pct']['quality'], 'stale')
+        self.state.ingest(0x204, bytes.fromhex('01F401'))
+        self.state.ingest(0x204, bytes.fromhex('01F4'))
+        self.assertEqual(self.values()['vehicle.fuel_pct']['quality'], 'fault')
+        self.state.ingest(0x204, bytes.fromhex('03E801'))
+        self.assertEqual(self.values()['vehicle.fuel_pct']['value'], 100)
+        self.state.trip.sample(self.state.snapshot())
+        self.assertAlmostEqual(self.state.trip.snapshot()['remaining_l'], self.state.trip.settings['capacity_l'])
+        self.assertEqual(self.state.trip.snapshot()['fuel_source'], 'CAN fuel level')
+        self.state.connected = False
+        self.assertEqual(self.values()['vehicle.fuel_pct']['quality'], 'stale')
+        self.state.trip.sample(self.state.snapshot())
+        self.assertIsNone(self.state.trip.snapshot()['remaining_l'])
 
     def test_ecu_priority_and_fallback(self):
         self.state.ingest(0x5E8, bytes.fromhex('03840D7A08020000'))

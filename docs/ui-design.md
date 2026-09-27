@@ -29,7 +29,7 @@ appearance preferences load without losing saved images or splash settings.
 | Oil / fuel pressure | 0–100 psi scales. |
 | Intake air | 0–200 °F scale. |
 | Battery | 10–16 V scale. |
-| Fuel | 0–100%; unavailable until a sender protocol is defined. |
+| Fuel | 0–100%; external CAN percentage; unavailable until a valid report arrives. |
 
 Bars clamp to their drawn scales; live numeric readings retain their measured values. Scales are visual references, not new control thresholds. The UI never assumes that an AFR of 14.7 is the requested ECU target. Pressure, voltage, and fuel cards do not invent fault thresholds.
 

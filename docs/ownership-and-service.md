@@ -1,53 +1,32 @@
 # Setup, ownership and service (0.4)
 
-Open **Drive → Dash management** on the Pi or the matching preview. The six panels stay within the scaled 1920×720 frame, including on a 1980×720 display.
+Open **Drive → Dash management** on the Pi or the matching preview. The five panels stay within the scaled 1920×720 frame, including on a 1980×720 display.
 
 ## Commissioning
 
-The setup checklist reports platform, CAN connection, GPS speed freshness, module presence, display dimensions, sender configuration and injector-estimate readiness. It links to calibration and vehicle acceptance checks. Live data does not establish wiring correctness or sensor accuracy; the final physical checks remain manual.
+The setup checklist reports platform, CAN connection, GPS speed freshness, module presence, display dimensions, CAN fuel quality and injector-estimate readiness. It links to vehicle acceptance checks. Live data does not establish wiring correctness or sensor accuracy; the final physical checks remain manual.
 
-The current vehicle defaults are a **15.4 US gallon** tank and **four 440 cc/min injectors**, two alternating squirts per four-stroke cycle (**0.5 pulses per injector per crank revolution**). Injector fuel-use estimation stays disabled until effective dead time and PW1/PW2 bank assignment are verified. A valid fuel sender supplies remaining fuel independently; range still requires learned, calibrated consumption data.
+The current vehicle defaults are a **15.4 US gallon** tank and **four 440 cc/min injectors**, two alternating squirts per four-stroke cycle (**0.5 pulses per injector per crank revolution**). Injector fuel-use estimation stays disabled until effective dead time and PW1/PW2 bank assignment are verified. A valid CAN fuel percentage supplies remaining fuel independently; range still requires learned, calibrated consumption data.
 
-Configuration forms, sender calibration, alert/fuel calibration, profile restore and pump tests require fresh stationary telemetry. Stationary means valid speed below 1 km/h, or fresh zero RPM when speed is unavailable. A live moving speed overrides zero RPM. Missing data never grants permission. Viewing remains available. Pump tests stop when stationary confirmation is lost. Controller protection remains in the module firmware; stop/disarm stays available when CAN is connected.
+Configuration forms, alert/fuel estimate calibration, profile restore and pump tests require fresh stationary telemetry. Stationary means valid speed below 1 km/h, or fresh zero RPM when speed is unavailable. A live moving speed overrides zero RPM. Missing data never grants permission. Viewing remains available. Pump tests stop when stationary confirmation is lost. Controller protection remains in the module firmware; stop/disarm stays available when CAN is connected.
 
-## Fuel sender input: hardware confirmation pending
+## External fuel controller
 
-Configured endpoints: **16 Ω empty; 158 Ω full**. Raspberry Pi GPIO has no general-purpose analog resistance input. Do not connect a tank sender directly to GPIO, and do not parallel an existing gauge circuit with a new pull-up.
-
-The optional implementation supports an **ADS1115** over Linux `/dev/i2c-*`, without a GPIO library. It is disabled by default. Confirm the ADC board and whether the sender is dedicated or shared before selecting a vehicle interface circuit. Automotive supply/transient protection, ground offsets and wire-fault behavior need an appropriate conditioned interface and bench validation.
-
-The selected divider uses a **100 Ω reference resistor** from the regulated 3.3 V supply to a resistance-to-ground sender. For a dedicated sender, the measurement topology is:
-
-```text
-3.3 V supply ── 100 Ω ──┬── sender (16–158 Ω) ── GND
-                       └── ADC AIN0
-3.3 V supply ────────────── ADC AIN1
-```
-
-The ADC shares that reference ground. Use the regulated supply rail, not a GPIO output, to excite the divider. AIN0 measures the divider and AIN1 measures the nominal 3.3 V excitation, compensating for supply variation. The resistance calculation is `100 × Vsender / (Vexcitation − Vsender)` ohms. With exactly 3.3 V excitation this becomes `100 × Vsender / (3.3 − Vsender)`. The ADC is still required; a divider alone does not give the Pi an analog input. Confirm whether the sender is shared with another gauge before connecting this topology to the vehicle.
-
-Defaults are bus 1, address `0x48` (decimal 72), 100 Ω pull-up, 8-second smoothing. Existing saved calibrations are preserved: set **Pull-up · Ω** to **100** on an already-configured installation when fitting this resistor. ADS1115 conversions use single-ended AIN0/AIN1 at 128 SPS, ±4.096 V range, sampled twice per second. The configured input range does **not** permit applying more than the ADC's supply voltage to an analog input. See the [TI ADS1115 datasheet](https://www.ti.com/lit/ds/symlink/ads1115.pdf), especially input limits and register configuration.
-
-At 3.3 V with a 100 Ω pull-up, isolated 16 Ω and 158 Ω resistors produce approximately **0.455 V empty** and **2.021 V full**. Divider current is about 28.4 mA at empty and 12.8 mA at full. The reference resistor dissipates at most 0.109 W with a shorted sender; use at least a 0.25 W resistor, with suitable temperature derating. Verify those endpoints, intermediate loads, an open wire and a short on a bench before commissioning. Software computes resistance before converting to percentage; divider voltage itself is not linear with resistance. It optionally interpolates up to 12 measured resistance/percentage points for tank shape, smooths slosh, and marks missing/out-of-range readings stale or faulted. Faults never become a valid empty reading. Long vehicle wiring and the real tank require testing; software plausibility limits are not electrical protection.
-
-If the chosen board is compatible, enable I²C using the instructions for the Pi's actual distro. On Pi 4 the normal I²C1 pins are BCM2/3 (physical pins 3/5). Keep bus pull-ups at 3.3 V. This leaves MCP2515 SPI/IRQ wiring and the existing **BCM23/24 power monitor** alone. After confirming that the distro's `i2c` group owns the selected `/dev/i2c-1` device, add a service drop-in with `sudo systemctl edit frogdash`:
-
-```ini
-[Service]
-SupplementaryGroups=i2c
-```
-
-Restart `frogdash.service`, then enter the actual interface values in Fuel sender and enable only after wiring verification. No I²C scan or GPIO reconfiguration is performed automatically. Replay mode never opens the ADC. The new resistance channel and quality flags are recorded in **MLG schema 5**; no new CAN frame was invented for fuel transmission.
+Fuel sender measurement, resistance conversion, tank calibration and smoothing
+run on the separate microcontroller. Frogdash receives the resulting percentage
+through CAN; see the [fuel CAN contract](fuel-can.md). The Pi sender driver,
+calibration UI, polling task and configuration API have been removed. There is
+no direct fuel-sender wiring or I2C setup required on the Pi.
 
 ## Backup, restore and support
 
-**Download backup** combines current browser preferences with Pi configuration: appearance/background/splash, layouts, units, alerts, sender calibration, fuel calibration, trip counters, learned economy, race gate/history, maintenance and acceptance records. Browser preferences are explicitly collected from the display making the backup. **Save display profile to Pi / Use saved Pi display profile** transfers preferences between display profiles.
+**Download backup** combines current browser preferences with Pi configuration: appearance/background/splash, layouts, units, alerts, injector fuel calibration, trip counters, learned economy, race gate/history, maintenance and acceptance records. Browser preferences are explicitly collected from the display making the backup. **Save display profile to Pi / Use saved Pi display profile** transfers preferences between display profiles.
 
-Restoring first validates the whole file. It writes a durable `restore-pending.json` before replacing configuration. An interrupted restore blocks further changes and is replayed at the next service start; do not delete that file to clear a failed restore. Correct storage/permission failures and restart. Manual fuel inventory requires reconfirmation. Restoration reloads the browser. A preview backup is labelled simulated and is rejected by production restore.
+New backups use version 2. Version-1 backups still restore supported settings, while ignoring the removed Pi sender section; old `sender.json` files are no longer read. Restoring first validates the whole file. It writes a durable `restore-pending.json` before replacing configuration. An interrupted restore blocks further changes and is replayed at the next service start; do not delete that file to clear a failed restore. Correct storage/permission failures and restart. Manual fuel inventory requires reconfirmation. Restoration reloads the browser. A preview backup is labelled simulated and is rejected by production restore.
 
 Backups exclude MLG recordings, drive-review files, Linux configuration, Wi-Fi credentials, service units and software binaries. Download recordings separately and preserve `/etc/default/frogdash` plus intentional systemd drop-ins before changing an installation. A software rollback does not rewind recorded data or configuration.
 
-**Download diagnostics** exports software/platform, CAN/GPS/recorder state, source quality, sender calibration/faults, Pi health, calibration settings and recent in-memory management/controller results. It excludes raw CAN, GPS positions, credentials and artwork. It is not a system journal export. For startup failures, also collect `journalctl -u frogdash -b` and the kiosk service journal locally.
+**Download diagnostics** exports software/platform, CAN/GPS/recorder state, source quality, CAN fuel status, Pi health, calibration settings and recent in-memory management/controller results. It excludes raw CAN, GPS positions, credentials and artwork. It is not a system journal export. For startup failures, also collect `journalctl -u frogdash -b` and the kiosk service journal locally.
 
 ## Units, backlight and maintenance
 
@@ -92,6 +71,6 @@ Before road use, record real results under Support & testing:
 5. Storage pressure: bounded MLG rotation, visible failures and recovery; retain unrelated files.
 6. Long recording: independently open generated `.mlg` files in MegaLogViewer; verify timestamps, channel units, schema and gaps.
 7. Actual 12.3-inch screen: every menu, touch target, daylight/night contrast and any hardware brightness control.
-8. Controllers and sender: requested value → ACK if defined → live readback, then controller power-cycle retention; sender resistor tests and tank calibration.
+8. Controllers and sender: requested value → ACK if defined → live readback, then controller power-cycle retention; external fuel-controller percentage/validity checks and transmission-loss handling.
 
 Browser/automated tests cannot establish these physical outcomes. Controller protocol support is unchanged: water/meth and knock have command acknowledgements, taillights have send-only commands plus telemetry, and persistence is not guaranteed by the current firmware. Adding EEPROM persistence or additional readback needs an agreed firmware change in the module repositories.
