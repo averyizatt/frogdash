@@ -387,3 +387,22 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 #shift-lights i { height:8px; flex:1; background:var(--line); border-radius:2px; }
 #shift-lights i[data-on="true"] { background:var(--accent); }
 #shift-lights[data-shift="true"] i { background:var(--warn); }
+.ops-columns { display:grid; grid-template-columns:1fr 1fr; gap:22px; height:100%; min-height:0; }
+.ops-panel .setting-card { min-height:0; }
+.ops-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px 15px; }
+.ops-panel label { font-size:14px; margin:10px 0; }
+.ops-panel input { width:100%; min-height:42px; padding:7px 10px; margin:5px 0 0; font-size:19px; }
+.ops-panel button { margin:5px 8px 5px 0; }
+.ops-panel .control-note { font-size:15px; line-height:1.45; }
+.ops-panel .check-label { margin:12px 0; }
+.ops-reading { font-size:54px; display:block; margin:30px 0; }
+.ops-status-row { display:flex; justify-content:space-between; gap:20px; padding:7px 0; margin:2px 0; border-bottom:1px solid var(--line); font-size:16px; }
+.ops-status-row b { text-align:right; max-width:65%; overflow-wrap:anywhere; }
+.ops-list { overflow:auto; }
+.ops-capabilities { max-height:220px; overflow:auto; }
+#acceptance-list { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+#acceptance-list button { display:block; width:100%; text-align:left; font-size:14px; min-height:64px; margin:0; }
+.service-item { border-top:1px solid var(--line); padding:14px 0; }
+.service-item h4 { margin:0; font-size:20px; }
+.configuration-locked { opacity:.55; }
+#operations-result { flex-shrink:0; }

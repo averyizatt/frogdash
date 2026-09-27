@@ -1,9 +1,13 @@
 """Launch the local kiosk as soon as HTTP is ready, without waiting for sensors."""
 import argparse
+import json
 import os
 from pathlib import Path
 import shutil
+import signal
+import subprocess
 import time
+from uuid import uuid4
 import urllib.error
 import urllib.request
 
@@ -46,6 +50,55 @@ def boot_stamp():
         return 'uptime unavailable'
 
 
+def heartbeat_probe(port, token):
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    def probe():
+        try:
+            with opener.open(f'http://127.0.0.1:{port}/ui/heartbeat/{token}', timeout=1) as response:
+                return json.load(response).get('alive') is True
+        except (OSError, ValueError, urllib.error.URLError):
+            return False
+    return probe
+
+
+class RenderWatchdog:
+    def __init__(self, now, grace=30):
+        self.deadline = now + grace
+
+    def frozen(self, now, backend_alive, rendered):
+        # Backend is recovered separately by systemd; give the browser time to reconnect.
+        if not backend_alive or rendered:
+            self.deadline = now + 20
+        return now > self.deadline
+
+
+def supervise(args, port, token):
+    process = subprocess.Popen(args, start_new_session=True)
+    watch = RenderWatchdog(time.monotonic())
+    backend, render = http_probe(port), heartbeat_probe(port, token)
+    def stop(*_):
+        raise KeyboardInterrupt()
+    previous = signal.signal(signal.SIGTERM, stop)
+    try:
+        while process.poll() is None:
+            if watch.frozen(time.monotonic(), backend(), render()):
+                print('Frogdash kiosk: render heartbeat stopped; restarting browser', flush=True)
+                return 1
+            time.sleep(2)
+        return process.returncode
+    except KeyboardInterrupt:
+        return 0
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+        if process.poll() is None:
+            os.killpg(process.pid, signal.SIGTERM)
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                os.killpg(process.pid, signal.SIGKILL)
+                process.wait(timeout=5)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--wayland', action='store_true')
@@ -71,8 +124,10 @@ def main():
     except TimeoutError as exc:
         parser.exit(1, f'{exc}; systemd will retry. Check journalctl -u frogdash.\n')
     print(f'Frogdash kiosk: HTTP ready; launching Chromium ({boot_stamp()})', flush=True)
-    # Preserve process supervision and argument boundaries, including spaces in profiles.
-    os.execv(binary, browser_args(binary, args.port, args.wayland, profile))
+    token = uuid4().hex
+    command = browser_args(binary, args.port, args.wayland, profile)
+    command[-1] += '?kiosk=' + token
+    raise SystemExit(supervise(command, args.port, token))
 
 
 if __name__ == '__main__':

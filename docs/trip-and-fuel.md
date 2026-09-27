@@ -8,6 +8,9 @@ Trip A/B, range, instant MPG and average MPG are available as lower instruments
 under **Drive → Display modes**. The preview shows explicitly simulated values;
 its trip data resets on page reload and never contacts the Pi.
 
+Choose US or metric display units under **Drive > Dash management**. Calibration
+fields and recorded channels retain their explicitly labelled engineering units.
+
 ## Your configuration
 
 The production defaults contain the supplied **15.4 US gallon tank (58.295 L)**
@@ -56,7 +59,7 @@ actual fuel used / estimated fuel used for comparable, completely recorded trips
 
 ## Fuel amount and range
 
-Until the fuel sender's CAN protocol is provided, use **Set amount** to enter
+Until the optional ADC sender is commissioned, use **Set amount** to enter
 the total fuel currently in the tank, or **Tank is full** after filling it.
 This is an absolute amount, not fuel added. The service subtracts estimated use.
 It never presents this inventory as a measured fuel-level percentage.
@@ -64,8 +67,8 @@ It never presents this inventory as a measured fuel-level percentage.
 After a service restart, a sampling gap above one second, or missing required
 fuel telemetry while the engine could be running, the manual inventory must be
 reconfirmed. The last tracked amount is shown as a reference, but range stays
-unavailable. A future decoder supplying fresh, calibrated `vehicle.fuel_pct`
-will take priority; no sender CAN ID or scaling is invented here.
+unavailable. The [ADS1115 sender](ownership-and-service.md) supplies calibrated `vehicle.fuel_pct`
+and takes priority when fresh; no sender CAN frame is invented.
 
 Range = max(0, remaining litres − reserve litres) / learned litres per km.
 Learning requires at least 1 km (0.62 mi) and 0.02 L of paired fresh speed/fuel

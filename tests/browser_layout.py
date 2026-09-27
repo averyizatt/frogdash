@@ -48,6 +48,8 @@ async def main(browser_path=None, url=None):
         page.on('pageerror', lambda error: errors.append(str(error)))
         await page.goto(url or (ROOT / 'preview' / 'index.html').as_uri())
         await page.wait_for_function("document.getElementById('rpm-value').textContent === '3450'")
+        await page.evaluate("frogdashDemo.scenario('parked')")
+        await page.wait_for_timeout(150)
         for width, height in SIZES:
             await page.set_viewport_size({'width': width, 'height': height})
             await page.locator('#meth-cell').click()
@@ -69,6 +71,13 @@ async def main(browser_path=None, url=None):
                 await inspect(page, '#drive-dialog', f'[data-driver-panel="{tab}"]')
                 if (width, height) in ((1980, 720), (1280, 480)):
                     await page.screenshot(path=str(ROOT / '.tmp' / f'menu-drive-{tab}-{width}x{height}.png'))
+            await page.locator('#operations-launch').click()
+            for tab in ('setup', 'sender', 'service', 'backup', 'display', 'support'):
+                await page.locator(f'[data-ops-tab="{tab}"]').click()
+                await inspect(page, '#operations-dialog')
+                if (width, height) == (1980, 720):
+                    await page.screenshot(path=str(ROOT / '.tmp' / f'management-{tab}.png'))
+            await page.locator('#operations-close').click()
             await page.locator('#drive-close').click()
             for launch, dialog, scroll in [('knock-launch', 'knock-overlay', '.knock-body'),
                                            ('race-launch', 'race-dialog', '.race-body'),
@@ -89,7 +98,7 @@ async def main(browser_path=None, url=None):
                 assert await page.locator(f'#{launch}').evaluate('(el) => document.activeElement === el')
         assert not errors, errors
         await browser.close()
-    print('All 15 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
+    print('All 21 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
 
 
 if __name__ == '__main__':

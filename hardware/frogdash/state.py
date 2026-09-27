@@ -7,6 +7,9 @@ from .controls import Controls
 from .race import Race
 from .driving import Driving
 from .trip import Trip
+from .fuel import FuelSender
+from .operations import Operations
+from .backlight import Backlight
 
 ALIASES = {
     "engine.rpm": ("ecu.rpm", "tach.rpm"),
@@ -33,6 +36,9 @@ class State:
         self.race = Race(clock=clock, wall=wall)
         self.driving = Driving(self)
         self.trip = Trip(self)
+        self.fuel = FuelSender(self)
+        self.operations = Operations(self)
+        self.backlight = Backlight()
         self.health = None
         self.can_errors = {'frames': 0, 'bus_off': 0, 'restarts': 0}
         self.controls = Controls(self)
@@ -119,6 +125,7 @@ class State:
             # to a different receiver on CAN when the USB receiver loses fix.
             values.update(self.gps.values())
         race = self.race.snapshot()
+        values.update(self.fuel.values())
         values.update(self.trip.values())
         values['dash.bookmark_id'] = {'value': self.driving.marker_seq, 'quality': 'live', 'source_id': None,
                                        'source': 'Drive review', 'timestamp_ms': int(self.wall() * 1000)}
@@ -139,6 +146,7 @@ class State:
                 "gps": {"status": self.gps.status, "tx_status": self.gps.tx_status,
                         "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
                 "controls": self.controls.status(), "events": list(self.events), "race": race,
-                "drive": self.driving.snapshot(), "trip": self.trip.snapshot(), "system": dict(self.health.status) if self.health else None,
+                "drive": self.driving.snapshot(), "trip": self.trip.snapshot(), "sender": self.fuel.snapshot(),
+                "operations": self.operations.status(), "system": dict(self.health.status) if self.health else None,
                 "can_errors": dict(self.can_errors),
                 "recording": dict(self.recorder.status) if self.recorder else {"enabled": False, "state": "disabled"}}

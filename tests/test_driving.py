@@ -184,7 +184,9 @@ class DrivingServiceTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((await drive.get_reviews())[0]['status'], 'recording')
 
     async def test_local_settings_markers_and_portal_read_only_authentication(self):
-        state = State()
+        state = State(clock=lambda: 0)
+        state.connected = True
+        state.samples['ecu.rpm', 1520] = dict(value=0, quality='live', seen=state.clock(), source_id=1520, timestamp_ms=0)
         async with TestClient(TestServer(create_app(state))) as client:
             response = await client.post('/drive/settings', json={**DEFAULTS, 'oil_psi': 20})
             self.assertEqual(response.status, 200)

@@ -29,12 +29,14 @@ async def preview(browser):
     await page.evaluate("frogdashDemo.scenario('night')")
     await page.wait_for_function('document.documentElement.dataset.lighting === "night"')
     await page.locator('#drive-launch').click()
+    await page.evaluate("frogdashDemo.scenario('parked')")
+    await page.wait_for_timeout(150)
     await page.locator('#lighting-mode').select_option('day')
     assert await page.locator('html').get_attribute('data-lighting') == 'day'
     await page.locator('#lighting-mode').select_option('auto')
     await page.evaluate("frogdashDemo.scenario('offline')")
     await page.wait_for_function('document.documentElement.dataset.lighting === "day"')
-    await page.evaluate("frogdashDemo.scenario('normal')")
+    await page.evaluate("frogdashDemo.scenario('parked')")
     for layout in ('street', 'tuning', 'track'):
         await page.locator(f'button[data-layout="{layout}"]').click()
         await page.locator('#drive-close').click()
@@ -55,6 +57,8 @@ async def preview(browser):
     assert await page.locator('#profile-sensors h2').first.inner_text() == 'Battery'
     await page.locator('#bookmark-launch').click()
     await page.wait_for_function('document.getElementById("bookmark-launch").textContent.startsWith("Marked #")')
+    await page.evaluate("frogdashDemo.scenario('parked')")
+    await page.wait_for_timeout(150)
     await page.locator('#alerts-launch').click()
     await page.locator('#setting-oil_psi').fill('90')
     await page.locator('#alert-settings button[type=submit]').click()
@@ -90,7 +94,7 @@ async def live(browser):
         state.connected = True
         state.driving = Driving(state, Path(directory))
         state.recorder = Recorder(state, Config(Path(directory) / 'logs', seconds=1, free_bytes=0))
-        signals = {'tach.rpm': 2500, 'engine.oil_pressure_psi': 50, 'sensors.fault_flags': 0,
+        signals = {'vehicle.speed_kph': 0, 'tach.rpm': 2500, 'engine.oil_pressure_psi': 50, 'sensors.fault_flags': 0,
                    'engine.fuel_pressure_psi': 39, 'engine.boost_kpa': 50, 'ecu.afr': 12.5,
                    'ecu.afr_target': 12.5, 'ecu.coolant_c': 90, 'meth.state': 'OFF',
                    'meth.flow': 'OK', 'meth.fault_flags': 0, 'meth.duty_pct': 0,

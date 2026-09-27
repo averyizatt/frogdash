@@ -1,5 +1,6 @@
 """Typed CAN controls. No arbitrary frame injection or automatic command retries."""
 import asyncio
+from .parking import parked
 
 
 # action: (CAN ID, command byte, minimum, maximum, requires ACK)
@@ -64,6 +65,9 @@ class Controls:
         if not self.state.connected or self.sender is None: return 'CAN is disconnected'
         stop = action == 'meth.stop' or (action == 'meth.arm' and value == 0)
         if stop: return None  # Always allow an explicit stop/disarm on an open bus.
+        if self.state.operations.restoring: return 'Configuration restore recovery pending'
+        if action in ('meth.boost', 'knock.threshold', 'knock.multiplier') and not parked(self.state):
+            return 'Park first to change controller calibration'
         if self.closing: return 'Dashboard is shutting down'
         if self.state.clock() < self.ready_at: return 'Checking CAN control ownership'
         if self.pending: return 'Waiting for controller acknowledgement'
@@ -81,6 +85,7 @@ class Controls:
             if action in ('meth.test', 'meth.boost') and mode != 'OFF':
                 return 'Disarm water/meth first'
             if action == 'meth.test':
+                if not parked(self.state): return 'Park first: pump tests require fresh stationary or engine-off telemetry'
                 if self.test_owner is not None: return 'A pump test is already active'
                 if self.state.clock() - self.last_stop < 3: return 'Pump test cooldown (3 seconds)'
         elif action.startswith('knock.'):
@@ -187,7 +192,7 @@ class Controls:
         while self.test_owner is not None:
             if (self.state.clock() >= self.test_deadline or not self.state.connected or
                     self.live('meth.state', 0x300) is None or
-                    self.live('meth.fault_flags', 0x300) != 0 or self.conflict()):
+                    self.live('meth.fault_flags', 0x300) != 0 or self.conflict() or not parked(self.state)):
                 await self.stop_test('Pump test ended')
                 return
             await asyncio.sleep(.1)

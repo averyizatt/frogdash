@@ -81,7 +81,7 @@ class TripTests(unittest.TestCase):
         for t in range(61): self.sample(t)
         self.trip.set_fuel(40)
         self.sample(61, **{'vehicle.fuel_pct': 1})
-        self.assertEqual(self.trip.snapshot()['fuel_source'], 'CAN fuel sender')
+        self.assertEqual(self.trip.snapshot()['fuel_source'], 'Calibrated fuel sender')
         self.assertEqual(self.trip.snapshot()['range_km'], 0)
         self.sample(62, **{'vehicle.fuel_pct': None})
         self.assertTrue(self.trip.snapshot()['fuel_source'].startswith('Manual'))
@@ -131,7 +131,9 @@ class TripTests(unittest.TestCase):
 
 class TripAPITests(unittest.IsolatedAsyncioTestCase):
     async def test_local_settings_reset_inventory_and_validation(self):
-        state = State()
+        state = State(clock=lambda: 0)
+        state.connected = True
+        state.samples['ecu.rpm', 1520] = dict(value=0, quality='live', seen=state.clock(), source_id=1520, timestamp_ms=0)
         async with TestClient(TestServer(create_app(state))) as client:
             response = await client.get('/trip')
             data = await response.json()

@@ -17,7 +17,7 @@ Physical key-on startup time has not yet been measured.
 - Taillight turn, brake, running, and reverse inputs; module connection health.
 - Water/meth summary opens its controls directly. Separate tabs for injection, knock settings, and lighting.
 - Knock history graph, searchable sensor readings, connection details, and raw CAN traffic.
-- Explicit stale, fault, and unavailable states. Fuel remains unavailable until its CAN source is defined.
+- Explicit stale, fault, and unavailable states. Fuel remains unavailable until its optional ADC interface is commissioned.
 
 See [UI design and gauge behavior](docs/ui-design.md) for display scales and review details.
 
@@ -50,9 +50,18 @@ one-touch log bookmarks, synchronized drive-review graphs on the dash and Wi-Fi
 page, and read-only Pi/CAN health diagnostics. The existing power/shutdown service
 and its GPIO assignments stay separate.
 
+[Dash management](docs/ownership-and-service.md) adds a setup checklist, optional
+16-ohm-empty / 158-ohm-full ADS1115 fuel input, portable backup/restore, service
+reminders/history, diagnostic exports, US/metric instruments, supported LCD
+backlight control, parked configuration gates, watchdog recovery and versioned
+installation/rollback. Open **Drive > Dash management**. Physical ADC wiring and
+vehicle commissioning still need confirmation; no power/shutdown changes are made.
+
 ## Browser preview
 
 Open [preview/index.html](preview/index.html) in your browser, or use the GitHub Pages preview. It works directly from disk without dependencies or network access.
+
+Use **Drive > Dash management > Park demo** to unlock simulated configuration.
 
 The persistent **DEMO · SIMULATED** badge identifies generated readings. Controls only change the simulated state. `M` opens controls, `K` opens the knock monitor, and `Esc` closes a dialog. Use the arrow keys to change control tabs. The production UI receives its readings exclusively from the local CAN/GPS service.
 
@@ -84,15 +93,17 @@ python -m unittest discover -s tests -v
 python tools/update_preview.py --check
 
 # Optional real browser integration and visual review
-python -m pip install playwright
+python -m pip install -r requirements-browser.lock
 python -m playwright install chromium
 python tests/browser_smoke.py
 python tests/browser_personalize.py
 python tests/browser_driving.py
 python tests/browser_layout.py
+python tests/browser_trip.py
+python tests/browser_operations.py
 # Or pass --browser /path/to/chromium
 ```
 
 The browser check saves screenshots in `.tmp/` and exercises live telemetry, command acknowledgements, stopping pump tests, reconnects, dialog navigation, warnings, offline states, and the isolated design preview.
 
-Vehicle commissioning still requires confirming controller firmware ownership, the fuel sender protocol, and the display on the actual Pi. The [original phase plan](docs/phase-2-plan.md) is retained for reference.
+Vehicle commissioning still requires confirming controller firmware ownership, the ADC/sender interface, and the display on the actual Pi. The [original phase plan](docs/phase-2-plan.md) is retained for reference.

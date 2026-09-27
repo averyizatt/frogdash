@@ -28,6 +28,8 @@ async def preview(browser):
     await page.screenshot(path=str(ROOT / '.tmp/appearance-test-upload.png'))
     # Footer buttons must remain inside the panel even with the extra destinations.
     assert await page.locator('.dashboard-nav').evaluate('(el) => el.getBoundingClientRect().right <= document.getElementById("display").getBoundingClientRect().right')
+    await page.evaluate("frogdashDemo.scenario('parked')")
+    await page.wait_for_timeout(150)
     await page.locator('#appearance-launch').click()
     # Catalogue choices affect the actual dash, survive reload, and compose
     # with independent backgrounds without touching splash or driving layout.
@@ -52,6 +54,8 @@ async def preview(browser):
     await page.evaluate("frogdashDemo.scenario('normal')")
     await page.wait_for_function('document.documentElement.dataset.lighting === "day"')
     assert await page.locator('#display').evaluate('(el) => getComputedStyle(el).getPropertyValue("--accent").trim()') == '#b9dfa2'
+    await page.evaluate("frogdashDemo.scenario('parked')")
+    await page.wait_for_timeout(150)
     await page.locator('#appearance-launch').click()
     await page.locator('#appearance-tab-gallery').focus()
     await page.keyboard.press('ArrowRight')
@@ -62,6 +66,8 @@ async def preview(browser):
     await page.reload()
     assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()') == '#c6a6ff'
     assert await page.locator('html').get_attribute('data-finish') == 'carbon'
+    await page.evaluate("frogdashDemo.scenario('parked')")
+    await page.wait_for_timeout(150)
     await page.locator('#appearance-launch').click()
     await page.locator('#appearance-tab-custom').click()
     await page.locator('#appearance-background').set_input_files(str(ROOT / '.tmp/appearance-test-upload.png'))
@@ -89,6 +95,8 @@ async def preview(browser):
     await page.reload()
     # Moving telemetry dismisses the configured startup splash automatically.
     await page.wait_for_function('!document.getElementById("splash-dialog").open')
+    await page.evaluate("frogdashDemo.scenario('parked')")
+    await page.wait_for_timeout(150)
     await page.locator('#appearance-launch').click()
     await page.locator('#appearance-tab-custom').click()
     assert await page.locator('#appearance-title-input').input_value() == 'FOXBODY / 5.0'

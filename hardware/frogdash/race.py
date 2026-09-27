@@ -29,6 +29,7 @@ class Race:
         self.history, self.gate = [], None
         self.storage_error, self.dirty = '', False
         self.stopping = False
+        self.save_lock = asyncio.Lock()
         self.sample = None
         self.pending_epoch, self.pending = None, {}
         self.received = float('-inf')
@@ -273,21 +274,22 @@ class Race:
                 'storage_error': self.storage_error}
 
     async def save(self):
-        if not self.dirty or not self.path:
-            return
-        data = json.dumps({'version': 1, 'gate': self.gate, 'history': self.history}, allow_nan=False)
-        self.dirty = False
-        def write():
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            temp = self.path.with_suffix('.tmp')
-            temp.write_text(data, encoding='utf-8')
-            temp.replace(self.path)
-        try:
-            await asyncio.to_thread(write)
-            self.storage_error = ''
-        except OSError:
-            self.dirty = True
-            self.storage_error = 'Could not save race results; check disk space and permissions'
+        async with self.save_lock:
+            if not self.dirty or not self.path:
+                return
+            data = json.dumps({'version': 1, 'gate': self.gate, 'history': self.history}, allow_nan=False)
+            self.dirty = False
+            def write():
+                self.path.parent.mkdir(parents=True, exist_ok=True)
+                temp = self.path.with_suffix('.tmp')
+                temp.write_text(data, encoding='utf-8')
+                temp.replace(self.path)
+            try:
+                await asyncio.to_thread(write)
+                self.storage_error = ''
+            except OSError:
+                self.dirty = True
+                self.storage_error = 'Could not save race results; check disk space and permissions'
 
     async def run(self):
         while not self.stopping:

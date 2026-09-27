@@ -69,24 +69,25 @@
     const rpm = display('rpm-value', 'engine.rpm');
     $('rpm-bar-fill').setAttribute('stroke-dasharray', `${rpm === null ? 0 : clamp(rpm / 7000 * 100, 0, 100)} 100`);
     document.querySelector('.tach').dataset.tone = rpm !== null && rpm >= 6000 ? 'danger' : 'normal';
-    display('speed-digits', 'vehicle.speed_kph', 0, n => n / 1.609344);
+    display('speed-digits', 'vehicle.speed_kph', 0, window.FrogdashUnits.distance);
     document.body.dataset.speedLive = live('vehicle.speed_kph') !== null;
     $('gps-sats').textContent = live('vehicle.speed_kph') === null ? 'GPS · NO LIVE FIX' :
       `GPS SPEED${live('gps.satellites') === null ? '' : ' · ' + live('gps.satellites') + ' SAT'}`;
-    const temp = n => n * 9 / 5 + 32;
-    bar('coolant-fill', display('coolant-val', 'engine.coolant_c', 0, temp), 100, 250);
+    const temp = window.FrogdashUnits.temperature;
+    bar('coolant-fill', display('coolant-val', 'engine.coolant_c', 0, temp), temp((100 - 32) / 1.8), temp((250 - 32) / 1.8));
     document.querySelector('[data-signal="engine.coolant_c"]').dataset.tone = live('engine.coolant_c') !== null && live('engine.coolant_c') >= (snapshot.drive?.settings?.coolant_c ?? 112) ? 'danger' : 'normal';
-    bar('iat-fill', display('iat-val', 'engine.iat_c', 0, temp), 0, 200);
+    bar('iat-fill', display('iat-val', 'engine.iat_c', 0, temp), temp(-32 / 1.8), temp(168 / 1.8));
     bar('fuel-fill', display('fuel-val', 'vehicle.fuel_pct'), 0, 100);
-    const boost = display('boost-val', 'engine.boost_kpa', 1, n => n * .145037738);
+    display('boost-val', 'engine.boost_kpa', 1, window.FrogdashUnits.boost);
+    const boost = live('engine.boost_kpa') === null ? null : live('engine.boost_kpa') * .145037738;
     const boostPosition = boost === null ? 100 / 3 : clamp((boost + 15) / 45 * 100, 0, 100);
     $('boost-fill').style.left = `${Math.min(100 / 3, boostPosition)}%`;
     $('boost-fill').style.width = `${Math.abs(boostPosition - 100 / 3)}%`;
     $('boost-fill').style.background = boost !== null && boost < 0 ? 'var(--blue)' : 'var(--accent)';
     $('boost-state').textContent = boost === null ? qualityNames[signal('engine.boost_kpa').quality] : boost < 0 ? 'VACUUM' : 'BOOST';
     bar('batt-fill', display('batt-val', 'vehicle.battery_v', 1), 10, 16);
-    bar('fuelp-fill', display('fuelp-val', 'engine.fuel_pressure_psi', 1), 0, 100);
-    bar('oilp-fill', display('oilp-val', 'engine.oil_pressure_psi', 1), 0, 100);
+    bar('fuelp-fill', display('fuelp-val', 'engine.fuel_pressure_psi', 1, window.FrogdashUnits.pressure), 0, window.FrogdashUnits.pressure(100));
+    bar('oilp-fill', display('oilp-val', 'engine.oil_pressure_psi', 1, window.FrogdashUnits.pressure), 0, window.FrogdashUnits.pressure(100));
     display('ego-val', 'engine.ego_correction_pct', 1, n => n - 100);
     const afr = display('afr-val', 'engine.afr', 1);
     $('afr-lambda').textContent = afr === null ? '—' : (afr / 14.7).toFixed(2);
@@ -136,8 +137,21 @@
     if ($('knock-overlay').open) renderKnock();
     renderControls();
     if ($('diagnostics').open) renderDiagnostics();
+    window.frogdashRendered = (window.frogdashRendered || 0) + 1;
+    updateUnits();
   }
 
+  function updateUnits() {
+    const u = window.FrogdashUnits;
+    document.querySelector('.speed-readout .unit').textContent = u.speedUnit;
+    for (const [selector, unit, scales] of [
+      ['.boost-gauge', u.metric ? 'kPa' : 'psi', [-15,0,15,30].map(u.pressure)],
+      ['[data-signal="engine.coolant_c"]', u.metric ? '\u00b0C' : '\u00b0F', [u.temperature((100-32)/1.8),u.temperature((250-32)/1.8)]],
+      ['[data-signal="engine.iat_c"]', u.metric ? '\u00b0C' : '\u00b0F', [u.temperature(-32/1.8),u.temperature(168/1.8)]],
+      ['[data-signal="engine.oil_pressure_psi"]', u.metric ? 'kPa' : 'psi', [0,u.pressure(100)]],
+      ['[data-signal="engine.fuel_pressure_psi"]', u.metric ? 'kPa' : 'psi', [0,u.pressure(100)]]
+    ]) { const card = document.querySelector(selector); card.querySelector('.unit').textContent = unit; [...card.querySelectorAll('.scale-labels span')].forEach((n,i) => n.textContent = Math.round(scales[i])); }
+  }
   function renderKnock() {
     const energy = display('knock-energy-num', 'knock.energy');
     display('knock-baseline-num', 'knock.baseline');

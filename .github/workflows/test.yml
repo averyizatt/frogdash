@@ -15,3 +15,11 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python -m unittest discover -s tests -v
       - run: python tools/update_preview.py --check
+      - run: pip install -r requirements-browser.lock
+      - run: python -m playwright install --with-deps chromium
+      - run: python tests/browser_smoke.py
+      - run: python tests/browser_layout.py
+      - run: python tests/browser_personalize.py
+      - run: python tests/browser_driving.py
+      - run: python tests/browser_trip.py
+      - run: python tests/browser_operations.py

@@ -131,6 +131,7 @@ async def main(browser_path=None):
               (0x307, '13140FB403225500'), (0x5E8, '07080D7A080201F4'),
               (0x5EA, '937C03E800000000'), (0x5EB, '008E000000000000')]
     sent = []
+    gps_speed = 21
 
     async def sender(identifier, data):
         sent.append((identifier, data))
@@ -148,7 +149,7 @@ async def main(browser_path=None):
             for identifier, data in frames:
                 state.ingest(identifier, bytes.fromhex(data))
             state.gps.connected = True
-            state.gps.update({'class': 'TPV', 'mode': 3, 'speed': 21})
+            state.gps.update({'class': 'TPV', 'mode': 3, 'speed': gps_speed})
             await asyncio.sleep(.05)
 
     task = asyncio.create_task(feed())
@@ -191,6 +192,8 @@ async def main(browser_path=None):
             await page.wait_for_function("document.getElementById('command-result').textContent.startsWith('ACKNOWLEDGED')")
             await page.wait_for_function("document.getElementById('meth-live-summary').textContent.startsWith('ARMED')")
             assert sent[-1] == (0x301, b'\x01\x01')
+            assert await page.locator('[data-action="meth.test"]').is_disabled()
+            gps_speed = 0
             await page.locator('[data-action="meth.arm"][data-value="0"]').click()
             await page.wait_for_function("document.getElementById('meth-live-summary').textContent.startsWith('OFF')")
             await page.wait_for_function("!document.querySelector('[data-action=\"meth.test\"]').disabled")

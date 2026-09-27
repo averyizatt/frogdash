@@ -16,15 +16,33 @@ from .race import Race
 from .driving import Driving
 from .health import Health
 from .trip import Trip
+from .operations import Operations
+from .driving import atomic_write
+from .parking import require_parked
+from .backlight import Backlight
+from .supervision import watchdog
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
 
 
 def create_app(state, adapter=None, connectivity=None):
-    app = web.Application()
+    @web.middleware
+    async def recovery_guard(request, handler):
+        if request.method == 'POST' and state.operations.restoring:
+            raise web.HTTPServiceUnavailable(text='Restore recovery pending; restart service to finish')
+        if request.method == 'POST' and request.path not in {'/operations/settings', '/operations/restore', '/operations/sender'}:
+            async with state.operations.lock:
+                if state.operations.restoring:
+                    raise web.HTTPServiceUnavailable(text='Restore recovery pending; restart service to finish')
+                return await handler(request)
+        return await handler(request)
+    app = web.Application(client_max_size=7 * 1024 * 1024, middlewares=[recovery_guard])
     clients = set()
 
     async def lifecycle(app):
+        await state.operations.recover()
+        notify_task = asyncio.create_task(watchdog())
+        fuel_task = asyncio.create_task(state.fuel.run())
         tasks = [asyncio.create_task(adapter())] if adapter else []
         race_task = asyncio.create_task(state.race.run())
         drive_task = asyncio.create_task(state.driving.run())
@@ -38,6 +56,11 @@ def create_app(state, adapter=None, connectivity=None):
         if connectivity:
             await connectivity.start()
         yield
+        notify_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await notify_task
+        state.fuel.stopping = True
+        await fuel_task
         await state.controls.close()
         if connectivity:
             await connectivity.close()
@@ -164,6 +187,7 @@ def create_app(state, adapter=None, connectivity=None):
         require_local(request)
         if request.method == 'POST':
             try:
+                require_parked(state)
                 state.driving.configure(await request.json())
             except (ValueError, TypeError) as exc:
                 raise web.HTTPBadRequest(text=str(exc))
@@ -199,6 +223,7 @@ def create_app(state, adapter=None, connectivity=None):
                 if not isinstance(body, dict):
                     raise ValueError('Expected a trip command')
                 if set(body) == {'settings'}:
+                    require_parked(state)
                     state.trip.configure(body['settings'])
                 elif set(body) == {'reset'} and isinstance(body['reset'], str):
                     state.trip.reset(body['reset'])
@@ -242,9 +267,69 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "personalize.js", "driving.js", "trip.js", "review.js", "review.css"}:
+        if name not in {"index.html", "app.js", "style.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css"}:
             raise web.HTTPNotFound()
         return web.FileResponse(WEB / name, headers={"Cache-Control": "no-store"})
+
+    async def operations(request):
+        require_local(request)
+        action = request.match_info['action']
+        try:
+            if action == 'diagnostic' and request.method == 'GET':
+                return web.json_response(state.operations.diagnostic(), headers={'Content-Disposition': 'attachment; filename="frogdash-diagnostic.json"', 'Cache-Control': 'no-store'})
+            if action == 'status' and request.method == 'GET':
+                return web.json_response({**state.operations.status(), 'ui': state.operations.data['ui'], 'backlight': state.backlight.status()}, headers={'Cache-Control': 'no-store'})
+            if action == 'backup' and request.method == 'POST':
+                body = await request.json()
+                if not isinstance(body, dict) or set(body) != {'ui'}:
+                    raise ValueError('Expected current display preferences')
+                return web.json_response(state.operations.backup(body['ui']))
+            if action == 'restore' and request.method == 'POST':
+                ui = await state.operations.restore(await request.json())
+                return web.json_response({'ui': ui})
+            if action == 'settings' and request.method == 'POST':
+                await state.operations.change(await request.json())
+                return web.json_response(state.operations.status())
+            if action == 'sender' and request.method == 'POST':
+                require_parked(state)
+                if state.operations.restoring:
+                    raise ValueError('Restore recovery pending')
+                from .fuel import validate
+                settings = validate(await request.json())
+                async with state.operations.lock:
+                    require_parked(state)
+                    if state.operations.restoring:
+                        raise ValueError('Restore recovery pending')
+                    if state.operations.directory:
+                        await asyncio.to_thread(atomic_write, state.operations.directory / 'sender.json', settings)
+                    state.fuel.configure(settings)
+                return web.json_response(state.fuel.snapshot())
+            if action == 'backlight' and request.method == 'POST':
+                body = await request.json()
+                if not isinstance(body, dict) or set(body) != {'percent'}:
+                    raise ValueError('Expected percent')
+                percent = await asyncio.to_thread(state.backlight.set, body['percent'])
+                return web.json_response({'percent': percent})
+        except (ValueError, TypeError, KeyError, RecursionError) as exc:
+            raise web.HTTPBadRequest(text=str(exc))
+        except OSError:
+            raise web.HTTPServiceUnavailable(text=state.operations.error or 'Could not save settings; check storage and permissions')
+        raise web.HTTPNotFound()
+
+    async def heartbeat(request):
+        require_local(request)
+        import re
+        token = request.match_info['token']
+        if not re.fullmatch('[0-9a-f]{32}', token):
+            raise web.HTTPBadRequest()
+        now = state.clock()
+        if request.method == 'POST':
+            state.operations.heartbeats[token] = now
+            state.operations.heartbeats = {k: v for k, v in state.operations.heartbeats.items() if now - v < 120}
+            if len(state.operations.heartbeats) > 16:
+                del state.operations.heartbeats[next(iter(state.operations.heartbeats))]
+        seen = state.operations.heartbeats.get(token)
+        return web.json_response({'alive': seen is not None and now - seen < 10}, headers={'Cache-Control': 'no-store'})
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
@@ -255,6 +340,8 @@ def create_app(state, adapter=None, connectivity=None):
                     web.post('/drive/{action:mark|ack}', drive_action),
                     web.get('/drives', drives), web.get('/drives/{name}', drive_review),
                     web.get('/trip', trip), web.post('/trip', trip),
+                    web.get('/operations/{action}', operations), web.post('/operations/{action}', operations),
+                    web.get('/ui/heartbeat/{token}', heartbeat), web.post('/ui/heartbeat/{token}', heartbeat),
                     web.get("/", asset), web.get("/{name}", asset)])
     return app
 
@@ -277,6 +364,7 @@ def main():
     parser.add_argument('--hotspot-socket', type=Path, help='Enable the optional local Wi-Fi helper socket')
     parser.add_argument('--race-file', type=Path, default=Path('/var/lib/frogdash/race.json'), help='Saved start/finish and last 50 race sessions')
     parser.add_argument('--data-dir', type=Path, default=Path('/var/lib/frogdash'), help='Alert settings and bounded drive reviews')
+    parser.add_argument('--backlight-name', help='Explicit Linux /sys/class/backlight device; requires write permission')
     args = parser.parse_args()
     if args.loop and not args.replay:
         parser.error("--loop requires --replay")
@@ -290,6 +378,14 @@ def main():
     state.race = Race(args.race_file if not args.replay else None)
     state.driving = Driving(state, args.data_dir / 'replay' if args.replay else args.data_dir)
     state.trip = Trip(state, (args.data_dir / 'replay' if args.replay else args.data_dir) / 'trip.json')
+    state.operations = Operations(state, args.data_dir / 'replay' if args.replay else args.data_dir)
+    sender_file = state.operations.directory / 'sender.json'
+    if sender_file.exists() and not args.replay:
+        try:
+            state.fuel.configure(json.loads(sender_file.read_text()))
+        except (OSError, ValueError, TypeError):
+            state.operations.error = 'Sender configuration could not be loaded; input disabled'
+    state.backlight = Backlight(args.backlight_name)
     state.health = Health(state, args.interface, args.log_dir or args.data_dir)
     if args.log_dir:
         try:

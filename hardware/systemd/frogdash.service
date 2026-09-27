@@ -4,7 +4,9 @@ After=network.target gpsd.socket
 Wants=gpsd.socket
 
 [Service]
-Type=simple
+Type=notify
+NotifyAccess=main
+WatchdogSec=20
 DynamicUser=yes
 # Read-only vcgencmd diagnostics use the Raspberry Pi video device group.
 SupplementaryGroups=video

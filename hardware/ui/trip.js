@@ -10,6 +10,7 @@
   ];
   let latest = {}, connected = false, loaded = false, busy = false, previous = performance.now();
   let tripMessage = '', messageUntil = 0;
+  const u = window.FrogdashUnits;
   const freshBucket = () => ({km: 0, moving_s: 0, engine_s: 0, fuel_l: 0, paired_km: 0, paired_l: 0, missing_s: 0});
   const simulated = {
     settings: {enabled: true, capacity_l: 15.4 * GAL, reserve_l: 3, injector_cc_min: 440, injectors: 4, pw2_injectors: 2, pulses_per_rev: .5, dead_ms: 1, correction: 1},
@@ -58,15 +59,16 @@
     if (!loaded) { fill(t.settings); loaded = true; }
     for (const name of ['a', 'b']) {
       const b = t.counters[name];
-      $(`trip-${name}-distance`).innerHTML = `${fmt(b.km / MI)} <small>mi</small>`;
-      $(`trip-${name}-detail`).textContent = `${duration(b.engine_s)} engine · ${fmt(b.moving_s ? b.km / MI / (b.moving_s / 3600) : null)} MPH moving avg · ${fmt(b.mpg)} US MPG${b.missing_s > 1 ? ' · partial data' : ''}`;
+      $(`trip-${name}-distance`).innerHTML = `${fmt(u.distance(b.km))} <small>${u.distanceUnit}</small>`;
+      $(`trip-${name}-detail`).textContent = `${duration(b.engine_s)} engine · ${fmt(b.moving_s ? u.distance(b.km) / (b.moving_s / 3600) : null)} ${u.speedUnit} moving avg · ${fmt(u.economy(b.mpg))} ${u.economyUnit}${b.missing_s > 1 ? ' · partial data' : ''}`;
     }
-    $('trip-total').textContent = `${fmt(t.counters.total.km / MI)} mi tracked since installation · GPS distance, separate from the vehicle odometer.`;
-    $('trip-range').innerHTML = `${fmt(connected ? t.range_km === null ? null : t.range_km / MI : null, 0)} <small>mi</small>`;
-    $('trip-instant').textContent = connected && t.coasting ? 'COAST' : fmt(connected ? t.instant_mpg : null);
-    $('trip-average').textContent = fmt(t.average_mpg);
-    $('trip-flow').textContent = `US MPG · ${fmt(connected && t.flow_lph !== null ? t.flow_lph / GAL : null, 2)} US gal/hr`;
-    $('trip-fuel-source').textContent = `${fmt(connected && t.remaining_l !== null ? t.remaining_l / GAL : null, 2)} US gal · ${t.fuel_source}`;
+    $('trip-total').textContent = `${fmt(u.distance(t.counters.total.km))} ${u.distanceUnit} tracked since installation · GPS distance, separate from the vehicle odometer.`;
+    $('trip-range').innerHTML = `${fmt(connected ? t.range_km === null ? null : u.distance(t.range_km) : null, 0)} <small>${u.distanceUnit}</small>`;
+    $('trip-instant').textContent = connected && t.coasting ? 'COAST' : fmt(connected ? u.economy(t.instant_mpg) : null);
+    $('trip-average').textContent = fmt(u.economy(t.average_mpg));
+    $('trip-average-unit').textContent = `${u.economyUnit} \u00b7 sampled driving`;
+    $('trip-flow').textContent = `${u.economyUnit} · ${fmt(connected && t.flow_lph !== null ? u.volume(t.flow_lph) : null, 2)} ${u.volumeUnit}/hr`;
+    $('trip-fuel-source').textContent = `${fmt(connected && t.remaining_l !== null ? u.volume(t.remaining_l) : null, 2)} ${u.volumeUnit} · ${t.fuel_source}`;
     $('trip-quality').textContent = `${demo() ? 'SIMULATED · ' : ''}${!connected ? 'Connection lost · live estimates unavailable' : !t.settings.enabled ? 'Fuel estimate disabled · verify settings in Fuel setup' : !t.gps_live ? 'GPS unavailable · distance paused' : !t.fuel_live ? 'Fuel telemetry unavailable · fuel estimates paused' : 'Recording distance and estimated fuel use'}${t.average_mpg === null ? ' · learning economy (minimum 0.62 mi with fuel data)' : ''}`;
     $('trip-status').textContent = performance.now() < messageUntil ? tripMessage : t.error || (demo() ? 'Preview counters are simulated and reset when this page reloads.' : 'Trip A and B save on the Pi and keep recording with this menu closed.');
     $('fuel-inventory-status').textContent = `${t.fuel_source}${t.last_manual_l != null ? ` · last tracked amount ${fmt(t.last_manual_l / GAL, 2)} US gal` : ''}${t.error ? ' · ' + t.error : ''}`;

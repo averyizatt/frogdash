@@ -31,6 +31,8 @@ async def preview(browser):
     await page.locator('[data-trip-reset="a"]').click()
     await page.wait_for_function('document.getElementById("trip-a-distance").textContent.startsWith("0.0")')
     assert before == await page.locator('#trip-b-distance').inner_text()
+    await page.evaluate("frogdashDemo.scenario('parked')")
+    await page.wait_for_timeout(150)
     await page.locator('[data-driver-tab="fuel"]').click()
     assert await page.locator('#fuel-capacity_l').input_value() == '15.4'
     assert await page.locator('#fuel-pulses_per_rev').input_value() == '0.5'
@@ -63,6 +65,7 @@ async def live(browser):
     now = 0
     state = State(clock=lambda: now)
     state.connected = True
+    state.samples['ecu.rpm', 1520] = dict(value=0, quality='live', seen=now, source_id=1520, timestamp_ms=0)
     with tempfile.TemporaryDirectory() as directory:
         path = Path(directory) / 'trip.json'
         state.trip = Trip(state, path)

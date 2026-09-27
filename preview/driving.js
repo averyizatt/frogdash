@@ -87,11 +87,11 @@
     [...$('shift-lights').children].forEach((light, i) => { light.dataset.on = rpm !== null && rpm >= prefs.shift - (7 - i) * 150; });
     $('shift-lights').dataset.shift = rpm !== null && rpm >= prefs.shift;
     if (!native) prefs.layouts[prefs.layout].forEach((key, i) => {
-      const [title, signal, unit, min, max, digits, convert] = metricDefs[key], tile = tiles[i];
+      const [title, signal, unit, min, max, digits, convert] = window.FrogdashUnits.definition(metricDefs[key]), tile = tiles[i];
       const raw = signal === '@last' ? online ? last : null : signal === '@best' ? online ? best : null : get(signal);
       const valid = Number.isFinite(raw), v = valid ? (convert ? convert(raw) : raw) : null;
       tile.title.textContent = title; tile.unit.textContent = unit; tile.lo.textContent = min; tile.hi.textContent = max;
-      tile.value.textContent = valid ? v.toFixed(digits) : '—'; tile.quality.textContent = valid ? signal.startsWith('fuel.') ? 'Estimated' : signal.startsWith('trip.') ? 'Tracked' : 'Live' : online ? latest.values?.[signal]?.quality || 'No signal' : 'Stale';
+      tile.value.textContent = valid && Number.isFinite(v) ? v.toFixed(digits) : '—'; tile.quality.textContent = valid ? signal.startsWith('fuel.') ? 'Estimated' : signal.startsWith('trip.') ? 'Tracked' : 'Live' : online ? latest.values?.[signal]?.quality || 'No signal' : 'Stale';
       tile.card.dataset.quality = valid ? 'live' : !online ? 'stale' : latest.values?.[signal]?.quality || 'unavailable';
       tile.fill.style.width = valid ? `${Math.max(0, Math.min(100, (v - min) / (max - min) * 100))}%` : '0%';
     });

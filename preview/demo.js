@@ -23,7 +23,7 @@
   // Explicit test/review hooks. The production client has no demo switch.
   window.frogdashDemo = {
     scenario(name) {
-      if (!['normal', 'warning', 'offline', 'vacuum', 'night'].includes(name)) throw new Error('Unknown demo scenario');
+      if (!['normal', 'warning', 'offline', 'vacuum', 'night', 'parked'].includes(name)) throw new Error('Unknown demo scenario');
       scenario = name;
     }
   };
@@ -37,6 +37,7 @@
     publish() {
       tick++;
       const current = {...readings,
+        'vehicle.speed_kph': scenario === 'parked' ? 0 : readings['vehicle.speed_kph'],
         'lighting.running': scenario === 'night',
         'lighting.left_state': scenario === 'night' ? 'RUNNING' : 'OFF',
         'lighting.right_state': scenario === 'night' ? 'RUNNING' : 'OFF',
@@ -49,6 +50,8 @@
         {value, quality: value === null ? 'unavailable' : scenario === 'offline' ? 'stale' : 'live', source: 'SIMULATED'}]));
       const test = readings['meth.state'] === 'TEST';
       const reasons = {};
+      if (scenario !== 'parked') reasons['meth.test'] = 'Park before testing the pump';
+      if (scenario !== 'parked') for (const key of ['meth.boost', 'knock.threshold', 'knock.multiplier']) reasons[key] = 'Park before changing calibration';
       if (test) reasons['meth.arm'] = reasons['meth.test'] = reasons['meth.boost'] = 'Stop the pump test first';
       if (readings['meth.state'] === 'ARMED') reasons['meth.test'] = reasons['meth.boost'] = 'Disarm before adjusting or testing';
       if (scenario === 'offline') {
