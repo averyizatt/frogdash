@@ -4,7 +4,7 @@ import math
 import os
 import time
 
-DEFAULTS = dict(enabled=False, bus=1, address=0x48, pullup_ohms=1000.,
+DEFAULTS = dict(enabled=False, bus=1, address=0x48, pullup_ohms=100.,
                 points=[[16., 0.], [158., 100.]], smoothing_s=8.)
 
 

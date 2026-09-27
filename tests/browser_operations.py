@@ -35,6 +35,7 @@ async def preview(browser):
     await page.wait_for_function("!document.getElementById('sender-form').inert")
     assert await page.locator('#sender-empty').input_value() == '16'
     assert await page.locator('#sender-full').input_value() == '158'
+    assert await page.locator('#sender-pullup').input_value() == '100'
     assert not await page.locator('#sender-enabled').is_checked()
     await page.locator('[data-ops-tab="display"]').click()
     await page.locator('#units-system').select_option('metric')
@@ -94,6 +95,7 @@ async def live(browser):
             await (await event.value).save_as(path / 'backup.json')
             backup = json.loads((path / 'backup.json').read_text())
             assert backup['sender']['points'] == [[16, 0], [158, 100]]
+            assert backup['sender']['pullup_ohms'] == 100
             assert backup['trip']['settings']['capacity_l'] == 15.4 * 3.785411784
             state.operations.data['maintenance'].clear()
             await page.locator('#backup-file').set_input_files(path / 'backup.json')

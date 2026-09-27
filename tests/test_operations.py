@@ -43,12 +43,12 @@ class SenderTests(unittest.TestCase):
     def test_resistance_endpoints_supply_compensation_and_tank_curve(self):
         for supply in (3, 3.3, 3.5):
             for ohms, percent in ((16, 0), (87, 50), (158, 100)):
-                reading = resistance(supply * ohms / (1000 + ohms), supply, 1000)
+                reading = resistance(supply * ohms / (100 + ohms), supply, 100)
                 self.assertAlmostEqual(reading, ohms)
                 self.assertAlmostEqual(percentage(reading, DEFAULTS['points']), percent)
         self.assertEqual(percentage(87, [[16, 0], [87, 30], [158, 100]]), 30)
         for voltage, supply in ((0, 3.3), (3.3, 3.3), (1, 5), (float('nan'), 3.3)):
-            with self.assertRaises(ValueError): resistance(voltage, supply, 1000)
+            with self.assertRaises(ValueError): resistance(voltage, supply, 100)
         for points in ([[158, 0], [16, 100]], [[16, 5], [158, 100]], [[16, 0], [20, 60], [30, 40], [158, 100]]):
             with self.assertRaises(ValueError): validate({**DEFAULTS, 'points': points})
 
@@ -58,9 +58,12 @@ class SenderTests(unittest.TestCase):
         sender = state.fuel
         self.assertEqual(sender.values(), {})
         sender.configure({**DEFAULTS, 'enabled': True})
-        sender.feed(3.3 * 16 / 1016, 3.3)
+        sender.feed(3.3 * 16 / 116, 3.3)
+        self.assertAlmostEqual(sender.ohms, 16)
+        self.assertAlmostEqual(sender.level, 0)
         now[0] = .5
-        sender.feed(3.3 * 158 / 1158, 3.3)
+        sender.feed(3.3 * 158 / 258, 3.3)
+        self.assertAlmostEqual(sender.ohms, 158)
         self.assertGreater(sender.level, 0)
         self.assertLess(sender.level, 10)
         self.assertEqual(state.snapshot()['values']['vehicle.fuel_pct']['quality'], 'live')
