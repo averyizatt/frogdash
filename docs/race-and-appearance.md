@@ -80,12 +80,15 @@ track map is claimed; delta compares the latest completed lap to session best.
 
 ## Appearance and splash screens
 
-- **Appearance → Preset gallery** offers six coordinated looks: Frogdash (mint),
+- **Appearance → Preset gallery** has two collections with six looks each. Signature includes Frogdash (mint),
   Glacier (ice blue), Heritage (amber), After hours (violet), Apex (platinum),
-  and Expedition (sage). Each applies instrument accents, panel colors,
+  and Expedition (sage). Track & touring adds GT Sprint, Endurance, Rally Stage,
+  Club Sport, Obsidian and Executive. Race looks use square panels, accent rails
+  and heavier gauge strokes; touring looks use rounded surfaces and subtle depth.
+  Each applies instrument accents, panel colors,
   borders and a background immediately. The selected look is marked with a tick.
-- Eight built-in backgrounds: midnight, graphite, carbon weave, accent glow,
-  horizon, blueprint, contours and dusk. Mix any background with any look;
+- Twelve built-in backgrounds: midnight, graphite, carbon weave, accent glow,
+  horizon, blueprint, contours, dusk, pit lane, redline, telemetry and satin. Mix any background with any look;
   the label shows when a look has been customized. These are static local CSS
   patterns, with no downloads, animation or additional image storage.
 - **Customize & splash** retains the individual controls and image uploads.
@@ -93,6 +96,12 @@ track map is claimed; delta compares the latest completed lap to session best.
   change your Street/Tuning/Track layout. Select **Custom image** again to reuse
   an uploaded background. Day/night mode still uses the brightness and night
   accent set in the Drive workspace; preset colors return in day mode.
+- **Customize & splash > Your display > Widget transparency** adjusts dashboard
+  panel backgrounds from 0% (solid) to 100% (clear), with a live surface preview.
+  Numbers, labels, gauge strokes and borders keep their opacity. Warning banners,
+  danger-card backgrounds and settings dialogs remain solid. Presets apply their
+  own starting transparency; changing it marks the look customized. The setting
+  persists with your appearance profile and is included in display backups.
 - Mint, ice blue, amber and violet accents, plus a custom color picker.
 - Optional Frogdash/custom-title splash or uploaded splash image; duration of
   1, 2, 3 or 5 seconds, with **Preview splash** and **Skip** controls.
@@ -108,7 +117,7 @@ them. Preview preferences are separate from the Pi's. Storage errors are shown
 and changes remain usable for that page session. Keep an original copy of your
 artwork. Dark accent selections are brightened to retain readable contrast;
 warning/fault colors remain unchanged. Background images are dimmed behind
-opaque instruments, and splash images use contain rather than cropping.
+the adjustable instrument surfaces, and splash images use contain rather than cropping.
 
 The splash is the dashboard application's startup screen, not the Raspberry Pi
 firmware or Linux boot logo. It defaults off and starts when the page loads.

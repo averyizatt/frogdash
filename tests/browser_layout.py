@@ -90,6 +90,9 @@ async def main(browser_path=None, url=None):
                 if (width, height) in ((1980, 720), (1280, 480)):
                     await page.screenshot(path=str(ROOT / '.tmp' / f'menu-{dialog}-{width}x{height}.png'))
                 if dialog == 'appearance-dialog':
+                    await page.locator('[data-collection-filter="performance"]').click()
+                    await inspect(page, '#appearance-dialog', '.appearance-gallery')
+                    await page.locator('[data-collection-filter="signature"]').click()
                     await page.locator('#appearance-tab-custom').click()
                     await inspect(page, '#appearance-dialog', '.appearance-body')
                     await page.locator('#appearance-tab-gallery').click()

@@ -39,9 +39,20 @@ async def preview(browser):
         assert await page.locator('html').get_attribute('data-finish') == finish
         assert await page.locator('button[data-look][aria-pressed="true"]').count() == 1
         assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--warn")') == warning_color
-    for finish in ['midnight', 'graphite', 'carbon', 'glow', 'horizon', 'grid', 'contour', 'dusk']:
+    await page.locator('[data-collection-filter="performance"]').click()
+    for look, finish, style in [('sprint', 'pitlane', 'race'), ('endurance', 'apexline', 'race'), ('rally', 'technical', 'race'), ('clubsport', 'carbon', 'race'), ('obsidian', 'satin', 'touring'), ('executive', 'horizon', 'touring')]:
+        await page.locator(f'button[data-look="{look}"]').click()
+        assert await page.locator('html').get_attribute('data-finish') == finish
+        assert await page.locator('html').get_attribute('data-instrument-style') == style
+        assert await page.locator('button[data-look][aria-pressed="true"]').count() == 1
+        assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--warn")') == warning_color
+    assert await page.locator('.look-card:visible').count() == 6
+    await page.locator('[data-collection-filter="signature"]').click()
+    await page.locator('[data-look="expedition"]').click()
+    for finish in ['midnight', 'graphite', 'carbon', 'glow', 'horizon', 'grid', 'contour', 'dusk', 'pitlane', 'apexline', 'technical', 'satin']:
         await page.locator(f'button[data-background="{finish}"]').click()
         assert await page.locator('html').get_attribute('data-scene') == finish
+    await page.locator('button[data-background="dusk"]').click()
     assert 'customized' in await page.locator('#appearance-current').inner_text()
     assert await page.locator('button[data-look][aria-pressed="true"]').count() == 0
     await page.reload()
@@ -61,11 +72,24 @@ async def preview(browser):
     await page.keyboard.press('ArrowRight')
     assert await page.locator('#appearance-custom').is_visible()
     await page.locator('#appearance-tab-custom').click()
+    for transparency, alpha in [(0, 255), (50, 128), (100, 0)]:
+        await page.locator('#appearance-transparency').fill(str(transparency))
+        assert await page.locator('#appearance-transparency-value').inner_text() == f'{transparency}%'
+        actual = await page.locator('.primary-instruments').evaluate("""el => {
+          const c = document.createElement('canvas'); c.width = c.height = 1;
+          const ctx = c.getContext('2d'); ctx.fillStyle = getComputedStyle(el).backgroundColor;
+          ctx.fillRect(0,0,1,1); return ctx.getImageData(0,0,1,1).data[3];
+        }""")
+        assert abs(actual - alpha) <= 1, (transparency, actual)
+        assert await page.locator('#speed-digits').evaluate('(el) => getComputedStyle(el).opacity') == '1'
+        assert await page.locator('.primary-instruments').evaluate('(el) => getComputedStyle(el).opacity') == '1'
+    await page.locator('#appearance-transparency').fill('50')
     await page.get_by_role('button', name='Violet', exact=True).click()
     await page.locator('#appearance-finish').select_option('carbon')
     await page.reload()
     assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()') == '#c6a6ff'
     assert await page.locator('html').get_attribute('data-finish') == 'carbon'
+    assert await page.locator('#appearance-transparency').input_value() == '50'
     await page.evaluate("frogdashDemo.scenario('parked')")
     await page.wait_for_timeout(150)
     await page.locator('#appearance-launch').click()
@@ -102,6 +126,7 @@ async def preview(browser):
     assert await page.locator('#appearance-title-input').input_value() == 'FOXBODY / 5.0'
     await page.locator('#appearance-reset').click()
     assert await page.evaluate('JSON.parse(localStorage.getItem("frogdash.appearance.v1")).look') == 'original'
+    assert await page.locator('#appearance-transparency').input_value() == '0'
     await page.locator('#appearance-close').click()
     await page.locator('#race-launch').click()
     await page.locator('[data-race="accel"]').click()

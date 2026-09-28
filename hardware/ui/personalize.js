@@ -8,10 +8,16 @@
     heritage: {name: 'Heritage', note: 'Warm amber · graphite', accent: '#ffc77d', finish: 'graphite', surface: '#211c17', raised: '#2c251e', line: '#4b4035'},
     afterhours: {name: 'After hours', note: 'Soft violet · dusk', accent: '#c6a6ff', finish: 'dusk', surface: '#1b1726', raised: '#292137', line: '#443853'},
     apex: {name: 'Apex', note: 'Platinum · carbon weave', accent: '#e3e9ee', finish: 'carbon', surface: '#191d22', raised: '#272c32', line: '#434a53'},
-    expedition: {name: 'Expedition', note: 'Sage green · contours', accent: '#b9dfa2', finish: 'contour', surface: '#192018', raised: '#263024', line: '#3e4c39'}
+    expedition: {name: 'Expedition', note: 'Sage green · contours', accent: '#b9dfa2', finish: 'contour', surface: '#192018', raised: '#263024', line: '#3e4c39'},
+    sprint: {name: 'GT Sprint', note: 'Acid yellow / precision instruments', accent: '#e3f58a', finish: 'pitlane', surface: '#141a13', raised: '#242c20', line: '#424d37', style: 'race', transparency: 15},
+    endurance: {name: 'Endurance', note: 'Platinum / red pit-lane stripes', accent: '#e3e9ee', finish: 'apexline', surface: '#171b22', raised: '#262c35', line: '#424b58', style: 'race', transparency: 20},
+    rally: {name: 'Rally Stage', note: 'Glacier cyan / technical grid', accent: '#85e6ee', finish: 'technical', surface: '#101e25', raised: '#1d3039', line: '#355361', style: 'race', transparency: 15},
+    clubsport: {name: 'Club Sport', note: 'Hot amber / exposed carbon', accent: '#ffc48a', finish: 'carbon', surface: '#201b17', raised: '#31271e', line: '#504132', style: 'race', transparency: 10},
+    obsidian: {name: 'Obsidian', note: 'Monochrome / brushed satin', accent: '#dce5ec', finish: 'satin', surface: '#171b21', raised: '#252b33', line: '#3d4854', style: 'touring', transparency: 25},
+    executive: {name: 'Executive', note: 'Champagne / midnight blue', accent: '#e7d3a5', finish: 'horizon', surface: '#151d2a', raised: '#253145', line: '#42526a', style: 'touring', transparency: 20}
   };
-  const finishes = {midnight: 'Midnight', graphite: 'Graphite', carbon: 'Carbon weave', glow: 'Accent glow', horizon: 'Horizon', grid: 'Blueprint', contour: 'Contours', dusk: 'Dusk', image: 'Custom image'};
-  const defaults = {look: 'original', accent: '#8befc4', finish: 'midnight', background: '', splash: 'off', splashImage: '', title: 'FROGDASH', duration: 2};
+  const finishes = {midnight: 'Midnight', graphite: 'Graphite', carbon: 'Carbon weave', glow: 'Accent glow', horizon: 'Horizon', grid: 'Blueprint', contour: 'Contours', dusk: 'Dusk', pitlane: 'Pit lane', apexline: 'Redline', technical: 'Telemetry', satin: 'Satin', image: 'Custom image'};
+  const defaults = {look: 'original', accent: '#8befc4', finish: 'midnight', background: '', splash: 'off', splashImage: '', title: 'FROGDASH', duration: 2, transparency: 0};
   const key = 'frogdash.appearance.v1';
   const validImage = value => typeof value === 'string' && value.length < 1500000 && /^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(value);
   let prefs = {...defaults}, splashTimer, splashPreview = false;
@@ -26,6 +32,7 @@
       if (validImage(stored.splashImage)) prefs.splashImage = stored.splashImage;
       if (typeof stored.title === 'string') prefs.title = stored.title.slice(0, 32);
       if ([1, 2, 3, 5].includes(stored.duration)) prefs.duration = stored.duration;
+      if (Number.isFinite(stored.transparency)) prefs.transparency = Math.max(0, Math.min(100, stored.transparency));
     }
   } catch { /* Unavailable storage falls back to a fully usable dash. */ }
 
@@ -52,13 +59,21 @@
   });
   for (const [id, look] of Object.entries(looks)) {
     const button = document.createElement('button'); button.type = 'button'; button.dataset.look = id;
+    button.dataset.collection = look.style ? 'performance' : 'signature';
+    button.dataset.instrumentStyle = look.style || 'classic';
     button.className = 'look-card'; button.setAttribute('aria-label', `Apply ${look.name} look`);
     button.style.setProperty('--accent', look.accent); button.style.setProperty('--surface', look.surface);
     // Static, local catalogue text only; uploaded artwork never enters markup.
     button.innerHTML = `<span class="look-art" data-scene="${look.finish}" aria-hidden="true"><span class="mini-gauge"></span><span class="mini-speed">76<small>MPH</small></span><span class="mini-bars"></span></span><span class="look-caption"><strong>${look.name}</strong><span class="look-check" aria-hidden="true">✓</span><small>${look.note}</small></span>`;
-    button.onclick = () => { prefs.look = id; prefs.accent = look.accent; prefs.finish = look.finish; applyAppearance(); };
+    button.onclick = () => { prefs.look = id; prefs.accent = look.accent; prefs.finish = look.finish; prefs.transparency = look.transparency || 0; applyAppearance(); };
     $('appearance-looks').append(button);
   }
+  function collection(name) {
+    for (const button of document.querySelectorAll('button[data-collection-filter]')) button.setAttribute('aria-pressed', String(button.dataset.collectionFilter === name));
+    for (const card of document.querySelectorAll('.look-card')) card.hidden = card.dataset.collection !== name;
+  }
+  for (const button of document.querySelectorAll('button[data-collection-filter]')) button.onclick = () => collection(button.dataset.collectionFilter);
+  collection(looks[prefs.look].style ? 'performance' : 'signature');
   $('appearance-finish').replaceChildren();
   for (const [id, name] of Object.entries(finishes)) {
     const option = document.createElement('option'); option.value = id; option.textContent = name; $('appearance-finish').append(option);
@@ -82,16 +97,21 @@
     root.style.setProperty('--accent', prefs.accent);
     for (const token of ['surface', 'raised', 'line']) root.style.setProperty(`--${token}`, look[token]);
     root.style.setProperty('--bg', prefs.finish === 'graphite' ? '#191d22' : '#090f13');
+    root.dataset.instrumentStyle = look.style || 'classic';
+    root.style.setProperty('--widget-fill', `${100 - prefs.transparency}%`);
     root.dataset.finish = prefs.finish;
     root.dataset.scene = prefs.finish;
     root.style.setProperty('--custom-background', prefs.background ? `url("${prefs.background}")` : 'none');
+    $('appearance-transparency').value = prefs.transparency;
+    $('appearance-transparency-value').textContent = `${prefs.transparency}%`;
+    $('appearance-transparency').setAttribute('aria-valuetext', `${prefs.transparency}% transparent`);
     $('appearance-accent').value = prefs.accent;
     $('appearance-finish').value = prefs.finish;
     $('appearance-splash').value = prefs.splash;
     $('appearance-title-input').value = prefs.title;
     $('appearance-duration').value = prefs.duration;
     for (const button of document.querySelectorAll('[data-accent]')) button.setAttribute('aria-pressed', String(button.dataset.accent === prefs.accent));
-    const exact = prefs.accent === look.accent && prefs.finish === look.finish;
+    const exact = prefs.accent === look.accent && prefs.finish === look.finish && prefs.transparency === (look.transparency || 0);
     $('appearance-current').textContent = `${look.name}${exact ? '' : ' · customized'} / ${finishes[prefs.finish]}`;
     for (const button of document.querySelectorAll('button[data-look]')) button.setAttribute('aria-pressed', String(button.dataset.look === prefs.look && exact));
     for (const button of document.querySelectorAll('button[data-background]')) button.setAttribute('aria-pressed', String(button.dataset.background === prefs.finish));
@@ -161,7 +181,8 @@
   $('appearance-splash-image').onchange = event => uploadImage(event.target, 'splashImage');
   $('appearance-clear-background').onclick = () => { prefs.background = ''; prefs.finish = 'midnight'; applyAppearance(); };
   $('appearance-clear-splash').onclick = () => { prefs.splashImage = ''; prefs.splash = 'wordmark'; applyAppearance(); };
-  $('appearance-reset').onclick = () => { prefs = {...defaults}; applyAppearance(); };
+  $('appearance-transparency').addEventListener('input', event => { prefs.transparency = Number(event.target.value); applyAppearance(); });
+  $('appearance-reset').onclick = () => { prefs = {...defaults}; collection('signature'); applyAppearance(); };
   applyAppearance(false);
   if (prefs.splash !== 'off') showSplash();
 
