@@ -2,8 +2,9 @@
 
 Open **Drive** in the footer for Display modes, Alerts, Drive review and Dash
 health. **Mark log** and **Alerts** also stay on the main instrument screen.
-These tools do not command the engine or change the existing shutdown service.
-No GPIO is accessed. BCM 23/24 remain reserved for the owner's ACC/relay service.
+These tools do not command the engine or access GPIO. Power sequencing belongs
+to the separate [PiSugar service](pisugar-power.md); the BCM23/24 ACC/relay design
+is retired.
 
 ## Day/night and saved layouts
 
@@ -102,7 +103,7 @@ The service checkpoints reviews about every 15 seconds and promptly after an
 event, using atomic replacement and file sync in a worker thread. An unclosed
 checkpoint recovered after restart is labeled **interrupted**, never complete.
 Data after the last successful checkpoint may be missing after abrupt power loss.
-The existing shutdown script remains responsible for power sequencing.
+The separate [PiSugar shutdown setup](pisugar-power.md) owns power sequencing.
 
 Reviews live in `<data-dir>/drives/`. Retention keeps up to 20 recorder-owned
 drive JSON files within a 64 MiB budget, protecting the active drive and ignoring
@@ -138,7 +139,8 @@ Install `iproute2` and the Raspberry Pi package providing `vcgencmd` on the Pi.
 The updated Frogdash service adds the `video` supplementary group for Pi firmware
 diagnostics and `AF_NETLINK` for interface queries. It adds no administrative CAN
 capability. Reinstall this unit template and reload/restart **frogdash.service**
-when deploying the update; leave the separate shutdown service as it is.
+when deploying the update. Power hardware migration has its own
+[PiSugar installation steps](pisugar-power.md).
 
 ## Validation
 

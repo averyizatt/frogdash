@@ -23,6 +23,7 @@ __pycache__/
 # Secrets — never commit
 *.env
 !config/frogdash.env
+!config/frogdash-power.env
 credentials/
 secrets/
 .sources/

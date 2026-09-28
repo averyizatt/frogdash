@@ -1,0 +1,29 @@
+[Unit]
+Description=Frogdash PiSugar 3 input-power monitor
+Wants=pisugar-server.service
+After=pisugar-server.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=root
+Environment="FROGDASH_POWER_ARGS=--loss-delay 8"
+EnvironmentFile=-/etc/default/frogdash-power
+ExecStart=/usr/bin/python3 /usr/local/lib/frogdash-power/monitor.py --execute --status-file /run/frogdash-power/status.json $FROGDASH_POWER_ARGS
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=5
+RuntimeDirectory=frogdash-power
+RuntimeDirectoryMode=0755
+UMask=0022
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+# Vendor socket lives in shared /tmp; a private namespace would hide it.
+PrivateTmp=no
+PrivateDevices=yes
+RestrictAddressFamilies=AF_UNIX
+ReadWritePaths=/run/frogdash-power
+
+[Install]
+WantedBy=multi-user.target

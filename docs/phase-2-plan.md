@@ -1,5 +1,8 @@
 # Phase 2 — UI and connection layer
 
+> Historical scope: the original ACC/relay shutdown exclusions below are now
+> superseded by the [PiSugar 3 Plus power design](pisugar-power.md).
+
 Implementation update: the production CAN/GPS service and UI now live in
 `hardware/`. See [installation and protocol details](can-integration.md).
 The user's expanded scope adds USB GPS via gpsd and transmission of GPS frame

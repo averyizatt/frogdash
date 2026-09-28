@@ -187,9 +187,10 @@ systemctl --user enable --now frogdash-kiosk
 The readiness launcher discovers `chromium` or `chromium-browser` and waits for
 local HTTP before opening it. Use a service override with launcher `--browser`
 for a different executable. Configure graphical autologin/session startup
-separately for this desktop option. The existing shutdown
-workflow can stop the user's kiosk and then `sudo systemctl stop frogdash` before
-poweroff. No replacement power controller or shutdown script is introduced.
+separately for this desktop option. The [PiSugar power monitor](pisugar-power.md)
+requests normal Linux poweroff after sustained input loss. Systemd stops the
+kiosk/backend and flushes storage before the final UPS cutoff hook runs. Install
+that power setup separately when retiring the old ACC/relay hardware.
 
 ## Replay and validation
 

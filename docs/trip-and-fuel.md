@@ -89,8 +89,9 @@ the service is stopped. Engine time requires fresh RPM of at least 300.
 
 Counters/settings save atomically to `/var/lib/frogdash/trip.json` every 15
 seconds, on settings/reset/fuel actions, and on orderly service exit. An abrupt
-power loss can lose up to the last checkpoint interval. Existing power and
-shutdown services, GPIO23 and GPIO24 are untouched. Replay uses a separate
+power loss can lose up to the last checkpoint interval. The separate
+[PiSugar shutdown service](pisugar-power.md) gives orderly service cleanup time
+before cutting output. Replay uses a separate
 `replay/trip.json`. Storage failures remain visible in the Trips screen.
 
 Local same-origin `GET /trip` returns state. `POST /trip` accepts exactly one of

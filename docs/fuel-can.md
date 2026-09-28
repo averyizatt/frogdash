@@ -74,8 +74,9 @@ on that controller and is not included in Frogdash backups.
 
 If you previously installed an I2C-specific systemd drop-in solely for the old
 sender, remove only that obsolete setting on the Pi and reload systemd. No I2C
-permissions are needed by Frogdash. Keep unrelated overrides and the separate
-ACC/shutdown service intact.
+permissions are needed by the Frogdash application. Keep unrelated overrides;
+the separate [PiSugar power manager](pisugar-power.md) now owns I2C power control
+and replaces the earlier ACC/relay shutdown service.
 
 Bench-test empty/full/intermediate percentages, fault/unavailable status, malformed
 frames, and stopped transmission before vehicle use. Automated tests cover CAN

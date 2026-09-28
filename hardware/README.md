@@ -8,9 +8,12 @@ The Raspberry Pi implementation is now here. See the
   [rotating binary MLG recorder](../docs/data-logging.md).
 - `ui/`: production dashboard, quality indicators, knock monitor, CAN inspector,
   and water/meth/knock/lighting controls.
-- `systemd/`: daemon and graphical-session kiosk service templates.
+- `systemd/`: daemon, kiosk and PiSugar power service templates.
+- `power/`: independent input-loss monitor and final UPS cutoff hook; follow
+  the [PiSugar 3 Plus setup](../docs/pisugar-power.md) to replace the old ACC/relay.
 - `compat/`: CCM patches to transfer GPS and engine-control ownership to the Pi.
 
 Run `python -m hardware.frogdash.server --interface can0 --gpsd` from the repo
-root after installation. GPIO, fuel-level sensing, power control, and physical
-CAN adapter setup remain hardware-specific integration work.
+root after installation. Fuel sensing belongs to the external CAN controller.
+Physical CAN, UPS wiring, shutdown cutoff and automatic restart need bench
+commissioning with the actual hardware.

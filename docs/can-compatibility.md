@@ -111,7 +111,8 @@ compare RPM, temperatures, AFR, MAP and pulse widths to TunerStudio, verify
 module inputs, exercise parked commands and ACKs, and test stale/fault recovery.
 Check fuel empty/full/fault frames and GPS ownership after flashing the CCM.
 These tests verify software layouts; physical bus/device operation remains to
-be checked on the Pi. The existing ACC/shutdown system is unchanged.
+be checked on the Pi. Ignition power now uses the separate
+[PiSugar 3 Plus setup](pisugar-power.md), replacing the previous ACC/relay design.
 
 [Steering-wheel navigation](steering-wheel.md) adds 0x205 in shared extension 2.
 It requires integrating the new CCM button scan/transmit task; the old heartbeat

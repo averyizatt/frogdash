@@ -1,0 +1,15 @@
+#!/bin/sh
+# Install executable in /usr/lib/systemd/system-shutdown/ on Raspberry Pi OS.
+# These hooks run AFTER services stop and filesystems become read-only/unmount.
+# Do not install as an ordinary shutdown.target service or call from the monitor.
+case "$1" in
+    poweroff|halt)
+        if [ ! -x /usr/bin/pisugar-poweroff ]; then
+            echo 'Frogdash: PiSugar cutoff binary missing; UPS output remains on' >&2
+            exit 1
+        fi
+        exec /usr/bin/pisugar-poweroff --model 'PiSugar 3' \
+            --config /etc/pisugar-server/config.json --countdown 3 --retries 3
+        ;;
+    *) exit 0 ;;
+esac

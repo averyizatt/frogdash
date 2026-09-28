@@ -1,0 +1,4 @@
+# PiSugar 3 Plus uses the vendor model name "PiSugar 3".
+# Install as /etc/default/pisugar-server; keep the existing config.json.
+# Local root-only socket: no unauthenticated network power controls on car Wi-Fi.
+OPTS="--model 'PiSugar 3' --syslog --config /etc/pisugar-server/config.json --uds /tmp/pisugar-server.sock --uds-mode 600"

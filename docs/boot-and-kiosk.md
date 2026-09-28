@@ -42,7 +42,8 @@ timeout. It launches Chromium on the first HTTP 200, even with no CAN/GPS data.
 It bypasses HTTP proxies for loopback, uses no fixed startup sleep and keeps
 Chromium's sandbox enabled. If HTTP is still unavailable after approximately
 30 seconds, it exits and systemd retries after one second. It never changes
-power controls, shutdown services, GPIO23 or GPIO24.
+power controls. Install the separate [PiSugar power setup](pisugar-power.md) for
+ignition-loss shutdown; the previous GPIO23/24 relay design is retired.
 
 After confirming a compatible Debian/Pi OS installation, typical dependencies
 are installed with:
@@ -112,7 +113,7 @@ systemd-analyze critical-chain frogdash-console@YOUR_USER.service
 ```
 
 The launcher logs `boot+...s` when it begins waiting and when it launches
-Chromium. These timestamps start at kernel uptime, not relay key-on, and are
+Chromium. These timestamps start at kernel uptime, not ignition key-on, and are
 **not first-paint measurements**. Record several ordinary cold starts on video:
 key-on, visible instruments, first live CAN readings, and first valid GPS speed.
 GPS acquisition is independent and never gates UI startup. Systemd's reports

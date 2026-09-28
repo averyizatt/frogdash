@@ -65,7 +65,7 @@ The backend sends systemd readiness/watchdog notifications; a stalled event loop
 Before road use, record real results under Support & testing:
 
 1. Repeated cold starts: measure key-on to first UI and **live** readings separately; compare microSD performance and journal uptime stamps.
-2. Cranking / key cycling: no undervoltage corruption or conflicting relay control; verify the existing external shutdown service still owns BCM23/24.
+2. Cranking / key cycling: commission the [PiSugar 3 Plus setup](pisugar-power.md), retire the old BCM23/24 relay service, and verify ride-through, orderly log closure, output cutoff and automatic restart. Test input returning during shutdown too.
 3. GPS unplug/replug and lost fix: stale/unavailable speed, reconnect, no fabricated race result.
 4. CAN/module loss and recovery: correct stale flags, bus errors, command availability and controller ownership. Confirm no duplicate GPS transmitter.
 5. Storage pressure: bounded MLG rotation, visible failures and recovery; retain unrelated files.

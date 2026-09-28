@@ -56,8 +56,10 @@ remaining calibration in **Drive → Fuel setup** before enabling estimates.
 [Driving tools](docs/driving-tools.md) add automatic day/night software dimming,
 saved Street/Tuning/Track layouts, conditional latched alerts, optional chimes,
 one-touch log bookmarks, synchronized drive-review graphs on the dash and Wi-Fi
-page, and read-only Pi/CAN health diagnostics. The existing power/shutdown service
-and its GPIO assignments stay separate.
+page, and read-only Pi/CAN health diagnostics.
+[PiSugar 3 Plus power management](docs/pisugar-power.md) replaces the old ACC/relay
+shutdown: battery ride-through, an 8-second input-loss grace period, orderly Linux
+shutdown, final UPS output cutoff, and startup on the next input restoration.
 [Screen speakers](docs/screen-audio.md) support warning chimes through Linux audio,
 with saved display volume, a test sound and automatic activation in the kiosk.
 
@@ -66,7 +68,8 @@ CAN fuel-level status, portable backup/restore, service
 reminders/history, diagnostic exports, US/metric instruments, supported LCD
 backlight control, parked configuration gates, watchdog recovery and versioned
 installation/rollback. Open **Drive > Dash management**. The [external fuel controller](docs/fuel-can.md) owns sender calibration;
-vehicle commissioning remains pending; no power/shutdown changes are made.
+vehicle commissioning remains pending. Install and bench-test the separate
+[PiSugar power services](docs/pisugar-power.md) when changing the power hardware.
 
 ## Browser preview
 
@@ -95,6 +98,7 @@ python tools/update_preview.py --check
 | `hardware/ui/` | Authoritative production dashboard |
 | `preview/` | Standalone simulated design preview; published by GitHub Pages |
 | `hardware/systemd/` | Raspberry Pi service templates |
+| `hardware/power/` | PiSugar input-loss monitor and final shutdown hook |
 | `hardware/can_contract/` | Shared schema-2 firmware header with fuel/GPS extension |
 | `hardware/compat/` | Comfort controller patches for GPS/control ownership |
 | `config/` | Production service environment |
