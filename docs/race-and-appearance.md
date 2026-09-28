@@ -136,3 +136,8 @@ reload, local appearance persistence, image uploads and splash previews.
 Appearance browser checks include every preset/background, persistence,
 day/night interaction, keyboard tab navigation and retaining uploaded artwork.
 Physical GPS and Raspberry Pi validation are still pending.
+
+Preview settings remain editable during the animated drive. On the Pi, configuration
+requires fresh stationary telemetry; a visible message explains the locked state.
+After clicking/touching a range, number or select field, native keyboard editing
+works normally; steering-wheel selection still enters its explicit edit mode.

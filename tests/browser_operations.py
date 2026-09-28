@@ -32,7 +32,8 @@ async def preview(browser):
     await page.locator('#operations-launch').click()
     assert await page.locator('[data-ops-tab="sender"], #sender-form').count() == 0
     await page.locator('[data-ops-tab="service"]').click()
-    assert await page.locator('#maintenance-form').evaluate('(n) => n.inert')
+    assert not await page.locator('#maintenance-form').evaluate('(n) => n.inert')
+    assert 'Preview editing enabled' in await page.locator('#operations-summary').inner_text()
     await page.locator('#demo-park').click()
     await page.wait_for_function("!document.getElementById('maintenance-form').inert")
     await page.locator('[data-ops-tab="display"]').click()

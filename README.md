@@ -80,7 +80,8 @@ Open [preview/index.html](preview/index.html) in your browser, or use the GitHub
 The preview starts with a repeating simulated drive: acceleration, gear changes,
 cruise, braking and idle, with synchronized moving gauges and light indicators.
 Use **Pause / Play** in the header to freeze or resume, and **Park / Drive** to
-unlock configuration or return to motion. **Drive > Dash management > Park demo**
+switch between simulated idle and motion. Configuration remains editable while
+the preview gauges move, including transparency, fuel setup and alert settings. **Drive > Dash management > Park demo**
 is also available.
 
 The persistent **DEMO · SIMULATED** badge identifies generated readings. Controls only change the simulated state. `M` opens controls, `K` opens the knock monitor, and `Esc` closes a dialog. Use the arrow keys to change control tabs. The production UI receives its readings exclusively from the local CAN/GPS service.

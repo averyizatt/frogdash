@@ -1,7 +1,7 @@
 /* Shared steering-wheel and keyboard navigation. CAN gestures arrive once via state. */
 (() => {
   'use strict';
-  let editing = null, session = null, cursor = null, enterAt = null, enterTimer;
+  let editing = null, session = null, cursor = null, enterAt = null, enterTimer, nativeInput = null;
   const selector = 'button, a[href], input:not([type="hidden"]), select, textarea, [tabindex]';
   const hint = document.createElement('output');
   hint.id = 'wheel-hint'; hint.hidden = true; hint.setAttribute('aria-live', 'polite');
@@ -44,6 +44,7 @@
     el.dispatchEvent(new Event('change', {bubbles: true}));
   }
   function action(name) {
+    nativeInput = null; // Wheel navigation explicitly takes ownership again.
     if (document.hidden || !['up', 'down', 'left', 'right', 'ok', 'back'].includes(name)) return;
     const before = scope();
     const items = candidates();
@@ -110,7 +111,8 @@
     }
     cursor = wheel.seq;
   });
-  document.addEventListener('pointerdown', () => {
+  document.addEventListener('pointerdown', event => {
+    nativeInput = editable(event.target) ? event.target : null;
     clearEdit(); hint.hidden = true;
     document.querySelectorAll('.wheel-focus').forEach(el => el.classList.remove('wheel-focus'));
   }, true);
@@ -118,6 +120,8 @@
   document.addEventListener('visibilitychange', () => { cancelEnter(); clearEdit(); });
   window.addEventListener('blur', cancelEnter);
   document.addEventListener('keydown', event => {
+    // After a touch/click, use the browser's normal slider/select/number keys.
+    if (event.target === nativeInput && !editing && event.key !== 'Escape') return;
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || textInput(event.target)) return;
     const name = {ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Escape: 'back'}[event.key];
     if (!name && event.key !== 'Enter') return;

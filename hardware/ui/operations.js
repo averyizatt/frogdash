@@ -9,6 +9,7 @@
   const demo = () => latest.mode === 'demo';
   const status = () => demo() ? simulated : latest.operations || {};
   const parked = () => online && (demo() ? latest.values?.['vehicle.speed_kph']?.quality === 'live' && latest.values['vehicle.speed_kph'].value < 1 : status().parked === true);
+  const canConfigure = () => online && (demo() || parked());
   const el = (tag, text, cls) => { const n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; };
   const dialog = el('dialog', null, 'workspace-dialog'); dialog.id = 'operations-dialog'; dialog.setAttribute('aria-labelledby', 'operations-title');
   dialog.innerHTML = `<header class="dialog-header"><div><span class="eyebrow">SETUP / SERVICE / SUPPORT</span><h2 id="operations-title">Dash management</h2><p id="operations-summary"></p></div><button id="demo-park" class="close-button" type="button" hidden>Park demo</button><button id="operations-close" class="close-button" type="button">Close ×</button></header>
@@ -36,7 +37,7 @@
   function applyPreferences(ui) { for (const key of keys) { if (ui[key]) localStorage.setItem(key, JSON.stringify(ui[key])); else localStorage.removeItem(key); } location.reload(); }
   function download(name, data) { const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'})); const a = el('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
   async function change(body) {
-    if (!parked()) throw new Error('Park before changing configuration.');
+    if (!canConfigure()) throw new Error('Park before changing configuration.');
     if (demo()) {
       if (body.check) simulated.checks[body.check] = Date.now();
       if (body.ui) simulated.ui = body.ui;
@@ -55,14 +56,14 @@
   $('profile-load').onclick = () => work(async () => { const data = demo() ? simulated : await api('status'); if (!Object.keys(data.ui || {}).length) throw new Error('No display profile is saved on the Pi.'); applyPreferences(data.ui); });
   $('backup-download').onclick = () => work(async () => { const data = demo() ? {format: 'frogdash-preview-backup', version: 1, ui: preferences(), operations: simulated} : await api('backup', {ui: preferences()}); download('frogdash-backup.json', data); message(demo() ? 'Preview backup downloaded; production restore rejects simulated data.' : 'Backup downloaded.'); });
   $('backup-file').onchange = () => work(async () => { pending = null; const file = $('backup-file').files[0]; if (!file) return; if (file.size > 6000000) throw new Error('Backup exceeds 6 MB.'); const data = JSON.parse(await file.text()); if (data.format !== (demo() ? 'frogdash-preview-backup' : 'frogdash-backup') || ![1, 2].includes(data.version)) throw new Error('Unsupported backup.'); pending = data; $('backup-review').textContent = `${data.software || 'Preview'} · ${data.operations?.maintenance?.length || 0} service reminders. Restore will replace the configuration and reload this display.${!demo() && data.version === 1 ? ' Legacy Pi sender settings will be ignored.' : ''}`; });
-  $('backup-restore').onclick = () => work(async () => { if (!pending || !parked()) throw new Error('Park and choose a backup first.'); const result = demo() ? {ui: pending.ui} : await api('restore', pending); applyPreferences(result.ui); });
+  $('backup-restore').onclick = () => work(async () => { if (!pending || !canConfigure()) throw new Error('Park and choose a backup first.'); const result = demo() ? {ui: pending.ui} : await api('restore', pending); applyPreferences(result.ui); });
   $('diagnostic-download').onclick = () => work(async () => { download('frogdash-diagnostic.json', demo() ? {simulated: true, software: simulated} : await api('diagnostic')); message('Diagnostic report downloaded.'); });
   let feedback = '';
   let listSignature = '';
   function render() {
-    const s = status(), canEdit = parked() && !busy && !s.restore_pending;
-    $('operations-result').textContent = feedback || (parked() ? 'Configuration ready. Changes save to the Pi; preview changes are simulated.' : 'Park with fresh stationary telemetry before changing configuration.');
-    $('operations-summary').textContent = `${demo() ? 'SIMULATED · ' : ''}${parked() ? 'Stationary telemetry confirmed' : 'Configuration locked · park with fresh speed or engine-off data'}${s.error ? ' · ' + s.error : ''}`;
+    const s = status(), canEdit = canConfigure() && !busy && !s.restore_pending;
+    $('operations-result').textContent = feedback || (demo() ? 'Preview configuration is editable while the gauges move. Changes are simulated.' : parked() ? 'Configuration ready. Changes save to the Pi; preview changes are simulated.' : 'Park with fresh stationary telemetry before changing configuration.');
+    $('operations-summary').textContent = `${demo() ? 'SIMULATED · Preview editing enabled' : parked() ? 'Stationary telemetry confirmed' : 'Configuration locked · park with fresh speed or engine-off data'}${s.error ? ' · ' + s.error : ''}`;
     $('demo-park').hidden = !demo(); $('demo-park').textContent = parked() ? 'Drive demo' : 'Park demo';
     document.querySelectorAll('.ops-edit').forEach(n => { n.inert = !canEdit; n.classList.toggle('configuration-locked', !canEdit); });
     $('backup-restore').disabled = !pending || !canEdit;
@@ -73,8 +74,10 @@
     }
     $('maintenance-distance-label').firstChild.textContent = `Distance · ${u.distanceUnit}`;
     $('support-version').textContent = `Frogdash ${s.version || 'connecting'} · ${s.os || ''} · Python ${s.python || '—'}`;
-    $('backlight-status').textContent = backlight.writable ? `Selected: ${backlight.selected}` : `Unavailable. Detected: ${(backlight.devices || []).join(', ') || 'none'}. Select a supported device in service configuration.`;
+    $('backlight-status').textContent = demo() ? 'Hardware only: physical LCD brightness requires a connected Pi display. Use Drive > Display modes to preview software dimming.' : backlight.writable ? `Selected: ${backlight.selected}` : `Unavailable. Detected: ${(backlight.devices || []).join(', ') || 'none'}. Select a supported device in service configuration.`;
     $('backlight-apply').disabled = !backlight.writable || busy || demo();
+    $('backlight-percent').disabled = !backlight.writable || busy || demo();
+    $('backlight-apply').textContent = demo() ? 'Requires Pi display' : 'Apply to LCD';
     const signature = JSON.stringify([(s.maintenance || []).map(m => ({...m, remaining: Object.fromEntries(Object.entries(m.remaining || {}).map(([k,v]) => [k, Math.round(v)]))})), s.checks, s.capabilities, canEdit, u.metric]);
     if (signature !== listSignature) {
       listSignature = signature;
@@ -95,10 +98,13 @@
       $('acceptance-list').replaceChildren(...Object.entries(checks).map(([key, label]) => { const b = el('button', `${s.checks?.[key] ? '✓ ' : ''}${label}`); b.type = 'button'; b.disabled = !canEdit; b.onclick = () => work(() => change({check: key})); return b; }));
       $('controller-capabilities').replaceChildren(...(s.capabilities || []).map(c => el('p', `${c.module}: ${c.command}. ${c.readback}. ${c.persistence}.`, 'control-note')));
     }
-    // Allow viewing while moving; configuration controls require fresh stationary data.
-    for (const selector of ['#appearance-dialog .appearance-body', '[data-driver-panel="display"]', '#fuel-settings', '#alert-settings']) {
-      const node = document.querySelector(selector); if (node) { node.inert = !parked(); node.classList.toggle('configuration-locked', !parked()); node.title = parked() ? '' : 'Park with fresh stationary telemetry to edit'; }
+    // The preview stays editable during its animated drive. Real hardware still
+    // requires fresh stationary telemetry; explain the lock outside inert panels.
+    for (const selector of ['#appearance-looks', '#appearance-backgrounds', '#appearance-dialog .appearance-body', '[data-driver-panel="display"]', '#fuel-settings', '#alert-settings']) {
+      const node = document.querySelector(selector); if (node) { node.inert = !canConfigure(); node.classList.toggle('configuration-locked', !canConfigure()); node.title = canConfigure() ? '' : 'Park with fresh stationary telemetry to edit'; }
     }
+    $('appearance-access').textContent = demo() ? 'Preview editing enabled · changes save on this display' : canConfigure() ? 'Saved on this display · live changes across the dash' : 'Settings locked · park with fresh stationary telemetry to edit';
+    if (!canConfigure()) $('drive-summary').textContent = 'Settings locked · park with fresh stationary telemetry to edit';
   }
   tab('setup');
   window.addEventListener('frogdash-state', e => { latest = e.detail.snapshot; online = e.detail.connected; render(); });

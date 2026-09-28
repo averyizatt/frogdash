@@ -28,3 +28,4 @@ jobs:
       - run: python tests/browser_navigation.py
       - run: python tests/browser_demo.py
       - run: python tests/browser_power.py
+      - run: python tests/browser_interactions.py

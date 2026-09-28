@@ -19,7 +19,7 @@
     'knock.config.multiplier': 2
   };
   let scenario = 'drive', paused = false, elapsed = 3, previous = performance.now();
-  let tick = 0, testTimer;
+  let tick = 0, testTimer, boostStart = 25, lightingMode = 0;
   // Keyframes model acceleration, brief gear changes, cruise, braking and idle.
   const cycle = [
     [0,0,900,-60], [2,5,1600,-30], [6,42,5200,70], [6.4,46,3300,0],
@@ -64,7 +64,7 @@
     motion.setAttribute('aria-label', scenario === 'drive' && !paused ? 'Pause simulated drive' : 'Play simulated drive');
     motion.setAttribute('aria-pressed', String(scenario === 'drive' && !paused));
     park.textContent = scenario === 'parked' ? 'Drive' : 'Park';
-    park.setAttribute('aria-label', scenario === 'parked' ? 'Resume simulated driving' : 'Park demo to customize');
+    park.setAttribute('aria-label', scenario === 'parked' ? 'Resume simulated driving' : 'Switch to simulated idle');
   }
   function setScenario(name) {
     if (!['drive', 'normal', 'warning', 'offline', 'vacuum', 'night', 'parked'].includes(name)) throw new Error('Unknown demo scenario');
@@ -106,7 +106,7 @@
       };
       if (scenario === 'parked') Object.assign(current, {'engine.rpm': 900, 'engine.boost_kpa': -60, 'engine.afr': 14.7, 'ecu.afr_target': 14.7, 'vehicle.fuel_pct': drivingValues(elapsed)['vehicle.fuel_pct']});
       if (scenario === 'drive') for (const side of ['left', 'right']) current[`lighting.${side}_state`] = current[`lighting.turn_${side}`] ? 'TURN' : current['lighting.brake'] ? 'BRAKE' : 'OFF';
-      if (scenario === 'drive' && readings['meth.state'] === 'ARMED' && current['engine.boost_kpa'] > 25) {
+      if (scenario === 'drive' && readings['meth.state'] === 'ARMED' && current['engine.boost_kpa'] > boostStart) {
         current['meth.state'] = 'SPRAYING';
         current['meth.duty_pct'] = Math.round(Math.min(85, 20 + current['engine.boost_kpa'] * .6));
       }
@@ -114,8 +114,8 @@
         {value, quality: value === null ? 'unavailable' : scenario === 'offline' ? 'stale' : 'live', source: 'SIMULATED'}]));
       const test = readings['meth.state'] === 'TEST';
       const reasons = {};
-      if (scenario !== 'parked') reasons['meth.test'] = 'Park before testing the pump';
-      if (scenario !== 'parked') for (const key of ['meth.boost', 'knock.threshold', 'knock.multiplier']) reasons[key] = 'Park before changing calibration';
+      // Simulated motion does not lock preview configuration. Keep meaningful
+      // controller states (disarm before test, active test, offline) observable.
       if (test) reasons['meth.arm'] = reasons['meth.test'] = reasons['meth.boost'] = 'Stop the pump test first';
       if (readings['meth.state'] === 'ARMED') reasons['meth.test'] = reasons['meth.boost'] = 'Disarm before adjusting or testing';
       if (scenario === 'offline') {
@@ -129,6 +129,7 @@
     }
     send(data) {
       const {request_id, action, value} = JSON.parse(data);
+      let detail = 'Demo change only — no vehicle connected.';
       if (scenario === 'offline') {
         this.emit({type: 'command_result', request_id, status: 'rejected', message: 'Demo controller offline'});
         return;
@@ -143,16 +144,20 @@
           break;
         case 'meth.stop':
           clearTimeout(testTimer); readings['meth.state'] = 'OFF'; readings['meth.duty_pct'] = 0; break;
+        case 'meth.boost': boostStart = value; detail = `Simulated boost start set to ${value} kPa.`; break;
         case 'meth.clear_faults': readings['meth.fault_flags'] = 0; break;
         case 'knock.enable': readings['knock.enabled'] = !!value; break;
         case 'knock.threshold': readings['knock.config.threshold_offset'] = value; break;
         case 'knock.multiplier': readings['knock.config.multiplier'] = value / 10; break;
+        case 'knock.refresh': detail = 'Simulated knock settings refreshed.'; break;
         case 'knock.clear_events': readings['knock.event_count'] = 0; break;
         case 'lighting.brightness': readings['lighting.brightness'] = value; break;
+        case 'lighting.mode': lightingMode = value; detail = `Simulated lighting mode: ${lightingMode ? 'Sequential' : 'Stock'}.`; break;
+        default: this.emit({type: 'command_result', request_id, status: 'rejected', message: 'This command is not supported in the preview.'}); return;
       }
       // Match the asynchronous command/state order without pretending hardware acknowledged.
       setTimeout(() => {
-        this.emit({type: 'command_result', request_id, status: 'simulated', message: 'Demo change only — no vehicle connected.'});
+        this.emit({type: 'command_result', request_id, status: 'simulated', message: detail});
         this.publish();
       }, 120);
     }
