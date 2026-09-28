@@ -15,6 +15,7 @@ from .connectivity import Connectivity, require_local
 from .race import Race
 from .driving import Driving
 from .health import Health
+from .shutdown import ShutdownHistory
 from .trip import Trip
 from .operations import Operations
 from .parking import require_parked
@@ -39,6 +40,8 @@ def create_app(state, adapter=None, connectivity=None):
     clients = set()
 
     async def lifecycle(app):
+        if state.shutdown_history:
+            await asyncio.to_thread(state.shutdown_history.start)
         await state.operations.recover()
         notify_task = asyncio.create_task(watchdog())
         tasks = [asyncio.create_task(adapter())] if adapter else []
@@ -78,6 +81,8 @@ def create_app(state, adapter=None, connectivity=None):
         if state.recorder:
             await state.recorder.close()
         await asyncio.gather(*(ws.close(code=1001, message=b"Service stopping") for ws in list(clients)))
+        if state.shutdown_history:
+            await asyncio.to_thread(state.shutdown_history.finish, state)
 
     async def websocket(request):
         if request.url.host not in {'127.0.0.1', 'localhost', '::1'}:
@@ -363,6 +368,7 @@ def main():
     state.operations = Operations(state, args.data_dir / 'replay' if args.replay else args.data_dir)
     state.backlight = Backlight(args.backlight_name)
     state.health = Health(state, args.interface, args.log_dir or args.data_dir)
+    state.shutdown_history = ShutdownHistory((args.data_dir / 'replay' if args.replay else args.data_dir) / 'shutdown.json')
     if args.log_dir:
         try:
             config = LogConfig(args.log_dir.resolve(), args.log_hz, args.log_minutes * 60,

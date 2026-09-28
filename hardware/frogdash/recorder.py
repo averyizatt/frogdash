@@ -106,6 +106,12 @@ class RotatingWriter:
             try:
                 stream.flush()
                 os.fsync(stream.fileno())
+                if os.name == 'posix':
+                    directory_fd = os.open(self.config.directory, os.O_DIRECTORY)
+                    try:
+                        os.fsync(directory_fd)
+                    finally:
+                        os.close(directory_fd)
             finally:
                 try:
                     stream.close()

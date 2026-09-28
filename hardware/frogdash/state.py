@@ -40,6 +40,7 @@ class State:
         self.backlight = Backlight()
         self.wheel = SteeringWheel(clock)
         self.health = None
+        self.shutdown_history = None
         self.can_errors = {'frames': 0, 'bus_off': 0, 'restarts': 0}
         self.controls = Controls(self)
 

@@ -14,6 +14,7 @@ import signal
 import socket
 import subprocess
 import time
+import threading
 
 
 LOG = logging.getLogger('frogdash-power')
@@ -72,6 +73,24 @@ class PiSugar:
         self.verify_model()
         # Charging=false can mean a full battery; only this field detects input.
         return self.boolean('battery_power_plugged')
+
+    def telemetry(self):
+        result = {'errors': []}
+        for field, command, limits in (
+                ('battery_percent', 'battery', (0, 100)),
+                ('battery_volts', 'battery_v', (0, 6)),
+                ('charging', 'battery_charging', None),
+                ('auto_power_on', 'auto_power_on', None)):
+            try:
+                value = self.boolean(command) if limits is None else float(self.request('get ' + command))
+                if limits is not None and (not math.isfinite(value) or not limits[0] <= value <= limits[1]):
+                    raise ProtocolError('Invalid ' + command)
+                result[field] = value
+            except (OSError, ValueError) as exc:
+                result[field] = None
+                result['errors'].append(str(exc))
+        result['sampled_monotonic'] = time.monotonic()
+        return result
 
     def check(self):
         self.verify_model()
@@ -155,7 +174,7 @@ class Monitor:
             present, error = None, str(exc)
         now = time.monotonic()
         status = self.timer.update(present, now)
-        status.update(input_present=present, timestamp=time.time(), dry_run=not self.execute, error=error)
+        status.update(input_present=present, timestamp=time.time(), monotonic=now, dry_run=not self.execute, error=error)
         if status['state'] == 'shutdown_due':
             if not self.execute:
                 status['state'] = 'would_shutdown'
@@ -199,10 +218,24 @@ def main(argv=None):
         LOG.error('%s', exc)
         return 1
     stopping = False
+    telemetry = {}
+    telemetry_stop = threading.Event()
+
+    def sample_telemetry():
+        nonlocal telemetry
+        # Separate, bounded I/O: battery diagnostics must not block the loss timer.
+        client = PiSugar(args.socket, timeout=.4)
+        while not telemetry_stop.is_set():
+            telemetry = client.telemetry()
+            telemetry_stop.wait(5)
+
+    worker = threading.Thread(target=sample_telemetry, name='ups-telemetry', daemon=True)
+    worker.start()
 
     def stop(_signum, _frame):
         nonlocal stopping
         stopping = True
+        telemetry_stop.set()
 
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
@@ -211,6 +244,7 @@ def main(argv=None):
              'shutdown enabled' if args.execute else 'DRY RUN')
     while not stopping:
         status = monitor.tick()
+        status['ups'] = telemetry
         summary = (status['state'], status['error'])
         if summary != previous:
             LOG.info('%s', json.dumps(status))

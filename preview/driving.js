@@ -259,14 +259,47 @@
   document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'b' && !e.repeat && !e.target.matches('input,select,textarea') && !document.querySelector('dialog[open]')) $('bookmark-launch').click(); });
   function renderHealth() {
     const demoMode = latest.mode === 'demo';
-    const health = demoMode ? {cpu_c: 51, disk: {free_bytes: 24 * 1073741824}, power: {undervoltage_now: false, undervoltage_since_boot: false, throttled_now: false, throttled_since_boot: false}, can: {state: 'ERROR-ACTIVE', bitrate: 500000, rx_errors: 0, tx_errors: 0}, notes: ['Simulated system health; no Pi hardware is accessed']} : latest.system || {};
+    const health = demoMode ? {cpu_c: 51, disk: {free_bytes: 24 * 1073741824}, power: {undervoltage_now: false, undervoltage_since_boot: false, throttled_now: false, throttled_since_boot: false}, can: {state: 'ERROR-ACTIVE', bitrate: 500000, rx_errors: 0, tx_errors: 0}, ups: {available: true, battery_percent: 86, battery_volts: 4.05, input_present: true, charging: true, auto_power_on: true}, shutdown: {tracking: true, scope: 'boot', previous: {state: 'saved', ended_ms: Date.now() - 3600000, recording_enabled: true, dropped_samples: 0}}, notes: ['Simulated system health; no Pi hardware is accessed']} : latest.system || {};
     const num = (v, suffix = '') => online && Number.isFinite(v) ? v.toFixed(1) + suffix : 'Unavailable';
     const flag = v => !online || v === undefined ? 'Unavailable' : v ? 'Detected' : 'Clear';
     const hz = demoMode ? 10 : latest.race?.interval ? 1 / latest.race.interval : null;
     const entries = [['Storage free', num(health.disk?.free_bytes == null ? null : health.disk.free_bytes / 1073741824, ' GiB')], ['Pi temperature', num(health.cpu_c, ' °C')], ['Undervoltage now / boot', `${flag(health.power?.undervoltage_now)} / ${flag(health.power?.undervoltage_since_boot)}`], ['Throttling now / boot', `${flag(health.power?.throttled_now)} / ${flag(health.power?.throttled_since_boot)}`], ['USB GPS update rate', demoMode || latest.race?.fresh ? num(hz, ' Hz') : 'No fresh USB fix'], ['CAN controller', online ? health.can?.state || 'Unavailable' : 'Disconnected'], ['CAN RX / TX errors', online ? `${health.can?.rx_errors ?? '—'} / ${health.can?.tx_errors ?? '—'}` : 'Unavailable'], ['Recorder dropped samples', online ? `${latest.recording?.dropped ?? '—'}` : 'Unavailable']];
-    $('health-cards').replaceChildren(...entries.map(([label, text]) => { const card = el('div', undefined, 'setting-card'); card.append(el('span', label), el('strong', text)); return card; }));
+    const ups = online && health.ups?.available ? health.ups : {};
+    const previous = online ? health.shutdown?.previous : null;
+    const shutdownState = !online ? 'Unavailable' : !previous ? 'No record' : ({saved: 'Data synced', running: 'Unconfirmed', save_failed: 'Save failed'}[previous.state] || 'Unconfirmed');
+    const shutdownQuality = previous?.state === 'saved' ? 'good' : previous ? 'warning' : 'unknown';
+    const stamp = Number.isFinite(previous?.ended_ms) ? new Date(previous.ended_ms).toLocaleString() : 'No completed save recorded';
+    entries.unshift(
+      ['UPS battery', num(ups.battery_percent, '%'), Number.isFinite(ups.battery_percent) ? (ups.battery_percent <= 15 ? 'warning' : 'good') : 'unknown', `${num(ups.battery_volts, ' V')} \u00b7 ${ups.charging === true ? 'Charging' : ups.charging === false ? 'Not charging' : 'Charge state unavailable'}`],
+      ['UPS input power', ups.input_present === true ? 'External power' : ups.input_present === false ? 'On battery' : 'Unavailable', ups.input_present === true ? 'good' : ups.input_present === false ? 'warning' : 'unknown', health.ups?.dry_run ? 'Observer only; shutdown disabled' : ups.state === 'shutdown_failed' ? 'Shutdown request failed' : ups.state === 'shutdown_requested' ? 'Linux shutdown requested' : ups.input_present === false ? 'Input-loss shutdown policy active' : 'PiSugar 3 Plus'],
+      ['Startup on power return', ups.auto_power_on === true ? 'Enabled' : ups.auto_power_on === false ? 'Disabled' : 'Unavailable', ups.auto_power_on === true ? 'good' : ups.auto_power_on === false ? 'warning' : 'unknown', 'After UPS output turns off'],
+      ['Previous shutdown', shutdownState, shutdownQuality, previous?.state === 'saved' ? stamp : 'Completion cannot be confirmed']
+    );
+    $('health-cards').replaceChildren(...entries.map(([label, text, quality, detail]) => {
+      const card = el('div', undefined, 'setting-card');
+      if (quality) card.dataset.quality = quality;
+      card.append(el('span', label), el('strong', text));
+      if (detail) card.append(el('small', detail));
+      return card;
+    }));
+    const shutdownNotes = [];
+    if (previous?.state === 'saved') {
+      shutdownNotes.push('Previous ' + (health.shutdown?.scope === 'service' ? 'service run' : 'boot') + ': Frogdash saved and synced its data before exiting.');
+      if (previous.recording_enabled === false) shutdownNotes.push('MLG recording was disabled.');
+      if (previous.recording_enabled && previous.log_rows === 0) shutdownNotes.push('No MLG rows were recorded.');
+      if (previous.dropped_samples) shutdownNotes.push(`${previous.dropped_samples} recording samples were dropped during that run.`);
+    } else if (previous?.state === 'save_failed') {
+      shutdownNotes.push('The previous service exit reported a storage error.');
+      if (Array.isArray(previous.errors)) shutdownNotes.push(previous.errors.join(' '));
+    } else if (previous) shutdownNotes.push('No completed cleanup record: possible power loss, service crash or interrupted shutdown.');
+    else shutdownNotes.push('No previous shutdown evidence yet; a completed run is needed.');
+    if (previous?.interruptions) shutdownNotes.push(`${previous.interruptions} earlier service interruption(s) in that boot.`);
+    shutdownNotes.push('This confirms application saves, not SD-card health or physical UPS cutoff.');
+    if (health.shutdown?.error) shutdownNotes.push(health.shutdown.error);
+    if (online && health.shutdown?.tracking === false) shutdownNotes.push('Current shutdown tracking is unavailable.');
+    $('health-shutdown-note').textContent = (demoMode ? 'SIMULATED \u00b7 ' : '') + shutdownNotes.join(' ');
     $('health-detail').textContent = `${demoMode ? 'SIMULATED · ' : ''}CAN bitrate ${health.can?.bitrate ?? '—'} bit/s · received error frames ${latest.can_errors?.frames ?? 0} · bus-off events ${latest.can_errors?.bus_off ?? 0} · restarts ${latest.can_errors?.restarts ?? 0} · ${latest.recording?.state || 'recording unavailable'}`;
-    $('health-notes').textContent = [!online ? 'Dashboard connection lost; values unavailable.' : 'System diagnostics refresh every five seconds.', ...(health.notes || [])].join(' ');
+    $('health-notes').textContent = [!online ? 'Dashboard connection lost; values unavailable.' : 'System diagnostics refresh every five seconds.', ...(health.ups?.error ? ['UPS: ' + health.ups.error] : []), ...(health.notes || [])].join(' ');
   }
   function render() {
     renderDisplay();

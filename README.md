@@ -60,6 +60,8 @@ page, and read-only Pi/CAN health diagnostics.
 [PiSugar 3 Plus power management](docs/pisugar-power.md) replaces the old ACC/relay
 shutdown: battery ride-through, an 8-second input-loss grace period, orderly Linux
 shutdown, final UPS output cutoff, and startup on the next input restoration.
+**Drive > Dash health** shows UPS charge/input state and the previous boot's
+saved-and-synced, unconfirmed, or failed shutdown record.
 [Screen speakers](docs/screen-audio.md) support warning chimes through Linux audio,
 with saved display volume, a test sound and automatic activation in the kiosk.
 

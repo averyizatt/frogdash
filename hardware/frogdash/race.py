@@ -7,6 +7,8 @@ import math
 from pathlib import Path
 import time
 
+from .driving import atomic_write
+
 MPH = .44704
 ACTIVE = {'armed', 'running'}
 
@@ -277,13 +279,10 @@ class Race:
         async with self.save_lock:
             if not self.dirty or not self.path:
                 return
-            data = json.dumps({'version': 1, 'gate': self.gate, 'history': self.history}, allow_nan=False)
+            data = {'version': 1, 'gate': self.gate, 'history': deepcopy(self.history)}
             self.dirty = False
             def write():
-                self.path.parent.mkdir(parents=True, exist_ok=True)
-                temp = self.path.with_suffix('.tmp')
-                temp.write_text(data, encoding='utf-8')
-                temp.replace(self.path)
+                atomic_write(self.path, data)
             try:
                 await asyncio.to_thread(write)
                 self.storage_error = ''

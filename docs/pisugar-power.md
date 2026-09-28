@@ -39,6 +39,91 @@ Bench-test that sequence on the installed firmware. It may need another off/on
 input cycle after output turns off. Do not assume instant resume or guaranteed
 restart for that race. A normal reboot deliberately does not cut UPS output.
 
+## Debugging: UPS and previous shutdown
+
+Open **Drive > Dash health**. The first four cards show UPS battery percentage
+and voltage, charging state, external-input presence, the reported automatic
+startup setting, and evidence from the previous recorded boot. UPS percentage
+is the vendor's estimate, not the vehicle fuel/battery reading. Missing or stale
+readings show **Unavailable**, never a fabricated 0% or a remembered full battery.
+The monitor samples UPS telemetry independently every five seconds; the health
+screen refreshes about every five seconds. A full battery may correctly show
+external power present and not charging.
+
+**Previous shutdown** has four outcomes:
+
+- **Data synced:** the previous boot's final Frogdash run completed cleanup,
+  drained accepted MLG samples, closed/synced its log, saved trip/review/race
+  state, and wrote a synced completion record. The completion time is displayed.
+- **Unconfirmed:** the previous run left an in-progress record. Power loss,
+  a service crash, forced termination or an interrupted shutdown can cause this.
+- **Save failed:** orderly cleanup returned a storage error; the detail appears
+  below the cards. This is not labeled a successful save.
+- **No record:** first use or unavailable/unreadable history. It is not proof of
+  an unsafe shutdown.
+
+Evidence is stored in `/var/lib/frogdash/shutdown.json` (or the selected data
+folder; replay is isolated). Startup first writes and fsyncs an in-progress
+marker; only completed cleanup replaces it with a completion record. Linux boot
+IDs distinguish a real new boot from a dashboard service restart. A restart
+within the same boot keeps the previous boot's result and counts any earlier
+unclean service exits. The UI also discloses dropped recorder samples or disabled
+recording: successful storage flush does not mean every telemetry sample was
+captured. On platforms without Linux boot IDs the scope is explicitly a previous
+service run. History is local diagnostic evidence, not a portable backup item.
+
+This confirms **application save/flush completion reported by the filesystem**.
+It cannot certify SD-card electronics, prove that every other Linux service
+stopped cleanly, or prove the UPS physically cut output. Writing a successful
+"whole OS powered off" marker after power has gone away is not possible. The
+late cutoff hook still supplies the actual ordering described above.
+
+For an existing installation, update/restart the backend and refresh the kiosk
+as usual. Also update the independently installed monitor for battery telemetry:
+
+```sh
+# Use stable external input while replacing the running power monitor.
+sudo install -m 0644 /opt/frogdash/hardware/power/monitor.py /usr/local/lib/frogdash-power/monitor.py
+sudo systemctl restart frogdash-power
+```
+
+The public preview shows labeled simulated UPS and shutdown evidence; it does
+not query local Pi hardware. Older monitors without the new telemetry fields
+show unavailable until updated.
+
+## Ignition returning: what restarts, and when
+
+| When input returns | Current behavior |
+| --- | --- |
+| Before the 8-second loss deadline | Cancel the timer; keep the current session running. |
+| After UPS output has switched off | PiSugar's enabled power-restore feature turns output on and cold-boots the Pi. |
+| After Linux accepted poweroff, but before UPS output is off | Complete shutdown. Firmware behavior for this overlapping input edge must be tested on the actual board. |
+
+The second case is a PiSugar hardware function; Linux does not need to be alive
+or poll anything to wake it. The dashboard's **Startup on power return** card
+shows the daemon's configured setting, not proof of a successful physical wake.
+The official datasheet specifies restoration **while PiSugar is off**; it does
+not guarantee the third case. SCL wake is described for a Pi already halted when
+PiSugar turns on, and is not documented as a latch for an earlier ignition edge.
+
+First verify the installed firmware with input returning at several points in
+shutdown. If it handles the overlap, no extra hardware is needed. If it remains
+off, cycling ignition off/on after cutoff is the immediate recovery. Increasing
+the grace period to 10 seconds can cover more quick key cycles, but does not
+eliminate the race.
+
+For unattended restart even with such firmware, the robust fallback would be an
+external controller that **remembers the restart request, waits for confirmed
+UPS output-off, then reapplies the regulated 5 V input** through a suitable
+converter-enable/input switch. It needs a shutdown-committed indication or an
+equivalent coordinated state machine to distinguish a brief crank from committed
+shutdown, plus output sensing; an arbitrary delay alone is not confirmation.
+The existing vehicle MCU could be considered once its wiring is defined. This is
+a proposed hardware fallback, not implemented or tested by this update. It must
+never interrupt UPS output ahead of Linux cleanup. A Pi-only process cannot act
+after its own power has been removed, and blindly arming a periodic wake timer
+would also wake the dash with ignition off.
+
 ## Wiring and power budget
 
 ```text

@@ -118,7 +118,11 @@ on that listener. An expired hotspot session hides the review and requests login
 
 ## Dash health
 
-Diagnostics refresh about every five seconds, outside the CAN receive loop:
+Diagnostics refresh about every five seconds, outside the CAN receive loop.
+The first cards show [PiSugar battery/input status and previous shutdown
+evidence](pisugar-power.md#debugging-ups-and-previous-shutdown). Data synced means
+Frogdash completed its saves; unconfirmed or failed saves are never shown as safe.
+The remaining diagnostics include:
 
 - Free storage on the recording/data filesystem and recorder drop count.
 - Linux thermal-zone temperature when exposed by the hardware.
