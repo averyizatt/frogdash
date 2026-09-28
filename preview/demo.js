@@ -18,15 +18,67 @@
     'knock.last_boost_kpa': 0, 'knock.config.threshold_offset': 20,
     'knock.config.multiplier': 2
   };
-  let scenario = 'normal';
+  let scenario = 'drive', paused = false, elapsed = 3, previous = performance.now();
   let tick = 0, testTimer;
-  // Explicit test/review hooks. The production client has no demo switch.
-  window.frogdashDemo = {
-    scenario(name) {
-      if (!['normal', 'warning', 'offline', 'vacuum', 'night', 'parked'].includes(name)) throw new Error('Unknown demo scenario');
-      scenario = name;
-    }
+  // Keyframes model acceleration, brief gear changes, cruise, braking and idle.
+  const cycle = [
+    [0,0,900,-60], [2,5,1600,-30], [6,42,5200,70], [6.4,46,3300,0],
+    [10,85,6000,100], [10.4,88,4100,5], [15,128,6100,100],
+    [15.4,129,4500,10], [19,130,4400,-15], [23,78,3100,-65],
+    [28,10,1150,-60], [30,0,900,-60], [34,0,900,-60]
+  ];
+  function drivingValues(seconds) {
+    const t = seconds % 34;
+    const index = cycle.findIndex((point, i) => i > 0 && point[0] >= t);
+    const a = cycle[index - 1], b = cycle[index];
+    const fraction = (t - a[0]) / (b[0] - a[0]);
+    const [speed, rpm, boost] = [1,2,3].map(i => a[i] + (b[i] - a[i]) * fraction);
+    const target = boost > 15 ? 12.3 : 14.7;
+    return {
+      'vehicle.speed_kph': speed, 'engine.rpm': Math.round(rpm),
+      'engine.boost_kpa': boost, 'engine.afr': target + .12 * Math.sin(seconds * 2.2),
+      'ecu.afr_target': target, 'engine.ego_correction_pct': 100 + 2 * Math.sin(seconds * .7),
+      'engine.oil_pressure_psi': 23 + rpm * .007,
+      'engine.fuel_pressure_psi': 39 + Math.max(0, boost) * .145,
+      'engine.coolant_c': 93 + 2.5 * Math.sin(seconds / 15),
+      'engine.iat_c': 34 + Math.max(0, boost) * .08,
+      'vehicle.battery_v': 14.1 + .12 * Math.sin(seconds * .6),
+      'vehicle.fuel_pct': Math.max(5, 72 - seconds / 240),
+      'lighting.brake': t >= 19 && t < 30,
+      'lighting.turn_left': t < 5 && Math.floor(seconds * 2) % 2 === 0,
+      'lighting.turn_right': t >= 26 && t < 32 && Math.floor(seconds * 2) % 2 === 0,
+      'knock.energy': Math.round(12 + rpm / 450 + 2 * Math.sin(seconds * 3))
+    };
+  }
+  const motion = document.createElement('button');
+  motion.id = 'demo-motion'; motion.type = 'button'; motion.className = 'demo-control';
+  const park = document.createElement('button');
+  park.id = 'demo-driving'; park.type = 'button'; park.className = 'demo-control';
+  const controls = document.createElement('div'); controls.className = 'demo-playback';
+  controls.setAttribute('role', 'group'); controls.setAttribute('aria-label', 'Simulated drive playback');
+  controls.append(motion, park);
+  document.getElementById('recording-badge').hidden = true;
+  document.getElementById('recording-badge').before(controls);
+  function playbackLabels() {
+    motion.textContent = scenario === 'drive' && !paused ? 'Pause' : 'Play';
+    motion.setAttribute('aria-label', scenario === 'drive' && !paused ? 'Pause simulated drive' : 'Play simulated drive');
+    motion.setAttribute('aria-pressed', String(scenario === 'drive' && !paused));
+    park.textContent = scenario === 'parked' ? 'Drive' : 'Park';
+    park.setAttribute('aria-label', scenario === 'parked' ? 'Resume simulated driving' : 'Park demo to customize');
+  }
+  function setScenario(name) {
+    if (!['drive', 'normal', 'warning', 'offline', 'vacuum', 'night', 'parked'].includes(name)) throw new Error('Unknown demo scenario');
+    scenario = name; paused = false; previous = performance.now(); playbackLabels();
+  }
+  motion.onclick = () => {
+    if (scenario !== 'drive') setScenario('drive');
+    else { paused = !paused; previous = performance.now(); playbackLabels(); }
   };
+  park.onclick = () => setScenario(scenario === 'parked' ? 'drive' : 'parked');
+  playbackLabels();
+  // Static scenarios remain available for repeatable design checks.
+  // This entire transport is loaded only by the standalone preview.
+  window.frogdashDemo = {scenario: setScenario};
   class FrogdashDemoSocket {
     static OPEN = 1;
     readyState = 1;
@@ -36,6 +88,11 @@
     emit(message) { this.onmessage?.({data: JSON.stringify(message)}); }
     publish() {
       tick++;
+      const now = performance.now();
+      if (scenario === 'drive' && !paused && !document.hidden) elapsed += Math.min(.25, Math.max(0, (now - previous) / 1000));
+      previous = now;
+      const dynamic = scenario === 'drive' ? drivingValues(elapsed) : {};
+
       const current = {...readings,
         'vehicle.speed_kph': scenario === 'parked' ? 0 : readings['vehicle.speed_kph'],
         'lighting.running': scenario === 'night',
@@ -44,8 +101,15 @@
         'knock.energy': scenario === 'warning' ? 75 : Math.round(23 + Math.sin(tick / 7) * 5),
         'knock.warning': scenario === 'warning',
         'engine.coolant_c': scenario === 'warning' ? 115 : readings['engine.coolant_c'],
-        'engine.boost_kpa': scenario === 'vacuum' ? -55 : readings['engine.boost_kpa']
+        'engine.boost_kpa': scenario === 'vacuum' ? -55 : readings['engine.boost_kpa'],
+        ...dynamic
       };
+      if (scenario === 'parked') Object.assign(current, {'engine.rpm': 900, 'engine.boost_kpa': -60, 'engine.afr': 14.7, 'ecu.afr_target': 14.7, 'vehicle.fuel_pct': drivingValues(elapsed)['vehicle.fuel_pct']});
+      if (scenario === 'drive') for (const side of ['left', 'right']) current[`lighting.${side}_state`] = current[`lighting.turn_${side}`] ? 'TURN' : current['lighting.brake'] ? 'BRAKE' : 'OFF';
+      if (scenario === 'drive' && readings['meth.state'] === 'ARMED' && current['engine.boost_kpa'] > 25) {
+        current['meth.state'] = 'SPRAYING';
+        current['meth.duty_pct'] = Math.round(Math.min(85, 20 + current['engine.boost_kpa'] * .6));
+      }
       const values = Object.fromEntries(Object.entries(current).map(([key, value]) => [key,
         {value, quality: value === null ? 'unavailable' : scenario === 'offline' ? 'stale' : 'live', source: 'SIMULATED'}]));
       const test = readings['meth.state'] === 'TEST';

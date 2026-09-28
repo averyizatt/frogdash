@@ -22,6 +22,7 @@ def assets():
     js = js.replace('new WebSocket(', 'new FrogdashDemoSocket(')
     js = js.replace('WebSocket.OPEN', 'FrogdashDemoSocket.OPEN')
     css = (source / 'style.css').read_text(encoding='utf-8')
+    css += '\n/* Preview-only playback controls. */\n.demo-playback { display:flex; gap:6px; }\n.demo-control { min-height:40px; padding:7px 11px; border:1px solid var(--line); border-radius:6px; background:var(--raised); color:var(--text); font-size:13px; font-weight:750; }\n.demo-control[aria-pressed=true] { border-color:var(--accent); color:var(--accent); }\n'
     demo = (ROOT / 'preview' / 'demo.js').read_text(encoding='utf-8')
     personalize = (source / 'personalize.js').read_text(encoding='utf-8')
     extra = {name: (source / name).read_text(encoding='utf-8') for name in ('navigation.js', 'driving.js', 'trip.js', 'operations.js', 'units.js', 'review.js', 'review.css')}

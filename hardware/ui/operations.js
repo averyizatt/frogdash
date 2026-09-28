@@ -28,7 +28,7 @@
   document.querySelectorAll('[data-ops-tab], [data-ops-go]').forEach(n => n.onclick = () => tab(n.dataset.opsTab || n.dataset.opsGo));
   $('operations-close').onclick = () => dialog.close();
   launch.onclick = async () => { dialog.showModal(); render(); if (!demo()) await work(async () => { const data = await api('status'); backlight = data.backlight; render(); }); };
-  $('demo-park').onclick = () => window.frogdashDemo.scenario(parked() ? 'normal' : 'parked');
+  $('demo-park').onclick = () => window.frogdashDemo.scenario(parked() ? 'drive' : 'parked');
   function message(text) { feedback = text; $('operations-result').textContent = text; }
   async function work(fn) { if (busy) return; busy = true; try { await fn(); } catch (e) { message(e.message); } finally { busy = false; render(); } }
   async function api(action, body) { const response = await fetch('/operations/' + action, {method: body === undefined ? 'GET' : 'POST', headers: {'Content-Type': 'application/json'}, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(12000)}); if (!response.ok) throw new Error(await response.text()); return response.json(); }

@@ -24,6 +24,7 @@ async def preview(browser):
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.on('request', lambda request: network.append(request.url) if request.url.startswith(('http:', 'https:')) else None)
     await page.goto((ROOT / 'preview/index.html').as_uri())
+    await page.evaluate("frogdashDemo.scenario('normal')")
     await page.wait_for_function("document.getElementById('rpm-value').textContent === '3450'")
     await page.screenshot(path=str(ROOT / '.tmp/appearance-test-upload.png'))
     # Footer buttons must remain inside the panel even with the extra destinations.

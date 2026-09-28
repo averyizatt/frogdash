@@ -56,6 +56,7 @@ async def check_preview(browser, errors):
     page.on('websocket', lambda ws: network.append(ws.url))
     page.on('request', lambda request: network.append(request.url) if request.url.startswith(('http:', 'https:')) else None)
     await page.goto((Path(__file__).resolve().parents[1] / 'preview' / 'index.html').as_uri())
+    await page.evaluate("frogdashDemo.scenario('normal')")
     await page.wait_for_function("document.getElementById('connection-summary').textContent === 'DEMO · SIMULATED'")
     assert await page.locator('#afr-target').inner_text() == '12.5'
     assert (await page.locator('#afr-state').inner_text()).lower() == 'at target'

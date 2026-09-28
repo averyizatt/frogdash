@@ -49,6 +49,7 @@ async def main(browser_path=None, url=None):
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
         await page.goto(url or (ROOT / 'preview' / 'index.html').as_uri())
+        await page.evaluate("frogdashDemo.scenario('normal')")
         await page.wait_for_function("document.getElementById('rpm-value').textContent === '3450'")
         await page.evaluate("frogdashDemo.scenario('parked')")
         await page.wait_for_timeout(150)

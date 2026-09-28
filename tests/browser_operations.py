@@ -26,6 +26,7 @@ async def preview(browser):
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.on('request', lambda r: requests.append(r.url) if r.url.startswith(('http:', 'https:')) else None)
     await page.goto((ROOT / 'preview/index.html').as_uri())
+    await page.evaluate("frogdashDemo.scenario('normal')")
     await page.wait_for_function("document.getElementById('speed-digits').textContent === '47'")
     await page.locator('#drive-launch').click()
     await page.locator('#operations-launch').click()
@@ -44,6 +45,7 @@ async def preview(browser):
     assert await page.locator('#boost-val').inner_text() == '85.0'
     assert await page.locator('.speed-readout .unit').inner_text() == 'km/h'
     await page.reload()
+    await page.evaluate("frogdashDemo.scenario('normal')")
     await page.wait_for_function("document.getElementById('speed-digits').textContent === '76'")
     assert not errors, errors
     assert not requests, requests

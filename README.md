@@ -72,7 +72,11 @@ vehicle commissioning remains pending; no power/shutdown changes are made.
 
 Open [preview/index.html](preview/index.html) in your browser, or use the GitHub Pages preview. It works directly from disk without dependencies or network access.
 
-Use **Drive > Dash management > Park demo** to unlock simulated configuration.
+The preview starts with a repeating simulated drive: acceleration, gear changes,
+cruise, braking and idle, with synchronized moving gauges and light indicators.
+Use **Pause / Play** in the header to freeze or resume, and **Park / Drive** to
+unlock configuration or return to motion. **Drive > Dash management > Park demo**
+is also available.
 
 The persistent **DEMO · SIMULATED** badge identifies generated readings. Controls only change the simulated state. `M` opens controls, `K` opens the knock monitor, and `Esc` closes a dialog. Use the arrow keys to change control tabs. The production UI receives its readings exclusively from the local CAN/GPS service.
 

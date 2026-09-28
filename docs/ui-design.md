@@ -39,8 +39,12 @@ Control inputs express requested settings; module telemetry and command feedback
 
 ## Reviewing the preview
 
-Open `preview/index.html`. Its badge and control feedback identify simulated data; it never opens a WebSocket or accesses CAN/GPS. In the browser console, use `frogdashDemo.scenario('warning')`, `'vacuum'`, `'offline'`, or `'normal'` to review those states. Fuel stays unavailable.
+Open `preview/index.html`. Its badge and control feedback identify simulated data; it never opens a WebSocket or accesses CAN/GPS. It starts a repeating 34-second driving cycle with gear changes, boost/vacuum, AFR targets, pressure changes and brake/turn inputs. Temperatures and voltage vary gently; fuel is a simulated amount that decreases slowly. Armed demo water/meth responds to boost. Header **Pause / Play** freezes/resumes the simulation; **Park / Drive** selects idle for editing or returns to the drive. These controls exist only in the preview.
+
+In the browser console, use `frogdashDemo.scenario('warning')`, `'vacuum'`, `'offline'`, `'night'`, `'parked'`, or `'normal'` for repeatable design checks. `normal` retains the old fixed readings and unavailable fuel fixture; `drive` resumes animation. These are illustrative values, not a vehicle physics model.
+
+Run `python tests/browser_demo.py` to check default animation, pause/resume, parked editing and header fit.
 
 Run `python tests/browser_smoke.py` for saved screenshots and interaction checks. Review readability on the physical panel, including sunlight and night conditions, before vehicle use; browser screenshots alone cannot establish panel brightness or viewing-angle performance.
 
-Run `python tests/browser_layout.py` to check all fifteen submenu views at native 1920/1980 × 720 and scaled sizes. It verifies that menus stay inside the dashboard, controls remain unobscured, and resizing an open submenu preserves the layout. Pass `--url` to run the same checks against the hosted preview.
+Run `python tests/browser_layout.py` to check all twenty submenu views at native 1920/1980 × 720 and scaled sizes. It verifies that menus stay inside the dashboard, controls remain unobscured, and resizing an open submenu preserves the layout. Pass `--url` to run the same checks against the hosted preview.
