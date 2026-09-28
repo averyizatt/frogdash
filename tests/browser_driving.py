@@ -62,6 +62,7 @@ async def preview(browser):
     await page.wait_for_timeout(150)
     await page.locator('#alerts-launch').click()
     await page.locator('#setting-oil_psi').fill('90')
+    await page.locator('#setting-oil_rpm').fill('500')  # Parked demo now idles at 900 RPM.
     await page.locator('#alert-settings button[type=submit]').click()
     await page.wait_for_function('document.getElementById("driver-alerts").textContent.includes("LOW OIL PRESSURE")')
     await page.locator('#driver-alerts button').first.click()
