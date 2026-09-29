@@ -25,7 +25,7 @@ def assets():
     css += '\n/* Preview-only playback controls. */\n.demo-playback { display:flex; gap:6px; }\n.demo-control { min-height:40px; padding:7px 11px; border:1px solid var(--line); border-radius:6px; background:var(--raised); color:var(--text); font-size:13px; font-weight:750; }\n.demo-control[aria-pressed=true] { border-color:var(--accent); color:var(--accent); }\n'
     demo = (ROOT / 'preview' / 'demo.js').read_text(encoding='utf-8')
     personalize = (source / 'personalize.js').read_text(encoding='utf-8')
-    extra = {name: (source / name).read_text(encoding='utf-8') for name in ('viewport.js', 'responsive.css', 'navigation.js', 'driving.js', 'trip.js', 'operations.js', 'units.js', 'review.js', 'review.css')}
+    extra = {name: (source / name).read_text(encoding='utf-8') for name in ('viewport.js', 'responsive.css', 'instruments.js', 'instruments.css', 'navigation.js', 'driving.js', 'trip.js', 'operations.js', 'units.js', 'review.js', 'review.css')}
     # A published HTML update must not reuse cached CSS/JS from the previous design.
     for name, content in [('style.css', css), ('app.js', js), ('demo.js', demo), ('personalize.js', personalize), *extra.items()]:
         version = sha256(content.encode('utf-8')).hexdigest()[:12]

@@ -80,15 +80,16 @@ track map is claimed; delta compares the latest completed lap to session best.
 
 ## Appearance and splash screens
 
-- **Appearance → Preset gallery** has two collections with six looks each. Signature includes Frogdash (mint),
+- **Appearance → Preset gallery** has three collections with six looks each. Signature includes Frogdash (mint),
   Glacier (ice blue), Heritage (amber), After hours (violet), Apex (platinum),
   and Expedition (sage). Track & touring adds GT Sprint, Endurance, Rally Stage,
-  Club Sport, Obsidian and Executive. Race looks use square panels, accent rails
+  Club Sport, Obsidian and Executive. Retro & future adds six analog and digital
+  interpretations detailed below. Race looks use square panels, accent rails
   and heavier gauge strokes; touring looks use rounded surfaces and subtle depth.
   Each applies instrument accents, panel colors,
   borders and a background immediately. The selected look is marked with a tick.
-- Twelve built-in backgrounds: midnight, graphite, carbon weave, accent glow,
-  horizon, blueprint, contours, dusk, pit lane, redline, telemetry and satin. Mix any background with any look;
+- Eighteen built-in backgrounds: midnight, graphite, carbon weave, accent glow,
+  horizon, blueprint, contours, dusk, pit lane, redline, telemetry, satin, charcoal, phosphor, neon grid, afterglow, vector grid and copper. Mix any background with any look;
   the label shows when a look has been customized. These are static local CSS
   patterns, with no downloads, animation or additional image storage.
 - **Customize & splash** retains the individual controls and image uploads.
@@ -102,7 +103,8 @@ track map is claimed; delta compares the latest completed lap to session best.
   danger-card backgrounds and settings dialogs remain solid. Presets apply their
   own starting transparency; changing it marks the look customized. The setting
   persists with your appearance profile and is included in display backups.
-- Mint, ice blue, amber and violet accents, plus a custom color picker.
+- Sixteen named accent swatches, plus custom accent and analog needle color pickers
+  under **Gauges & colors**.
 - Optional Frogdash/custom-title splash or uploaded splash image; duration of
   1, 2, 3 or 5 seconds, with **Preview splash** and **Skip** controls.
 - PNG, JPEG and WebP uploads up to 10 MB, resized to fit 1920 × 720. Uploaded
@@ -141,3 +143,32 @@ Settings remain editable during the animated preview and on the Pi without
 stationary telemetry. Local appearance preferences also work offline.
 After clicking/touching a range, number or select field, native keyboard editing
 works normally; steering-wheel selection still enters its explicit edit mode.
+
+
+### Retro instruments and colors
+
+**Appearance > Preset gallery > Retro & future** adds Foxbody LX, Foxbody
+Afterdark, Turbo Heritage, Midnight Runner, Green Terminal and Vector Interceptor.
+The Foxbody designs are original vector interpretations of the factory cluster,
+not exact OEM reproductions. All artwork is local SVG/CSS; no fonts or images
+are downloaded at runtime.
+
+**Gauges & colors** selects the original layout, a six-gauge Foxbody binnacle,
+round analog instruments, or a seven-segment digital cluster. Mix these with any
+look, sixteen named accent swatches, a custom accent and a separate needle color.
+Very dark accent/needle choices are brightened for legibility. Presets choose
+matching gauges and needle colors; custom selections persist in the existing
+appearance profile and are included in display backups.
+
+The three new layouts show speed, RPM, coolant, fuel level, oil pressure and
+voltage, with a lower strip for boost, AFR, intake temperature and fuel pressure.
+The original layout retains the configurable Drive sensor slots. Track mode's
+shift lights and lap readouts also appear on the new clusters. Signal warnings,
+turn/brake indicators and the control menus remain available. Analog pointers
+hide when their data is unavailable/stale/faulted; digital values show a dash.
+US/metric speed and pressure scales follow the Units setting. Scales clamp at
+their printed limits while the numerical reading continues to show the value.
+
+Six additional backgrounds are Charcoal, Phosphor, Neon grid, Afterglow, Vector
+grid and Copper. The gallery and customization panels scroll within the display
+when needed, keeping their header and Close button accessible.

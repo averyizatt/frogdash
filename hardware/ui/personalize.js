@@ -14,10 +14,16 @@
     rally: {name: 'Rally Stage', note: 'Glacier cyan / technical grid', accent: '#85e6ee', finish: 'technical', surface: '#101e25', raised: '#1d3039', line: '#355361', style: 'race', transparency: 15},
     clubsport: {name: 'Club Sport', note: 'Hot amber / exposed carbon', accent: '#ffc48a', finish: 'carbon', surface: '#201b17', raised: '#31271e', line: '#504132', style: 'race', transparency: 10},
     obsidian: {name: 'Obsidian', note: 'Monochrome / brushed satin', accent: '#dce5ec', finish: 'satin', surface: '#171b21', raised: '#252b33', line: '#3d4854', style: 'touring', transparency: 25},
-    executive: {name: 'Executive', note: 'Champagne / midnight blue', accent: '#e7d3a5', finish: 'horizon', surface: '#151d2a', raised: '#253145', line: '#42526a', style: 'touring', transparency: 20}
+    executive: {name: 'Executive', note: 'Champagne / midnight blue', accent: '#e7d3a5', finish: 'horizon', surface: '#151d2a', raised: '#253145', line: '#42526a', style: 'touring', transparency: 20},
+    foxbody: {name: 'Foxbody LX', note: 'Charcoal binnacle / ivory needles', accent: '#e5e1cd', needle: '#f5f0df', gauges: 'foxbody', collection: 'retro', finish: 'charcoal', surface: '#161b18', raised: '#252a27', line: '#454a43'},
+    foxnight: {name: 'Foxbody Afterdark', note: 'Green illumination / factory spirit', accent: '#a1efb1', needle: '#c9ffc9', gauges: 'foxbody', collection: 'retro', finish: 'phosphor', surface: '#101e17', raised: '#20372a', line: '#385844'},
+    svo: {name: 'Turbo Heritage', note: 'Warm amber / six analog instruments', accent: '#ffd096', needle: '#ffb38a', gauges: 'analog', collection: 'retro', finish: 'copper', surface: '#211811', raised: '#35251c', line: '#614c36'},
+    outrun: {name: 'Midnight Runner', note: '1986 tomorrow / pink LED instruments', accent: '#ff9adf', needle: '#85e8ff', gauges: 'digital', collection: 'retro', finish: 'synthwave', surface: '#171128', raised: '#2b1d3d', line: '#66426c', style: 'race', transparency: 15},
+    terminal: {name: 'Green Terminal', note: 'Phosphor display / segmented meters', accent: '#a0ffb5', needle: '#f5f0df', gauges: 'digital', collection: 'retro', finish: 'phosphor', surface: '#091b13', raised: '#153525', line: '#346447', style: 'race'},
+    vector: {name: 'Vector Interceptor', note: 'Ice cyan / midnight instrument pod', accent: '#8cecff', needle: '#ff9aaf', gauges: 'analog', collection: 'retro', finish: 'blueprint', surface: '#0b1925', raised: '#173043', line: '#34566b', transparency: 10}
   };
-  const finishes = {midnight: 'Midnight', graphite: 'Graphite', carbon: 'Carbon weave', glow: 'Accent glow', horizon: 'Horizon', grid: 'Blueprint', contour: 'Contours', dusk: 'Dusk', pitlane: 'Pit lane', apexline: 'Redline', technical: 'Telemetry', satin: 'Satin', image: 'Custom image'};
-  const defaults = {look: 'original', accent: '#8befc4', finish: 'midnight', background: '', splash: 'off', splashImage: '', title: 'FROGDASH', duration: 2, transparency: 0};
+  const finishes = {midnight: 'Midnight', graphite: 'Graphite', carbon: 'Carbon weave', glow: 'Accent glow', horizon: 'Horizon', grid: 'Blueprint', contour: 'Contours', dusk: 'Dusk', pitlane: 'Pit lane', apexline: 'Redline', technical: 'Telemetry', satin: 'Satin', charcoal: 'Charcoal', phosphor: 'Phosphor', synthwave: 'Neon grid', sunset: 'Afterglow', blueprint: 'Vector grid', copper: 'Copper', image: 'Custom image'};
+  const defaults = {look: 'original', accent: '#8befc4', finish: 'midnight', background: '', splash: 'off', splashImage: '', title: 'FROGDASH', duration: 2, transparency: 0, gauges: 'standard', needle: '#f5f0df'};
   const key = 'frogdash.appearance.v1';
   const validImage = value => typeof value === 'string' && value.length < 1500000 && /^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(value);
   let prefs = {...defaults}, splashTimer, splashPreview = false;
@@ -25,6 +31,8 @@
     const stored = JSON.parse(localStorage.getItem(key));
     if (stored && typeof stored === 'object') {
       if (/^#[0-9a-f]{6}$/i.test(stored.accent)) prefs.accent = stored.accent;
+      if (['standard', 'analog', 'foxbody', 'digital'].includes(stored.gauges)) prefs.gauges = stored.gauges;
+      if (/^#[0-9a-f]{6}$/i.test(stored.needle)) prefs.needle = stored.needle;
       if (Object.hasOwn(looks, stored.look)) prefs.look = stored.look;
       if (Object.hasOwn(finishes, stored.finish)) prefs.finish = stored.finish;
       if (['off', 'wordmark', 'image'].includes(stored.splash)) prefs.splash = stored.splash;
@@ -59,13 +67,14 @@
   });
   for (const [id, look] of Object.entries(looks)) {
     const button = document.createElement('button'); button.type = 'button'; button.dataset.look = id;
-    button.dataset.collection = look.style ? 'performance' : 'signature';
+    button.dataset.collection = look.collection || (look.style ? 'performance' : 'signature');
     button.dataset.instrumentStyle = look.style || 'classic';
+    button.dataset.gaugePreview = look.gauges || 'standard';
     button.className = 'look-card'; button.setAttribute('aria-label', `Apply ${look.name} look`);
     button.style.setProperty('--accent', look.accent); button.style.setProperty('--surface', look.surface);
     // Static, local catalogue text only; uploaded artwork never enters markup.
     button.innerHTML = `<span class="look-art" data-scene="${look.finish}" aria-hidden="true"><span class="mini-gauge"></span><span class="mini-speed">76<small>MPH</small></span><span class="mini-bars"></span></span><span class="look-caption"><strong>${look.name}</strong><span class="look-check" aria-hidden="true">✓</span><small>${look.note}</small></span>`;
-    button.onclick = () => { prefs.look = id; prefs.accent = look.accent; prefs.finish = look.finish; prefs.transparency = look.transparency || 0; applyAppearance(); };
+    button.onclick = () => { prefs.look = id; prefs.accent = look.accent; prefs.finish = look.finish; prefs.transparency = look.transparency || 0; prefs.gauges = look.gauges || 'standard'; prefs.needle = look.needle || defaults.needle; applyAppearance(); };
     $('appearance-looks').append(button);
   }
   function collection(name) {
@@ -73,7 +82,7 @@
     for (const card of document.querySelectorAll('.look-card')) card.hidden = card.dataset.collection !== name;
   }
   for (const button of document.querySelectorAll('button[data-collection-filter]')) button.onclick = () => collection(button.dataset.collectionFilter);
-  collection(looks[prefs.look].style ? 'performance' : 'signature');
+  collection(looks[prefs.look].collection || (looks[prefs.look].style ? 'performance' : 'signature'));
   $('appearance-finish').replaceChildren();
   for (const [id, name] of Object.entries(finishes)) {
     const option = document.createElement('option'); option.value = id; option.textContent = name; $('appearance-finish').append(option);
@@ -92,12 +101,18 @@
   }
   function applyAppearance(save = true) {
     prefs.accent = readableAccent(prefs.accent);
+    prefs.needle = readableAccent(prefs.needle);
     const root = document.documentElement;
     const look = looks[prefs.look];
     root.style.setProperty('--accent', prefs.accent);
     for (const token of ['surface', 'raised', 'line']) root.style.setProperty(`--${token}`, look[token]);
     root.style.setProperty('--bg', prefs.finish === 'graphite' ? '#191d22' : '#090f13');
     root.dataset.instrumentStyle = look.style || 'classic';
+    root.dataset.gauges = prefs.gauges;
+    root.dataset.preset = prefs.look;
+    root.style.setProperty('--needle', prefs.needle);
+    $('appearance-gauges').value = prefs.gauges;
+    $('appearance-needle').value = prefs.needle;
     root.style.setProperty('--widget-fill', `${100 - prefs.transparency}%`);
     root.dataset.finish = prefs.finish;
     root.dataset.scene = prefs.finish;
@@ -111,10 +126,11 @@
     $('appearance-title-input').value = prefs.title;
     $('appearance-duration').value = prefs.duration;
     for (const button of document.querySelectorAll('[data-accent]')) button.setAttribute('aria-pressed', String(button.dataset.accent === prefs.accent));
-    const exact = prefs.accent === look.accent && prefs.finish === look.finish && prefs.transparency === (look.transparency || 0);
+    const exact = prefs.accent === look.accent && prefs.finish === look.finish && prefs.transparency === (look.transparency || 0) && prefs.gauges === (look.gauges || 'standard') && prefs.needle === (look.needle || defaults.needle);
     $('appearance-current').textContent = `${look.name}${exact ? '' : ' · customized'} / ${finishes[prefs.finish]}`;
     for (const button of document.querySelectorAll('button[data-look]')) button.setAttribute('aria-pressed', String(button.dataset.look === prefs.look && exact));
     for (const button of document.querySelectorAll('button[data-background]')) button.setAttribute('aria-pressed', String(button.dataset.background === prefs.finish));
+    window.dispatchEvent(new Event('frogdash-appearance'));
     if (save) {
       try { localStorage.setItem(key, JSON.stringify(prefs)); appearanceMessage('Saved on this display. Night mode uses your Drive workspace colors and brightness.'); }
       catch { appearanceMessage('Applied for now, but browser storage is full or unavailable. Remove an image to save.'); }
@@ -142,8 +158,15 @@
   $('splash-skip').onclick = hideSplash;
   $('splash-dialog').addEventListener('close', () => clearTimeout(splashTimer));
   $('appearance-preview').onclick = () => showSplash(true);
+  const palette = [['Mint','#8befc4'],['Ice blue','#8fcfff'],['Amber','#ffc77d'],['Violet','#c6a6ff'],['Ivory','#e5e1cd'],['Coral','#ff9b8f'],['Hot pink','#ff9adf'],['Cyan','#8cecff'],['Phosphor','#a0ffb5'],['Lime','#e3f58a'],['Sunset','#ffb897'],['Lavender','#b7b8ff'],['Rose','#ffb6ce'],['Sage','#b9dfa2'],['Champagne','#e7d3a5'],['Platinum','#e3e9ee']];
+  const swatches = document.querySelector('.swatches'), colorPicker = $('appearance-accent'); swatches.replaceChildren();
+  for (const [name,color] of palette) {
+    const button=document.createElement('button'); button.type='button'; button.dataset.accent=color;
+    button.style.setProperty('--swatch',color); button.setAttribute('aria-label',name); button.title=name; swatches.append(button);
+  }
+  swatches.append(colorPicker);
   for (const button of document.querySelectorAll('[data-accent]')) button.onclick = () => { prefs.accent = button.dataset.accent; applyAppearance(); };
-  for (const [id, field] of [['accent', 'accent'], ['finish', 'finish'], ['splash', 'splash'], ['title-input', 'title'], ['duration', 'duration']]) {
+  for (const [id, field] of [['gauges', 'gauges'], ['needle', 'needle'], ['accent', 'accent'], ['finish', 'finish'], ['splash', 'splash'], ['title-input', 'title'], ['duration', 'duration']]) {
     $(`appearance-${id}`).addEventListener('change', event => {
       prefs[field] = field === 'duration' ? Number(event.target.value) : event.target.value;
       applyAppearance();

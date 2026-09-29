@@ -85,7 +85,9 @@ async def preview(browser):
         assert await page.locator('#speed-digits').evaluate('(el) => getComputedStyle(el).opacity') == '1'
         assert await page.locator('.primary-instruments').evaluate('(el) => getComputedStyle(el).opacity') == '1'
     await page.locator('#appearance-transparency').fill('50')
+    await page.locator('#appearance-tab-instruments').click()
     await page.get_by_role('button', name='Violet', exact=True).click()
+    await page.locator('#appearance-tab-custom').click()
     await page.locator('#appearance-finish').select_option('carbon')
     await page.reload()
     assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()') == '#c6a6ff'

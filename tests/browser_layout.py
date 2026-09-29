@@ -17,7 +17,7 @@ async def inspect(page, selector, scroll_selector=None):
     # Viewport RPC completion can precede Chromium's resize event by one frame.
     await page.wait_for_function("Math.abs(document.getElementById('display').getBoundingClientRect().width - (matchMedia('(max-aspect-ratio: 11/5)').matches ? document.documentElement.clientWidth : Math.min(innerWidth, innerHeight * 1920 / 720))) < 1")
     responsive = await page.evaluate("matchMedia('(max-aspect-ratio: 11/5)').matches")
-    if responsive:
+    if responsive or selector == '#appearance-dialog':
         await inspect_responsive(page, selector)
         return
     problems = await page.locator(selector).evaluate('''(dialog, scrollSelector) => {
@@ -144,6 +144,8 @@ async def main(browser_path=None, url=None):
                     await page.locator('[data-collection-filter="signature"]').click()
                     await page.locator('#appearance-tab-custom').click()
                     await inspect(page, '#appearance-dialog', '.appearance-body')
+                    await page.locator('#appearance-tab-instruments').click()
+                    await inspect(page, '#appearance-dialog', '#appearance-instruments')
                     await page.locator('#appearance-tab-gallery').click()
                 if dialog == 'diagnostics':
                     await page.locator('.diagnostics-body').evaluate('(el) => { el.scrollTop = el.scrollHeight; }')
@@ -152,7 +154,7 @@ async def main(browser_path=None, url=None):
                 assert await page.locator(f'#{launch}').evaluate('(el) => document.activeElement === el')
         assert not errors, errors
         await browser.close()
-    print(f'All 20 submenu views fit at {len(SIZES)} sizes; controls remain reachable, resize and keyboard close work.')
+    print(f'All 21 submenu views fit at {len(SIZES)} sizes; controls remain reachable, resize and keyboard close work.')
 
 
 if __name__ == '__main__':

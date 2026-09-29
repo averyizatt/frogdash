@@ -1,0 +1,109 @@
+/* Instrument geometry is independent of theme, display size and telemetry. */
+:root { --needle:#f5f0df; }
+.custom-cluster,.cluster-telemetry { display:none; }
+:root:not([data-gauges="standard"])[data-gauges] .display { grid-template-rows:56px minmax(0,1fr) 76px 66px; }
+:root:not([data-gauges="standard"])[data-gauges] .primary-instruments,
+:root:not([data-gauges="standard"])[data-gauges] .sensor-row { display:none; }
+:root:not([data-gauges="standard"])[data-gauges] .custom-cluster { display:grid; }
+:root:not([data-gauges="standard"])[data-gauges] .cluster-telemetry { display:grid; }
+.custom-cluster { position:relative; min-height:0; grid-template-columns:1fr 2fr 2fr 1fr; grid-template-rows:1fr 1fr; grid-template-areas:"coolant speed rpm oil" "fuel speed rpm volts"; gap:4px 22px; padding:14px 36px; border:1px solid var(--line); border-radius:16px; background:color-mix(in srgb,var(--surface) var(--widget-fill),transparent); }
+.cluster-gauge { position:relative; min-width:0; min-height:0; }
+.cluster-coolant { grid-area:coolant; }.cluster-fuel { grid-area:fuel; }.cluster-speed { grid-area:speed; }.cluster-rpm { grid-area:rpm; }.cluster-oil { grid-area:oil; }.cluster-volts { grid-area:volts; }
+.cluster-dial { width:100%; height:100%; overflow:visible; }
+.dial-bezel { fill:#0b0d0e; stroke:#5b6265; stroke-width:3; }
+.dial-face { fill:#121718; stroke:#242a2c; stroke-width:8; }
+.dial-tick { stroke:#aaaead; stroke-width:2; }.dial-tick.major { stroke:#f3f0e2; stroke-width:4; }
+.dial-number { fill:#f3f0e2; font-size:23px; font-weight:600; text-anchor:middle; dominant-baseline:central; }
+.dial-title,.dial-unit,.dial-value { text-anchor:middle; fill:#f3f0e2; font-family:"DejaVu Sans",Arial,sans-serif; }
+.dial-title { font-size:14px; font-weight:750; letter-spacing:1px; }.dial-unit { font-size:13px; fill:var(--accent); }
+.dial-value { font-size:37px; font-weight:650; letter-spacing:2px; }
+.dial-needle path { fill:var(--needle); }.dial-needle circle { fill:#1f2426; stroke:#555; stroke-width:2; }
+.dial-scale .redline { stroke:var(--danger); }.dial-scale text.redline { stroke:none; fill:var(--danger); }
+.cluster-gauge[data-danger="true"] .dial-value { fill:var(--danger); }
+.cluster-gauge:not(.cluster-speed):not(.cluster-rpm) .dial-title { font-size:22px; letter-spacing:0; }.cluster-gauge:not(.cluster-speed):not(.cluster-rpm) .dial-unit { font-size:20px; }.cluster-gauge:not(.cluster-speed):not(.cluster-rpm) .dial-number { font-size:27px; }.cluster-gauge:not(.cluster-speed):not(.cluster-rpm) .dial-value { font-size:42px; }
+.cluster-quality { position:absolute; bottom:0; left:0; width:100%; text-align:center; font-size:12px; color:var(--warn); font-weight:750; }
+.cluster-warning { position:absolute; bottom:6px; left:25%; width:50%; padding:4px 12px; text-align:center; font-size:13px; font-weight:800; background:#2c1518; color:var(--danger); border:1px solid var(--danger); border-radius:4px; }
+.cluster-telemetry { grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
+.cluster-telemetry article { display:flex; align-items:center; gap:14px; padding:14px 22px; border:1px solid var(--line); border-radius:9px; background:color-mix(in srgb,var(--surface) var(--widget-fill),transparent); min-width:0; }
+.cluster-telemetry article > span { font-size:13px; letter-spacing:1px; color:var(--muted); font-weight:750; }.cluster-telemetry strong { font-size:30px; margin-left:auto; }.cluster-telemetry small { color:var(--muted); font-size:13px; }
+.terminal-face { display:none; }
+/* Foxbody: recessed charcoal panel, printed scales, white pointers and squared trim. */
+:root[data-gauges="foxbody"] .custom-cluster { border-radius:32px 32px 12px 12px; border:8px solid #232627; box-shadow:inset 0 6px 10px #0008,0 0 0 2px #090b0b; padding:16px 24px; column-gap:8px; background:color-mix(in srgb,#121514 var(--widget-fill),transparent); }
+:root[data-gauges="foxbody"] .dial-bezel { stroke:#3d4140; stroke-width:2; fill:#141615; }
+:root[data-gauges="foxbody"] .dial-face { fill:#141615; stroke:#1b1e1d; stroke-width:4; }
+:root[data-gauges="foxbody"] .dial-value { font-family:"DejaVu Sans Mono",monospace; font-size:30px; letter-spacing:4px; }
+:root[data-gauges="foxbody"] .dial-unit { fill:var(--accent); }
+:root[data-gauges="foxbody"] .cluster-telemetry article { border-radius:3px; box-shadow:inset 0 2px 5px #0006; }
+/* Terminal: crisp LED numerals and segmented meters, without flashing/glitch effects. */
+:root[data-gauges="digital"] .custom-cluster { padding:18px; gap:14px; border-radius:3px; border-color:var(--accent); }
+:root[data-gauges="digital"] .cluster-dial { display:none; }
+:root[data-gauges="digital"] .cluster-gauge { border:1px solid var(--line); background:#050c1480; padding:20px; overflow:hidden; }
+:root[data-gauges="digital"] .terminal-face { display:flex; height:100%; flex-direction:column; justify-content:center; gap:14px; }
+.terminal-face h3 { color:var(--accent); font:700 15px "DejaVu Sans Mono",monospace; letter-spacing:2px; }
+.terminal-face > div:not(.terminal-meter) { display:flex; align-items:baseline; gap:10px; }
+.terminal-value { color:var(--accent); font:700 100px/1 "DejaVu Sans Mono","Consolas",monospace; letter-spacing:-5px; text-shadow:0 0 18px color-mix(in srgb,var(--accent) 18%,transparent); }
+.cluster-speed .terminal-value { font-size:142px; }.terminal-unit { color:var(--muted); font:600 14px monospace; }
+.cluster-gauge:not(.cluster-speed):not(.cluster-rpm) .terminal-value { font-size:40px; letter-spacing:-2px; }
+.cluster-gauge:not(.cluster-speed):not(.cluster-rpm) .terminal-face { gap:10px; }.cluster-gauge:not(.cluster-speed):not(.cluster-rpm) .terminal-face h3 { font-size:12px; letter-spacing:1px; }
+.terminal-meter { display:flex; gap:3px; height:20px; }.terminal-meter i { flex:1; background:#ffffff0b; }.terminal-meter i[data-on="true"] { background:var(--accent); }.cluster-rpm .terminal-meter i:nth-child(n+25)[data-on="true"] { background:var(--danger); }
+.cluster-gauge[data-danger="true"] .terminal-value { color:var(--danger); }
+/* New backgrounds remain lightweight CSS and never obscure warning surfaces. */
+[data-scene="charcoal"] { --scene:repeating-linear-gradient(115deg,#ffffff02 0 1px,transparent 1px 4px),linear-gradient(160deg,#262926,#0a0c0b 65%); }
+[data-scene="phosphor"] { --scene:repeating-linear-gradient(0deg,#70ffa805 0 1px,transparent 1px 5px),radial-gradient(ellipse at 50% 0,#133c25,#040d0a 75%); }
+[data-scene="synthwave"] { --scene:linear-gradient(180deg,#080b22 0%,#23103080 60%,#110b20 100%),repeating-linear-gradient(0deg,#ff77d526 0 1px,transparent 1px 42px),repeating-linear-gradient(90deg,#69dfff30 0 1px,#090b1a 1px 84px); }
+[data-scene="sunset"] { --scene:radial-gradient(ellipse at 75% 100%,#ff905238,transparent 55%),linear-gradient(140deg,#27142b,#120d24 65%); }
+[data-scene="blueprint"] { --scene:repeating-linear-gradient(0deg,#4bddff0c 0 1px,transparent 1px 28px),repeating-linear-gradient(90deg,#4bddff0c 0 1px,#071622 1px 28px); }
+[data-scene="copper"] { --scene:linear-gradient(120deg,#39251b,#140e0c 50%,#35231d); }
+.look-card[data-gauge-preview="foxbody"] .mini-gauge,.look-card[data-gauge-preview="analog"] .mini-gauge { border:3px solid var(--accent); border-radius:50%; height:66px; width:66px; transform:none; position:relative; }
+.look-card[data-gauge-preview="foxbody"] .mini-gauge::after,.look-card[data-gauge-preview="analog"] .mini-gauge::after { content:""; position:absolute; width:3px; height:25px; background:var(--needle); left:30px; top:6px; transform:rotate(35deg); transform-origin:bottom; }
+.look-card[data-gauge-preview="digital"] .mini-speed { font-family:monospace; color:var(--accent); }.look-card[data-gauge-preview="digital"] .mini-gauge { border:0; border-radius:0; height:32px; background:repeating-linear-gradient(90deg,var(--accent) 0 5px,transparent 5px 8px); }
+.appearance-body { overflow:auto; }
+.appearance-body .swatches { flex-wrap:wrap; gap:8px; }
+.background-grid { grid-template-columns:repeat(9,minmax(0,1fr)); }
+.background-grid button > span { height:24px; }.background-grid button { min-height:52px; }
+.look-collections button { padding:9px 11px; }.look-collections button span { margin-left:7px; }
+@media (max-aspect-ratio:11/5) {
+  :root:not([data-gauges="standard"])[data-gauges] .display { grid-template-rows:auto minmax(380px,1fr) auto auto; }
+  .custom-cluster { min-height:380px; }
+  .cluster-telemetry article { padding:12px; gap:8px; flex-wrap:wrap; }.cluster-telemetry article > span { width:100%; }
+}
+@media (max-aspect-ratio:11/5) and (max-width:1200px) {
+  .custom-cluster { grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-areas:"speed speed rpm rpm" "coolant fuel oil volts"; grid-template-rows:320px 180px; padding:14px; gap:12px; }
+  :root:not([data-gauges="standard"])[data-gauges] .display { grid-template-rows:auto auto auto auto; }
+  .cluster-warning { left:5%; width:90%; bottom:0; }
+  .cluster-telemetry { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .background-grid { grid-template-columns:repeat(6,minmax(0,1fr)); }
+}
+@media (max-aspect-ratio:11/5) and (max-width:600px) {
+  .custom-cluster { grid-template-columns:1fr 1fr; grid-template-areas:"speed rpm" "coolant oil" "fuel volts"; grid-template-rows:210px 180px 180px; gap:10px; padding:8px !important; }
+  .cluster-quality { font-size:9px; }.cluster-warning { font-size:10px; position:relative; grid-column:1/-1; left:auto; width:auto; }
+  :root[data-gauges="digital"] .cluster-gauge { padding:10px; }.cluster-speed .terminal-value,.cluster-rpm .terminal-value { font-size:42px; letter-spacing:-3px; }
+  .terminal-face > div:not(.terminal-meter) { flex-wrap:wrap; gap:6px; }.terminal-face h3 { font-size:11px; letter-spacing:0; }.terminal-meter { gap:2px; height:14px; }
+  .background-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+
+.appearance-gallery { overflow:auto; }
+.look-grid { min-height:300px; flex-shrink:0; }
+.look-art { min-height:72px; }
+.terminal-digits { width:75%; height:auto; max-height:144px; overflow:visible; }
+.terminal-digits polyline { stroke:var(--accent); stroke-width:7; stroke-linecap:square; stroke-linejoin:bevel; opacity:.06; }
+.terminal-digits polyline[data-lit="true"] { opacity:1; }
+.cluster-speed .terminal-value,.cluster-rpm .terminal-value { display:none; }
+.cluster-gauge[data-danger="true"] .terminal-digits polyline { stroke:var(--danger); }
+:root[data-gauges="digital"] .terminal-meter i[data-on="true"] { background:var(--needle); }
+:root[data-gauges="digital"] .cluster-rpm .terminal-meter i:nth-child(n+25)[data-on="true"] { background:var(--danger); }
+
+.gauge-options { grid-template-columns:1fr 1fr; }
+.gauge-guide { display:flex; flex-direction:column; gap:16px; }
+.gauge-guide > div { border-left:2px solid var(--accent); padding-left:16px; }
+.gauge-guide strong { font-size:19px; }.gauge-guide p { color:var(--muted); margin-top:4px; line-height:1.5; font-size:15px; }
+@media (max-aspect-ratio:11/5) and (max-width:900px) { .gauge-options { grid-template-columns:1fr; } }
+
+:root[data-preset="foxnight"] .dial-number,:root[data-preset="foxnight"] .dial-title { fill:var(--accent); }
+:root[data-preset="foxnight"] .dial-tick.major { stroke:var(--accent); }
+:root[data-preset="foxnight"] .dial-scale text.redline { fill:var(--danger); }
+:root[data-preset="foxnight"] .dial-scale line.redline { stroke:var(--danger); }
+.cluster-track { position:absolute; top:22px; left:50%; transform:translateX(-50%); width:140px; display:grid; gap:8px; padding:10px; background:#0a1018e8; border:1px solid var(--line); border-radius:6px; }
+.cluster-track > span { display:flex; justify-content:space-between; gap:8px; font-size:10px; color:var(--muted); }.cluster-track b { color:var(--text); }
+.cluster-shift { display:flex; gap:3px; }.cluster-shift i { height:8px; flex:1; background:#ffffff15; }.cluster-shift i[data-on="true"] { background:var(--accent); }.cluster-track[data-shift="true"] .cluster-shift i { background:var(--danger); }
+@media (max-aspect-ratio:11/5) and (max-width:1200px) { .cluster-track { position:static; transform:none; grid-column:1/-1; width:auto; display:flex; justify-content:center; align-items:center; gap:16px; }.cluster-shift { width:120px; } }

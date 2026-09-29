@@ -139,6 +139,7 @@
     if ($('diagnostics').open) renderDiagnostics();
     window.frogdashRendered = (window.frogdashRendered || 0) + 1;
     updateUnits();
+    window.FrogdashInstruments?.render(snapshot, connected);
   }
 
   function updateUnits() {
