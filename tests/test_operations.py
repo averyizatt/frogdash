@@ -148,6 +148,15 @@ class OperationsTests(unittest.IsolatedAsyncioTestCase):
             self.assertFalse((await (await client.get('/ui/heartbeat/' + token)).json())['alive'])
             self.assertEqual((await client.post('/ui/heartbeat/' + token)).status, 200)
             self.assertTrue((await (await client.get('/ui/heartbeat/' + token)).json())['alive'])
+            self.assertEqual((await (await client.get('/ui/display')).json())['status'], 'waiting for kiosk heartbeat')
+            report = {'viewport': [1366, 768], 'dashboard': [0, 0, 1366, 768], 'responsive': True}
+            self.assertEqual((await client.post('/ui/heartbeat/' + token, json={'display': report})).status, 200)
+            self.assertEqual((await (await client.get('/ui/display')).json())['viewport'], [1366, 768])
+            for bad in ({'unexpected': 1}, {'viewport': [float('inf')]}, {'viewport': [10 ** 999]}, {'browser': 'x' * 201}):
+                self.assertEqual((await client.post('/ui/heartbeat/' + token, json={'display': bad})).status, 400)
+            state.clock = lambda: 20
+            self.assertEqual((await (await client.get('/ui/display')).json())['status'], 'stale')
+            state.clock = lambda: 0
             state.operations.restoring = True
             self.assertEqual((await client.post('/trip', json={'reset': 'a'})).status, 503)
             state.operations.restoring = False

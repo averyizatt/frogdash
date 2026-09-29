@@ -222,6 +222,20 @@ Chromium instance can also prevent a supervised browser from owning its profile;
 check running processes if the log reports a profile lock. Keep one kiosk owner
 and preserve the profile's saved appearance settings.
 
+For a clipped HDMI dashboard, capture the kiosk's actual browser layout after
+it has rendered:
+
+```sh
+curl -s http://127.0.0.1:8080/ui/display
+```
+
+This local-only endpoint reports the latest kiosk heartbeat's screen and browser
+viewport sizes, dashboard bounds, CSS positioning, browser version and responsive
+stylesheet presence. `fresh` means sampled within ten seconds; `waiting` means no
+layout report has arrived. Browser geometry does not prove the HDMI monitor is
+showing every pixel: if the bounds fit, investigate the output mode and monitor
+scaling next. Reports stay in memory and are not written to the SD card.
+
 On Raspberry Pi OS, check the network-at-boot setting in `raspi-config`; the
 dashboard needs only loopback and does not require Wi-Fi to connect. Remove
 unnecessary waits only after the critical chain identifies them. Leave optional

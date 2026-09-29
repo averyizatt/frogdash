@@ -110,6 +110,6 @@
   window.addEventListener('frogdash-state', e => { latest = e.detail.snapshot; online = e.detail.connected; render(); });
   const token = new URLSearchParams(location.search).get('kiosk');
   let lastBeat = 0, lastRender = 0;
-  function heartbeat(now) { if (/^[0-9a-f]{32}$/.test(token) && now - lastBeat > 2000 && window.frogdashRendered !== lastRender) { lastBeat = now; lastRender = window.frogdashRendered; fetch('/ui/heartbeat/' + token, {method: 'POST', signal: AbortSignal.timeout(3000)}).catch(() => {}); } requestAnimationFrame(heartbeat); }
+  function heartbeat(now) { if (/^[0-9a-f]{32}$/.test(token) && now - lastBeat > 2000 && window.frogdashRendered !== lastRender) { lastBeat = now; lastRender = window.frogdashRendered; fetch('/ui/heartbeat/' + token, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: window.frogdashDisplayInfo ? JSON.stringify({display: window.frogdashDisplayInfo()}) : undefined, signal: AbortSignal.timeout(3000)}).catch(() => {}); } requestAnimationFrame(heartbeat); }
   requestAnimationFrame(heartbeat);
 })();

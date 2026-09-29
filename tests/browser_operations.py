@@ -71,7 +71,8 @@ async def live(browser):
         errors = []
         page.on('pageerror', lambda e: errors.append(str(e)))
         try:
-            await page.goto(f'http://127.0.0.1:{site._server.sockets[0].getsockname()[1]}/?kiosk=' + 'f' * 32)
+            base = f'http://127.0.0.1:{site._server.sockets[0].getsockname()[1]}'
+            await page.goto(base + '/?kiosk=' + 'f' * 32)
             await page.wait_for_function("document.getElementById('fuel-val').textContent === '50'")
             state.ingest(0x204, bytes.fromhex('000002'))
             await page.wait_for_function("document.querySelector('[data-signal=\"vehicle.fuel_pct\"]').dataset.quality === 'fault'")
@@ -113,6 +114,10 @@ async def live(browser):
             assert not state.operations.restoring
             await page.wait_for_timeout(2300)
             assert 'f' * 32 in state.operations.heartbeats
+            report = await (await page.request.get(base + '/ui/display')).json()
+            assert report['status'] == 'fresh', report
+            assert report['responsive_css'] and report['viewport'] == [1980, 720], report
+            assert len(report['dashboard']) == 4 and report['browser'], report
             assert not errors, errors
         finally:
             await page.close(); await runner.cleanup()

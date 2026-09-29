@@ -67,6 +67,7 @@ class Operations:
         self.lock = asyncio.Lock()
         self.restoring = False
         self.heartbeats = {}
+        self.display_report = None
         self.events = []
         try:
             self.os_name = platform.freedesktop_os_release().get('PRETTY_NAME', platform.system())

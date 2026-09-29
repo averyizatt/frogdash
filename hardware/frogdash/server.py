@@ -311,6 +311,31 @@ def create_app(state, adapter=None, connectivity=None):
             raise web.HTTPBadRequest()
         now = state.clock()
         if request.method == 'POST':
+            if request.can_read_body:
+                raw = await request.read()
+                if len(raw) > 4096:
+                    raise web.HTTPBadRequest(text='Display report too large')
+                try:
+                    import math
+                    data = json.loads(raw)
+                    report = data['display']
+                    allowed = {'screen', 'viewport', 'visual', 'pixel_ratio', 'responsive',
+                               'dashboard', 'position', 'transform', 'margin', 'body_overflow',
+                               'scroll', 'browser', 'responsive_css'}
+                    if set(data) != {'display'} or not isinstance(report, dict) or not set(report) <= allowed:
+                        raise ValueError()
+                    for value in report.values():
+                        if isinstance(value, str):
+                            if len(value) > 200:
+                                raise ValueError()
+                        elif isinstance(value, list):
+                            if len(value) > 5 or any(type(n) not in (int, float) or abs(n) > 100000 or not math.isfinite(n) for n in value):
+                                raise ValueError()
+                        elif type(value) not in (bool, int, float) or abs(value) > 100000 or not math.isfinite(value):
+                            raise ValueError()
+                    state.operations.display_report = {'sampled': now, 'display': report}
+                except (ValueError, TypeError, KeyError):
+                    raise web.HTTPBadRequest(text='Invalid display report')
             state.operations.heartbeats[token] = now
             state.operations.heartbeats = {k: v for k, v in state.operations.heartbeats.items() if now - v < 120}
             if len(state.operations.heartbeats) > 16:
@@ -318,9 +343,19 @@ def create_app(state, adapter=None, connectivity=None):
         seen = state.operations.heartbeats.get(token)
         return web.json_response({'alive': seen is not None and now - seen < 10}, headers={'Cache-Control': 'no-store'})
 
+    async def display_info(request):
+        require_local(request)
+        report = state.operations.display_report
+        if not report:
+            return web.json_response({'status': 'waiting for kiosk heartbeat'}, headers={'Cache-Control': 'no-store'})
+        age = max(0, state.clock() - report['sampled'])
+        return web.json_response({'status': 'fresh' if age < 10 else 'stale',
+                                  'age_seconds': round(age, 2), **report['display']},
+                                 headers={'Cache-Control': 'no-store'})
+
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/raw", raw), web.get('/logs', logs), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get('/logs', logs), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),
