@@ -1,6 +1,6 @@
 # Frogdash
 
-A Raspberry Pi instrument cluster for a Foxbody Mustang, designed for a 1920 × 720, 12.3-inch display. Runs on Linux with SocketCAN, USB GPS through gpsd, and local vehicle controls.
+A Raspberry Pi instrument cluster for a Foxbody Mustang, designed for a 1920 × 720, 12.3-inch display, with automatic responsive layouts for standard monitors, tablets and portrait screens. Runs on Linux with SocketCAN, USB GPS through gpsd, and local vehicle controls.
 
 **Start here:** [CAN + USB GPS installation](docs/can-integration.md) and [water/meth, knock, and lighting controls](docs/controls.md). Desktop tests cover the integration; Raspberry Pi and vehicle validation are still pending.
 

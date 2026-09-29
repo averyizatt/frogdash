@@ -409,10 +409,5 @@
     } catch { $('raw-frames').textContent = 'Raw traffic unavailable'; }
     finally { rawPending = false; }
   }, 1000);
-  function resize() {
-    const scale = Math.min(innerWidth / 1920, innerHeight / 720);
-    document.documentElement.style.setProperty('--panel-scale', scale);
-    $('display').style.transform = `scale(${scale})`;
-  }
-  window.addEventListener('resize', resize); resize(); render(); connect();
+  render(); connect();
 })();

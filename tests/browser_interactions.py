@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 async def preview(browser):
-    for width, height in ((1920, 720), (1280, 480), (960, 360)):
+    for width, height in ((1920, 720), (1280, 480), (960, 360), (1366, 768), (390, 844)):
         page = await browser.new_page(viewport={'width': width, 'height': height}, has_touch=True)
         errors, network = [], []
         page.on('pageerror', lambda error: errors.append(str(error)))
@@ -23,6 +23,7 @@ async def preview(browser):
         await page.locator('#appearance-launch').click()
         await page.locator('#appearance-tab-custom').click()
         slider = page.locator('#appearance-transparency')
+        await slider.scroll_into_view_if_needed()
         box = await slider.bounding_box()
         await page.mouse.click(box['x'] + box['width'] * .7, box['y'] + box['height'] / 2)
         assert 65 <= int(await slider.input_value()) <= 75
@@ -90,7 +91,7 @@ async def production(browser):
     await runner.setup()
     site = web.TCPSite(runner, '127.0.0.1', 0)
     await site.start()
-    page = await browser.new_page(viewport={'width': 1920, 'height': 720})
+    page = await browser.new_page(viewport={'width': 1366, 'height': 768})
     try:
         await page.goto('http://127.0.0.1:' + str(site._server.sockets[0].getsockname()[1]))
         await page.locator('#appearance-launch').click()
@@ -100,6 +101,7 @@ async def production(browser):
         assert await page.locator('#appearance-looks').evaluate('e=>e.inert')
         speed['value'] = 0
         await page.wait_for_function('!document.getElementById("appearance-custom").inert')
+        await page.locator('#appearance-transparency').scroll_into_view_if_needed()
         box = await page.locator('#appearance-transparency').bounding_box()
         await page.mouse.click(box['x'] + box['width'] * .5, box['y'] + box['height'] / 2)
         assert int(await page.locator('#appearance-transparency').input_value()) >= 45

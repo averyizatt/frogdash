@@ -9,12 +9,17 @@ from playwright.async_api import async_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 SIZES = [(1920, 720), (1980, 720), (1280, 480), (960, 360),
-         (1920, 600), (1280, 720), (2560, 1440)]
+         (1920, 600), (1280, 720), (2560, 1440), (1920, 1080),
+         (1366, 768), (1024, 768), (800, 600), (768, 1024), (390, 844), (320, 568)]
 
 
 async def inspect(page, selector, scroll_selector=None):
     # Viewport RPC completion can precede Chromium's resize event by one frame.
-    await page.wait_for_function("Math.abs(document.getElementById('display').getBoundingClientRect().width - Math.min(innerWidth, innerHeight * 1920 / 720)) < 1")
+    await page.wait_for_function("Math.abs(document.getElementById('display').getBoundingClientRect().width - (matchMedia('(max-aspect-ratio: 11/5)').matches ? document.documentElement.clientWidth : Math.min(innerWidth, innerHeight * 1920 / 720))) < 1")
+    responsive = await page.evaluate("matchMedia('(max-aspect-ratio: 11/5)').matches")
+    if responsive:
+        await inspect_responsive(page, selector)
+        return
     problems = await page.locator(selector).evaluate('''(dialog, scrollSelector) => {
       const errors = [];
       const frame = document.getElementById('display').getBoundingClientRect();
@@ -41,6 +46,47 @@ async def inspect(page, selector, scroll_selector=None):
     assert not problems, (page.viewport_size, selector, problems)
 
 
+async def inspect_dashboard(page):
+    await page.wait_for_function("Math.abs(document.getElementById('display').getBoundingClientRect().width - (matchMedia('(max-aspect-ratio: 11/5)').matches ? document.documentElement.clientWidth : Math.min(innerWidth, innerHeight * 1920 / 720))) < 1")
+    assert await page.evaluate('document.documentElement.scrollWidth <= innerWidth'), page.viewport_size
+    for selector in ('.topbar', '.primary-instruments', '.sensor-row', '.dashboard-footer'):
+        bounds = await page.locator(selector).filter(visible=True).bounding_box()
+        assert bounds['x'] >= -1 and bounds['x'] + bounds['width'] <= page.viewport_size['width'] + 1, (selector, bounds)
+    for button in await page.locator('#display button').all():
+        if await button.is_visible():
+            await button.scroll_into_view_if_needed()
+            assert await button.evaluate("el => { const r = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.x+r.width/2, r.y+r.height/2)); }"), await button.get_attribute('id')
+
+
+async def inspect_responsive(page, selector):
+    dialog = page.locator(selector)
+    problems = await dialog.evaluate("""el => {
+      const r = el.getBoundingClientRect(), errors = [];
+      if (r.left < 0 || r.top < 0 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1)
+        errors.push('Dialog outside viewport');
+      if (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1)
+        errors.push('Dialog shell overflows');
+      return errors;
+    }""")
+    assert not problems, (page.viewport_size, selector, problems)
+    # Vertical scrolling is intentional on smaller screens. Every control must
+    # scroll into view and accept pointer input, including the last form field.
+    problems = await dialog.evaluate("""async dialog => {
+      const errors = [];
+      for (const el of dialog.querySelectorAll('button, input, select')) {
+        if (!el.checkVisibility()) continue;
+        el.scrollIntoView({block:'center', inline:'nearest', behavior:'instant'});
+        await new Promise(requestAnimationFrame);
+        const r = el.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.x + r.width/2, r.y + r.height/2);
+        if (!el.contains(hit)) errors.push('Obscured: ' + (el.id || el.textContent));
+      }
+      return errors;
+    }""")
+    assert not problems, (page.viewport_size, selector, problems)
+    await dialog.locator('.close-button').first.scroll_into_view_if_needed()
+
+
 async def main(browser_path=None, url=None):
     (ROOT / '.tmp').mkdir(exist_ok=True)
     async with async_playwright() as p:
@@ -54,7 +100,9 @@ async def main(browser_path=None, url=None):
         await page.evaluate("frogdashDemo.scenario('parked')")
         await page.wait_for_timeout(150)
         for width, height in SIZES:
+            print(f'Checking {width} x {height}', flush=True)
             await page.set_viewport_size({'width': width, 'height': height})
+            await inspect_dashboard(page)
             await page.locator('#meth-cell').click()
             for tab in ('meth', 'knock', 'lighting', 'wifi'):
                 await page.locator(f'#tab-{tab}').click()
@@ -104,7 +152,7 @@ async def main(browser_path=None, url=None):
                 assert await page.locator(f'#{launch}').evaluate('(el) => document.activeElement === el')
         assert not errors, errors
         await browser.close()
-    print('All 20 submenu views fit the dashboard at all 7 sizes; controls remain visible and clickable, resize and keyboard close work.')
+    print(f'All 20 submenu views fit at {len(SIZES)} sizes; controls remain reachable, resize and keyboard close work.')
 
 
 if __name__ == '__main__':

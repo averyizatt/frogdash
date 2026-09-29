@@ -6,7 +6,11 @@ The production design lives in `hardware/ui/`. The standalone preview copies tha
 
 Speed and RPM receive the largest type. Boost and AFR occupy the right column. Six matched sensor cards group the remaining routine readings. The bottom row holds water/meth status, module health, and navigation. Dark solid surfaces, warm white text, restrained mint accents, and consistent spacing replace the original decorative background.
 
-The cluster scales proportionally from 1920 × 720 to fit the display, including 1980 × 720 panels. Every submenu uses a 1864 × 680 layout centered inside that same scaled area. Native dialogs receive the same scale explicitly because the browser renders them in its top layer. Resizing a preview preserves the wide panel layout, including open menus. Controls and the knock graph fit without scrolling; the long diagnostics list scrolls beneath its fixed header and search controls. Buttons have visible keyboard focus, and native dialogs trap focus and support Escape. Control tabs use Up/Down, Home, and End. Leaving the water/meth tab stops a locally requested pump test, as does closing the dialog.
+Wide panels (aspect ratio above 2.2:1) scale proportionally from 1920 × 720, including 1980 × 720 panels. Their submenus retain the 1864 × 680 layout and receive the same scale explicitly because native dialogs render in the browser's top layer.
+
+Standard 16:9 monitors, 4:3 screens and portrait displays automatically use a responsive layout. Instruments and sensor cards reflow into fewer columns as space narrows, navigation wraps, and the page scrolls vertically when necessary. Menus use the available viewport, with fixed headers/close buttons and scrollable contents. Below 900 CSS pixels, menu tabs wrap across the top. Resizing or rotating an open menu updates its layout immediately; the visual viewport also tracks the on-screen keyboard. No screen-resolution setting or reset of appearance preferences is needed. Layout initialization is independent of the live-data connection.
+
+Buttons have visible keyboard focus, and native dialogs trap focus and support Escape. Control tabs use Up/Down, Home, and End. Leaving the water/meth tab stops a locally requested pump test, as does closing the dialog.
 
 Fonts are local: DejaVu Sans on Linux, with Segoe UI and Arial fallbacks. No font download is required. Reduced-motion preferences disable gauge transitions.
 
@@ -43,8 +47,8 @@ Open `preview/index.html`. Its badge and control feedback identify simulated dat
 
 In the browser console, use `frogdashDemo.scenario('warning')`, `'vacuum'`, `'offline'`, `'night'`, `'parked'`, or `'normal'` for repeatable design checks. `normal` retains the old fixed readings and unavailable fuel fixture; `drive` resumes animation. These are illustrative values, not a vehicle physics model.
 
-Run `python tests/browser_demo.py` to check default animation, pause/resume, editing and header fit. `tests/browser_interactions.py` exercises a fresh moving preview with mouse clicks, slider drags, touch taps, native slider keys and menu toggles at three screen sizes, then verifies the production parked gates.
+Run `python tests/browser_demo.py` to check default animation, pause/resume, editing and header fit. `tests/browser_interactions.py` exercises a fresh moving preview with mouse clicks, slider drags, touch taps, native slider keys and menu toggles at five screen sizes, including 16:9 and portrait, then verifies the production parked gates.
 
 Run `python tests/browser_smoke.py` for saved screenshots and interaction checks. Review readability on the physical panel, including sunlight and night conditions, before vehicle use; browser screenshots alone cannot establish panel brightness or viewing-angle performance.
 
-Run `python tests/browser_layout.py` to check all twenty submenu views at native 1920/1980 × 720 and scaled sizes. It verifies that menus stay inside the dashboard, controls remain unobscured, and resizing an open submenu preserves the layout. Pass `--url` to run the same checks against the hosted preview.
+Run `python tests/browser_layout.py` to check all twenty submenu views at fourteen sizes, from 320 × 568 through 2560 × 1440, including native 1920/1980 × 720 panels. It verifies dashboard navigation, viewport bounds, reachable controls after scrolling, and resizing an open submenu across layout modes. Pass `--url` to run the same checks against the hosted preview.

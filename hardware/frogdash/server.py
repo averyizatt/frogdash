@@ -268,7 +268,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js"}:
+        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js"}:
             raise web.HTTPNotFound()
         return web.FileResponse(WEB / name, headers={"Cache-Control": "no-store"})
 
