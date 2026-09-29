@@ -34,7 +34,9 @@ tested manually on the intended OS.
 existing normal user on **tty7**, directly from `multi-user.target`. It needs
 no desktop autologin or full desktop environment. It starts the Frogdash backend
 in parallel and uses a small PAM session to give Cage access through logind.
-Only one console instance should be enabled. Keep the ordinary tty1 login for
+The service uses `Type=exec` so PAM/logind session setup completes before
+`ExecStartPost` activates tty7; a `Type=simple` post-start activation can run
+before session registration. Only one console instance should be enabled. Keep the ordinary tty1 login for
 maintenance; Cage's `-s` option allows switching virtual terminals.
 
 The readiness launcher polls local `/health` every 100 ms, with a 500 ms request
@@ -42,7 +44,9 @@ timeout. It launches Chromium on the first HTTP 200, even with no CAN/GPS data.
 It bypasses HTTP proxies for loopback, uses no fixed startup sleep and keeps
 Chromium's sandbox enabled. If HTTP is still unavailable after approximately
 30 seconds, it exits and systemd retries after one second. It never changes
-power controls. Install the separate [PiSugar power setup](pisugar-power.md) for
+power controls. The backend is no longer ordered after `network.target`: its
+HTTP and gpsd connections use loopback, and sensor/hotspot connections retry
+independently. NetworkManager can start in parallel. Install the separate [PiSugar power setup](pisugar-power.md) for
 ignition-loss shutdown; the previous GPIO23/24 relay design is retired.
 
 After confirming a compatible Debian/Pi OS installation, typical dependencies
@@ -85,7 +89,11 @@ default boot target.
 
 The console uses `~/.config/frogdash-chromium` in that user's home. It persists
 themes, uploads and display settings; it is separate from the ordinary Chromium
-profile. Reusing the same user, profile and `http://127.0.0.1:8080/` origin keeps
+profile. The dedicated profile uses Chromium `--password-store=basic` to avoid
+unattended GNOME/KWallet prompts and D-Bus activation timeouts. This store does
+not provide desktop-keyring encryption; keep it for the local dash and do not
+save website passwords in it. Ordinary desktop profiles keep their normal
+password-store selection. Reusing the same user, profile and `http://127.0.0.1:8080/` origin keeps
 those settings. The original desktop user-service template now uses the same
 readiness launcher but retains the ordinary Chromium profile.
 
@@ -112,12 +120,99 @@ journalctl -b -u frogdash -u frogdash-console@YOUR_USER -o short-monotonic
 systemd-analyze critical-chain frogdash-console@YOUR_USER.service
 ```
 
-The launcher logs `boot+...s` when it begins waiting and when it launches
-Chromium. These timestamps start at kernel uptime, not ignition key-on, and are
-**not first-paint measurements**. Record several ordinary cold starts on video:
-key-on, visible instruments, first live CAN readings, and first valid GPS speed.
-GPS acquisition is independent and never gates UI startup. Systemd's reports
-help identify service delays but do not capture the whole driver experience.
+For a single read-only report, run:
+
+```sh
+python3 /opt/frogdash/tools/boot_report.py --user foxbody
+```
+
+Substitute the actual kiosk username. Use `sudo` if journal access is denied.
+The report includes OS, kernel/userspace boot time, critical chains, startup
+units, launch logs and DRM connector modes. It changes no settings. Missing
+utilities and individual command timeouts are reported without aborting.
+
+The launcher logs `boot+...s` at these stages:
+
+- Waiting for local HTTP: the Cage session has started the launcher.
+- HTTP ready; launching Chromium: the local service accepts requests.
+- First render heartbeat observed: the browser has rendered the dashboard and
+  its heartbeat has reached the backend. This is observed at the supervisor's
+  next poll; heartbeat and polling intervals are each two seconds. It is an
+  upper-bound observation with a few seconds of sampling/transport delay, **not
+  the instant of first paint or proof the physical screen is showing gauges**.
+  A configured splash can still cover the instruments.
+
+These timestamps start at kernel uptime, not ignition key-on. A kiosk restart
+later in the same boot reports its later uptime; use a cold start for comparisons.
+Record several ordinary cold starts on video: key-on, visible instruments,
+first live CAN readings, and first valid GPS speed. GPS acquisition is independent
+and never gates UI startup. Systemd's reports help identify service delays but
+do not capture the whole driver experience.
+
+### Updating an existing console installation
+
+With external power present, update the checkout and installed backend unit:
+
+```sh
+cd /opt/frogdash
+sudo git pull --ff-only
+sudo install -m 0644 hardware/systemd/frogdash.service /etc/systemd/system/frogdash.service
+sudo install -m 0644 hardware/systemd/frogdash-console@.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl restart frogdash.service
+sudo systemctl restart frogdash-console@foxbody.service
+```
+
+The kiosk restart briefly blanks the display and loads the new timing logger.
+No PiSugar services or user environment files are replaced. Existing systemd
+drop-ins still apply; inspect `systemctl show frogdash -p After` if a network
+ordering remains. For cold-start measurements, perform a normal safe shutdown,
+let PiSugar switch its output off, restore input power and run the report.
+Do not count the update/restart itself as a boot benchmark.
+
+### Reading the bench measurement
+
+The September 29 bench report reached `multi-user.target` in **5.570 seconds of
+userspace**. The backend was ordered after `network.target` at 3.513 seconds;
+`gpsd.socket` was already ready at 2.314 seconds. Removing the network ordering
+allows earlier startup (roughly 1.2 seconds of dependency spacing in this sample),
+but CPU/I/O contention and other ordering can reduce any actual saving. The
+backend's 2.033-second activation is not the Chromium startup time. Kernel,
+firmware and monitor wake times were not included in the supplied output.
+Measure again before changing other services or claiming a key-on startup time.
+
+### Fix repeated kiosk restarts before timing
+
+A later bench log showed seven kiosk restarts by kernel uptime 60 seconds,
+including exit status 1. The user-session journal then revealed a Cage timeout
+waiting for an active DRM session, a first browser-render watchdog restart,
+and a GNOME Secret Service activation timeout. `Type=exec` addresses activation
+before PAM registration, and the dedicated profile's basic store removes the
+keyring dependency. These changes need confirmation on the Pi; the log alone
+cannot establish that every missed render was caused by the keyring. The
+EDID warning should be investigated if screen mode or HDMI initialization
+remains incorrect after startup is stable.
+
+That restart sequence is a startup failure, not a cold-boot benchmark.
+`Type=simple` can report the kiosk as started before Cage/Chromium are ready.
+The unit's short activation time therefore does not establish display readiness.
+The console also waits for `systemd-user-sessions`; retain that login/session
+ordering rather than weakening it to shorten the critical chain.
+
+PAM/logind can place child processes in user session scopes. If the service
+journal contains only systemd start/stop lines, also inspect the user's journal:
+
+```sh
+sudo journalctl -b -o short-monotonic --no-pager _UID=$(id -u foxbody) -n 120
+systemctl show frogdash-console@foxbody -p NRestarts -p Result -p ExecMainStatus
+```
+
+The boot report includes these diagnostics. Investigate the actual Cage/seat,
+Chromium or launcher error before changing GPU options, deleting the browser
+profile or extending the render watchdog grace period. A surviving manual
+Chromium instance can also prevent a supervised browser from owning its profile;
+check running processes if the log reports a profile lock. Keep one kiosk owner
+and preserve the profile's saved appearance settings.
 
 On Raspberry Pi OS, check the network-at-boot setting in `raspi-config`; the
 dashboard needs only loopback and does not require Wi-Fi to connect. Remove
@@ -126,7 +221,9 @@ Wi-Fi management available for the log-transfer feature. Keep the application's
 splash off during timing. A decorative boot image hides messages but does not
 shorten startup. Measure the existing microSD before deciding to replace it.
 
-Sources: [Cage systemd sessions](https://github.com/cage-kiosk/cage/wiki/Starting-Cage-on-boot-with-systemd),
+Sources: [Chromium Linux password storage](https://chromium.googlesource.com/chromium/src/+/main/docs/linux/password_storage.md),
+[systemd network ordering](https://systemd.io/NETWORK_ONLINE/),
+[Cage systemd sessions](https://github.com/cage-kiosk/cage/wiki/Starting-Cage-on-boot-with-systemd),
 [Cage command-line options](https://github.com/cage-kiosk/cage/blob/master/cage.1.scd),
 [Raspberry Pi configuration](https://www.raspberrypi.com/documentation/computers/configuration.html).
 Launcher readiness, timeout, proxy handling and browser arguments have automated

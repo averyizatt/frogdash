@@ -10,7 +10,8 @@ ConditionPathExists=/dev/tty0
 StartLimitIntervalSec=0
 
 [Service]
-Type=simple
+# Complete PAM/logind session setup before ExecStartPost activates its VT.
+Type=exec
 User=%i
 PAMName=frogdash-kiosk
 Environment=XDG_SESSION_TYPE=wayland

@@ -40,6 +40,9 @@ def browser_args(binary, port=8080, wayland=False, profile=None, allow_audio=Fal
         args.append('--ozone-platform=wayland')
     if profile:
         args.append(f'--user-data-dir={profile}')
+        # This dedicated local dashboard profile has no website logins. Avoid
+        # a desktop keyring prompt/timeout in an unattended console session.
+        args.append('--password-store=basic')
     if allow_audio:
         args.append('--autoplay-policy=no-user-gesture-required')
     return args + [f'http://127.0.0.1:{port}/']
@@ -75,15 +78,22 @@ class RenderWatchdog:
 
 
 def supervise(args, port, token):
+    launched = time.monotonic()
     process = subprocess.Popen(args, start_new_session=True)
-    watch = RenderWatchdog(time.monotonic())
+    watch = RenderWatchdog(launched)
+    first_render = False
     backend, render = http_probe(port), heartbeat_probe(port, token)
     def stop(*_):
         raise KeyboardInterrupt()
     previous = signal.signal(signal.SIGTERM, stop)
     try:
         while process.poll() is None:
-            if watch.frozen(time.monotonic(), backend(), render()):
+            backend_alive, rendered = backend(), render()
+            if rendered and not first_render:
+                first_render = True
+                print(f'Frogdash kiosk: first render heartbeat observed ({boot_stamp()}; '
+                      f'{time.monotonic() - launched:.2f}s after browser launch)', flush=True)
+            if watch.frozen(time.monotonic(), backend_alive, rendered):
                 print('Frogdash kiosk: render heartbeat stopped; restarting browser', flush=True)
                 return 1
             time.sleep(2)

@@ -1,7 +1,7 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
-from tools.launch_kiosk import browser_args, http_probe, wait_ready
+from tools.launch_kiosk import browser_args, http_probe, wait_ready, supervise
 
 
 class KioskTests(unittest.TestCase):
@@ -25,6 +25,8 @@ class KioskTests(unittest.TestCase):
         args = browser_args('/usr/bin/chromium', wayland=True, profile='/home/dash user/profile')
         self.assertIn('--user-data-dir=/home/dash user/profile', args)
         self.assertIn('--ozone-platform=wayland', args)
+        self.assertIn('--password-store=basic', args)
+        self.assertFalse(any(arg.startswith('--password-store') for arg in browser_args('chromium')))
         self.assertNotIn('--no-sandbox', args)
         self.assertNotIn('--incognito', args)
         self.assertEqual(args[-1], 'http://127.0.0.1:8080/')
@@ -43,6 +45,37 @@ class KioskTests(unittest.TestCase):
             opener.return_value.open.return_value.__enter__.return_value.status = 200
             self.assertTrue(probe())
             opener.return_value.open.assert_called_with('http://127.0.0.1:8080/health', timeout=.5)
+
+    def test_first_render_is_logged_once_only_after_browser_heartbeat(self):
+        process = Mock()
+        process.poll.side_effect = [None, None, None, 0, 0]
+        process.returncode = 0
+        with patch('tools.launch_kiosk.subprocess.Popen', return_value=process), \
+             patch('tools.launch_kiosk.signal.signal'), \
+             patch('tools.launch_kiosk.http_probe', return_value=lambda: True), \
+             patch('tools.launch_kiosk.heartbeat_probe', return_value=Mock(side_effect=[False, True, True])), \
+             patch('tools.launch_kiosk.time.monotonic', return_value=10), \
+             patch('tools.launch_kiosk.time.sleep'), \
+             patch('tools.launch_kiosk.boot_stamp', return_value='boot+12.00s'), \
+             patch('builtins.print') as log:
+            self.assertEqual(supervise(['chromium'], 8080, 'a' * 32), 0)
+        messages = [call.args[0] for call in log.call_args_list]
+        self.assertEqual(len(messages), 1)
+        self.assertIn('first render heartbeat observed (boot+12.00s;', messages[0])
+
+    def test_no_render_success_is_reported_when_browser_never_renders(self):
+        process = Mock()
+        process.poll.side_effect = [None, 0, 0]
+        process.returncode = 0
+        with patch('tools.launch_kiosk.subprocess.Popen', return_value=process), \
+             patch('tools.launch_kiosk.signal.signal'), \
+             patch('tools.launch_kiosk.http_probe', return_value=lambda: True), \
+             patch('tools.launch_kiosk.heartbeat_probe', return_value=lambda: False), \
+             patch('tools.launch_kiosk.time.monotonic', return_value=10), \
+             patch('tools.launch_kiosk.time.sleep'), \
+             patch('builtins.print') as log:
+            self.assertEqual(supervise(['chromium'], 8080, 'a' * 32), 0)
+        log.assert_not_called()
 
 
 if __name__ == '__main__':
