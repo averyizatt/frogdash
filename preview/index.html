@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#090f13">
   <link rel="icon" href="data:,">
   <title>Frogdash · Simulated design preview</title>
-  <link rel="stylesheet" href="style.css?v=b3a62b6d52c9">
+  <link rel="stylesheet" href="style.css?v=0a2255be0543">
   <link rel="stylesheet" href="review.css?v=4131615d94e6">
   <link rel="stylesheet" href="responsive.css?v=2eaa09f6d5dc">
-<link rel="stylesheet" href="instruments.css?v=db8de0d39ca1">
+<link rel="stylesheet" href="instruments.css?v=89de567c6180">
 </head>
 <body>
 <noscript>JavaScript is required to display live vehicle data.</noscript>
@@ -300,7 +300,7 @@
 <dialog id="appearance-dialog" class="workspace-dialog" aria-labelledby="appearance-title">
   <header class="dialog-header"><div><span class="eyebrow">MAKE IT YOURS</span><h2 id="appearance-title">Appearance</h2><p id="appearance-access" role="status">Waiting for configuration status</p></div><nav class="appearance-tabs" role="tablist" aria-label="Appearance sections"><button id="appearance-tab-gallery" data-appearance-tab="gallery" type="button" role="tab" aria-selected="true" aria-controls="appearance-gallery">Preset gallery</button><button id="appearance-tab-custom" data-appearance-tab="custom" type="button" role="tab" aria-selected="false" aria-controls="appearance-custom" tabindex="-1">Customize &amp; splash</button><button id="appearance-tab-instruments" data-appearance-tab="instruments" type="button" role="tab" aria-selected="false" aria-controls="appearance-instruments" tabindex="-1">Gauges &amp; colors</button></nav><button id="appearance-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
   <section id="appearance-gallery" class="appearance-gallery" role="tabpanel" aria-labelledby="appearance-tab-gallery">
-    <div class="gallery-heading"><div><h3>Choose your look</h3><p>Coordinated instruments, panels and backgrounds. Tap to apply.</p></div><div class="look-collections" role="group" aria-label="Look collections"><button type="button" data-collection-filter="signature" aria-pressed="true">Signature <span>06</span></button><button type="button" data-collection-filter="performance" aria-pressed="false">Track &amp; touring <span>06</span></button><button type="button" data-collection-filter="retro" aria-pressed="false">Retro &amp; future <span>06</span></button></div><strong id="appearance-current"></strong></div>
+    <div class="gallery-heading"><div><h3>Choose your look</h3><p>Coordinated instruments, panels and backgrounds. Tap to apply.</p></div><div class="look-collections" role="group" aria-label="Look collections"><button type="button" data-collection-filter="signature" aria-pressed="true">Signature <span>06</span></button><button type="button" data-collection-filter="performance" aria-pressed="false">Track &amp; touring <span>06</span></button><button type="button" data-collection-filter="retro" aria-pressed="false">Retro &amp; future <span>06</span></button><button type="button" data-collection-filter="cyber" aria-pressed="false">Cyber <span>06</span></button></div><strong id="appearance-current"></strong></div>
     <div id="appearance-looks" class="look-grid" role="group" aria-label="Preset looks"></div>
     <div class="gallery-heading"><h3>Make it your own</h3><p>Mix any look with a background below, or upload your own in Customize.</p></div>
     <div id="appearance-backgrounds" class="background-grid" role="group" aria-label="Preset backgrounds"></div>
@@ -322,17 +322,31 @@
     <section class="setting-card appearance-sample"><h3>Your display</h3><div class="theme-preview"><span class="eyebrow">FROGDASH</span><strong>76 <small>MPH</small></strong><div class="theme-preview-track"></div><span>LIVE SURFACE PREVIEW</span></div><div class="transparency-setting"><label for="appearance-transparency">Widget transparency <output id="appearance-transparency-value" for="appearance-transparency">0%</output></label><input id="appearance-transparency" type="range" min="0" max="100" step="5" value="0"><div class="range-captions"><span>Solid</span><span>Clear</span></div></div><p id="appearance-feedback" class="control-note" role="status">Settings save automatically in this browser.</p><p class="control-note">PNG, JPEG or WebP, up to 10 MB. Images are resized for this display. Splash opens when the dash loads and can be skipped.</p><button id="appearance-reset" type="button">RESTORE DEFAULT STYLE</button></section>
   </div>
   <div id="appearance-instruments" class="appearance-body control-section gauge-options" role="tabpanel" aria-labelledby="appearance-tab-instruments" hidden>
-    <section class="setting-card"><h3>Your instrument cluster</h3>      <label for="appearance-gauges">Gauge layout</label><select id="appearance-gauges"><option value="standard">Original / digital speed + arc tach</option><option value="foxbody">Foxbody / factory-inspired analog</option><option value="analog">Touring / round analog dials</option><option value="digital">Terminal / segmented digital</option></select>
-      <label for="appearance-needle">Analog needle color</label><input id="appearance-needle" type="color" value="#f5f0df"><p class="control-note">Mix any gauge layout with any preset, accent or background.</p>
-      <label for="appearance-accent">Instrument accent</label><div class="swatches" role="group" aria-label="Accent presets"><button type="button" data-accent="#8befc4" style="--swatch:#8befc4" aria-label="Mint"></button><button type="button" data-accent="#8fcfff" style="--swatch:#8fcfff" aria-label="Ice blue"></button><button type="button" data-accent="#ffc77d" style="--swatch:#ffc77d" aria-label="Amber"></button><button type="button" data-accent="#c6a6ff" style="--swatch:#c6a6ff" aria-label="Violet"></button><input id="appearance-accent" type="color" value="#8befc4" aria-label="Custom accent color"></div>
-
+    <section class="setting-card"><h3>Instrument style</h3>
+      <label for="appearance-gauges">Gauge layout</label><select id="appearance-gauges"><option value="standard">Original / digital speed + arc tach</option><option value="foxbody">Foxbody / factory-inspired analog</option><option value="analog">Touring / round analog dials</option><option value="digital">Terminal / segmented digital</option><option value="cyber">Neon HUD / cyberpunk data blocks</option></select>
+      <label for="appearance-font">Numeral typeface</label><select id="appearance-font"></select>
+      <label for="appearance-shape">Panel shape</label><select id="appearance-shape"></select>
+      <label for="appearance-edge">Panel edges</label><select id="appearance-edge"></select>
+      <div class="transparency-setting"><label for="appearance-glow">Glow intensity <output id="appearance-glow-value" for="appearance-glow">0%</output></label><input id="appearance-glow" type="range" min="0" max="100" step="5" value="0"><div class="range-captions"><span>Off</span><span>Full neon</span></div></div>
+      <p class="control-note">Mix any layout with any preset, typeface, shape or color. Warning and fault colors never change.</p>
     </section>
-    <section class="setting-card gauge-guide"><span class="eyebrow">FOUR WAYS TO DRIVE</span><h3>Same car. Different era.</h3>
+    <section class="setting-card color-studio"><h3>Color studio <small id="appearance-studio-target"></small></h3>
+      <div class="color-slots" role="radiogroup" aria-label="Color to edit"><div class="color-slot"><button type="button" role="radio" data-color-slot="accent" aria-checked="true"><i aria-hidden="true"></i><span>Accent<small>Arcs, labels, highlights</small></span><code></code></button><input id="appearance-accent" type="color" aria-label="Custom accent color"></div><div class="color-slot"><button type="button" role="radio" data-color-slot="accent2" aria-checked="false"><i aria-hidden="true"></i><span>Secondary<small>Meters, gradients, duotone</small></span><code></code></button><input id="appearance-accent2" type="color" aria-label="Custom secondary color"></div><div class="color-slot"><button type="button" role="radio" data-color-slot="numeral" aria-checked="false"><i aria-hidden="true"></i><span>Numerals<small>Speed, RPM and readings</small></span><code></code></button><input id="appearance-numeral" type="color" aria-label="Custom numeral color"></div><div class="color-slot"><button type="button" role="radio" data-color-slot="needle" aria-checked="false"><i aria-hidden="true"></i><span>Needles<small>Analog pointers</small></span><code></code></button><input id="appearance-needle" type="color" aria-label="Analog needle color"></div></div>
+      <div id="appearance-swatches" class="swatches" role="group" aria-label="Spectrum swatches"></div>
+      <div class="hsl-sliders">
+        <label for="appearance-hue">Hue <output id="appearance-hue-value" for="appearance-hue"></output></label><input id="appearance-hue" type="range" min="0" max="359" step="1">
+        <label for="appearance-sat">Saturation <output id="appearance-sat-value" for="appearance-sat"></output></label><input id="appearance-sat" type="range" min="0" max="100" step="1">
+        <label for="appearance-light">Lightness <output id="appearance-light-value" for="appearance-light"></output></label><input id="appearance-light" type="range" min="0" max="100" step="1">
+      </div>
+      <div class="harmony" role="group" aria-label="Set secondary from accent"><span>Secondary from accent</span><button type="button" data-harmony="match">Match</button><button type="button" data-harmony="analogous">Analogous</button><button type="button" data-harmony="triad">Triad</button><button type="button" data-harmony="complement">Complement</button></div>
+    </section>
+    <section class="setting-card gauge-guide"><span class="eyebrow">FIVE WAYS TO DRIVE</span><h3>Same car. Different era.</h3>
       <div><strong>Original</strong><p>Digital road speed, an arc tachometer and your configurable sensor row.</p></div>
-      <div><strong>Foxbody</strong><p>A factory-inspired charcoal binnacle, printed scales and six moving needles. A tribute, not an exact OEM replica.</p></div>
+      <div><strong>Foxbody</strong><p>A factory-inspired charcoal binnacle: tach left, speedometer right, six moving needles. A tribute, not an OEM replica.</p></div>
       <div><strong>Touring analog</strong><p>Six round instruments with precision scales and independent needle color.</p></div>
-      <div><strong>Terminal digital</strong><p>Seven-segment speed and RPM, phosphor-style numerals and illuminated bar meters.</p></div>
-      <p class="control-note">Speed scales follow US or metric units. Unavailable signals show a dash and hide their needle. The original layout retains the custom sensor slots in Drive.</p>
+      <div><strong>Terminal digital</strong><p>Seven-segment speed and RPM with illuminated bar meters.</p></div>
+      <div><strong>Neon HUD</strong><p>Full-width segmented tach, split-color speed readout and cut-corner data blocks.</p></div>
+      <p class="control-note">Scales follow US or metric units. Unavailable signals show a dash and hide their needle.</p>
     </section>
   </div>
 </dialog>
@@ -373,8 +387,8 @@
 <script src="viewport.js?v=2123ae318b10"></script>
 <script src="units.js?v=7f934be8abf3"></script>
 <script src="review.js?v=c6ec99c5fdab"></script>
-<script src="instruments.js?v=b2dde27f6306"></script>
-<script src="personalize.js?v=44d1b388a7d4"></script>
+<script src="instruments.js?v=10adc3851353"></script>
+<script src="personalize.js?v=30675d8ebb7f"></script>
 <script src="trip.js?v=6b67863f329b"></script>
 <script src="driving.js?v=10415a075ab7"></script>
 <script src="operations.js?v=ceca2637436b"></script>

@@ -48,9 +48,18 @@ async def preview(browser):
         assert await page.locator('button[data-look][aria-pressed="true"]').count() == 1
         assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--warn")') == warning_color
     assert await page.locator('.look-card:visible').count() == 6
+    # Cyber looks differ in structure, not only color: layout, type, shape and edges all change.
+    await page.locator('[data-collection-filter="cyber"]').click()
+    assert await page.locator('.look-card:visible').count() == 6
+    for look, finish, gauges, font, shape, edge in [('cyberdeck', 'neoncity', 'cyber', 'mono', 'chamfer', 'glow'), ('netrunner', 'circuit', 'cyber', 'mono', 'sharp', 'accent'), ('ronin', 'void', 'cyber', 'racing', 'chamfer', 'rail'), ('hologram', 'aurora', 'standard', 'sans', 'round', 'glow'), ('toxic', 'hazard', 'digital', 'mono', 'sharp', 'accent'), ('blackout', 'void', 'cyber', 'sans', 'sharp', 'none')]:
+        await page.locator(f'button[data-look="{look}"]').click()
+        html = page.locator('html')
+        assert [await html.get_attribute(f'data-{name}') for name in ('finish', 'gauges', 'font', 'shape', 'edge')] == [finish, gauges, font, shape, edge], look
+        assert await page.locator('button[data-look][aria-pressed="true"]').count() == 1
+        assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--warn")') == warning_color
     await page.locator('[data-collection-filter="signature"]').click()
     await page.locator('[data-look="expedition"]').click()
-    for finish in ['midnight', 'graphite', 'carbon', 'glow', 'horizon', 'grid', 'contour', 'dusk', 'pitlane', 'apexline', 'technical', 'satin']:
+    for finish in ['midnight', 'graphite', 'carbon', 'glow', 'horizon', 'grid', 'contour', 'dusk', 'pitlane', 'apexline', 'technical', 'satin', 'void', 'duotone', 'neoncity', 'circuit', 'hazard', 'aurora']:
         await page.locator(f'button[data-background="{finish}"]').click()
         assert await page.locator('html').get_attribute('data-scene') == finish
     await page.locator('button[data-background="dusk"]').click()
@@ -65,7 +74,7 @@ async def preview(browser):
     assert await page.locator('#display').evaluate('(el) => getComputedStyle(el).getPropertyValue("--accent").trim()') == '#ffc77d'
     await page.evaluate("frogdashDemo.scenario('normal')")
     await page.wait_for_function('document.documentElement.dataset.lighting === "day"')
-    assert await page.locator('#display').evaluate('(el) => getComputedStyle(el).getPropertyValue("--accent").trim()') == '#b9dfa2'
+    assert await page.locator('#display').evaluate('(el) => getComputedStyle(el).getPropertyValue("--accent").trim()') == '#7ed321'
     await page.evaluate("frogdashDemo.scenario('parked')")
     await page.wait_for_timeout(150)
     await page.locator('#appearance-launch').click()
@@ -90,7 +99,7 @@ async def preview(browser):
     await page.locator('#appearance-tab-custom').click()
     await page.locator('#appearance-finish').select_option('carbon')
     await page.reload()
-    assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()') == '#c6a6ff'
+    assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()') == '#9d00ff'
     assert await page.locator('html').get_attribute('data-finish') == 'carbon'
     assert await page.locator('#appearance-transparency').input_value() == '50'
     await page.evaluate("frogdashDemo.scenario('parked')")

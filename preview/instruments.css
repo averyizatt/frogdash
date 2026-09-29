@@ -107,3 +107,139 @@
 .cluster-track > span { display:flex; justify-content:space-between; gap:8px; font-size:10px; color:var(--muted); }.cluster-track b { color:var(--text); }
 .cluster-shift { display:flex; gap:3px; }.cluster-shift i { height:8px; flex:1; background:#ffffff15; }.cluster-shift i[data-on="true"] { background:var(--accent); }.cluster-track[data-shift="true"] .cluster-shift i { background:var(--danger); }
 @media (max-aspect-ratio:11/5) and (max-width:1200px) { .cluster-track { position:static; transform:none; grid-column:1/-1; width:auto; display:flex; justify-content:center; align-items:center; gap:16px; }.cluster-shift { width:120px; } }
+
+/* ===== Appearance system: secondary color, numerals, glow, panel shape and edges ===== */
+:root { --accent-2:var(--accent); --numeral:#f4f7f6; --numeral-font:"DejaVu Sans","Segoe UI",Arial,sans-serif; --numeral-style:normal; --glow-blur:0px; --glow-mix:0%; --edge-glow:6px; }
+:root[data-lighting="night"] .display,:root[data-lighting="night"] .workspace-dialog { --accent-2:var(--night-accent,#ffc77d); }
+.speed-readout,.tach-readout,.metric-reading,.sensor-reading,.cluster-telemetry strong,.theme-preview strong { color:var(--numeral); }
+.dial-value { fill:var(--numeral); }
+#speed-digits,#rpm-value,.metric-reading > span:first-child,.sensor-reading > span:first-child,.cluster-telemetry strong,.terminal-value,.cyber-value,.theme-preview strong,.mini-speed,.dial-value { font-family:var(--numeral-font); font-style:var(--numeral-style); }
+:root[data-font="racing"] :is(#speed-digits,#rpm-value,.metric-reading > span:first-child,.sensor-reading > span:first-child,.cyber-value) { font-weight:900; }
+:root[data-font="mono"] #speed-digits { letter-spacing:-18px; }
+:root[data-gauges="digital"][data-font="racing"] .terminal-digits { transform:skewX(-9deg); }
+.tach-stop-start { stop-color:var(--accent-2); }.tach-stop-end { stop-color:var(--accent); }
+.tach-progress { stroke:url(#tach-gradient); }
+.sensor-card .fill { background:var(--accent-2); }
+:root[data-gauges="digital"] .terminal-meter i[data-on="true"] { background:var(--accent-2); }
+.cluster-rpm:not([data-danger="true"]) .terminal-digits polyline { stroke:var(--accent-2); }
+.cluster-telemetry article > span { color:color-mix(in srgb,var(--accent-2) 55%,var(--muted)); }
+/* Glow is opt-in so the Pi does no shadow work when it is off. */
+:root[data-glow="on"] :is(#speed-digits,#rpm-value,.metric-reading > span:first-child,.sensor-reading > span:first-child,.cluster-telemetry strong,.terminal-value,.theme-preview strong) { text-shadow:0 0 var(--glow-blur) color-mix(in srgb,var(--accent) var(--glow-mix),transparent); }
+:root[data-glow="on"] :is(.tach-progress,.terminal-digits,.dial-needle) { filter:drop-shadow(0 0 calc(var(--glow-blur) / 3) color-mix(in srgb,var(--accent) var(--glow-mix),transparent)); }
+:root[data-glow="on"] :is(.sensor-card .fill,.boost-track .fill,.terminal-meter i[data-on="true"],.cyber-meter i[data-on="true"],#shift-lights i[data-on="true"]) { box-shadow:0 0 calc(var(--glow-blur) / 2) color-mix(in srgb,var(--accent) var(--glow-mix),transparent); }
+/* Panel shape. Foxbody and Neon HUD binnacles keep their own silhouettes. */
+:root[data-shape="sharp"] :is(.primary-instruments,.sensor-card,.cluster-telemetry article,.meth-summary,.dashboard-nav button,.drive-quick button),
+:root[data-shape="sharp"][data-gauges="digital"] .cluster-gauge,:root[data-shape="sharp"][data-gauges="analog"] .custom-cluster,:root[data-shape="sharp"][data-gauges="digital"] .custom-cluster { border-radius:2px; }
+:root[data-shape="round"] :is(.primary-instruments,.sensor-card,.cluster-telemetry article,.meth-summary),
+:root[data-shape="round"][data-gauges="digital"] .cluster-gauge,:root[data-shape="round"][data-gauges="analog"] .custom-cluster,:root[data-shape="round"][data-gauges="digital"] .custom-cluster { border-radius:24px; }
+:root[data-shape="round"] :is(.dashboard-nav button,.drive-quick button) { border-radius:999px; }
+:root[data-shape="chamfer"] :is(.primary-instruments,.sensor-card,.cluster-telemetry article),
+:root[data-shape="chamfer"][data-gauges="digital"] .cluster-gauge,:root[data-shape="chamfer"][data-gauges="analog"] .custom-cluster,:root[data-shape="chamfer"][data-gauges="digital"] .custom-cluster { --cut:16px; border-radius:0; clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut)); }
+:root[data-shape="chamfer"] :is(.meth-summary,.dashboard-nav button,.drive-quick button) { border-radius:0; }
+/* Panel edges. Danger cards keep their red border and rail. */
+:root[data-edge="none"] :is(.primary-instruments,.sensor-card:not([data-tone="danger"]),.cluster-telemetry article,.meth-summary,.cluster-gauge) { border-color:transparent; }
+:root[data-edge="none"]:not([data-gauges="foxbody"]) .custom-cluster { border-color:transparent; }
+:root[data-edge="accent"] :is(.primary-instruments,.sensor-card:not([data-tone="danger"]),.cluster-telemetry article,.meth-summary) { border-color:color-mix(in srgb,var(--accent) 65%,transparent); }
+:root[data-edge="accent"]:not([data-gauges="foxbody"]) .custom-cluster,:root[data-edge="accent"][data-gauges="digital"] .cluster-gauge { border-color:color-mix(in srgb,var(--accent) 65%,transparent); }
+:root[data-edge="rail"] :is(.primary-instruments,.sensor-card,.cluster-telemetry article,.cluster-gauge) { box-shadow:inset 0 3px var(--accent); }
+:root[data-edge="rail"] .sensor-card[data-tone="danger"] { box-shadow:inset 0 3px var(--danger); }
+:root[data-edge="glow"] :is(.primary-instruments,.sensor-card:not([data-tone="danger"]),.cluster-telemetry article,.meth-summary) { border-color:color-mix(in srgb,var(--accent) 55%,transparent); box-shadow:0 0 var(--edge-glow) color-mix(in srgb,var(--accent) 30%,transparent),inset 0 0 var(--edge-glow) color-mix(in srgb,var(--accent) 10%,transparent); }
+:root[data-edge="glow"]:not([data-gauges="foxbody"]) .custom-cluster,:root[data-edge="glow"][data-gauges="digital"] .cluster-gauge { border-color:color-mix(in srgb,var(--accent) 55%,transparent); box-shadow:inset 0 0 calc(var(--edge-glow) * 2) color-mix(in srgb,var(--accent) 14%,transparent); }
+
+/* Foxbody: tachometer on the left and speedometer on the right, like the factory cluster. */
+:root[data-gauges="foxbody"] .custom-cluster { grid-template-areas:"coolant rpm speed oil" "fuel rpm speed volts"; }
+
+/* ===== Neon HUD: full-width segment tach, split-color speed, cut-corner data blocks. Static, no flashing. ===== */
+.cyber-face { display:none; }
+:root[data-gauges="cyber"] .cluster-dial,:root[data-gauges="cyber"] .terminal-face { display:none; }
+:root[data-gauges="cyber"] .cyber-face { display:flex; flex-direction:column; justify-content:center; gap:10px; height:100%; min-width:0; }
+:root[data-gauges="cyber"] .custom-cluster { --cut:26px; grid-template-columns:minmax(0,1fr) minmax(0,1.7fr) minmax(0,1fr); grid-template-rows:minmax(0,.85fr) minmax(0,1fr) minmax(0,1fr); grid-template-areas:"rpm rpm rpm" "coolant speed oil" "fuel speed volts"; gap:10px 14px; padding:14px 20px; border:0; border-radius:0; clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut)); background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 9%,transparent),transparent 32%,transparent 68%,color-mix(in srgb,var(--accent-2) 9%,transparent)),color-mix(in srgb,var(--surface) var(--widget-fill),transparent); }
+:root[data-gauges="cyber"] .custom-cluster::after { content:""; position:absolute; inset:0; pointer-events:none; background:repeating-linear-gradient(0deg,#ffffff05 0 1px,transparent 1px 4px); }
+:root[data-gauges="cyber"] .cluster-gauge { --cut:14px; padding:12px 18px; overflow:hidden; border:1px solid color-mix(in srgb,var(--accent) 30%,transparent); background:linear-gradient(90deg,color-mix(in srgb,var(--raised) 75%,transparent),color-mix(in srgb,var(--raised) 25%,transparent)); clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut))); }
+:root[data-gauges="cyber"] .cluster-gauge::before { content:""; position:absolute; left:0; top:0; width:48px; height:3px; background:var(--accent); }
+:root[data-gauges="cyber"] .cluster-gauge::after { content:""; position:absolute; right:0; bottom:0; width:24%; height:3px; background:var(--accent-2); }
+.cyber-face header { display:flex; align-items:baseline; gap:10px; min-width:0; font:700 13px/1 "DejaVu Sans Mono",Consolas,monospace; letter-spacing:2px; text-transform:uppercase; }
+.cyber-code { color:var(--accent); }.cyber-code::before { content:"//"; opacity:.55; margin-right:3px; }
+.cyber-face h3 { font:inherit; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cyber-unit { margin-left:auto; color:var(--accent-2); }
+.cyber-value { color:var(--numeral); font-size:56px; font-weight:800; line-height:1; letter-spacing:-1px; white-space:nowrap; text-shadow:-2px 0 color-mix(in srgb,var(--accent-2) 75%,transparent),2px 0 color-mix(in srgb,var(--accent) 75%,transparent),0 0 var(--glow-blur) color-mix(in srgb,var(--accent) var(--glow-mix),transparent); }
+.cyber-meter { display:flex; gap:3px; height:12px; padding:0 4px; }
+.cyber-meter i { flex:1; min-width:0; transform:skewX(-24deg); background:#ffffff0e; }
+.cyber-meter i[data-on="true"] { background:color-mix(in srgb,var(--accent) var(--mix),var(--accent-2)); }
+.cyber-meter i.redline { background:color-mix(in srgb,var(--danger) 24%,transparent); }
+.cyber-meter i.redline[data-on="true"] { background:var(--danger); }
+.cluster-gauge[data-danger="true"] .cyber-value { color:var(--danger); }
+.cluster-speed .cyber-value { font-size:176px; letter-spacing:-8px; text-align:center; text-shadow:-5px 0 color-mix(in srgb,var(--accent-2) 80%,transparent),5px 0 color-mix(in srgb,var(--accent) 80%,transparent),0 0 var(--glow-blur) color-mix(in srgb,var(--accent) var(--glow-mix),transparent); }
+.cluster-speed .cyber-meter { height:14px; }
+:root[data-gauges="cyber"] .cluster-rpm .cyber-face { display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"head value" "meter value" "scale value"; column-gap:28px; row-gap:7px; align-content:center; }
+.cluster-rpm .cyber-face header { grid-area:head; }
+.cluster-rpm .cyber-meter { grid-area:meter; height:38px; gap:4px; }
+.cyber-scale { grid-area:scale; display:flex; justify-content:space-between; padding:0 4px; font:700 13px/1 "DejaVu Sans Mono",Consolas,monospace; color:var(--muted); }
+.cyber-scale span:nth-last-child(-n+2) { color:var(--danger); }
+.cluster-rpm .cyber-value { grid-area:value; align-self:center; min-width:4.3ch; text-align:right; font-size:84px; }
+:root[data-gauges="cyber"] .cluster-track { top:auto; bottom:12px; }
+:root[data-gauges="cyber"] .cluster-telemetry article { border-left:3px solid var(--accent); }
+
+/* ===== New backgrounds. Several follow the current accent and secondary colors. ===== */
+[data-scene="void"] { --scene:linear-gradient(#000,#000); }
+[data-scene="duotone"] { --scene:radial-gradient(ellipse at 0% 0%,color-mix(in srgb,var(--accent) 30%,transparent),transparent 55%),radial-gradient(ellipse at 100% 100%,color-mix(in srgb,var(--accent-2) 30%,transparent),transparent 55%),linear-gradient(#06080c,#06080c); }
+[data-scene="neoncity"] { --scene:linear-gradient(90deg,#0c0617 0 70%,transparent 70%) 0 100%/53px 24% repeat-x,linear-gradient(90deg,transparent 0 30%,#120a20 30% 85%,transparent 85%) 0 100%/97px 38% repeat-x,linear-gradient(90deg,#0a0513 0 40%,transparent 40%) 20px 100%/71px 50% repeat-x,linear-gradient(115deg,transparent 72%,#ffd6001a 72% 73.4%,transparent 73.4% 74.6%,#ffd6000d 74.6% 76%,transparent 76%),radial-gradient(ellipse at 20% 105%,#ff2bd64a,transparent 55%),radial-gradient(ellipse at 85% -10%,#00f0ff38,transparent 50%),linear-gradient(170deg,#140828,#06030d 75%); }
+[data-scene="circuit"] { --scene:radial-gradient(circle,color-mix(in srgb,var(--accent) 30%,transparent) 0 2.5px,transparent 3.5px) 29px 44px/60px 90px,repeating-linear-gradient(90deg,transparent 0 58px,color-mix(in srgb,var(--accent) 8%,transparent) 58px 60px),repeating-linear-gradient(0deg,transparent 0 88px,color-mix(in srgb,var(--accent-2) 8%,transparent) 88px 90px),repeating-linear-gradient(45deg,transparent 0 120px,color-mix(in srgb,var(--accent) 5%,transparent) 120px 122px),linear-gradient(160deg,#07120b,#020604 70%); }
+[data-scene="hazard"] { --scene:repeating-linear-gradient(-45deg,#ffd60036 0 18px,transparent 18px 36px) 0 100%/100% 24px no-repeat,repeating-linear-gradient(-45deg,#ffd6001c 0 18px,transparent 18px 36px) 0 0/100% 10px no-repeat,radial-gradient(ellipse at 70% 35%,color-mix(in srgb,var(--accent) 10%,transparent),transparent 60%),linear-gradient(160deg,#16170c,#060604 70%); }
+[data-scene="aurora"] { --scene:radial-gradient(ellipse 60% 42% at 25% 8%,color-mix(in srgb,var(--accent) 24%,transparent),transparent 70%),radial-gradient(ellipse 50% 45% at 76% 18%,color-mix(in srgb,var(--accent-2) 24%,transparent),transparent 70%),radial-gradient(ellipse 70% 40% at 50% 112%,color-mix(in srgb,var(--accent-2) 14%,transparent),transparent 70%),linear-gradient(180deg,#061019,#03070c); }
+
+/* ===== Gallery previews reflect each look's type, colors, shape and gauges. ===== */
+.mini-speed { color:var(--numeral); text-shadow:0 0 var(--glow-blur) color-mix(in srgb,var(--accent) var(--glow-mix),transparent); }
+.mini-bars { border-top-color:var(--accent); border-bottom-color:var(--accent-2); opacity:.9; }
+.look-card[data-shape="sharp"] { border-radius:3px; }.look-card[data-shape="round"] { border-radius:22px; }
+.look-card[data-shape="chamfer"] { border-radius:0; }
+.look-card[data-shape="chamfer"] .look-art { clip-path:polygon(18px 0,100% 0,100% 100%,0 100%,0 18px); }
+.look-card[data-edge="rail"] .look-art { box-shadow:inset 0 3px var(--accent); }
+.look-card[data-edge="glow"] .look-art { box-shadow:inset 0 0 26px color-mix(in srgb,var(--accent) 35%,transparent); }
+.look-card[data-gauge-preview="cyber"] .mini-gauge { width:96px; height:20px; border:0; border-radius:0; opacity:1; background:repeating-linear-gradient(90deg,var(--accent) 0 6px,transparent 6px 9px); transform:skewX(-24deg); }
+.look-card[data-gauge-preview="cyber"] .mini-speed { text-shadow:-2px 0 var(--accent-2),2px 0 var(--accent); }
+.look-card[data-gauge-preview="cyber"] .mini-bars { border:0; height:18px; background:linear-gradient(90deg,var(--accent-2),var(--accent)); clip-path:polygon(0 0,88% 0,100% 100%,12% 100%); }
+
+/* ===== Color studio ===== */
+.gauge-options { grid-template-columns:minmax(0,1fr) minmax(0,1.5fr) minmax(0,.85fr); }
+.color-studio h3 small { font-size:13px; font-weight:650; color:var(--muted); margin-left:8px; }
+.color-slots { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0 14px; }
+.color-slot { display:flex; gap:6px; min-width:0; }
+.color-slot button { flex:1; min-width:0; display:flex; align-items:center; gap:10px; padding:6px 10px; min-height:54px; border:1px solid var(--line); border-radius:8px; background:var(--raised); color:var(--text); text-align:left; }
+.color-slot button[aria-checked="true"] { border-color:var(--accent); box-shadow:inset 4px 0 var(--accent); }
+.color-slot i { flex-shrink:0; width:26px; height:26px; border-radius:50%; background:var(--chip); box-shadow:0 0 0 2px #ffffff30,0 0 10px var(--chip); }
+.color-slot span { display:flex; flex-direction:column; min-width:0; font-size:15px; font-weight:750; }
+.color-slot small { font-size:11px; font-weight:500; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.color-slot code { margin-left:auto; font:600 12px "DejaVu Sans Mono",Consolas,monospace; color:var(--muted); }
+.appearance-body .color-slot input[type="color"] { width:46px; height:auto; min-height:54px; padding:3px; flex-shrink:0; }
+.color-studio .swatches { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:6px; }
+.color-studio .swatches button { min-width:0; min-height:36px; border-radius:6px; border:2px solid #0007; }
+.color-studio .swatches button[aria-pressed="true"] { outline:2px solid var(--text); outline-offset:2px; }
+.hsl-sliders { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; column-gap:14px; margin-top:10px; }
+.appearance-body .hsl-sliders label { margin:7px 0; display:flex; justify-content:space-between; gap:10px; min-width:128px; font-weight:750; }
+.hsl-sliders output { color:var(--accent); font-variant-numeric:tabular-nums; }
+.appearance-body .hsl-sliders input[type="range"] { -webkit-appearance:none; appearance:none; height:22px; min-height:22px; padding:0; border-radius:11px; border:1px solid #ffffff26; background:var(--track,#333); }
+.appearance-body .hsl-sliders #appearance-hue { --track:linear-gradient(90deg,#f00,#ff0 16.7%,#0f0 33.3%,#0ff 50%,#00f 66.7%,#f0f 83.3%,#f00); }
+.hsl-sliders input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:30px; height:30px; border-radius:50%; background:#fff; border:3px solid #0b0f12; box-shadow:0 0 0 2px #fff; }
+.harmony { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:14px; }
+.harmony span { font-size:13px; color:var(--muted); margin-right:auto; }
+.appearance-body .harmony button { min-height:40px; padding:6px 12px; font-size:14px; }
+.gauge-guide { gap:10px; }.gauge-guide p { font-size:14px; line-height:1.4; }
+
+/* Narrow and portrait screens. */
+@media (max-aspect-ratio:11/5) and (max-width:1499px) { .gauge-options { grid-template-columns:repeat(2,minmax(0,1fr)); }.gauge-guide { grid-column:1 / -1; } }
+@media (max-aspect-ratio:11/5) and (max-width:1200px) {
+  :root[data-gauges="foxbody"] .custom-cluster { grid-template-areas:"rpm rpm speed speed" "coolant fuel oil volts"; }
+  :root[data-gauges="cyber"] .custom-cluster { grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-areas:"rpm rpm rpm rpm" "speed speed speed speed" "coolant fuel oil volts"; grid-template-rows:120px 230px 150px; }
+  .cluster-speed .cyber-value { font-size:150px; }.cluster-rpm .cyber-value { font-size:60px; }.cyber-value { font-size:40px; }
+}
+@media (max-aspect-ratio:11/5) and (max-width:900px) { .gauge-options { grid-template-columns:1fr; } }
+@media (max-aspect-ratio:11/5) and (max-width:600px) {
+  :root[data-gauges="foxbody"] .custom-cluster { grid-template-areas:"rpm speed" "coolant oil" "fuel volts"; }
+  :root[data-gauges="cyber"] .custom-cluster { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-areas:"rpm rpm" "speed speed" "coolant oil" "fuel volts"; grid-template-rows:130px 170px 130px 130px; }
+  :root[data-gauges="cyber"] .cluster-rpm .cyber-face { grid-template-columns:minmax(0,1fr); grid-template-areas:"head" "value" "meter" "scale"; }
+  .cluster-rpm .cyber-value { text-align:left; font-size:40px; }.cluster-speed .cyber-value { font-size:100px; letter-spacing:-4px; }.cyber-value { font-size:32px; }
+  .cyber-face header { font-size:10px; letter-spacing:1px; }:root[data-gauges="cyber"] .cluster-gauge { padding:10px; }
+  .color-slots { grid-template-columns:1fr; }.color-studio .swatches { grid-template-columns:repeat(8,minmax(0,1fr)); }
+  .hsl-sliders { grid-template-columns:1fr; }
+}

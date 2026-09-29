@@ -80,16 +80,18 @@ track map is claimed; delta compares the latest completed lap to session best.
 
 ## Appearance and splash screens
 
-- **Appearance → Preset gallery** has three collections with six looks each. Signature includes Frogdash (mint),
-  Glacier (ice blue), Heritage (amber), After hours (violet), Apex (platinum),
-  and Expedition (sage). Track & touring adds GT Sprint, Endurance, Rally Stage,
-  Club Sport, Obsidian and Executive. Retro & future adds six analog and digital
-  interpretations detailed below. Race looks use square panels, accent rails
-  and heavier gauge strokes; touring looks use rounded surfaces and subtle depth.
-  Each applies instrument accents, panel colors,
-  borders and a background immediately. The selected look is marked with a tick.
-- Eighteen built-in backgrounds: midnight, graphite, carbon weave, accent glow,
-  horizon, blueprint, contours, dusk, pit lane, redline, telemetry, satin, charcoal, phosphor, neon grid, afterglow, vector grid and copper. Mix any background with any look;
+- **Appearance → Preset gallery** has four collections with six looks each. Signature includes Frogdash,
+  Glacier, Heritage, After hours, Apex and Expedition. Track & touring adds GT Sprint,
+  Endurance, Rally Stage, Club Sport, Obsidian and Executive. Retro & future and Cyber
+  are detailed below. A look sets structure as well as color: gauge layout, numeral
+  typeface, panel shape, panel edges, glow, accent, secondary, numeral and needle colors,
+  transparency and background. For example, Heritage uses serif analog dials, Apex uses
+  mono type with a red rail, and Expedition uses cut corners. The selected look is
+  marked with a tick.
+- Twenty-four built-in backgrounds: midnight, graphite, carbon weave, accent glow,
+  horizon, blueprint, contours, dusk, pit lane, redline, telemetry, satin, charcoal, phosphor,
+  neon grid, afterglow, vector grid, copper, true black, duotone, neon city, circuit, hazard
+  and aurora. Accent glow, duotone, circuit and aurora follow your chosen colors. Mix any background with any look;
   the label shows when a look has been customized. These are static local CSS
   patterns, with no downloads, animation or additional image storage.
 - **Customize & splash** retains the individual controls and image uploads.
@@ -103,8 +105,15 @@ track map is claimed; delta compares the latest completed lap to session best.
   danger-card backgrounds and settings dialogs remain solid. Presets apply their
   own starting transparency; changing it marks the look customized. The setting
   persists with your appearance profile and is included in display backups.
-- Sixteen named accent swatches, plus custom accent and analog needle color pickers
-  under **Gauges & colors**.
+- **Gauges & colors > Color studio** edits four color slots: Accent (arcs, labels,
+  highlights), Secondary (bar meters, tach gradient, duotone backgrounds), Numerals and
+  Needles. Select a slot, then use the 24 full-saturation spectrum swatches, the Hue,
+  Saturation and Lightness sliders, or the slot's system color picker. **Secondary from
+  accent** sets a matching, analogous, triad or complementary secondary color.
+- **Instrument style** sets the numeral typeface (modern sans, mechanical mono, classic
+  serif or racing italic), panel shape (soft, sharp, rounded or chamfered), panel edges
+  (hairline, accent outline, top rail, neon glow or borderless) and glow intensity. Glow
+  is off by default and adds no rendering work while off.
 - Optional Frogdash/custom-title splash or uploaded splash image; duration of
   1, 2, 3 or 5 seconds, with **Preview splash** and **Skip** controls.
 - PNG, JPEG and WebP uploads up to 10 MB, resized to fit 1920 × 720. Uploaded
@@ -117,8 +126,10 @@ and origin. Use the same Chromium profile and `http://127.0.0.1:8080/` address
 on the Pi; clearing site data or using an ephemeral/incognito profile loses
 them. Preview preferences are separate from the Pi's. Storage errors are shown
 and changes remain usable for that page session. Keep an original copy of your
-artwork. Dark accent selections are brightened to retain readable contrast;
-warning/fault colors remain unchanged. Background images are dimmed behind
+artwork. Very dark color selections gain lightness to stay readable on the dark panels,
+keeping their hue and saturation, so fully saturated reds, blues and violets stay vivid.
+Profiles saved before the color studio adopt their look's updated colors once.
+Warning/fault colors remain unchanged. Background images are dimmed behind
 the adjustable instrument surfaces, and splash images use contain rather than cropping.
 
 The splash is the dashboard application's startup screen, not the Raspberry Pi
@@ -153,14 +164,21 @@ The Foxbody designs are original vector interpretations of the factory cluster,
 not exact OEM reproductions. All artwork is local SVG/CSS; no fonts or images
 are downloaded at runtime.
 
-**Gauges & colors** selects the original layout, a six-gauge Foxbody binnacle,
-round analog instruments, or a seven-segment digital cluster. Mix these with any
-look, sixteen named accent swatches, a custom accent and a separate needle color.
-Very dark accent/needle choices are brightened for legibility. Presets choose
-matching gauges and needle colors; custom selections persist in the existing
-appearance profile and are included in display backups.
+**Gauges & colors** selects the original layout, a six-gauge Foxbody binnacle
+(tachometer left, speedometer right, like the factory cluster), round analog
+instruments, a seven-segment digital cluster, or the Neon HUD. Mix these with any
+look, typeface, shape and color. Presets choose matching gauges and colors; custom
+selections persist in the existing appearance profile and are included in display backups.
 
-The three new layouts show speed, RPM, coolant, fuel level, oil pressure and
+**Appearance > Preset gallery > Cyber** has Cyberdeck, Netrunner, Chrome Ronin,
+Hologram, Toxic and Blackout. Four use the **Neon HUD** layout: a full-width
+skewed-segment tachometer with its redline, a split-color speed readout, and
+cut-corner data blocks for coolant, fuel, oil pressure and volts over faint static
+scanlines. Hologram uses the original layout with rounded glowing glass, and Toxic
+uses segmented digital meters. Nothing flashes or animates; meter segments blend from
+the secondary to the accent color.
+
+The four alternative layouts show speed, RPM, coolant, fuel level, oil pressure and
 voltage, with a lower strip for boost, AFR, intake temperature and fuel pressure.
 The original layout retains the configurable Drive sensor slots. Track mode's
 shift lights and lap readouts also appear on the new clusters. Signal warnings,
@@ -169,6 +187,6 @@ hide when their data is unavailable/stale/faulted; digital values show a dash.
 US/metric speed and pressure scales follow the Units setting. Scales clamp at
 their printed limits while the numerical reading continues to show the value.
 
-Six additional backgrounds are Charcoal, Phosphor, Neon grid, Afterglow, Vector
-grid and Copper. The gallery and customization panels scroll within the display
+Retro backgrounds are Charcoal, Phosphor, Neon grid, Afterglow, Vector grid and
+Copper; cyber backgrounds are True black, Duotone, Neon city, Circuit, Hazard and Aurora. The gallery and customization panels scroll within the display
 when needed, keeping their header and Close button accessible.

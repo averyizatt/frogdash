@@ -15,7 +15,13 @@
   const svgNode = (tag, attrs, text) => { const n = document.createElementNS(ns, tag); for (const [k,v] of Object.entries(attrs)) n.setAttribute(k,v); if (text != null) n.textContent = text; return n; };
   for (const [id, title, signal] of definitions) {
     const card = document.createElement('article'); card.className = `cluster-gauge cluster-${id}`; card.dataset.channel = signal;
-    card.innerHTML = `<svg class="cluster-dial" viewBox="0 0 360 360" aria-hidden="true"><circle class="dial-bezel" cx="180" cy="180" r="172"/><circle class="dial-face" cx="180" cy="180" r="161"/><g class="dial-scale"></g><text class="dial-title" x="180" y="116">${title}</text><text class="dial-unit" x="180" y="142"></text><g class="dial-needle"><path d="M177 205 L177 162 L180 36 L183 162 L183 205 Z"/><circle cx="180" cy="180" r="12"/></g><text class="dial-value" x="180" y="280">\u2014</text></svg><div class="terminal-face"><h3>${title}</h3><div><strong class="terminal-value">\u2014</strong><span class="terminal-unit"></span></div><div class="terminal-meter" aria-hidden="true">${'<i></i>'.repeat(28)}</div></div><span class="cluster-quality">NO SIGNAL</span>`;
+    card.innerHTML = `<svg class="cluster-dial" viewBox="0 0 360 360" aria-hidden="true"><circle class="dial-bezel" cx="180" cy="180" r="172"/><circle class="dial-face" cx="180" cy="180" r="161"/><g class="dial-scale"></g><text class="dial-title" x="180" y="116">${title}</text><text class="dial-unit" x="180" y="142"></text><g class="dial-needle"><path d="M177 205 L177 162 L180 36 L183 162 L183 205 Z"/><circle cx="180" cy="180" r="12"/></g><text class="dial-value" x="180" y="280">\u2014</text></svg><div class="terminal-face"><h3>${title}</h3><div><strong class="terminal-value">\u2014</strong><span class="terminal-unit"></span></div><div class="terminal-meter" aria-hidden="true">${'<i></i>'.repeat(28)}</div></div><div class="cyber-face"><header><span class="cyber-code">${String(definitions.findIndex(d => d[0] === id) + 1).padStart(2, '0')}</span><h3>${title}</h3><span class="cyber-unit"></span></header><strong class="cyber-value">—</strong><div class="cyber-meter" aria-hidden="true"></div>${id === 'rpm' ? `<div class="cyber-scale" aria-hidden="true">${[0,1,2,3,4,5,6,7].map(n => `<span>${n}</span>`).join('')}</div>` : ''}</div><span class="cluster-quality">NO SIGNAL</span>`;
+    const segments = {rpm: 56, speed: 36}[id] || 18, meter = card.querySelector('.cyber-meter');
+    for (let i = 0; i < segments; i++) {
+      const bar = document.createElement('i'); bar.style.setProperty('--mix', `${Math.round(100 * i / (segments - 1))}%`);
+      if (id === 'rpm' && (i + 1) / segments > 6 / 7) bar.className = 'redline';
+      meter.append(bar);
+    }
     if (id === 'speed' || id === 'rpm') {
       const digits = svgNode('svg',{class:'terminal-digits',viewBox:`0 0 ${id==='speed'?168:224} 94`,'aria-hidden':'true'});
       const segments = ['12,4 42,4','46,10 46,39','46,53 46,82','12,88 42,88','8,53 8,82','8,10 8,39','12,46 42,46'];
@@ -26,7 +32,7 @@
       }
       card.querySelector('.terminal-value').after(digits);
     }
-    board.append(card); gauges.set(id, {card, signal, title, needle: card.querySelector('.dial-needle'), scale: card.querySelector('.dial-scale'), bars:[...card.querySelectorAll('.terminal-meter i')]});
+    board.append(card); gauges.set(id, {card, signal, title, needle: card.querySelector('.dial-needle'), scale: card.querySelector('.dial-scale'), meters:[[...card.querySelectorAll('.terminal-meter i')],[...card.querySelectorAll('.cyber-meter i')]]});
   }
   const track = document.createElement('div'); track.className='cluster-track'; track.hidden=true;
   track.innerHTML=`<div class="cluster-shift" aria-label="Shift lights">${'<i></i>'.repeat(8)}</div><span>LAST <b></b></span><span>BEST <b></b></span>`; board.append(track);
@@ -36,6 +42,8 @@
     const cell = document.createElement('article'); cell.dataset.reading = id; cell.innerHTML = `<span>${name}</span><strong>\u2014</strong><small></small>`; strip.append(cell);
   }
   host.before(board, strip);
+  const tach = document.querySelector('.tach-dial');
+  if (tach) tach.insertAdjacentHTML('afterbegin', '<defs><linearGradient id="tach-gradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0" class="tach-stop-start"/><stop offset="1" class="tach-stop-end"/></linearGradient></defs>');
   function configureScales() {
     const u = window.FrogdashUnits; metric = u.metric;
     const config = {rpm:[0,7000,7,'RPM \u00d7 1000'], speed:[0,u.metric ? 240 : 140,u.metric ? 12 : 7,u.speedUnit],
@@ -55,6 +63,7 @@
       }
       g.card.querySelector('.dial-unit').textContent = g.unit;
       g.card.querySelector('.terminal-unit').textContent = id === 'rpm' ? 'RPM' : g.unit;
+      g.card.querySelector('.cyber-unit').textContent = id === 'rpm' ? 'RPM' : g.unit;
     }
   }
   function render(snapshot, connected) {
@@ -82,10 +91,10 @@
       g.card.dataset.danger = String(id==='rpm' && value >= 6000 || id==='coolant' && live(g.signal) >= (snapshot.drive?.settings?.coolant_c ?? 112));
       g.needle.setAttribute('transform',`rotate(${-135+270*ratio} 180 180)`);
       g.needle.style.visibility = value === null ? 'hidden' : 'visible';
-      for(const n of g.card.querySelectorAll('.dial-value,.terminal-value')) n.textContent=text;
+      for(const n of g.card.querySelectorAll('.dial-value,.terminal-value,.cyber-value')) n.textContent=text;
       g.card.querySelector('.cluster-quality').textContent = value === null ? quality(g.signal).toUpperCase().replace('UNAVAILABLE','NO SIGNAL') : '';
       g.card.setAttribute('aria-label', `${g.title}: ${text} ${id==='rpm' ? 'RPM' : g.unit}${value === null ? ', '+quality(g.signal) : ''}`);
-      for(const [i,bar] of g.bars.entries()) bar.dataset.on = String(value !== null && i < ratio*g.bars.length);
+      for(const bars of g.meters) for(const [i,bar] of bars.entries()) bar.dataset.on = String(value !== null && i < ratio*bars.length);
     }
     for(const [id,key,convert,unit,digits] of [['boost','engine.boost_kpa',u.boost,u.metric?'kPa':'psi',1],['afr','engine.afr',n=>n,'AFR',1],['iat','engine.iat_c',u.temperature,u.metric?'\u00b0C':'\u00b0F',0],['fuelp','engine.fuel_pressure_psi',u.pressure,u.metric?'kPa':'psi',1]]) {
       const cell=strip.querySelector(`[data-reading="${id}"]`), value=live(key);

@@ -21,10 +21,27 @@ async def main(executable):
             assert await page.locator('html').get_attribute('data-gauges') == kind
             assert await page.locator(f'[data-look="{look}"]').get_attribute('aria-pressed') == 'true'
         await page.locator('#appearance-tab-instruments').click()
-        assert await page.locator('[data-accent]').count() == 16
+        assert await page.locator('[data-swatch]').count() == 24
         await page.locator('#appearance-gauges').select_option('foxbody')
         await page.locator('#appearance-needle').fill('#ffbc90')
+        await page.locator('[data-color-slot="accent"]').click()
         await page.get_by_role('button',name='Hot pink',exact=True).click()
+        assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()') == '#ff2d95'
+        # Saturated colors stay saturated; only too-dark picks gain lightness, keeping their hue.
+        assert await page.evaluate("FrogdashAppearance.readableAccent('#ff0000')") == '#ff0000'
+        blue = await page.evaluate("FrogdashAppearance.readableAccent('#0000ff')")
+        assert blue[5:7] == 'ff' and blue[1:3] == blue[3:5] and int(blue[1:3], 16) < 0x70, blue
+        # Sliders edit the selected color slot; harmony buttons derive the secondary color.
+        await page.locator('[data-color-slot="numeral"]').click()
+        await page.locator('#appearance-hue').fill('200')
+        assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--numeral").trim()') != '#f4f7f6'
+        await page.locator('[data-harmony="complement"]').click()
+        assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--accent-2").trim()') not in ('', '#ff2d95')
+        for field, value in (('font', 'racing'), ('shape', 'chamfer'), ('edge', 'glow')):
+            await page.locator(f'#appearance-{field}').select_option(value)
+            assert await page.locator('html').get_attribute(f'data-{field}') == value
+        await page.locator('#appearance-glow').fill('60')
+        assert await page.locator('html').get_attribute('data-glow') == 'on'
         await page.locator('#appearance-close').click()
         needle=page.locator('.cluster-rpm .dial-needle')
         before=await needle.get_attribute('transform')
@@ -33,12 +50,29 @@ async def main(executable):
         await page.wait_for_function('window.frogdashRendered > 2')
         assert await page.locator('html').get_attribute('data-gauges') == 'foxbody'
         assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--needle").trim()') == '#ffbc90'
+        assert await page.locator('html').get_attribute('data-font') == 'racing'
+        # Foxbody puts the tachometer left of the speedometer, like the factory cluster.
+        rpm_box, speed_box = await page.locator('.cluster-rpm').bounding_box(), await page.locator('.cluster-speed').bounding_box()
+        assert rpm_box['x'] < speed_box['x'], (rpm_box, speed_box)
         await page.evaluate("frogdashDemo.scenario('normal')")
         await page.wait_for_function('document.querySelector(".cluster-speed .dial-value").textContent === "47"')
         await page.evaluate("FrogdashUnits.set('metric')")
         await page.wait_for_function('document.querySelector(".cluster-speed .dial-value").textContent === "76"')
         assert await page.locator('.cluster-speed .dial-unit').text_content() == 'km/h'
         assert '240' in await page.locator('.cluster-speed .dial-scale').text_content()
+        # Neon HUD shares the same values, quality rules and redline.
+        await page.locator('#appearance-launch').click()
+        await page.locator('#appearance-tab-instruments').click()
+        await page.locator('#appearance-gauges').select_option('cyber')
+        await page.locator('#appearance-close').click()
+        assert await page.locator('.cluster-speed .cyber-value').text_content() == '76'
+        assert await page.locator('.cluster-speed .cyber-unit').text_content() == 'km/h'
+        assert await page.locator('.cluster-rpm .cyber-meter i[data-on="true"]').count() > 0
+        assert await page.locator('.cluster-rpm .cyber-meter i.redline').count() == 8
+        await page.locator('#appearance-launch').click()
+        await page.locator('#appearance-tab-instruments').click()
+        await page.locator('#appearance-gauges').select_option('foxbody')
+        await page.locator('#appearance-close').click()
         # Missing/stale/fault data cannot be represented by a valid zero needle.
         for quality in ('unavailable','stale','fault'):
             result=await page.evaluate('''quality=>{
@@ -57,7 +91,7 @@ async def main(executable):
         }''')
         for width,height in ((1920,720),(1280,480),(1920,1080),(1366,768),(800,600),(390,844)):
             await page.set_viewport_size({'width':width,'height':height})
-            for kind in ('foxbody','analog','digital'):
+            for kind in ('foxbody','analog','digital','cyber'):
                 await page.locator('#appearance-launch').click()
                 await page.locator('#appearance-tab-instruments').click()
                 await page.locator('#appearance-gauges').select_option(kind)

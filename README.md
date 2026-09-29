@@ -43,10 +43,11 @@ splits, eighth/quarter-mile timing, automatic or manual laps, saved session
 exports, custom accents/backgrounds, and configurable startup splash screens.
 Race timing continues on the Pi with the menu closed and is included in MLG logs.
 Appearance preferences and uploaded artwork save on the current display.
-The appearance gallery includes eighteen coordinated looks and eighteen mixable preset
-backgrounds, including Foxbody-inspired analog and retro digital clusters. Choose
-from four gauge layouts, sixteen accent swatches and independent needle colors,
-alongside image uploads and splash screens.
+The appearance gallery includes twenty-four coordinated looks in four collections and
+twenty-four mixable preset backgrounds, including Foxbody-inspired analog, retro digital
+and a cyberpunk Neon HUD cluster. Choose from five gauge layouts, four numeral typefaces,
+panel shapes, edge styles and glow, plus a full-spectrum color studio for accent,
+secondary, numeral and needle colors, alongside image uploads and splash screens.
 Track & touring adds four motorsport looks and two restrained touring looks.
 Widget transparency is adjustable from solid to clear without fading the readings.
 
