@@ -22,11 +22,13 @@ StandardInput=tty-fail
 StandardOutput=journal
 StandardError=journal
 TTYReset=yes
-TTYVHangup=yes
-TTYVTDisallocate=yes
+# These also run before ExecStartPost and can hang up the starting main process.
+TTYVHangup=no
+TTYVTDisallocate=no
 UtmpIdentifier=tty7
 UtmpMode=user
-ExecStart=/usr/bin/dbus-run-session -- /usr/bin/cage -s -- /usr/bin/python3 /opt/frogdash/tools/launch_kiosk.py --wayland --dedicated-profile --allow-audio
+# Keep the dashboard on one output; Cage otherwise extends across connectors.
+ExecStart=/usr/bin/dbus-run-session -- /usr/bin/cage -s -m last -- /usr/bin/python3 /opt/frogdash/tools/launch_kiosk.py --wayland --dedicated-profile --allow-audio
 ExecStartPost=+/usr/bin/python3 /opt/frogdash/tools/activate_kiosk.py --pid ${MAINPID} --user %i --tty tty7
 TimeoutStartSec=20
 Restart=always

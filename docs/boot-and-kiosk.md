@@ -69,7 +69,7 @@ user, with the backend running and no desktop compositor owning the display:
 
 ```sh
 sudo systemctl start frogdash
-dbus-run-session -- cage -s -- python3 /opt/frogdash/tools/launch_kiosk.py --wayland --dedicated-profile --allow-audio
+dbus-run-session -- cage -s -m last -- python3 /opt/frogdash/tools/launch_kiosk.py --wayland --dedicated-profile --allow-audio
 ```
 
 For automatic startup, copy the session files and enable **your actual username**
@@ -196,7 +196,12 @@ dedicated profile's basic store removes the keyring dependency. A temporary
 after launch but left systemd waiting for process-start confirmation; the final
 unit uses `Type=simple` plus explicit registered-session activation. The initial helper used comma-separated `loginctl` properties, which return
 no fields on the Pi's version. It now requests each property separately.
-Cold-boot timing and the final session helper still need confirmation on the Pi; the log alone
+The corrected helper subsequently activated session c16, but two earlier attempts
+still timed out before a PAM session opened. `TTYVHangup=yes` is a likely startup
+race: systemd v252 resets the terminal before each executed command, including
+`ExecStartPost`, potentially hanging up the main process as it starts. Terminal
+hangup/disallocation are now disabled; ordinary terminal reset is retained.
+This correction and cold-boot timing still need confirmation on the Pi; the log alone
 cannot establish that every missed render was caused by the keyring. The
 EDID warning should be investigated if screen mode or HDMI initialization
 remains incorrect after startup is stable.
@@ -236,6 +241,15 @@ layout report has arrived. Browser geometry does not prove the HDMI monitor is
 showing every pixel: if the bounds fit, investigate the output mode and monitor
 scaling next. Reports stay in memory and are not written to the SD card.
 
+The console starts Cage with `-m last`, using one output instead of its default
+extended layout. A 1920x1080 screen with a 3840x1080 browser viewport indicates
+that the app is receiving a wider desktop than the visible monitor. Do not
+compensate by hard-coding a CSS resolution; inspect the connectors and compositor
+configuration. With multiple connected outputs, `last` selects the last one
+Cage discovers, which may differ from the intended dash. Disconnect unused
+outputs during bench testing and verify the viewport again after restarting.
+
+
 On Raspberry Pi OS, check the network-at-boot setting in `raspi-config`; the
 dashboard needs only loopback and does not require Wi-Fi to connect. Remove
 unnecessary waits only after the critical chain identifies them. Leave optional
@@ -243,7 +257,8 @@ Wi-Fi management available for the log-transfer feature. Keep the application's
 splash off during timing. A decorative boot image hides messages but does not
 shorten startup. Measure the existing microSD before deciding to replace it.
 
-Sources: [Chromium Linux password storage](https://chromium.googlesource.com/chromium/src/+/main/docs/linux/password_storage.md),
+Sources: [systemd terminal setup](https://github.com/systemd/systemd/blob/v252/src/core/execute.c),
+[Chromium Linux password storage](https://chromium.googlesource.com/chromium/src/+/main/docs/linux/password_storage.md),
 [systemd network ordering](https://systemd.io/NETWORK_ONLINE/),
 [Cage systemd sessions](https://github.com/cage-kiosk/cage/wiki/Starting-Cage-on-boot-with-systemd),
 [Cage command-line options](https://github.com/cage-kiosk/cage/blob/master/cage.1.scd),
