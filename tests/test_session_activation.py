@@ -27,9 +27,13 @@ class SessionActivationTests(unittest.TestCase):
     def test_session_must_match_process_user_terminal_and_pam_service(self):
         fields = dict(Name='foxbody', TTY='tty7', Service='frogdash-kiosk', Leader='123', State='online')
         def probe(data):
-            output = '\n'.join(f'{key}={value}' for key, value in data.items())
+            def loginctl(args, **kwargs):
+                # loginctl v252 treats each -p argument as ONE property name;
+                # unlike systemctl it does not split comma-separated names.
+                requested = [arg.split('=', 1)[1] for arg in args if arg.startswith('--property=')]
+                return Mock(stdout='\n'.join(f'{key}={data[key]}' for key in requested if key in data))
             with patch('pathlib.Path.open', mock_open(read_data=b'XDG_SESSION_ID=c4\0')), \
-                 patch('tools.activate_kiosk.subprocess.run', return_value=Mock(stdout=output)):
+                 patch('tools.activate_kiosk.subprocess.run', side_effect=loginctl):
                 return registered_session(123, 'foxbody', 'tty7')
         self.assertEqual(probe(fields), 'c4')
         for key, value in [('Name','other'), ('TTY','tty1'), ('Service','sshd'), ('Leader','456'), ('State','closing')]:

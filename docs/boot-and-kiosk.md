@@ -194,7 +194,9 @@ and a GNOME Secret Service activation timeout. The post-start helper addresses a
 dedicated profile's basic store removes the keyring dependency. A temporary
 `Type=exec` change produced successful browser heartbeats in 4.03/4.04 seconds
 after launch but left systemd waiting for process-start confirmation; the final
-unit uses `Type=simple` plus explicit registered-session activation. Cold-boot timing and the final session helper still need confirmation on the Pi; the log alone
+unit uses `Type=simple` plus explicit registered-session activation. The initial helper used comma-separated `loginctl` properties, which return
+no fields on the Pi's version. It now requests each property separately.
+Cold-boot timing and the final session helper still need confirmation on the Pi; the log alone
 cannot establish that every missed render was caused by the keyring. The
 EDID warning should be investigated if screen mode or HDMI initialization
 remains incorrect after startup is stable.

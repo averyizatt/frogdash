@@ -10,7 +10,7 @@ ConditionPathExists=/dev/tty0
 StartLimitIntervalSec=0
 
 [Service]
-# The post-start helper waits for this process to register its PAM session.
+# Wait for the registered session in the post-start helper, not Type=exec.
 Type=simple
 User=%i
 PAMName=frogdash-kiosk

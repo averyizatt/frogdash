@@ -23,7 +23,8 @@ def registered_session(pid, user, tty):
         if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}', session):
             return None
         result = subprocess.run(['/usr/bin/loginctl', 'show-session', session, '--no-pager',
-                                 '--property=Name,Service,TTY,Leader,State'],
+                                 '--property=Name', '--property=Service', '--property=TTY',
+                                 '--property=Leader', '--property=State'],
                                 capture_output=True, text=True, timeout=1, check=True)
         fields = dict(line.split('=', 1) for line in result.stdout.splitlines() if '=' in line)
         if (fields.get('Name') == user and fields.get('TTY') == tty
