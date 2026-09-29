@@ -34,9 +34,13 @@ tested manually on the intended OS.
 existing normal user on **tty7**, directly from `multi-user.target`. It needs
 no desktop autologin or full desktop environment. It starts the Frogdash backend
 in parallel and uses a small PAM session to give Cage access through logind.
-The service uses `Type=exec` so PAM/logind session setup completes before
-`ExecStartPost` activates tty7; a `Type=simple` post-start activation can run
-before session registration. Only one console instance should be enabled. Keep the ordinary tty1 login for
+The service uses `Type=simple` with a bounded post-start helper. The helper waits
+for the main process's PAM-created session ID, verifies its user, leader PID,
+TTY and PAM service with logind, then activates that exact session. It retries
+registration every 100 ms for up to eight seconds; it adds no fixed startup delay.
+`TimeoutStartSec=20` also bounds service activation. `Type=exec` was tested on the
+bench but left this Pi stuck in `activating/start` despite successful rendering,
+so it is not used with this PAM setup. Only one console instance should be enabled. Keep the ordinary tty1 login for
 maintenance; Cage's `-s` option allows switching virtual terminals.
 
 The readiness launcher polls local `/health` every 100 ms, with a 500 ms request
@@ -54,7 +58,7 @@ are installed with:
 
 ```sh
 sudo apt install cage chromium dbus-user-session libpam-systemd kbd
-command -v cage chromium dbus-run-session chvt python3
+command -v cage chromium dbus-run-session loginctl python3
 ls -l /dev/dri
 ```
 
@@ -186,9 +190,11 @@ Measure again before changing other services or claiming a key-on startup time.
 A later bench log showed seven kiosk restarts by kernel uptime 60 seconds,
 including exit status 1. The user-session journal then revealed a Cage timeout
 waiting for an active DRM session, a first browser-render watchdog restart,
-and a GNOME Secret Service activation timeout. `Type=exec` addresses activation
-before PAM registration, and the dedicated profile's basic store removes the
-keyring dependency. These changes need confirmation on the Pi; the log alone
+and a GNOME Secret Service activation timeout. The post-start helper addresses activation before PAM registration, and the
+dedicated profile's basic store removes the keyring dependency. A temporary
+`Type=exec` change produced successful browser heartbeats in 4.03/4.04 seconds
+after launch but left systemd waiting for process-start confirmation; the final
+unit uses `Type=simple` plus explicit registered-session activation. Cold-boot timing and the final session helper still need confirmation on the Pi; the log alone
 cannot establish that every missed render was caused by the keyring. The
 EDID warning should be investigated if screen mode or HDMI initialization
 remains incorrect after startup is stable.

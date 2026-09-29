@@ -16,7 +16,7 @@ import time
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
-FILES = ('hardware', 'tools/launch_kiosk.py', 'tools/boot_report.py', 'tools/install_release.py', 'VERSION', 'requirements.txt', 'requirements.lock')
+FILES = ('hardware', 'tools/launch_kiosk.py', 'tools/boot_report.py', 'tools/activate_kiosk.py', 'tools/install_release.py', 'VERSION', 'requirements.txt', 'requirements.lock')
 
 
 def manifest(source):
