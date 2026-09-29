@@ -173,9 +173,6 @@
 @media (max-aspect-ratio: 11/5) and (min-width: 1201px) and (max-height: 900px) {
   .display { padding:16px; gap:14px; }
   .topbar { gap:10px; }
-  .identity { gap:10px; }
-  .wordmark { font-size:20px; }
-  .vehicle-label { font-size:9px; }
   .indicators { gap:6px; }
   .indicator { font-size:12px; padding:6px 8px; }
   .turn-cluster { width:34px; padding:4px; }
@@ -199,4 +196,13 @@
   .dashboard-nav { gap:6px; }
   .dashboard-nav button { font-size:14px; padding:0 10px; }
   .module-strip { gap:8px; }
+}
+
+/* Keep indicators on the screen centerline, independent of side-group widths. */
+@media (max-aspect-ratio:11/5) and (max-width:1200px) {
+  .topbar { grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"indicators indicators" "status actions"; }
+}
+@media (max-aspect-ratio:11/5) and (max-width:600px) {
+  .topbar { grid-template-columns:minmax(0,1fr); grid-template-areas:"indicators" "status" "actions"; }
+  .topbar > .header-status,.topbar > .drive-quick { justify-self:center; justify-content:center; }
 }

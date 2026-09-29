@@ -11,12 +11,10 @@ button:not(:disabled):active { transform:translateY(1px); }
 h1,h2,h3,h4,p { margin:0; }
 svg { display:block; }
 .display { position:absolute; width:1920px; height:720px; left:50%; top:50%; margin:-360px 0 0 -960px; transform-origin:center; background:var(--bg); padding:20px 28px; display:grid; grid-template-rows:56px 1fr 172px 66px; gap:18px; overflow:hidden; }
-.topbar { display:flex; align-items:center; justify-content:space-between; }
-.identity { display:flex; align-items:center; gap:14px; }
-.brand-mark { width:44px; height:44px; background:var(--accent); color:#11261e; border-radius:10px; font-size:30px; font-weight:900; line-height:44px; text-align:center; letter-spacing:-5px; padding-right:7px; }
-.brand-mark span { font-size:22px; }
-.wordmark { display:block; font-size:23px; font-weight:850; letter-spacing:2px; }
-.vehicle-label { display:block; color:var(--muted); font-size:11px; font-weight:700; letter-spacing:2px; margin-top:4px; }
+.topbar { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); grid-template-areas:"status indicators actions"; align-items:center; gap:18px; }
+.topbar > .indicators { grid-area:indicators; justify-self:center; justify-content:center; }
+.topbar > .header-status { grid-area:status; min-width:0; justify-self:start; justify-content:flex-start; flex-wrap:wrap; }
+.topbar > .drive-quick { grid-area:actions; justify-self:end; }
 .indicators { display:flex; align-items:center; gap:13px; }
 .indicator { font-size:16px; font-weight:800; letter-spacing:.7px; padding:8px 12px; border:1px solid #28343d; border-radius:6px; color:#637884; }
 .indicator.on { color:var(--accent); border-color:#64967f; background:#152e25; }
