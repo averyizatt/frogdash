@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   const $ = id => document.getElementById(id), u = window.FrogdashUnits;
-  const keys = ['frogdash.appearance.v1', 'frogdash.driving.v1', 'frogdash.units.v1'];
+  const keys = ['frogdash.appearance.v1', 'frogdash.driving.v1', 'frogdash.units.v1', 'frogdash.cluster.v1'];
   const checks = {boot: 'Cold start: time until live gauges', crank: 'Cranking: power and display stay stable', gps_loss: 'Unplug GPS: speed becomes unavailable', can_loss: 'Disconnect CAN / modules: stale state visible', storage: 'Low storage: rotation and warnings verified', recording: 'Long drive: MLG opens in MegaLogViewer', display: 'Physical screen: touch, daylight and night', controls: 'Controller commands and readback checked'};
   let latest = {}, online = false, busy = false, pending = null, backlight = {};
   const simulated = {version: '0.4.0 preview', os: 'Simulated Raspberry Pi', maintenance: [], checks: {}, capabilities: []};

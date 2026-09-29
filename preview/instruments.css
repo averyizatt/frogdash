@@ -243,3 +243,24 @@
   .color-slots { grid-template-columns:1fr; }.color-studio .swatches { grid-template-columns:repeat(8,minmax(0,1fr)); }
   .hsl-sliders { grid-template-columns:1fr; }
 }
+
+/* ===== Press-and-hold gauge picker ===== */
+[data-gauge-slot] { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:manipulation; }
+.gauge-holding { outline:2px dashed var(--accent); outline-offset:-4px; }
+@media (prefers-reduced-motion:no-preference) { .gauge-holding { animation:gauge-hold .65s linear forwards; } }
+@keyframes gauge-hold { from { outline-color:transparent; } to { outline-color:var(--accent); } }
+.gauge-picker[open] { display:flex; flex-direction:column; }
+.gauge-picker .dialog-header p { color:var(--muted); font-size:14px; margin-top:4px; }
+#gauge-picker-default { margin-left:auto; min-height:48px; padding:8px 18px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); font-size:16px; font-weight:750; }
+.gauge-picker-options { flex:1; min-height:0; overflow:auto; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); grid-auto-rows:minmax(84px,auto); gap:12px; padding:20px 28px; align-content:start; }
+.gauge-picker-options button { display:flex; flex-direction:column; justify-content:center; gap:6px; padding:12px 16px; text-align:left; border:2px solid var(--line); border-radius:10px; background:var(--surface); color:var(--text); }
+.gauge-picker-options button strong { font-size:19px; }
+.gauge-picker-options button small { font-size:14px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.gauge-picker-options button[aria-pressed="true"] { border-color:var(--accent); box-shadow:inset 4px 0 var(--accent); }
+.gauge-picker-options button[aria-pressed="true"] small { color:var(--accent); }
+@media (max-aspect-ratio:11/5) and (max-width:1200px) { .gauge-picker-options { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media (max-aspect-ratio:11/5) and (max-width:600px) {
+  .gauge-picker-options { grid-template-columns:repeat(2,minmax(0,1fr)); padding:12px; gap:8px; }
+  .gauge-picker .dialog-header { flex-wrap:wrap; }
+  #gauge-picker-default { margin-left:0; }
+}

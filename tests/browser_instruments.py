@@ -89,6 +89,30 @@ async def main(executable):
           FrogdashInstruments.render({values:{}},false);
           if(document.querySelector('.cluster-track').hidden || document.querySelector('.cluster-warning').textContent!=='SENSOR FAULT') throw Error('Track or warning lost');
         }''')
+        # Press and hold reassigns small dials and strip readings; a tap does nothing.
+        await page.evaluate("FrogdashUnits.set('us')")
+        async def hold(selector):
+            box = await page.locator(selector).bounding_box()
+            await page.mouse.move(box['x'] + box['width'] / 2, box['y'] + box['height'] / 2)
+            await page.mouse.down(); await page.wait_for_timeout(800); await page.mouse.up()
+        await page.evaluate("frogdashDemo.scenario('normal')")
+        await page.locator('.cluster-coolant').click()
+        assert not await page.locator('#gauge-picker').is_visible()
+        await hold('.cluster-coolant')
+        await page.locator('#gauge-picker [data-metric="afr"]').click()
+        await page.wait_for_function("document.querySelector('.cluster-coolant .dial-value').textContent === '12.4'")
+        assert await page.locator('.cluster-coolant .dial-title').text_content() == 'AIR / FUEL'
+        await hold('[data-gauge-slot="strip-0"]')
+        await page.locator('#gauge-picker [data-metric="tank"]').click()
+        await page.reload()
+        await page.wait_for_function('window.frogdashRendered > 2')
+        await page.evaluate("frogdashDemo.scenario('normal')")
+        await page.wait_for_function("document.querySelector('[data-gauge-slot=\"strip-0\"] span').textContent === 'METH TANK'")
+        assert await page.locator('.cluster-coolant .dial-title').text_content() == 'AIR / FUEL'
+        await hold('.cluster-coolant')
+        await page.locator('#gauge-picker-default').click()
+        assert await page.locator('.cluster-coolant .dial-title').text_content() == 'WATER TEMP'
+        await page.evaluate("FrogdashUnits.set('metric')")
         for width,height in ((1920,720),(1280,480),(1920,1080),(1366,768),(800,600),(390,844)):
             await page.set_viewport_size({'width':width,'height':height})
             for kind in ('foxbody','analog','digital','cyber'):

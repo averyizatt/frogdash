@@ -35,6 +35,60 @@
   let audio, audioAttempted = false, audioError = false, lastChime = -Infinity, seenAlerts = null, pendingChime = 0, pendingTest = 0;
   const get = key => online && latest.values?.[key]?.quality === 'live' ? latest.values[key].value : null;
   const el = (tag, text, cls) => { const n = document.createElement(tag); if (text !== undefined) n.textContent = text; if (cls) n.className = cls; return n; };
+  // One reading for any metric, in display units, with the same quality rules everywhere.
+  function read(key, snapshot = latest, connected = online) {
+    const [title, signal, unit, min, max, digits, convert] = window.FrogdashUnits.definition(metricDefs[key]);
+    const race = (snapshot.mode === 'demo' ? window.frogdashRaceView : snapshot.race) || {};
+    const live = connected && snapshot.values?.[signal]?.quality === 'live' ? snapshot.values[signal].value : null;
+    const raw = !connected ? null : signal === '@last' ? race.laps?.at(-1)?.seconds : signal === '@best' ? race.best_lap : live;
+    const v = Number.isFinite(raw) ? (convert ? convert(raw) : raw) : null, value = Number.isFinite(v) ? v : null;
+    const quality = value !== null ? 'live' : !connected ? 'stale' : snapshot.values?.[signal]?.quality || 'unavailable';
+    const label = value !== null ? signal.startsWith('fuel.') ? 'Estimated' : signal.startsWith('trip.') ? 'Tracked' : 'Live' : !connected ? 'Stale' : snapshot.values?.[signal]?.quality || 'No signal';
+    return {key, title, signal, unit, min, max, digits, value, quality, label, text: value === null ? '\u2014' : value.toFixed(digits), ratio: value === null ? 0 : Math.max(0, Math.min(1, (value - min) / (max - min)))};
+  }
+  // Press and hold any [data-gauge-slot] element; its owner listens for 'gauge-hold'.
+  const picker = el('dialog', undefined, 'workspace-dialog gauge-picker'); picker.id = 'gauge-picker'; picker.setAttribute('aria-labelledby', 'gauge-picker-title');
+  picker.innerHTML = '<header class="dialog-header"><div><span class="eyebrow">PRESS AND HOLD ANY GAUGE</span><h2 id="gauge-picker-title">Change gauge</h2><p id="gauge-picker-note"></p></div><button id="gauge-picker-default" type="button">Restore default</button><button id="gauge-picker-close" class="close-button" type="button">Close <span aria-hidden="true">\u00d7</span></button></header><div id="gauge-picker-options" class="gauge-picker-options" role="group" aria-label="Readings"></div>';
+  document.body.append(picker);
+  let pickRequest = null;
+  function renderPicker() {
+    if (!picker.open || !pickRequest) return;
+    for (const button of $('gauge-picker-options').children) {
+      const m = read(button.dataset.metric);
+      button.setAttribute('aria-pressed', String(button.dataset.metric === pickRequest.current));
+      button.querySelector('small').textContent = m.value === null ? m.label : `${m.text} ${m.unit}`.trim();
+    }
+  }
+  for (const key of Object.keys(metricDefs)) {
+    const button = el('button'); button.type = 'button'; button.dataset.metric = key;
+    button.append(el('strong', metricDefs[key][0]), el('small'));
+    button.onclick = () => { const request = pickRequest; picker.close(); request?.onPick(key); };
+    $('gauge-picker-options').append(button);
+  }
+  $('gauge-picker-close').onclick = () => picker.close();
+  $('gauge-picker-default').onclick = () => { const request = pickRequest; picker.close(); request?.onPick(request.fallback); };
+  picker.addEventListener('close', () => { pickRequest = null; });
+  function pick(request) {
+    pickRequest = request;
+    $('gauge-picker-title').textContent = `Change ${request.title}`;
+    $('gauge-picker-note').textContent = `Default: ${metricDefs[request.fallback][0]}. Speed and RPM stay fixed.`;
+    if (!picker.open) picker.showModal();
+    renderPicker();
+  }
+  window.FrogdashMetrics = {defs: metricDefs, read, pick};
+  let hold = null;
+  const cancelHold = () => { if (hold) { clearTimeout(hold.timer); hold.target.classList.remove('gauge-holding'); } hold = null; };
+  const fireHold = target => { cancelHold(); if (!picker.open) target.dispatchEvent(new Event('gauge-hold')); };
+  document.addEventListener('pointerdown', event => {
+    const target = event.target.closest?.('[data-gauge-slot]');
+    if (!target || event.button > 0) return;
+    cancelHold(); target.classList.add('gauge-holding');
+    hold = {target, x: event.clientX, y: event.clientY, timer: setTimeout(() => fireHold(target), 650)};
+  });
+  document.addEventListener('pointermove', event => { if (hold && Math.hypot(event.clientX - hold.x, event.clientY - hold.y) > 14) cancelHold(); });
+  for (const type of ['pointerup', 'pointercancel', 'scroll']) document.addEventListener(type, cancelHold, true);
+  // Touch long-press and mouse right-click both raise contextmenu in Chromium.
+  document.addEventListener('contextmenu', event => { const target = event.target.closest?.('[data-gauge-slot]'); if (target) { event.preventDefault(); fireHold(target); } });
   const row = el('section', undefined, 'sensor-row profile-sensors'); row.id = 'profile-sensors'; row.hidden = true;
   document.querySelector('.sensor-row').after(row);
   const tiles = [];
@@ -45,6 +99,11 @@
     const track = el('div', undefined, 'track'), fill = el('div', undefined, 'fill'); track.append(fill);
     const scale = el('div', undefined, 'scale-labels'), lo = el('span'), hi = el('span'); scale.append(lo, hi); card.append(heading, readout, track, scale); row.append(card);
     tiles.push({card, title, quality, value, unit, fill, lo, hi});
+    const native = document.querySelectorAll('.sensor-row:not(.profile-sensors) .sensor-card')[i];
+    for (const target of [card, native].filter(Boolean)) {
+      target.dataset.gaugeSlot = `sensor-${i}`;
+      target.addEventListener('gauge-hold', () => pick({title: `position ${i + 1}`, current: prefs.layouts[prefs.layout][i], fallback: layouts[prefs.layout][i], onPick: key => { prefs.layouts[prefs.layout][i] = key; saveDisplay(); }}));
+    }
     const label = el('label', `Position ${i + 1}`), select = el('select'); select.id = `layout-slot-${i}`;
     for (const [key, [name]] of Object.entries(metricDefs)) { const option = el('option', name); option.value = key; select.append(option); }
     select.onchange = () => { prefs.layouts[prefs.layout][i] = select.value; saveDisplay(); };
@@ -80,23 +139,20 @@
     document.querySelector('.sensor-row:not(.profile-sensors)').hidden = !native;
     row.hidden = native;
     $('display').dataset.layout = prefs.layout;
-    const race = (latest.mode === 'demo' ? window.frogdashRaceView : latest.race) || {};
-    const last = race.laps?.at(-1)?.seconds, best = race.best_lap;
-    const lapText = n => Number.isFinite(n) ? `${n.toFixed(2)} s` : '—';
-    $('track-last').textContent = lapText(last); $('track-best').textContent = lapText(best);
+    $('track-last').textContent = read('lastlap').value === null ? '—' : `${read('lastlap').text} s`;
+    $('track-best').textContent = read('bestlap').value === null ? '—' : `${read('bestlap').text} s`;
     $('track-lap-readout').hidden = $('shift-lights').hidden = prefs.layout !== 'track';
     const rpm = get('engine.rpm');
     [...$('shift-lights').children].forEach((light, i) => { light.dataset.on = rpm !== null && rpm >= prefs.shift - (7 - i) * 150; });
     $('shift-lights').dataset.shift = rpm !== null && rpm >= prefs.shift;
     if (!native) prefs.layouts[prefs.layout].forEach((key, i) => {
-      const [title, signal, unit, min, max, digits, convert] = window.FrogdashUnits.definition(metricDefs[key]), tile = tiles[i];
-      const raw = signal === '@last' ? online ? last : null : signal === '@best' ? online ? best : null : get(signal);
-      const valid = Number.isFinite(raw), v = valid ? (convert ? convert(raw) : raw) : null;
-      tile.title.textContent = title; tile.unit.textContent = unit; tile.lo.textContent = min; tile.hi.textContent = max;
-      tile.value.textContent = valid && Number.isFinite(v) ? v.toFixed(digits) : '—'; tile.quality.textContent = valid ? signal.startsWith('fuel.') ? 'Estimated' : signal.startsWith('trip.') ? 'Tracked' : 'Live' : online ? latest.values?.[signal]?.quality || 'No signal' : 'Stale';
-      tile.card.dataset.quality = valid ? 'live' : !online ? 'stale' : latest.values?.[signal]?.quality || 'unavailable';
-      tile.fill.style.width = valid ? `${Math.max(0, Math.min(100, (v - min) / (max - min) * 100))}%` : '0%';
+      const m = read(key), tile = tiles[i];
+      tile.title.textContent = m.title; tile.unit.textContent = m.unit; tile.lo.textContent = m.min; tile.hi.textContent = m.max;
+      tile.value.textContent = m.text; tile.quality.textContent = m.label;
+      tile.card.dataset.quality = m.quality;
+      tile.fill.style.width = `${m.ratio * 100}%`;
     });
+    renderPicker();
   }
   syncDisplayForm();
   const rules = [
