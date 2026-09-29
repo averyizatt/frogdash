@@ -1,4 +1,4 @@
-"""Management UI, parked gates, real backup/restore, units and wide-screen bounds."""
+"""Management UI without stationary telemetry, real backup/restore, units and wide-screen bounds."""
 import argparse
 import asyncio
 import json
@@ -58,7 +58,6 @@ async def live(browser):
         path = Path(directory)
         state = State(clock=lambda: 0)
         state.connected = True
-        state.samples['ecu.rpm', 1520] = dict(value=0, quality='live', seen=0, source_id=1520, timestamp_ms=0)
         state.ingest(0x204, bytes.fromhex('01F401'))
         state.operations = Operations(state, path)
         state.trip = Trip(state, path / 'trip.json')
@@ -72,6 +71,7 @@ async def live(browser):
         page.on('pageerror', lambda e: errors.append(str(e)))
         try:
             base = f'http://127.0.0.1:{site._server.sockets[0].getsockname()[1]}'
+            assert not state.operations.status()['parked']
             await page.goto(base + '/?kiosk=' + 'f' * 32)
             await page.wait_for_function("document.getElementById('fuel-val').textContent === '50'")
             state.ingest(0x204, bytes.fromhex('000002'))
@@ -131,7 +131,7 @@ async def main(path):
             await live(browser)
         finally:
             await browser.close()
-    print('Management: parked locks, CAN fuel display, metric conversion, maintenance/history, diagnostics, backup/restore and render heartbeat passed.')
+    print('Management: editing without stationary telemetry, CAN fuel display, metric conversion, maintenance/history, diagnostics, backup/restore and render heartbeat passed.')
 
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ import sys
 from uuid import uuid4
 
 from .driving import atomic_write, validate_settings
-from .parking import parked, require_parked
+from .parking import parked
 from .trip import validate as validate_trip, bucket, number
 from .race import Race
 
@@ -112,13 +112,11 @@ class Operations:
                         dict(module='Taillights', command='Sent only; no ACK defined', readback='Lighting state and brightness telemetry', persistence='Not confirmed')])
 
     async def change(self, body):
-        require_parked(self.state)
         if self.restoring:
             raise ValueError('Restore recovery pending; restart service to finish')
         if not isinstance(body, dict) or len(body) != 1:
             raise ValueError('Expected one setup action')
         async with self.lock:
-            require_parked(self.state)
             if self.restoring:
                 raise ValueError('Restore recovery pending; restart service to finish')
             before = deepcopy(self.data)
@@ -200,13 +198,11 @@ class Operations:
 
     async def restore(self, data, recovery=False):
         if not recovery:
-            require_parked(self.state)
             if self.state.race.phase in ('armed', 'running') or self.state.controls.test_owner:
                 raise ValueError('Stop race timing and pump tests before restoring')
         data = self.validate_backup(data)
         async with self.lock:
             if not recovery:
-                require_parked(self.state)
                 if self.state.race.phase in ('armed', 'running') or self.state.controls.test_owner:
                     raise ValueError('Stop race timing and pump tests before restoring')
             self.restoring = True

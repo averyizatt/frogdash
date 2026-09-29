@@ -96,17 +96,27 @@ async def production(browser):
         await page.goto('http://127.0.0.1:' + str(site._server.sockets[0].getsockname()[1]))
         await page.locator('#appearance-launch').click()
         await page.locator('#appearance-tab-custom').click()
-        await page.wait_for_function('document.getElementById("appearance-custom").inert')
-        assert 'Settings locked' in await page.locator('#appearance-access').inner_text()
-        assert await page.locator('#appearance-looks').evaluate('e=>e.inert')
-        speed['value'] = 0
         await page.wait_for_function('!document.getElementById("appearance-custom").inert')
-        await page.locator('#appearance-transparency').scroll_into_view_if_needed()
-        box = await page.locator('#appearance-transparency').bounding_box()
-        await page.mouse.click(box['x'] + box['width'] * .5, box['y'] + box['height'] / 2)
-        assert int(await page.locator('#appearance-transparency').input_value()) >= 45
-        state.connected = False
-        await page.wait_for_function('document.getElementById("appearance-custom").inert')
+        assert 'Settings locked' not in await page.locator('#appearance-access').inner_text()
+        assert not await page.locator('#appearance-looks').evaluate('e=>e.inert')
+        for connected, value in ((True, 30), (True, 0), (False, 0)):
+            state.connected = connected
+            speed['value'] = value
+            await page.wait_for_timeout(300)
+            slider = page.locator('#appearance-transparency')
+            await slider.scroll_into_view_if_needed()
+            box = await slider.bounding_box()
+            await page.mouse.click(box['x'] + box['width'] * .5, box['y'] + box['height'] / 2)
+            before = int(await slider.input_value())
+            assert before >= 45
+            await page.keyboard.press('ArrowRight')
+            assert int(await slider.input_value()) == before + 5
+            assert not await page.locator('#appearance-custom').evaluate('e=>e.inert')
+        await page.reload()
+        await page.locator('#appearance-launch').click()
+        await page.locator('#appearance-tab-custom').click()
+        assert int(await page.locator('#appearance-transparency').input_value()) > 0
+        assert not await page.locator('#appearance-custom').evaluate('e=>e.inert')
     finally:
         await page.close()
         await runner.cleanup()
@@ -120,7 +130,7 @@ async def main(path):
             await production(browser)
         finally:
             await browser.close()
-    print('Fresh moving preview: mouse/touch/keyboard transparency, menus, toggles, commands and real parked locks passed.')
+    print('Fresh moving preview: mouse/touch/keyboard transparency, menus, toggles, commands and production editing with moving/missing CAN passed.')
 
 
 if __name__ == '__main__':

@@ -18,7 +18,6 @@ from .health import Health
 from .shutdown import ShutdownHistory
 from .trip import Trip
 from .operations import Operations
-from .parking import require_parked
 from .backlight import Backlight
 from .supervision import watchdog
 
@@ -188,7 +187,6 @@ def create_app(state, adapter=None, connectivity=None):
         require_local(request)
         if request.method == 'POST':
             try:
-                require_parked(state)
                 state.driving.configure(await request.json())
             except (ValueError, TypeError) as exc:
                 raise web.HTTPBadRequest(text=str(exc))
@@ -224,7 +222,6 @@ def create_app(state, adapter=None, connectivity=None):
                 if not isinstance(body, dict):
                     raise ValueError('Expected a trip command')
                 if set(body) == {'settings'}:
-                    require_parked(state)
                     state.trip.configure(body['settings'])
                 elif set(body) == {'reset'} and isinstance(body['reset'], str):
                     state.trip.reset(body['reset'])

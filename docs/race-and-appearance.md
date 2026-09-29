@@ -137,7 +137,7 @@ Appearance browser checks include every preset/background, persistence,
 day/night interaction, keyboard tab navigation and retaining uploaded artwork.
 Physical GPS and Raspberry Pi validation are still pending.
 
-Preview settings remain editable during the animated drive. On the Pi, configuration
-requires fresh stationary telemetry; a visible message explains the locked state.
+Settings remain editable during the animated preview and on the Pi without
+stationary telemetry. Local appearance preferences also work offline.
 After clicking/touching a range, number or select field, native keyboard editing
 works normally; steering-wheel selection still enters its explicit edit mode.

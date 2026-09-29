@@ -9,7 +9,7 @@
   const demo = () => latest.mode === 'demo';
   const status = () => demo() ? simulated : latest.operations || {};
   const parked = () => online && (demo() ? latest.values?.['vehicle.speed_kph']?.quality === 'live' && latest.values['vehicle.speed_kph'].value < 1 : status().parked === true);
-  const canConfigure = () => online && (demo() || parked());
+  const canConfigure = () => online;
   const el = (tag, text, cls) => { const n = document.createElement(tag); if (text != null) n.textContent = text; if (cls) n.className = cls; return n; };
   const dialog = el('dialog', null, 'workspace-dialog'); dialog.id = 'operations-dialog'; dialog.setAttribute('aria-labelledby', 'operations-title');
   dialog.innerHTML = `<header class="dialog-header"><div><span class="eyebrow">SETUP / SERVICE / SUPPORT</span><h2 id="operations-title">Dash management</h2><p id="operations-summary"></p></div><button id="demo-park" class="close-button" type="button" hidden>Park demo</button><button id="operations-close" class="close-button" type="button">Close ×</button></header>
@@ -21,7 +21,7 @@
       <section class="driver-panel ops-panel control-section" data-ops-panel="backup" hidden><div class="ops-columns"><div class="setting-card"><h3>One portable configuration file</h3><p class="control-note">Includes this display’s appearance, layouts and units, plus Pi alerts, fuel estimate settings, trip totals, economy history, race results and service records.</p><p class="control-note">Download recordings separately. Hotspot credentials and Linux configuration are not included.</p><button id="backup-download" type="button">Download backup</button><button id="profile-save" class="ops-edit" type="button">Save display profile to Pi</button><button id="profile-load" class="ops-edit" type="button">Use saved Pi display profile</button></div><div class="setting-card ops-edit"><h3>Review and restore</h3><label>Frogdash backup JSON<input id="backup-file" type="file" accept="application/json,.json"></label><p id="backup-review" class="control-note">Choose a file to review before replacing your settings.</p><button id="backup-restore" type="button" disabled>Restore reviewed backup</button><p class="control-note">Restore replaces counters and calibration. The display reloads. Manually entered fuel inventory must be reconfirmed afterward.</p></div></div></section>
       <section class="driver-panel ops-panel control-section" data-ops-panel="display" hidden><div class="ops-columns"><div class="setting-card ops-edit"><h3>Display units</h3><label>Road instruments<select id="units-system"><option value="us">US · MPH / °F / psi / US MPG</option><option value="metric">Metric · km/h / °C / kPa / L/100 km</option></select></label><p class="control-note">Changes gauges, trip, range and economy displays. Calibration, diagnostics and recorded channels retain their explicitly labelled engineering units.</p></div><form id="backlight-form" class="setting-card"><h3>Physical LCD backlight</h3><p id="backlight-status" class="control-note">Checking device support…</p><label>Brightness · %<input id="backlight-percent" type="number" min="10" max="100" value="80" required></label><button id="backlight-apply" type="submit" disabled>Apply to LCD</button><p class="control-note">Requires a selected, writable Linux backlight device. Day/night dimming under Drive remains a software display effect.</p></form></div></section>
       <section class="driver-panel ops-panel control-section" data-ops-panel="support" hidden><div class="ops-columns"><div class="setting-card"><h3>Support report</h3><p id="support-version" class="control-note"></p><button id="diagnostic-download" type="button">Download diagnostics</button><p class="control-note">Includes connection quality, CAN errors, GPS status, recorder and Pi health, fuel level quality. Excludes GPS coordinates, raw logs, Wi-Fi secrets and artwork.</p><div id="controller-capabilities" class="ops-capabilities"></div></div><div class="setting-card ops-list"><h3>Vehicle acceptance checks</h3><p class="control-note">Mark passed only after performing each test on the car. These are records, not automatic hardware certification.</p><div id="acceptance-list"></div></div></div></section>
-    </div></div><footer class="command-result" id="operations-result" role="status">Park before changing configuration.</footer>`;
+    </div></div><footer class="command-result" id="operations-result" role="status">Connect to the dash service to save configuration.</footer>`;
   document.body.append(dialog);
   const launch = el('button', 'Dash management', 'close-button'); launch.id = 'operations-launch'; launch.type = 'button';
   $('drive-close').before(launch);
@@ -37,7 +37,7 @@
   function applyPreferences(ui) { for (const key of keys) { if (ui[key]) localStorage.setItem(key, JSON.stringify(ui[key])); else localStorage.removeItem(key); } location.reload(); }
   function download(name, data) { const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'})); const a = el('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
   async function change(body) {
-    if (!canConfigure()) throw new Error('Park before changing configuration.');
+    if (!canConfigure()) throw new Error('Connect to the dash service to save configuration.');
     if (demo()) {
       if (body.check) simulated.checks[body.check] = Date.now();
       if (body.ui) simulated.ui = body.ui;
@@ -56,14 +56,14 @@
   $('profile-load').onclick = () => work(async () => { const data = demo() ? simulated : await api('status'); if (!Object.keys(data.ui || {}).length) throw new Error('No display profile is saved on the Pi.'); applyPreferences(data.ui); });
   $('backup-download').onclick = () => work(async () => { const data = demo() ? {format: 'frogdash-preview-backup', version: 1, ui: preferences(), operations: simulated} : await api('backup', {ui: preferences()}); download('frogdash-backup.json', data); message(demo() ? 'Preview backup downloaded; production restore rejects simulated data.' : 'Backup downloaded.'); });
   $('backup-file').onchange = () => work(async () => { pending = null; const file = $('backup-file').files[0]; if (!file) return; if (file.size > 6000000) throw new Error('Backup exceeds 6 MB.'); const data = JSON.parse(await file.text()); if (data.format !== (demo() ? 'frogdash-preview-backup' : 'frogdash-backup') || ![1, 2].includes(data.version)) throw new Error('Unsupported backup.'); pending = data; $('backup-review').textContent = `${data.software || 'Preview'} · ${data.operations?.maintenance?.length || 0} service reminders. Restore will replace the configuration and reload this display.${!demo() && data.version === 1 ? ' Legacy Pi sender settings will be ignored.' : ''}`; });
-  $('backup-restore').onclick = () => work(async () => { if (!pending || !canConfigure()) throw new Error('Park and choose a backup first.'); const result = demo() ? {ui: pending.ui} : await api('restore', pending); applyPreferences(result.ui); });
+  $('backup-restore').onclick = () => work(async () => { if (!pending || !canConfigure()) throw new Error('Connect to the dash service and choose a backup first.'); const result = demo() ? {ui: pending.ui} : await api('restore', pending); applyPreferences(result.ui); });
   $('diagnostic-download').onclick = () => work(async () => { download('frogdash-diagnostic.json', demo() ? {simulated: true, software: simulated} : await api('diagnostic')); message('Diagnostic report downloaded.'); });
   let feedback = '';
   let listSignature = '';
   function render() {
     const s = status(), canEdit = canConfigure() && !busy && !s.restore_pending;
-    $('operations-result').textContent = feedback || (demo() ? 'Preview configuration is editable while the gauges move. Changes are simulated.' : parked() ? 'Configuration ready. Changes save to the Pi; preview changes are simulated.' : 'Park with fresh stationary telemetry before changing configuration.');
-    $('operations-summary').textContent = `${demo() ? 'SIMULATED · Preview editing enabled' : parked() ? 'Stationary telemetry confirmed' : 'Configuration locked · park with fresh speed or engine-off data'}${s.error ? ' · ' + s.error : ''}`;
+    $('operations-result').textContent = feedback || (demo() ? 'Preview configuration is editable while the gauges move. Changes are simulated.' : online ? 'Configuration ready. Changes save to the Pi; CAN telemetry is not required.' : 'Connecting to the dash service...');
+    $('operations-summary').textContent = `${demo() ? 'SIMULATED · Preview editing enabled' : online ? 'Configuration available' : 'Connecting to the dash service'}${s.error ? ' · ' + s.error : ''}`;
     $('demo-park').hidden = !demo(); $('demo-park').textContent = parked() ? 'Drive demo' : 'Park demo';
     document.querySelectorAll('.ops-edit').forEach(n => { n.inert = !canEdit; n.classList.toggle('configuration-locked', !canEdit); });
     $('backup-restore').disabled = !pending || !canEdit;
@@ -98,13 +98,13 @@
       $('acceptance-list').replaceChildren(...Object.entries(checks).map(([key, label]) => { const b = el('button', `${s.checks?.[key] ? '✓ ' : ''}${label}`); b.type = 'button'; b.disabled = !canEdit; b.onclick = () => work(() => change({check: key})); return b; }));
       $('controller-capabilities').replaceChildren(...(s.capabilities || []).map(c => el('p', `${c.module}: ${c.command}. ${c.readback}. ${c.persistence}.`, 'control-note')));
     }
-    // The preview stays editable during its animated drive. Real hardware still
-    // requires fresh stationary telemetry; explain the lock outside inert panels.
-    for (const selector of ['#appearance-looks', '#appearance-backgrounds', '#appearance-dialog .appearance-body', '[data-driver-panel="display"]', '#fuel-settings', '#alert-settings']) {
-      const node = document.querySelector(selector); if (node) { node.inert = !canConfigure(); node.classList.toggle('configuration-locked', !canConfigure()); node.title = canConfigure() ? '' : 'Park with fresh stationary telemetry to edit'; }
+    // Local display preferences remain editable even without the backend.
+    // API-backed calibration only needs the service, not stationary CAN data.
+    for (const selector of ['#fuel-settings', '#alert-settings']) {
+      const node = document.querySelector(selector);
+      if (node) { node.inert = !canConfigure() || s.restore_pending === true; node.classList.toggle('configuration-locked', node.inert); node.title = node.inert ? 'Waiting for the dash service to accept configuration' : ''; }
     }
-    $('appearance-access').textContent = demo() ? 'Preview editing enabled · changes save on this display' : canConfigure() ? 'Saved on this display · live changes across the dash' : 'Settings locked · park with fresh stationary telemetry to edit';
-    if (!canConfigure()) $('drive-summary').textContent = 'Settings locked · park with fresh stationary telemetry to edit';
+    $('appearance-access').textContent = demo() ? 'Preview editing enabled \u00b7 changes save on this display' : 'Saved on this display \u00b7 live changes across the dash';
   }
   tab('setup');
   window.addEventListener('frogdash-state', e => { latest = e.detail.snapshot; online = e.detail.connected; render(); });

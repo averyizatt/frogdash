@@ -8,7 +8,7 @@ The setup checklist reports platform, CAN connection, GPS speed freshness, modul
 
 The current vehicle defaults are a **15.4 US gallon** tank and **four 440 cc/min injectors**, two alternating squirts per four-stroke cycle (**0.5 pulses per injector per crank revolution**). Injector fuel-use estimation stays disabled until effective dead time and PW1/PW2 bank assignment are verified. A valid CAN fuel percentage supplies remaining fuel independently; range still requires learned, calibrated consumption data.
 
-Configuration forms, alert/fuel estimate calibration, profile restore and pump tests require fresh stationary telemetry. Stationary means valid speed below 1 km/h, or fresh zero RPM when speed is unavailable. A live moving speed overrides zero RPM. Missing data never grants permission. Viewing remains available. Pump tests stop when stationary confirmation is lost. Controller protection remains in the module firmware; stop/disarm stays available when CAN is connected.
+Dash configuration, alert/fuel estimate calibration and profile restore do not require stationary telemetry. Appearance and local display preferences also work without a backend connection; saving Pi settings requires the dash service. Restore remains blocked during race timing or pump tests and retains validation and recovery checks. Physical controller commands keep their existing module/telemetry requirements: pump tests stop when stationary confirmation is lost, and stop/disarm stays available when CAN is connected.
 
 ## External fuel controller
 

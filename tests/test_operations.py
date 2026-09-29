@@ -135,7 +135,34 @@ class OperationsTests(unittest.IsolatedAsyncioTestCase):
             self.assertFalse(ops.restoring)
             self.assertFalse((Path(directory) / 'restore-pending.json').exists())
 
-    async def test_local_api_motion_gate_report_and_heartbeat(self):
+    async def test_settings_save_without_stationary_telemetry(self):
+        state = State(clock=lambda: 10)
+        async with TestClient(TestServer(create_app(state))) as client:
+            for condition in ('missing', 'moving', 'stale'):
+                state.connected = condition != 'missing'
+                if state.connected:
+                    state.samples['vehicle.speed_kph', 0x202] = dict(
+                        value=50, quality='live', seen=10 if condition == 'moving' else 0,
+                        source_id=0x202, timestamp_ms=0)
+                self.assertFalse(parked(state), condition)
+                for route, body in (
+                    ('/operations/settings', {'check': 'display'}),
+                    ('/drive/settings', {**state.driving.settings, 'oil_psi': 22}),
+                    ('/trip', {'settings': {**state.trip.settings, 'capacity_l': 58}}),
+                ):
+                    response = await client.post(route, json=body)
+                    self.assertEqual(response.status, 200, (condition, route, await response.text()))
+                response = await client.post('/operations/restore', json=state.operations.backup())
+                self.assertEqual(response.status, 200, (condition, await response.text()))
+            self.assertEqual(state.driving.settings['oil_psi'], 22)
+            self.assertEqual(state.trip.settings['capacity_l'], 58)
+            response = await client.post('/trip', json={'settings': {**state.trip.settings, 'capacity_l': -1}})
+            self.assertEqual(response.status, 400)
+            state.race.phase = 'armed'
+            response = await client.post('/operations/restore', json=state.operations.backup())
+            self.assertEqual(response.status, 400)
+
+    async def test_local_api_report_and_heartbeat(self):
         state = State(clock=lambda: 0)
         async with TestClient(TestServer(create_app(state))) as client:
             self.assertEqual((await client.post('/operations/sender', json={'enabled': True})).status, 404)
