@@ -466,3 +466,37 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 
 /* boot.js: keep the dashboard hidden until an enabled startup splash is covering it. */
 :root[data-splash-pending="true"] .display { visibility:hidden; }
+
+/* Steering-wheel tools: keyboard, color picker and Pi file picker. */
+.wheel-tool[open] { display:flex; flex-direction:column; }
+.wheel-tool-body { flex:1; min-height:0; overflow:auto; padding:18px 28px; display:flex; flex-direction:column; gap:14px; }
+.wheel-tool-note { color:var(--muted); font-size:14px; margin-top:4px; }
+.wheel-text { display:block; min-height:58px; padding:10px 16px; border:1px solid var(--line); border-radius:8px; background:#0a1116; font:700 34px/1.2 "DejaVu Sans Mono",Consolas,monospace; color:var(--text); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.wheel-keys { display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:8px; }
+.wheel-key { min-height:56px; padding:4px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); font:750 24px/1 "DejaVu Sans",Arial,sans-serif; }
+.wheel-key.wide { grid-column:span 2; font-size:18px; }
+.wheel-key.space { grid-column:span 2; font-size:18px; }
+.wheel-key.done { background:var(--accent); color:#07100e; border-color:var(--accent); }
+.wheel-key[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
+.wheel-color-preview { display:flex; align-items:center; gap:14px; }
+.wheel-color-preview i { width:48px; height:48px; border-radius:50%; background:var(--chip,#fff); box-shadow:0 0 0 2px #ffffff40,0 0 16px var(--chip,#fff); }
+.wheel-color-preview output { font:700 24px "DejaVu Sans Mono",Consolas,monospace; }
+.wheel-swatches { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:8px; }
+.wheel-swatch { min-height:48px; border-radius:8px; border:2px solid #0007; background:var(--swatch); }
+.wheel-swatch[aria-pressed="true"] { outline:3px solid var(--text); outline-offset:2px; }
+.wheel-color-sliders { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+.wheel-slider { display:grid; grid-template-columns:1fr auto; gap:6px; font-weight:750; }
+.wheel-slider input { grid-column:1 / -1; width:100%; accent-color:var(--accent); }
+.wheel-slider output { color:var(--accent); }
+.wheel-done { align-self:flex-end; min-height:52px; padding:8px 28px; border-radius:8px; border:1px solid var(--accent); background:var(--accent); color:#07100e; font-size:18px; font-weight:800; }
+.wheel-files { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.wheel-file { display:flex; flex-direction:column; gap:6px; padding:10px; text-align:left; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--text); min-width:0; }
+.wheel-file img { width:100%; aspect-ratio:8 / 3; object-fit:cover; border-radius:6px; background:#000; }
+.wheel-file strong { font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.wheel-file small { color:var(--muted); font-size:12px; }
+[data-gauge-slot]:focus { outline:none; }
+@media (max-aspect-ratio:11/5) and (max-width:900px) {
+  .wheel-keys { gap:4px; }.wheel-key { min-height:44px; font-size:18px; }
+  .wheel-swatches { grid-template-columns:repeat(6,minmax(0,1fr)); }.wheel-color-sliders { grid-template-columns:1fr; }
+  .wheel-files { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}

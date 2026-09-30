@@ -231,6 +231,7 @@
   const palette = [['Red', '#ff1a1a'], ['Blood orange', '#ff4d00'], ['Orange', '#ff8000'], ['Amber', '#ffb300'], ['Yellow', '#ffe600'], ['Lime', '#b3ff00'], ['Green', '#22ff22'], ['Emerald', '#00e676'],
     ['Aqua', '#00ffb0'], ['Teal', '#00e5c8'], ['Cyan', '#00e5ff'], ['Sky', '#00a2ff'], ['Blue', '#2962ff'], ['Indigo', '#6a4dff'], ['Violet', '#9d00ff'], ['Purple', '#c800ff'],
     ['Magenta', '#ff00ff'], ['Hot pink', '#ff2d95'], ['Rose', '#ff0055'], ['Gold', '#ffc933'], ['White', '#ffffff'], ['Ivory', '#f2ecd2'], ['Silver', '#b8c4cc'], ['Tungsten', '#ffd9a0']];
+  Object.assign(window.FrogdashAppearance, {hexToHsl, hslToHex, palette});
   const swatches = $('appearance-swatches'); swatches.replaceChildren();
   for (const [name, color] of palette) {
     const button = document.createElement('button'); button.type = 'button'; button.dataset.swatch = color;

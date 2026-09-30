@@ -22,6 +22,7 @@ from .backlight import Backlight
 from .supervision import watchdog
 from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
 from .paint import Paint, validate as validate_paint
+from .imports import Imports
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
 
@@ -309,6 +310,19 @@ def create_app(state, adapter=None, connectivity=None):
             return web.Response(text=state.paint.inject(page), content_type='text/html', headers={"Cache-Control": "no-store"})
         return web.FileResponse(WEB / name, headers={"Cache-Control": "no-store"})
 
+    async def import_list(request):
+        require_local(request)
+        if not state.imports:
+            return web.json_response({'directory': None, 'files': [], 'error': 'Import folder not configured'}, headers={'Cache-Control': 'no-store'})
+        return web.json_response(await asyncio.to_thread(state.imports.listing), headers={'Cache-Control': 'no-store'})
+
+    async def import_file(request):
+        require_local(request)
+        path = state.imports and await asyncio.to_thread(state.imports.path, request.match_info['name'])
+        if not path:
+            raise web.HTTPNotFound()
+        return web.FileResponse(path, headers={'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
+
     async def appearance_snapshot(request):
         # The dashboard's current look, written to disk so the next start paints it first.
         require_local(request)
@@ -417,6 +431,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get('/trip', trip), web.post('/trip', trip),
                     web.get('/operations/{action}', operations), web.post('/operations/{action}', operations),
                     web.post('/ui/appearance', appearance_snapshot),
+                    web.get('/ui/import', import_list), web.get('/ui/import/{name}', import_file),
                     web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),
                     web.get('/ui/heartbeat/{token}', heartbeat), web.post('/ui/heartbeat/{token}', heartbeat),
                     web.get("/", asset), web.get("/{name}", asset)])
@@ -464,6 +479,7 @@ def main():
     state.operations = Operations(state, args.data_dir / 'replay' if args.replay else args.data_dir)
     state.backlight = Backlight(args.backlight_name)
     state.health = Health(state, args.interface, args.log_dir or args.data_dir)
+    state.imports = Imports((args.data_dir / 'replay' if args.replay else args.data_dir) / 'import')
     state.paint = Paint((args.data_dir / 'replay' if args.replay else args.data_dir) / 'appearance-paint.json')
     state.shutdown_history = ShutdownHistory((args.data_dir / 'replay' if args.replay else args.data_dir) / 'shutdown.json')
     if args.log_dir:

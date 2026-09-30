@@ -22,8 +22,26 @@ pull-ups and the physical switch scan belong to the CCM; the Pi only reads CAN.
 
 Arrow keys and Enter provide the same controls in the live dash and
 [web preview](https://averyizatt.github.io/frogdash/). Escape goes back immediately.
-Text entry, file uploads and native color/date pickers still need touch or a
-keyboard. Selecting a control uses its existing action and validation; vehicle
+Every control works from the wheel alone:
+
+- **Text boxes** (splash title, service names, sensor search): OK opens an
+  on-screen keyboard. Arrows move in two dimensions across the keys, OK types,
+  and Shift, Space, Delete, Clear and Done sit on the bottom row. Hold OK to
+  cancel and keep the previous text. Length limits still apply.
+- **Color squares** (Color studio slots, night accent): OK opens a color picker
+  with the 24-color spectrum and Hue, Saturation and Lightness sliders.
+- **Files** (background and splash images, backup restore): OK lists files in
+  the Pi's import folder, `/var/lib/frogdash/import`, filtered to what the control
+  accepts. Copy files there over SSH or from a USB stick
+  (`sudo cp picture.jpg /var/lib/frogdash/import/`). Loading one uses the same
+  checks as a normal upload. PNG, JPEG, WebP and JSON up to 10 MB, plain names only.
+- **Gauges**: gauges and readings on the main dash can be reached with the arrows;
+  OK opens the same reading picker as press-and-hold.
+- **Long number ranges** speed up while an arrow is held (×10, ×100, ×1000,
+  scaled to the field), so values such as service distances stay reachable.
+
+With a USB keyboard attached, typing into text boxes works directly as usual.
+Selecting a control uses its existing action and validation; vehicle
 commands and parked-only settings retain all existing gates. The wheel does not
 send an actuator command directly from the backend.
 
