@@ -67,7 +67,7 @@
     park.setAttribute('aria-label', scenario === 'parked' ? 'Resume simulated driving' : 'Switch to simulated idle');
   }
   function setScenario(name) {
-    if (!['drive', 'normal', 'warning', 'offline', 'vacuum', 'night', 'parked'].includes(name)) throw new Error('Unknown demo scenario');
+    if (!['drive', 'normal', 'warning', 'offline', 'vacuum', 'night', 'parked', 'reverse'].includes(name)) throw new Error('Unknown demo scenario');
     scenario = name; paused = false; previous = performance.now(); playbackLabels();
   }
   motion.onclick = () => {
@@ -94,7 +94,8 @@
       const dynamic = scenario === 'drive' ? drivingValues(elapsed) : {};
 
       const current = {...readings,
-        'vehicle.speed_kph': scenario === 'parked' ? 0 : readings['vehicle.speed_kph'],
+        'vehicle.speed_kph': scenario === 'parked' ? 0 : scenario === 'reverse' ? 4 : readings['vehicle.speed_kph'],
+        'lighting.reverse': scenario === 'reverse',
         'lighting.running': scenario === 'night',
         'lighting.left_state': scenario === 'night' ? 'RUNNING' : 'OFF',
         'lighting.right_state': scenario === 'night' ? 'RUNNING' : 'OFF',
@@ -104,6 +105,7 @@
         'engine.boost_kpa': scenario === 'vacuum' ? -55 : readings['engine.boost_kpa'],
         ...dynamic
       };
+      if (scenario === 'reverse') Object.assign(current, {'engine.rpm': 950, 'engine.boost_kpa': -58});
       if (scenario === 'parked') Object.assign(current, {'engine.rpm': 900, 'engine.boost_kpa': -60, 'engine.afr': 14.7, 'ecu.afr_target': 14.7, 'vehicle.fuel_pct': drivingValues(elapsed)['vehicle.fuel_pct']});
       if (scenario === 'drive') for (const side of ['left', 'right']) current[`lighting.${side}_state`] = current[`lighting.turn_${side}`] ? 'TURN' : current['lighting.brake'] ? 'BRAKE' : 'OFF';
       if (scenario === 'drive' && readings['meth.state'] === 'ARMED' && current['engine.boost_kpa'] > boostStart) {

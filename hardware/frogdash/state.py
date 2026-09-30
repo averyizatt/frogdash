@@ -33,6 +33,7 @@ class State:
         self.received = self.malformed = self.ignored = self.seq = 0
         self.gps = None
         self.recorder = None
+        self.camera = None
         self.race = Race(clock=clock, wall=wall)
         self.driving = Driving(self)
         self.trip = Trip(self)

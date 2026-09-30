@@ -13,6 +13,7 @@ Phase 2 documentation lives here:
 - [Race timing, appearance, and splash screens](race-and-appearance.md)
 - [Trip counters, fuel economy and range](trip-and-fuel.md)
 - [Driving tools: lighting, layouts, alerts, bookmarks, review and health](driving-tools.md)
+- [Reverse camera: Pi camera, HDMI extender, guides and failure behavior](reverse-camera.md)
 - Component datasheets
 - Wiring diagrams
 - Pi pinout reference

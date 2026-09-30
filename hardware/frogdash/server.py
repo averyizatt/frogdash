@@ -20,6 +20,7 @@ from .trip import Trip
 from .operations import Operations
 from .backlight import Backlight
 from .supervision import watchdog
+from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
 
@@ -56,6 +57,8 @@ def create_app(state, adapter=None, connectivity=None):
         if connectivity:
             await connectivity.start()
         yield
+        if state.camera:
+            await state.camera.close()
         notify_task.cancel()
         with suppress(asyncio.CancelledError):
             await notify_task
@@ -263,9 +266,42 @@ def create_app(state, adapter=None, connectivity=None):
         except (OSError, TimeoutError, ClientError):
             raise web.HTTPServiceUnavailable(text='Could not update hotspot')
 
+    async def camera_status(request):
+        require_local(request)
+        body = state.camera.status() if state.camera else {'enabled': False}
+        return web.json_response(body, headers={'Cache-Control': 'no-store'})
+
+    async def camera_stream(request):
+        require_local(request)
+        camera = state.camera
+        if not camera:
+            raise web.HTTPNotFound(text='Reverse camera is not enabled (--camera)')
+        try:
+            await camera.acquire()
+        except Exception:
+            raise web.HTTPServiceUnavailable(text=camera.error or 'Camera unavailable')
+        response = web.StreamResponse(headers={'Content-Type': f'multipart/x-mixed-replace; boundary={CAMERA_BOUNDARY}',
+                                               'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no'})
+        try:
+            await response.prepare(request)
+            sequence = 0
+            while True:
+                item = await camera.next_frame(sequence)
+                if item is None:
+                    if not camera.running:
+                        break
+                    continue
+                sequence, frame = item
+                await response.write(b'--%s\r\nContent-Type: image/jpeg\r\nContent-Length: %d\r\n\r\n' % (CAMERA_BOUNDARY.encode(), len(frame)) + frame + b'\r\n')
+        except ConnectionResetError:
+            pass
+        finally:
+            await camera.release()
+        return response
+
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js"}:
+        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css"}:
             raise web.HTTPNotFound()
         return web.FileResponse(WEB / name, headers={"Cache-Control": "no-store"})
 
@@ -360,6 +396,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get('/drives', drives), web.get('/drives/{name}', drive_review),
                     web.get('/trip', trip), web.post('/trip', trip),
                     web.get('/operations/{action}', operations), web.post('/operations/{action}', operations),
+                    web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),
                     web.get('/ui/heartbeat/{token}', heartbeat), web.post('/ui/heartbeat/{token}', heartbeat),
                     web.get("/", asset), web.get("/{name}", asset)])
     return app
@@ -383,6 +420,11 @@ def main():
     parser.add_argument('--hotspot-socket', type=Path, help='Enable the optional local Wi-Fi helper socket')
     parser.add_argument('--race-file', type=Path, default=Path('/var/lib/frogdash/race.json'), help='Saved start/finish and last 50 race sessions')
     parser.add_argument('--data-dir', type=Path, default=Path('/var/lib/frogdash'), help='Alert settings and bounded drive reviews')
+    parser.add_argument('--camera', action='store_true', help='Enable the Raspberry Pi CSI reverse camera (python3-picamera2)')
+    parser.add_argument('--camera-size', default='640x480', help='Capture size WIDTHxHEIGHT (default 640x480)')
+    parser.add_argument('--camera-fps', type=int, default=30)
+    parser.add_argument('--camera-rotate', type=int, choices=(0, 180), default=0, help='180 if the camera is mounted upside down')
+    parser.add_argument('--camera-keep-warm', action='store_true', help='Keep the camera running between views for instant display')
     parser.add_argument('--backlight-name', help='Explicit Linux /sys/class/backlight device; requires write permission')
     args = parser.parse_args()
     if args.loop and not args.replay:
@@ -408,6 +450,14 @@ def main():
         except ValueError as exc:
             parser.error(str(exc))
         state.recorder = Recorder(state, config)
+    if (args.camera_keep_warm or args.camera_size != '640x480' or args.camera_fps != 30 or args.camera_rotate) and not args.camera:
+        parser.error('Camera options require --camera')
+    if args.camera:
+        try:
+            width, height = (int(n) for n in args.camera_size.lower().split('x'))
+            state.camera = Camera(width, height, args.camera_fps, args.camera_rotate, idle_s=10 ** 9 if args.camera_keep_warm else 20)
+        except ValueError as exc:
+            parser.error(f'Invalid camera option: {exc}')
     if args.gpsd:
         state.gps = GPS(device=args.gps_device, transmit=not args.gps_no_transmit)
     if args.replay:

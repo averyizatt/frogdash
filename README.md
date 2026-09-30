@@ -42,6 +42,8 @@ downloading logs and checking system status.
 splits, eighth/quarter-mile timing, automatic or manual laps, saved session
 exports, custom accents/backgrounds, and configurable startup splash screens.
 Race timing continues on the Pi with the menu closed and is included in MLG logs.
+An optional [reverse camera](docs/reverse-camera.md) (Raspberry Pi CSI camera) opens on the CAN
+reverse signal with adjustable guide lines and a clear CAMERA LOST state.
 Appearance preferences and uploaded artwork save on the current display.
 The appearance gallery includes twenty-four coordinated looks in four collections and
 twenty-four mixable preset backgrounds, including Foxbody-inspired analog, retro digital
