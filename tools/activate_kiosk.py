@@ -42,6 +42,37 @@ def activate(session):
                    check=True, timeout=2)
 
 
+def session_active(session):
+    try:
+        result = subprocess.run(['/usr/bin/loginctl', 'show-session', session, '--no-pager', '--property=Active'],
+                                capture_output=True, text=True, timeout=1, check=True)
+        return result.stdout.strip() == 'Active=yes'
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def confirm_active(session, active, reactivate, timeout=9, clock=time.monotonic, sleep=time.sleep):
+    """Wait until logind reports the session active, re-requesting once a second.
+
+    Cage gives up after 10 seconds if the session never becomes active; a single
+    activation request was observed to be lost on a cold boot while the display
+    was still changing modes. Returns seconds taken, or None if never active.
+    """
+    start = clock()
+    next_retry = start + 1
+    while clock() - start < timeout:
+        if active(session):
+            return clock() - start
+        if clock() >= next_retry:
+            try:
+                reactivate(session)
+            except (OSError, subprocess.SubprocessError):
+                pass
+            next_retry = clock() + 1
+        sleep(.05)
+    return None
+
+
 def wait_for_session(probe, select, timeout=8, clock=time.monotonic, sleep=time.sleep):
     deadline = clock() + timeout
     while clock() < deadline:
@@ -70,6 +101,11 @@ def main():
     except (OSError, TimeoutError, subprocess.SubprocessError) as exc:
         parser.exit(1, f'Frogdash kiosk: session activation failed: {exc}\n')
     print(f'Frogdash kiosk: activated logind session {session} on {args.tty}', flush=True)
+    took = confirm_active(session, session_active, activate)
+    if took is None:
+        print(f'Frogdash kiosk: session {session} still not active after 9 s; Cage will time out and systemd will retry', flush=True)
+    else:
+        print(f'Frogdash kiosk: session {session} active after {took:.2f}s', flush=True)
 
 
 if __name__ == '__main__':

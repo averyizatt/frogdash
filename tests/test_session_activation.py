@@ -1,7 +1,7 @@
 import subprocess
 import unittest
 from unittest.mock import Mock, mock_open, patch
-from tools.activate_kiosk import registered_session, wait_for_session
+from tools.activate_kiosk import confirm_active, registered_session, wait_for_session
 
 
 class SessionActivationTests(unittest.TestCase):
@@ -51,6 +51,33 @@ class SessionActivationTests(unittest.TestCase):
     def test_activation_failure_is_reported_not_retried_as_success(self):
         with self.assertRaises(subprocess.TimeoutExpired):
             wait_for_session(lambda: 'c4', Mock(side_effect=subprocess.TimeoutExpired('loginctl',2)))
+
+
+
+class ConfirmActiveTests(unittest.TestCase):
+    def fake_clock(self):
+        now = [0.0]
+        return (lambda: now[0]), (lambda seconds: now.__setitem__(0, now[0] + seconds))
+
+    def test_already_active_returns_immediately_without_reactivating(self):
+        clock, sleep = self.fake_clock()
+        calls = []
+        self.assertEqual(confirm_active('c1', lambda s: True, calls.append, clock=clock, sleep=sleep), 0)
+        self.assertEqual(calls, [])
+
+    def test_lost_activation_is_requested_again_each_second(self):
+        clock, sleep = self.fake_clock()
+        calls = []
+        took = confirm_active('c1', lambda s: len(calls) >= 2, calls.append, clock=clock, sleep=sleep)
+        self.assertEqual(calls, ['c1', 'c1'])
+        self.assertLess(took, 2.2)
+
+    def test_never_active_gives_up_before_cage_timeout(self):
+        clock, sleep = self.fake_clock()
+        calls = []
+        self.assertIsNone(confirm_active('c1', lambda s: False, calls.append, clock=clock, sleep=sleep))
+        self.assertLess(clock(), 10)
+        self.assertGreaterEqual(len(calls), 7)
 
 
 if __name__ == '__main__':
