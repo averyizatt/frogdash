@@ -1,7 +1,11 @@
 """Typed CAN controls. No arbitrary frame injection or automatic command retries."""
 import asyncio
-from .parking import parked
+from .parking import moving, parked
 
+
+# CustomTaillights (dd4d971): 33 show animations, override states 0..6, custom one-shots 1..3.
+SHOW_COUNT = 33
+CUSTOM_BRAKE_CHECK, CUSTOM_FLASH_AMBER, CUSTOM_SCROLL_TWO = 1, 2, 3
 
 # action: (CAN ID, command byte, minimum, maximum, requires ACK)
 COMMANDS = {
@@ -17,7 +21,15 @@ COMMANDS = {
     "knock.refresh": (0x305, 0x40, None, None, False),
     "lighting.brightness": (0x101, 0x01, 0, 255, False),
     "lighting.mode": (0x101, 0x05, 0, 1, False),
+    # Show/demo/override/custom replace the turn signals, so they are parked-only and
+    # cleared automatically when the car moves. The firmware never suppresses brake/reverse.
+    "lighting.show": (0x101, 0x05, 0, SHOW_COUNT - 1, False),
+    "lighting.demo": (0x101, 0x05, None, None, False),
+    "lighting.override": (0x101, 0x02, 0, 0x66, False),
+    "lighting.clear": (0x101, 0x03, None, None, False),
+    "lighting.custom": (0x101, 0x04, 1, 0x037E7E, False),
 }
+PARKED_LIGHTING = ('lighting.show', 'lighting.demo', 'lighting.override', 'lighting.custom')
 LABELS = {
     'meth.arm': 'water/meth mode', 'meth.test': 'pump test', 'meth.stop': 'pump test stop',
     'meth.boost': 'boost start', 'meth.clear_faults': 'fault clear request',
@@ -40,6 +52,10 @@ class Controls:
         self.last = None
         self.watchdog = None
         self.closing = False
+        self.lighting_active = False  # A show/demo/override/custom this dashboard started.
+        self.lighting_reset_at = float('-inf')
+        self.lighting_guard = None
+        self.lighting_moving_since = None
 
     def attach(self, sender):
         self.sender = sender
@@ -92,12 +108,15 @@ class Controls:
             if self.live('knock.status_flags', 0x307) is None: return 'Knock controller is offline'
         elif action.startswith('lighting.'):
             if self.live('lighting.brightness', 0x100) is None: return 'Taillight controller is offline'
+            if action in PARKED_LIGHTING and not parked(self.state):
+                return 'Park first: shows and overrides replace the turn signals'
         return None
 
     def status(self):
         reasons = {name: self.reason(name, 1 if name == 'meth.arm' else None) for name in COMMANDS}
         reasons['meth.disarm'] = self.reason('meth.arm', 0)
         return {'reasons': reasons, 'pending': self.pending['action'] if self.pending else None,
+                'lighting_active': self.lighting_active,
                 'test_active': self.test_owner is not None, 'last_result': self.last,
                 'meth_config_conflict': self.conflict()}
 
@@ -128,7 +147,11 @@ class Controls:
             if value is not None: raise ValueError('This command has no value')
         elif type(value) is not int or not low <= value <= high:
             raise ValueError(f'Value must be an integer from {low} to {high}')
-        stop = action == 'meth.stop' or (action == 'meth.arm' and value == 0)
+        if action == 'lighting.override' and (value >> 4 > 6 or value & 15 > 6):
+            raise ValueError('Override sides must each be a light state from 0 to 6')
+        if action == 'lighting.custom' and not self.valid_custom(value):
+            raise ValueError('Unknown custom animation')
+        stop = action in ('meth.stop', 'lighting.clear') or (action == 'meth.arm' and value == 0)
         reason = self.reason(action, value)
         if reason: raise ValueError(reason)
         now = self.state.clock()
@@ -141,8 +164,7 @@ class Controls:
                 self.pending['future'].set_result(('unknown', 'Superseded by stop/disarm'))
             self.test_owner = None
             self.last_stop = now
-        payload = bytes([code]) if value is None else bytes([code, value])
-        if action == 'lighting.mode': payload += b'\0'  # Show option, unused for STOCK/SEQUENTIAL.
+        payload = self.payload(action, code, value)
         future = asyncio.get_running_loop().create_future()
         pending = {'future': future, 'code': code, 'value': value or 0, 'action': action}
         self.pending = pending
@@ -169,6 +191,10 @@ class Controls:
             # A missing ACK does not prove the test failed to start. Send STOP.
             if action == 'meth.test' and status != 'acknowledged':
                 await self.stop_test('Pump test stopped after an unconfirmed request')
+            if action in PARKED_LIGHTING:
+                self.lighting_active = True
+            elif action in ('lighting.clear', 'lighting.mode'):
+                self.lighting_active = False
             return result
         except (OSError, TimeoutError) as exc:
             self.last = {'action': action, 'status': 'unknown', 'message': f'Transmission failed; outcome unknown: {exc}'}
@@ -176,6 +202,63 @@ class Controls:
             return self.last
         finally:
             if self.pending is pending: self.pending = None
+
+    @staticmethod
+    def valid_custom(value):
+        if type(value) is not int: return False
+        kind = value >> 16
+        if kind == CUSTOM_SCROLL_TWO:
+            return all(0x20 <= c <= 0x7E for c in ((value >> 8) & 0xFF, value & 0xFF))
+        return kind == 0 and value in (CUSTOM_BRAKE_CHECK, CUSTOM_FLASH_AMBER)
+
+    @staticmethod
+    def payload(action, code, value):
+        if action == 'lighting.mode': return bytes([code, value, 0])  # Show option unused for STOCK/SEQUENTIAL.
+        if action == 'lighting.show': return bytes([code, 2, value])
+        if action == 'lighting.demo': return bytes([code, 3, 0])
+        if action == 'lighting.override': return bytes([code, value >> 4, value & 15])
+        if action == 'lighting.custom':
+            if value >> 16 == CUSTOM_SCROLL_TWO:
+                return bytes([code, CUSTOM_SCROLL_TWO, 0, 0, (value >> 8) & 0xFF, value & 0xFF])
+            if value == CUSTOM_FLASH_AMBER:
+                return bytes([code, CUSTOM_FLASH_AMBER, 0, 0, 3, 150])  # Three flashes, 150 ms apart.
+            return bytes([code, value, 0, 0, 0, 0])
+        return bytes([code]) if value is None else bytes([code, value])
+
+    def start(self):
+        if self.lighting_guard is None or self.lighting_guard.done():
+            self.lighting_guard = asyncio.create_task(self.guard_lighting())
+
+    async def guard_lighting(self):
+        """Send 'clear' once the car is moving with a show/override/custom active.
+
+        Covers shows started here and from the taillights' own Wi-Fi page (reported as
+        SHOW/CUSTOM). Brake and reverse are protected by the taillight firmware itself.
+        """
+        while not self.closing:
+            await asyncio.sleep(.25)
+            await self.check_lighting()
+
+    async def check_lighting(self):
+        sides = [self.live(f'lighting.{side}_state', 0x100, 1) for side in ('left', 'right')]
+        active = self.lighting_active or any(s in ('SHOW', 'CUSTOM') for s in sides)
+        if not active or not moving(self.state):
+            self.lighting_moving_since = None
+            return
+        now = self.state.clock()
+        if self.lighting_moving_since is None:
+            self.lighting_moving_since = now
+        if now - self.lighting_moving_since < 1 or now - self.lighting_reset_at < 2:
+            return
+        self.lighting_reset_at = now
+        try:
+            if self.state.mode != 'socketcan' or not self.sender or not self.state.connected:
+                raise OSError('CAN disconnected')
+            await self.sender(0x101, bytes([0x03]))
+            self.lighting_active = False
+            self.last = {'action': 'lighting.clear', 'status': 'sent', 'message': 'Vehicle moving: taillight show/override cleared so turn signals work'}
+        except (OSError, TimeoutError):
+            self.last = {'action': 'lighting.clear', 'status': 'unknown', 'message': 'Vehicle moving but the taillight clear could not be sent'}
 
     async def stop_test(self, reason):
         if self.test_owner is None: return
@@ -202,6 +285,9 @@ class Controls:
 
     async def close(self):
         self.closing = True
+        if self.lighting_guard:
+            self.lighting_guard.cancel()
+            await asyncio.gather(self.lighting_guard, return_exceptions=True)
         await self.stop_test('Dashboard shutting down')
         if self.watchdog:
             self.watchdog.cancel()

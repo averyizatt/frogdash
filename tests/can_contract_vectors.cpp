@@ -57,6 +57,18 @@ int main() {
   emit("knock.refresh", packEngineKnockConfigRequest());
   emit("lighting.brightness", packTaillightBrightness(128));
   emit("lighting.mode", packTaillightMode(1));
+  emit("lighting.show", packTaillightMode(taillight_mode::SHOW, 7));
+  emit("lighting.demo", packTaillightMode(taillight_mode::DEMO, 0));
+  // Override, clear and custom animations have command IDs but no shared builder;
+  // frames follow CustomTaillights canbus.cpp (dd4d971).
+  CanFrame taillight{}; taillight.id = ID_TAILLIGHT_COMMAND;
+  taillight.dlc = 3; taillight.data[0] = taillight_command::SET_OVERRIDE; taillight.data[1] = 2; taillight.data[2] = 3;
+  emit("lighting.override", taillight);
+  taillight = CanFrame{}; taillight.id = ID_TAILLIGHT_COMMAND; taillight.dlc = 1; taillight.data[0] = taillight_command::CLEAR_OVERRIDE;
+  emit("lighting.clear", taillight);
+  taillight = CanFrame{}; taillight.id = ID_TAILLIGHT_COMMAND; taillight.dlc = 6;
+  taillight.data[0] = taillight_command::TRIGGER_CUSTOM_ANIMATION; taillight.data[1] = 2; taillight.data[4] = 3; taillight.data[5] = 150;
+  emit("lighting.custom", taillight);
   emit("wheel", packSteeringButtons(steering_button::RIGHT, 255));
   FuelLevelState fuel{}; fuel.percent_x10=500; fuel.status=FuelLevelStatus::VALID;
   CanFrame frame=packFuelLevelState(fuel); emit("fuel",frame);

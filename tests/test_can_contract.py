@@ -70,7 +70,8 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_actual_dashboard_commands_match_firmware_builders(self):
         values = {'meth.arm':1, 'meth.test':25, 'meth.boost':40, 'knock.enable':1,
-                  'knock.threshold':20, 'knock.multiplier':24, 'lighting.brightness':128, 'lighting.mode':1}
+                  'knock.threshold':20, 'knock.multiplier':24, 'lighting.brightness':128, 'lighting.mode':1,
+                  'lighting.show':7, 'lighting.override':0x23, 'lighting.custom':2}
         for action in COMMANDS:
             state = State(clock=lambda: 10)
             state.connected = True

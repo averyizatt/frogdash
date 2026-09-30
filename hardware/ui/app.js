@@ -308,7 +308,9 @@
     $('command-result').dataset.status = 'pending';
     ws.send(JSON.stringify(message)); renderControls();
   }
+  window.FrogdashControls = {send: sendCommand};
   for (const button of document.querySelectorAll('[data-action]')) {
+    if (button.dataset.compute !== undefined) continue; // Owner computes the value and calls send().
     button.onclick = () => {
       let value;
       if (button.dataset.input) {

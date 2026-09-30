@@ -28,3 +28,6 @@ credentials/
 secrets/
 .sources/
 .venv/
+
+# Recorder build cache (CustomTaillights and FastLED checkouts)
+.cache/

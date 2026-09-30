@@ -14,8 +14,8 @@ ENUMS = {
     'meth.state': 'OFF ARMED SPRAYING FAULT TEST'.split(),
     'meth.flow': 'UNKNOWN OK LOW_FLOW NO_FLOW'.split(),
     'comfort.state': 'BOOT RUN WARN FAULT CONFIG'.split(),
-    'lighting.left_state': 'OFF RUNNING BRAKE TURN REVERSE BRAKE_TURN HAZARD CUSTOM'.split(),
-    'lighting.right_state': 'OFF RUNNING BRAKE TURN REVERSE BRAKE_TURN HAZARD CUSTOM'.split(),
+    'lighting.left_state': 'OFF RUNNING BRAKE TURN REVERSE BRAKE_TURN HAZARD CUSTOM SHOW'.split(),
+    'lighting.right_state': 'OFF RUNNING BRAKE TURN REVERSE BRAKE_TURN HAZARD CUSTOM SHOW'.split(),
 }
 
 

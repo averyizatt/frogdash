@@ -57,7 +57,7 @@ def decode(can_id, data):
 
     if can_id == 0x100:
         for side, index in (("left", 0), ("right", 1)):
-            enum("lighting." + side + "_state", d[index], "OFF RUNNING BRAKE TURN REVERSE BRAKE_TURN HAZARD CUSTOM")
+            enum("lighting." + side + "_state", d[index], "OFF RUNNING BRAKE TURN REVERSE BRAKE_TURN HAZARD CUSTOM SHOW")
             put("lighting.turn_" + side, bool(d[index + 2] & 4))
         fields("lighting", "driver_inputs passenger_inputs brightness die_c thermal_derate", d[2:])
         for name, mask in (("brake", 1), ("running", 2), ("reverse", 8)):

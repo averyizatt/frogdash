@@ -20,6 +20,10 @@
   };
   let scenario = 'drive', paused = false, elapsed = 3, previous = performance.now();
   let tick = 0, testTimer, boostStart = 25, lightingMode = 0;
+  // Simulated taillight extras: show/demo/override/custom, parked-only and cleared when moving.
+  const TL_STATES = ['OFF', 'RUNNING', 'BRAKE', 'TURN', 'REVERSE', 'BRAKE_TURN', 'HAZARD'];
+  const TL_PARKED = ['lighting.show', 'lighting.demo', 'lighting.override', 'lighting.custom'];
+  let tl = {show: null, override: null, customUntil: 0}, tlResult = null;
   // Keyframes model acceleration, brief gear changes, cruise, braking and idle.
   const cycle = [
     [0,0,900,-60], [2,5,1600,-30], [6,42,5200,70], [6.4,46,3300,0],
@@ -108,6 +112,17 @@
       if (scenario === 'reverse') Object.assign(current, {'engine.rpm': 950, 'engine.boost_kpa': -58});
       if (scenario === 'parked') Object.assign(current, {'engine.rpm': 900, 'engine.boost_kpa': -60, 'engine.afr': 14.7, 'ecu.afr_target': 14.7, 'vehicle.fuel_pct': drivingValues(elapsed)['vehicle.fuel_pct']});
       if (scenario === 'drive') for (const side of ['left', 'right']) current[`lighting.${side}_state`] = current[`lighting.turn_${side}`] ? 'TURN' : current['lighting.brake'] ? 'BRAKE' : 'OFF';
+      const speed = current['vehicle.speed_kph'];
+      const tlActive = tl.show !== null || tl.override || tl.customUntil > Date.now();
+      if (tlActive && speed > 5) {
+        tl = {show: null, override: null, customUntil: 0};
+        tlResult = {action: 'lighting.clear', status: 'sent', message: 'Vehicle moving: taillight show/override cleared so turn signals work'};
+      }
+      if (!current['lighting.brake'] && !current['lighting.reverse']) {
+        if (tl.customUntil > Date.now()) current['lighting.left_state'] = current['lighting.right_state'] = 'CUSTOM';
+        else if (tl.show !== null) current['lighting.left_state'] = current['lighting.right_state'] = 'SHOW';
+        else if (tl.override) [current['lighting.left_state'], current['lighting.right_state']] = tl.override.map(n => TL_STATES[n]);
+      }
       if (scenario === 'drive' && readings['meth.state'] === 'ARMED' && current['engine.boost_kpa'] > boostStart) {
         current['meth.state'] = 'SPRAYING';
         current['meth.duty_pct'] = Math.round(Math.min(85, 20 + current['engine.boost_kpa'] * .6));
@@ -120,6 +135,7 @@
       // controller states (disarm before test, active test, offline) observable.
       if (test) reasons['meth.arm'] = reasons['meth.test'] = reasons['meth.boost'] = 'Stop the pump test first';
       if (readings['meth.state'] === 'ARMED') reasons['meth.test'] = reasons['meth.boost'] = 'Disarm before adjusting or testing';
+      if (!(speed < 1)) for (const action of TL_PARKED) reasons[action] = 'Park first: shows and overrides replace the turn signals';
       if (scenario === 'offline') {
         for (const button of document.querySelectorAll('[data-action]')) reasons[button.dataset.action] = 'Simulated controller offline';
         reasons['meth.disarm'] = 'Simulated controller offline';
@@ -127,7 +143,7 @@
       this.emit({type: 'state', mode: 'demo', values, events: [],
         modules: Object.fromEntries(['taillights', 'comfort', 'watermeth', 'knock'].map(name => [name, scenario === 'offline' ? 'stale' : 'live'])),
         transport: {connected: scenario !== 'offline', status: 'Design preview — simulated data', received: tick, malformed: 0},
-        controls: {reasons, test_active: test}});
+        controls: {reasons, test_active: test, lighting_active: tl.show !== null || !!tl.override, ...(tlResult ? {last_result: tlResult} : {})}});
     }
     send(data) {
       const {request_id, action, value} = JSON.parse(data);
@@ -154,7 +170,12 @@
         case 'knock.refresh': detail = 'Simulated knock settings refreshed.'; break;
         case 'knock.clear_events': readings['knock.event_count'] = 0; break;
         case 'lighting.brightness': readings['lighting.brightness'] = value; break;
-        case 'lighting.mode': lightingMode = value; detail = `Simulated lighting mode: ${lightingMode ? 'Sequential' : 'Stock'}.`; break;
+        case 'lighting.mode': lightingMode = value; tl = {show: null, override: null, customUntil: 0}; detail = `Simulated lighting mode: ${lightingMode ? 'Sequential' : 'Stock'}.`; break;
+        case 'lighting.show': tl = {show: value, override: null, customUntil: 0}; detail = `Simulated show ${value}.`; break;
+        case 'lighting.demo': tl = {show: 0, override: null, customUntil: 0}; detail = 'Simulated demo cycling every 5 seconds.'; break;
+        case 'lighting.override': tl = {show: null, override: [value >> 4, value & 15], customUntil: 0}; detail = 'Simulated per-side test.'; break;
+        case 'lighting.clear': tl = {show: null, override: null, customUntil: 0}; detail = 'Simulated normal lights.'; break;
+        case 'lighting.custom': tl.customUntil = Date.now() + (value === 1 ? 6000 : 1500); detail = 'Simulated one-shot effect.'; break;
         default: this.emit({type: 'command_result', request_id, status: 'rejected', message: 'This command is not supported in the preview.'}); return;
       }
       // Match the asynchronous command/state order without pretending hardware acknowledged.

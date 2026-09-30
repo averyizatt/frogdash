@@ -41,8 +41,9 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
             self.refresh()
             value = low if low is not None else None
             result = await self.controls.execute(name, value)
-            payload = bytes([code]) if value is None else bytes([code, value])
-            if name == 'lighting.mode': payload += b'\0'
+            payload = {'lighting.mode': b'\x05\x00\x00', 'lighting.show': b'\x05\x02\x00', 'lighting.demo': b'\x05\x03\x00',
+                       'lighting.override': b'\x02\x00\x00', 'lighting.clear': b'\x03',
+                       'lighting.custom': b'\x04\x01\x00\x00\x00\x00'}.get(name) or (bytes([code]) if value is None else bytes([code, value]))
             self.assertEqual(self.sent[-1], (identifier, payload), name)
             self.assertEqual(result['status'], 'acknowledged' if ack else 'sent', name)
 
@@ -149,3 +150,76 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((await result())['status'], 'rejected')
             self.assertEqual(len(self.sent), 1)
             await ws.close()
+
+
+class TaillightControlTests(unittest.IsolatedAsyncioTestCase):
+    """Shows, demo, overrides and custom one-shots replace turn signals: parked-only, auto-cleared."""
+    asyncSetUp, asyncTearDown, refresh = ControlTests.asyncSetUp, ControlTests.asyncTearDown, ControlTests.refresh
+
+    def drive(self, kph):
+        self.state.samples['vehicle.speed_kph', 0x203] = dict(value=kph, quality='live', seen=self.now, source_id=0x203, timestamp_ms=0)
+
+    async def test_show_demo_override_custom_payloads(self):
+        for action, value, payload in [('lighting.show', 32, b'\x05\x02\x20'), ('lighting.demo', None, b'\x05\x03\x00'),
+                                       ('lighting.override', 0x26, b'\x02\x02\x06'),
+                                       ('lighting.custom', 2, b'\x04\x02\x00\x00\x03\x96'),
+                                       ('lighting.custom', (3 << 16) | (ord('V') << 8) | ord('8'), b'\x04\x03\x00\x00V8'),
+                                       ('lighting.clear', None, b'\x03')]:
+            self.now += 1
+            self.refresh()
+            await self.controls.execute(action, value)
+            self.assertEqual(self.sent[-1], (0x101, payload), action)
+        self.assertFalse(self.controls.lighting_active)  # Clear ends it.
+
+    async def test_invalid_values_are_refused(self):
+        for action, value in [('lighting.show', 33), ('lighting.override', 0x70), ('lighting.override', 0x07),
+                              ('lighting.custom', 4), ('lighting.custom', (3 << 16) | 0x0A41), ('lighting.demo', 1)]:
+            with self.assertRaises(ValueError, msg=(action, value)):
+                await self.controls.execute(action, value)
+        self.assertEqual(self.sent, [])
+
+    async def test_parked_only_but_clear_and_modes_always_work(self):
+        self.drive(40)
+        for action, value in [('lighting.show', 0), ('lighting.demo', None), ('lighting.override', 0x33), ('lighting.custom', 1)]:
+            with self.assertRaisesRegex(ValueError, 'Park first'):
+                await self.controls.execute(action, value)
+        await self.controls.execute('lighting.mode', 1)
+        self.now += 1
+        self.refresh(); self.drive(40)
+        await self.controls.execute('lighting.clear')
+        self.assertEqual([frame for _, frame in self.sent], [b'\x05\x01\x00', b'\x03'])
+
+    async def test_moving_clears_an_active_show_after_one_second(self):
+        await self.controls.execute('lighting.show', 5)
+        self.assertTrue(self.controls.lighting_active)
+        self.sent.clear()
+        self.refresh(); self.drive(3)  # Creeping / GPS jitter below 5 km/h: no reset.
+        await self.controls.check_lighting()
+        self.now += 2
+        self.refresh(); self.drive(3)
+        await self.controls.check_lighting()
+        self.assertEqual(self.sent, [])
+        self.refresh(); self.drive(30)
+        await self.controls.check_lighting()  # Moving starts the one-second debounce.
+        self.now += .5
+        self.refresh(); self.drive(30)
+        await self.controls.check_lighting()
+        self.assertEqual(self.sent, [])
+        self.now += .6
+        self.refresh(); self.drive(30)
+        await self.controls.check_lighting()
+        self.assertEqual(self.sent, [(0x101, b'\x03')])
+        self.assertFalse(self.controls.lighting_active)
+        self.assertIn('turn signals', self.controls.last['message'])
+
+    async def test_shows_started_elsewhere_are_also_cleared_when_moving(self):
+        # The taillight's own Wi-Fi page started a show: both sides report SHOW (8).
+        self.state.ingest(0x100, bytes([8, 8, 0, 0, 255, 60, 0]))
+        self.assertEqual(self.state.samples['lighting.left_state', 0x100]['value'], 'SHOW')
+        self.assertEqual(self.state.samples['lighting.left_state', 0x100]['quality'], 'live')
+        self.drive(50)
+        await self.controls.check_lighting()
+        self.now += 1.1
+        self.state.ingest(0x100, bytes([8, 8, 0, 0, 255, 60, 0])); self.drive(50)
+        await self.controls.check_lighting()
+        self.assertEqual(self.sent, [(0x101, b'\x03')])

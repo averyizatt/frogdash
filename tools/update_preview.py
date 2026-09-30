@@ -25,7 +25,7 @@ def assets():
     css += '\n/* Preview-only playback controls. */\n.demo-playback { display:flex; gap:6px; }\n.demo-control { min-height:40px; padding:7px 11px; border:1px solid var(--line); border-radius:6px; background:var(--raised); color:var(--text); font-size:13px; font-weight:750; }\n.demo-control[aria-pressed=true] { border-color:var(--accent); color:var(--accent); }\n'
     demo = (ROOT / 'preview' / 'demo.js').read_text(encoding='utf-8')
     personalize = (source / 'personalize.js').read_text(encoding='utf-8')
-    extra = {name: (source / name).read_text(encoding='utf-8') for name in ('viewport.js', 'responsive.css', 'instruments.js', 'instruments.css', 'navigation.js', 'driving.js', 'trip.js', 'operations.js', 'units.js', 'review.js', 'review.css', 'camera.js', 'camera.css', 'boot.js')}
+    extra = {name: (source / name).read_text(encoding='utf-8') for name in ('viewport.js', 'responsive.css', 'instruments.js', 'instruments.css', 'navigation.js', 'driving.js', 'trip.js', 'operations.js', 'units.js', 'review.js', 'review.css', 'camera.js', 'camera.css', 'boot.js', 'taillights.js', 'taillights.css')}
     # A published HTML update must not reuse cached CSS/JS from the previous design.
     for name, content in [('style.css', css), ('app.js', js), ('demo.js', demo), ('personalize.js', personalize), *extra.items()]:
         version = sha256(content.encode('utf-8')).hexdigest()[:12]
@@ -33,10 +33,29 @@ def assets():
     return {'index.html': html, 'style.css': css, 'app.js': js, 'personalize.js': personalize, **extra}
 
 
-def art():
-    """Bundled artwork is copied byte-for-byte so the published preview offers the same images."""
-    source = ROOT / 'hardware' / 'art'
+def binary_folder(source):
+    """Files copied byte-for-byte so the published preview has the same art and taillight frames."""
     return {path.name: path.read_bytes() for path in sorted(source.iterdir()) if path.is_file()}
+
+
+BINARY_FOLDERS = {'art': ROOT / 'hardware' / 'art', 'taillights': ROOT / 'hardware' / 'ui' / 'taillights'}
+
+
+def sync_binary(folder, expected, check):
+    target = ROOT / 'preview' / folder
+    target.mkdir(exist_ok=True)
+    for name, content in expected.items():
+        dest = target / name
+        if check:
+            if not dest.is_file() or dest.read_bytes() != content:
+                raise SystemExit(f'Preview is out of date: {folder}/{name}. Run python tools/update_preview.py')
+        else:
+            dest.write_bytes(content)
+    for stale in target.iterdir():
+        if stale.name not in expected:
+            if check:
+                raise SystemExit(f'Preview has stale {folder}/{stale.name}. Run python tools/update_preview.py')
+            stale.unlink()
 
 
 if __name__ == '__main__':
@@ -50,19 +69,6 @@ if __name__ == '__main__':
                 raise SystemExit(f'Preview is out of date: {name}. Run python tools/update_preview.py')
         else:
             dest.write_text(content, encoding='utf-8', newline='\n')
-    art_dir = ROOT / 'preview' / 'art'
-    art_dir.mkdir(exist_ok=True)
-    expected = art()
-    for name, content in expected.items():
-        dest = art_dir / name
-        if args.check:
-            if not dest.is_file() or dest.read_bytes() != content:
-                raise SystemExit(f'Preview is out of date: art/{name}. Run python tools/update_preview.py')
-        else:
-            dest.write_bytes(content)
-    for stale in art_dir.iterdir():
-        if stale.name not in expected:
-            if args.check:
-                raise SystemExit(f'Preview has stale art/{stale.name}. Run python tools/update_preview.py')
-            stale.unlink()
+    for folder, source in BINARY_FOLDERS.items():
+        sync_binary(folder, binary_folder(source), args.check)
     print('Preview assets match the production design.' if args.check else 'Updated standalone preview assets.')

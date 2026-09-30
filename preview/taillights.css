@@ -1,0 +1,42 @@
+/* Taillight studio: live LED mirror beside modes, shows and tests. */
+.taillight-dialog[open] { display:flex; flex-direction:column; }
+.taillight-dialog .dialog-header .appearance-tabs { margin-right:12px; }
+.tl-normal { min-height:48px; padding:8px 18px; border:1px solid var(--accent); border-radius:8px; background:transparent; color:var(--accent); font-size:16px; font-weight:800; }
+.tl-body { flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr); gap:22px; padding:18px 28px; }
+.tl-mirror { display:flex; flex-direction:column; gap:10px; min-width:0; }
+#tl-canvas { width:100%; height:auto; aspect-ratio:880 / 400; border-radius:10px; background:#060708; border:1px solid var(--line); }
+.tl-sides { display:grid; grid-template-columns:1fr auto 1fr; align-items:start; gap:10px; }
+.tl-sides > div { display:flex; flex-direction:column; gap:3px; }
+.tl-sides > div:last-child { text-align:right; }
+.tl-sides strong { font-size:13px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+.tl-sides span:not(.tl-inputs) { font-size:20px; font-weight:800; }
+.tl-inputs { font-size:12px; color:var(--muted); }
+#tl-mirror-note { align-self:center; text-align:center; color:var(--accent); font-size:14px; max-width:320px; }
+.tl-controls { display:flex; flex-direction:column; gap:10px; min-width:0; overflow:auto; }
+.tl-gate { padding:8px 12px; border-radius:8px; border:1px solid var(--line); font-size:14px; color:var(--muted); }
+.tl-gate[data-blocked="true"] { border-color:var(--warn); color:var(--warn); }
+.tl-panel { display:flex; flex-direction:column; gap:10px; }
+.tl-panel[hidden] { display:none; }
+.tl-panel h3 { font-size:16px; margin-top:4px; }
+.tl-panel button { min-height:46px; padding:8px 16px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); font-size:15px; font-weight:750; }
+.tl-panel button:disabled { opacity:.45; }
+.tl-shows { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }
+.tl-shows button { min-height:44px; padding:4px 8px; font-size:13px; text-align:left; display:flex; flex-direction:column; justify-content:center; }
+.tl-shows small { font:600 10px "DejaVu Sans Mono",Consolas,monospace; color:var(--muted); }
+.tl-range { display:flex; justify-content:space-between; font-weight:750; }
+.tl-range output { color:var(--accent); }
+#tl-brightness { width:100%; accent-color:var(--accent); }
+.tl-pair { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
+.tl-pair label { display:flex; flex-direction:column; gap:4px; font-weight:750; font-size:14px; }
+.tl-pair select,.tl-pair input { min-height:44px; padding:6px 10px; border:1px solid #536d7a; border-radius:8px; background:#0a1116; color:var(--text); font:inherit; font-size:16px; }
+.tl-pair input { width:90px; text-transform:uppercase; font-family:"DejaVu Sans Mono",Consolas,monospace; }
+@media (max-aspect-ratio:11/5) and (max-width:1200px) {
+  .taillight-dialog .dialog-header { flex-wrap:wrap; }
+  .tl-body { grid-template-columns:1fr; overflow:auto; }
+  .tl-controls { overflow:visible; }
+  .tl-shows { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+
+/* Controls > Lighting: output, turn pattern and taillight studio side by side. */
+#panel-lighting .settings-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+@media (max-aspect-ratio:11/5) and (max-width:1200px) { #panel-lighting .settings-grid { grid-template-columns:1fr; } }

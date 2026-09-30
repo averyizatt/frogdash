@@ -92,7 +92,7 @@ async def check_preview(browser, errors):
     await page.keyboard.press('ArrowDown')
     assert await page.locator('#panel-lighting').is_visible()
     await page.locator('#lighting-brightness-input').fill('128')
-    await page.locator('[data-action="lighting.brightness"]').click()
+    await page.locator('#panel-lighting [data-action="lighting.brightness"]').click()
     await page.wait_for_function("document.getElementById('lighting-live-summary').textContent.includes('128 / 255')")
     await page.screenshot(path='.tmp/dashboard-lighting.png')
     await page.keyboard.press('Escape')

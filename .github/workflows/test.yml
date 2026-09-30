@@ -25,6 +25,7 @@ jobs:
       - run: python tests/browser_camera.py
       - run: python tests/browser_first_paint.py
       - run: python tests/browser_wheel_tools.py
+      - run: python tests/browser_taillights.py
       - run: python tests/browser_driving.py
       - run: python tests/browser_trip.py
       - run: python tests/browser_operations.py

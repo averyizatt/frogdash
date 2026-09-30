@@ -51,6 +51,7 @@ def create_app(state, adapter=None, connectivity=None):
         drive_task = asyncio.create_task(state.driving.run())
         trip_task = asyncio.create_task(state.trip.run())
         health_task = asyncio.create_task(state.health.run()) if state.health else None
+        state.controls.start()
         if state.gps:
             state.gps.on_report = state.race.feed
             tasks.append(asyncio.create_task(gpsd(state.gps)))
@@ -303,7 +304,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "boot.js"}:
+        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "boot.js", "taillights.js", "taillights.css"}:
             raise web.HTTPNotFound()
         if name == 'index.html' and state.paint and state.paint.value:
             page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')
@@ -322,6 +323,13 @@ def create_app(state, adapter=None, connectivity=None):
         if not path:
             raise web.HTTPNotFound()
         return web.FileResponse(path, headers={'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
+
+    async def taillight_frames(request):
+        # Frames recorded from the CustomTaillights firmware for the on-screen mirror.
+        name = request.match_info['name']
+        if name not in {'frames.bin', 'frames.json'}:
+            raise web.HTTPNotFound()
+        return web.FileResponse(WEB / 'taillights' / name, headers={'Cache-Control': 'no-cache'})
 
     async def appearance_snapshot(request):
         # The dashboard's current look, written to disk so the next start paints it first.
@@ -431,6 +439,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get('/trip', trip), web.post('/trip', trip),
                     web.get('/operations/{action}', operations), web.post('/operations/{action}', operations),
                     web.post('/ui/appearance', appearance_snapshot),
+                    web.get('/taillights/{name}', taillight_frames),
                     web.get('/ui/import', import_list), web.get('/ui/import/{name}', import_file),
                     web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),
                     web.get('/ui/heartbeat/{token}', heartbeat), web.post('/ui/heartbeat/{token}', heartbeat),

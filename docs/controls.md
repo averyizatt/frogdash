@@ -68,8 +68,10 @@ Taillight controls support brightness 0–255 and STOCK/SEQUENTIAL modes through
 `0x101`. Brake/turn/running/reverse inputs keep their firmware-defined behavior.
 The taillight protocol provides **no command ACK or mode readback**: the UI says
 SENT, never confirmed. Applied brightness can differ from requested brightness
-because of module dimming/thermal behavior. Show/demo/override animations are
-not exposed in this driving dashboard.
+because of module dimming/thermal behavior. Shows, demo, per-side test overrides
+and one-shot effects are in the [taillight studio](taillights.md); they are
+parked-only and cleared automatically when the car moves, because they replace the
+turn signals.
 
 ## Command results and limits
 
