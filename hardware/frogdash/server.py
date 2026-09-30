@@ -488,6 +488,7 @@ def main():
     state.operations = Operations(state, args.data_dir / 'replay' if args.replay else args.data_dir)
     state.backlight = Backlight(args.backlight_name)
     state.health = Health(state, args.interface, args.log_dir or args.data_dir)
+    state.controls.load_interior((args.data_dir / 'replay' if args.replay else args.data_dir) / 'interior.json')
     state.imports = Imports((args.data_dir / 'replay' if args.replay else args.data_dir) / 'import', Path(__file__).resolve().parents[1] / 'art')
     state.paint = Paint((args.data_dir / 'replay' if args.replay else args.data_dir) / 'appearance-paint.json')
     state.shutdown_history = ShutdownHistory((args.data_dir / 'replay' if args.replay else args.data_dir) / 'shutdown.json')

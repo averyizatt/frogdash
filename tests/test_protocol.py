@@ -16,6 +16,12 @@ class ProtocolTests(unittest.TestCase):
                 data[3] = 2
             if identifier == 0x205:
                 data[2] = 1
+            if identifier == 0x103:
+                data[0] = 5  # Taillight status report.
+            if identifier == 0x501:
+                data[3] = 1
+            if identifier == 0x503:
+                data[0] = data[5] = 1
             self.assertTrue(decode(identifier, data), hex(identifier))
             with self.assertRaises(ValueError):
                 decode(identifier, data[:-1])

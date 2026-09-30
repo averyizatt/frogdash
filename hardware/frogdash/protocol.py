@@ -14,11 +14,13 @@ class Signal:
     quality: str = "live"
 
 
-LENGTHS = {0x100: 7, 0x102: 4, 0x200: 8, 0x202: 8, 0x203: 8, 0x204: 3, 0x205: 3,
+LENGTHS = {0x100: 7, 0x102: 4, 0x103: 8, 0x200: 8, 0x202: 8, 0x203: 8, 0x204: 3, 0x205: 3,
+           0x500: 8, 0x501: 4, 0x503: 7,
            0x300: 8, 0x302: 4, 0x303: 8, 0x304: 8, 0x305: 1,
            0x306: 4, 0x307: 8, 0x308: 4, 0x309: 4, 0x30A: 4,
            0x30B: 8, 0x30C: 8, 0x30D: 8}
-TIMEOUTS = {0x100: .5, 0x200: 1.5, 0x202: .5, 0x203: 2, 0x204: 2, 0x205: .35,
+TIMEOUTS = {0x100: .5, 0x103: 1.5, 0x200: 1.5, 0x202: .5, 0x203: 2, 0x204: 2, 0x205: .35,
+            0x500: .5, 0x501: .5, 0x503: .5,
             0x300: .5, 0x303: 1.5, 0x304: 3, 0x307: .5,
             0x309: .5, 0x30B: 1, 0x30C: 5, 0x30D: 5}
 EVENT_IDS = {0x102, 0x302, 0x308, 0x305, 0x306, 0x30A}
@@ -90,6 +92,40 @@ def decode(can_id, data):
         if d[2] != 1 or d[0] & ~0x1F:
             raise ValueError("0x205 invalid wheel input version or reserved bits")
         fields("wheel", "buttons_mask sequence", d[:2])
+    elif can_id == 0x103:
+        # CustomTaillights settings extension: acknowledgements and reports share one ID.
+        kind = d[0]
+        if kind not in (1, 2, 3, 4, 5):
+            raise ValueError("0x103 unknown taillight report kind")
+        put("taillight.report_kind", kind)
+        if kind == 1:
+            put("taillight.ack_command", d[1]); put("taillight.ack_status", d[2])
+        elif kind == 5:
+            put("taillight.revision", d[1]); put("taillight.flags", d[2])
+            put("taillight.show_anim", d[3]); put("taillight.profiles", d[4])
+            put("taillight.phase_ms", u(5) * 16)
+    elif can_id == 0x500:
+        # DIYComfortControlModule headless sensor gateway (gateway_protocol.h version 1).
+        if d[7] & ~7 or (d[6] > 100 and d[6] != 255):
+            raise ValueError("0x500 invalid gateway validity bits or fuel percent")
+        put("vehicle.speed_kph", u(0) / 10, "live" if d[7] & 1 else "unavailable")
+        put("gateway.rpm", u(2), "live" if d[7] & 2 else "unavailable")
+        put("gateway.fuel_raw", u(4))
+        fuel_ok = d[7] & 4 and d[6] <= 100
+        put("vehicle.fuel_pct", d[6] if fuel_ok else None, "live" if fuel_ok else "unavailable")
+    elif can_id == 0x501:
+        if d[3] != 1 or d[0] & ~31 or d[1] & ~31 or d[0] & ~d[1]:
+            raise ValueError("0x501 invalid gateway button version or bits")
+        put("wheel.cruise_pressed", d[0])
+        put("wheel.cruise_enabled", d[1])
+        put("wheel.cruise_sequence", d[2])
+    elif can_id == 0x503:
+        if d[0] not in (1, 2) or d[5] != 1:
+            raise ValueError("0x503 invalid interior light channel or version")
+        side = "upper" if d[0] == 1 else "lower"
+        put(f"interior.{side}.color", f"#{d[1]:02x}{d[2]:02x}{d[3]:02x}")
+        put(f"interior.{side}.brightness", d[4])
+        put(f"interior.{side}.commanded", bool(d[6]))
     elif can_id == 0x300:
         enum("meth.state", d[0], "OFF ARMED SPRAYING FAULT TEST")
         for key, value in (("meth.duty_pct", d[1]), ("meth.tank_pct", d[2])):

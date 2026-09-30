@@ -4,6 +4,7 @@ import time
 
 from .protocol import ANALOG_BITS, EVENT_IDS, TIMEOUTS, decode
 from .controls import Controls
+from .taillight import TaillightSettings
 from .race import Race
 from .driving import Driving
 from .trip import Trip
@@ -45,6 +46,7 @@ class State:
         self.health = None
         self.shutdown_history = None
         self.can_errors = {'frames': 0, 'bus_off': 0, 'restarts': 0}
+        self.taillight = TaillightSettings(clock)
         self.controls = Controls(self)
 
     def ingest(self, can_id, data, extended=False, remote=False, error=False):
@@ -68,7 +70,7 @@ class State:
             signals = decode(can_id, data)
         except ValueError as exc:
             self.malformed += 1
-            if can_id == 0x205:
+            if can_id in (0x205, 0x501):
                 self.wheel.reset()
             self.status = str(exc)
             for (name, source), sample in self.samples.items():
@@ -81,6 +83,10 @@ class State:
                                          "seen": now}
         if can_id == 0x205 and self.mode == "socketcan" and self.connected:
             self.wheel.observe(data)
+        elif can_id == 0x501 and self.mode == "socketcan" and self.connected:
+            self.wheel.observe_gateway(data)
+        if can_id == 0x103:
+            self.taillight.observe(data)
         self.controls.observe(can_id, data)
         if can_id in EVENT_IDS:
             self.events.append({"id": can_id, "timestamp_ms": stamp, "data": data.hex().upper(),
@@ -152,7 +158,7 @@ class State:
                               "received": self.received, "malformed": self.malformed, "ignored": self.ignored},
                 "gps": {"status": self.gps.status, "tx_status": self.gps.tx_status,
                         "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
-                "controls": self.controls.status(), "events": list(self.events), "race": race,
+                "controls": self.controls.status(), "taillight": self.taillight.snapshot(), "events": list(self.events), "race": race,
                 "drive": self.driving.snapshot(), "trip": self.trip.snapshot(),
                 "operations": self.operations.status(), "system": dict(self.health.status) if self.health else None,
                 "can_errors": dict(self.can_errors),

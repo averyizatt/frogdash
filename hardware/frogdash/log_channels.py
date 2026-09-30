@@ -101,6 +101,14 @@ def channels():
         frame = bytes(length) if can_id != 0x30A else bytes([0, 0, 0, 2])
         if can_id == 0x205:
             frame = bytes([0, 0, 1])
+        elif can_id == 0x501:
+            frame = bytes([0, 0, 0, 1])
+        elif can_id == 0x103:
+            keys.update(decode(can_id, bytes([1, 0, 0, 0, 0, 0, 0, 2])))  # Acknowledgement.
+            frame = bytes([5, 0, 0, 0, 0, 0, 0, 0])  # Status.
+        elif can_id == 0x503:
+            keys.update(decode(can_id, bytes([2, 0, 0, 0, 0, 1, 0])))  # Lower channel too.
+            frame = bytes([1, 0, 0, 0, 0, 1, 0])
         keys.update(decode(can_id, frame))
     covered = {c.key for c in primary}
     units = {'_us': 'us', '_g_s': 'g/s', '_rpm_s': 'RPM/s', '_pct_s': '%/s', '_kpa_s': 'kPa/s', '_c': 'C', '_kpa': 'kPa', '_psi': 'psi', '_pct': '%', '_ms': 'ms',
@@ -128,7 +136,7 @@ def row_values(snapshot, elapsed, dropped=0):
 
 def info(mode, rate):
     return '\n'.join([
-        f'Frogdash schema 8; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
+        f'Frogdash schema 9; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
         'trip.* = tracked GPS counters; fuel.level_status = MCU status; other fuel.* = calibrated estimates, MPG uses US gallons.',
         'Time = monotonic seconds since this file started. Q fields: 0=unavailable,1=live,2=stale,3=fault.',
         'Non-live values are IEEE NaN. Drop count is cumulative for this recorder process.',

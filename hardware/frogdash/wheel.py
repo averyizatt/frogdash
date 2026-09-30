@@ -3,8 +3,13 @@ from collections import deque
 from uuid import uuid4
 
 CAN_ID = 0x205
+GATEWAY_ID = 0x501
 TIMEOUT = .35
+GATEWAY_TIMEOUT = .5  # gateway_protocol.h: consumers expire button state after 500 ms.
 DIRECTIONS = {1: 'up', 2: 'down', 4: 'left', 8: 'right'}
+BACK = 32
+# Cruise-control buttons (gateway bits 0..4) to navigation bits.
+CRUISE = {1: 16, 2: BACK, 4: 2, 8: 1, 16: 8}  # ON=OK, OFF=back, COAST=down, SET ACCEL=up, RESUME=right
 
 
 class SteeringWheel:
@@ -19,6 +24,7 @@ class SteeringWheel:
         self.armed = False
         self.started = self.repeat_at = 0
         self.long_sent = False
+        self.timeout = TIMEOUT
 
     def reset(self):
         self.sequence = self.seen = None
@@ -32,7 +38,7 @@ class SteeringWheel:
 
     def tick(self):
         now = self.clock()
-        if self.seen is None or now - self.seen > TIMEOUT:
+        if self.seen is None or now - self.seen > self.timeout:
             self.reset()
             return
         if not self.armed:
@@ -44,11 +50,29 @@ class SteeringWheel:
             self.emit(DIRECTIONS[self.mask])
             self.repeat_at = now + .15  # Never catch up a backlog of repeats.
 
+    def observe_gateway(self, data):
+        """Cruise buttons from the sensor gateway (0x501): a repeated current-state report.
+
+        Unlike 0x205 the sequence only changes on transitions, so every valid report
+        refreshes freshness; silence for 500 ms releases everything.
+        """
+        now = self.clock()
+        if self.seen is not None and now - self.seen > GATEWAY_TIMEOUT:
+            self.reset()
+        self.timeout = GATEWAY_TIMEOUT
+        self.seen = now
+        mask = 0
+        for bit, nav in CRUISE.items():
+            if data[0] & bit:
+                mask |= nav
+        self.apply(mask, now)
+
     def observe(self, data):
         # Called only for a validated standard data frame on the live bus.
         now = self.clock()
         if self.seen is not None and now - self.seen > TIMEOUT:
             self.reset()
+        self.timeout = TIMEOUT
         mask, sequence, _ = data
         if self.sequence is not None:
             delta = (sequence - self.sequence) & 255
@@ -57,6 +81,9 @@ class SteeringWheel:
             if delta > 127:
                 self.reset()  # Restart/out-of-order: require released buttons.
         self.sequence, self.seen = sequence, now
+        self.apply(mask, now)
+
+    def apply(self, mask, now):
         if mask and mask & (mask - 1):
             self.mask = 0
             self.armed = False  # Chords cancel the current gesture.
@@ -71,6 +98,8 @@ class SteeringWheel:
             return
         if previous == 16 and mask == 0 and not self.long_sent:
             self.emit('back' if now - self.started >= .8 else 'ok')
+        if mask == BACK:
+            self.emit('back')  # OFF is a dedicated back button: no hold needed.
         self.mask = mask
         self.started = now
         self.repeat_at = now + .45

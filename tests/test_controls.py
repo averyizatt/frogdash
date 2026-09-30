@@ -37,6 +37,7 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
     async def test_supported_payloads_acknowledgements_and_lighting_no_ack(self):
         for name, (identifier, code, low, high, ack) in COMMANDS.items():
             if name == 'meth.test': continue
+            if name in ('lighting.setting', 'lighting.color', 'lighting.text', 'lighting.action', 'interior.light'): continue  # test_gateway_taillight
             self.now += 2
             self.refresh()
             value = low if low is not None else None

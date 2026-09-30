@@ -860,7 +860,7 @@ inline CanFrame packMethConfigAck(uint8_t acceptedVersion, uint8_t status, uint8
 
 // BEGIN FROGDASH ADDITIVE EXTENSION
 // Existing schema-2 IDs, layouts and ACK schema remain unchanged.
-constexpr uint8_t FROGDASH_EXTENSION_VERSION = 2;
+constexpr uint8_t FROGDASH_EXTENSION_VERSION = 3;
 constexpr uint16_t ID_FUEL_LEVEL_STATE = 0x204;
 constexpr uint8_t FUEL_LEVEL_DLC = 3;
 constexpr uint32_t FUEL_LEVEL_TX_MS = 500;
@@ -929,6 +929,188 @@ inline CanFrame packSteeringButtons(uint8_t pressedMask, uint8_t sequence) {
   frame.data[0] = pressedMask;
   frame.data[1] = sequence;
   frame.data[2] = STEERING_BUTTONS_VERSION;
+  return frame;
+}
+// Taillight settings over CAN (extension 3). Existing 0x100..0x102 frames and
+// taillight commands 0x01..0x05 are unchanged; these commands are new on 0x101
+// and the controller reports on the new ID 0x103. Firmware that predates them
+// ignores the new command bytes.
+constexpr uint16_t ID_TAILLIGHT_STATUS = 0x103;  // TX by taillight controller, DLC 8
+constexpr uint32_t TAILLIGHT_STATUS_TX_MS = 500;
+constexpr uint8_t TAILLIGHT_SHOW_MAX = 35;        // Shows 0..35; SET_MODE still selects 0..32
+namespace taillight_command {
+constexpr uint8_t SET_SETTING = 0x06;      // DLC 4: key, value u16 BE (clamped to the key's range)
+constexpr uint8_t SET_COLOR = 0x07;        // DLC 5: taillight_color, R, G, B
+constexpr uint8_t SET_SHOW_TEXT = 0x08;    // DLC 2..8: offset, up to 6 chars; offset 0 starts a new text
+constexpr uint8_t SETTINGS_ACTION = 0x09;  // DLC 2..3: taillight_action, argument
+}  // namespace taillight_command
+namespace taillight_setting {
+constexpr uint8_t BRIGHTNESS = 1;       // 10..255 saved main brightness
+constexpr uint8_t BRIGHTNESS_DIM = 2;   // 5..35 % running-light level
+constexpr uint8_t TURN_BLINK_MS = 3;    // 200..1500 full blink cycle
+constexpr uint8_t TURN_CUSTOM = 4;      // 0 equal on/off, 1 custom phases below
+constexpr uint8_t TURN_SWEEP_MS = 5;    // 50..1500
+constexpr uint8_t TURN_HOLD_MS = 6;     // 0..1500
+constexpr uint8_t TURN_OFF_MS = 7;      // 50..1500
+constexpr uint8_t BRAKE_SPEED = 8;      // 50..200 % animation speed
+constexpr uint8_t REVERSE_SPEED = 9;    // 50..200 %
+constexpr uint8_t RUN_SPEED = 10;       // 50..200 %
+constexpr uint8_t FRAME_MS = 11;        // 10..100 animation frame interval
+constexpr uint8_t BRAKE_ANIM = 12;      // 0..6
+constexpr uint8_t TURN_ANIM = 13;       // 0..7
+constexpr uint8_t REVERSE_ANIM = 14;    // 0..3
+constexpr uint8_t RUN_ANIM = 15;        // 0..5
+constexpr uint8_t LENS_PRESET = 16;     // 0..3
+constexpr uint8_t STARTUP_ANIM = 17;    // 0..1
+constexpr uint8_t REST_MODE = 18;       // 0..1
+constexpr uint8_t SHOW_SPEED = 19;      // 50..200 %
+constexpr uint8_t SHOW_ANIM = 20;       // 0..TAILLIGHT_SHOW_MAX (without changing show on/off)
+constexpr uint8_t SHOW_MODE = 21;       // 0..1, live only: never saved
+constexpr uint8_t COUNT = 21;
+}  // namespace taillight_setting
+namespace taillight_color {
+constexpr uint8_t BRAKE = 0;
+constexpr uint8_t TURN = 1;
+constexpr uint8_t REVERSE = 2;
+constexpr uint8_t RUNNING = 3;
+constexpr uint8_t COUNT = 4;
+}  // namespace taillight_color
+namespace taillight_action {
+constexpr uint8_t SAVE = 0;             // Persist current settings
+constexpr uint8_t REVERT = 1;           // Reload the saved settings
+constexpr uint8_t FACTORY_DEFAULTS = 2; // Apply defaults (not saved until SAVE)
+constexpr uint8_t REPORT = 3;           // Send every setting, color and the show text
+constexpr uint8_t PROFILE_LOAD = 4;     // argument: slot 0..5 (applied, not saved)
+constexpr uint8_t PROFILE_SAVE = 5;     // argument: slot 0..5
+constexpr uint8_t PROFILE_DELETE = 6;   // argument: slot 0..5
+}  // namespace taillight_action
+namespace taillight_report {
+constexpr uint8_t ACK = 1;      // command, config_ack_status, key/which/action, value u16 BE, revision, schema
+constexpr uint8_t SETTING = 2;  // key, value u16 BE, revision, flags
+constexpr uint8_t COLOR = 3;    // which, R, G, B, revision, flags
+constexpr uint8_t TEXT = 4;     // offset, 6 chars (NUL-padded after the end)
+constexpr uint8_t STATUS = 5;   // revision, flags, show_anim, profile slots, phase u16 BE (x16 ms)
+}  // namespace taillight_report
+namespace taillight_status_flag {
+constexpr uint8_t UNSAVED = 1 << 0;
+constexpr uint8_t SHOW = 1 << 1;
+constexpr uint8_t DEMO = 1 << 2;
+constexpr uint8_t CUSTOM = 1 << 3;
+constexpr uint8_t OVERRIDE = 1 << 4;
+}  // namespace taillight_status_flag
+constexpr uint8_t TAILLIGHT_ACK_SAVE_FAILED = 0x04;  // config_ack_status continuation
+constexpr uint8_t TAILLIGHT_ACK_NOT_FOUND = 0x05;    // empty profile slot
+constexpr uint8_t TAILLIGHT_PROFILE_COUNT = 6;
+constexpr uint8_t TAILLIGHT_SHOW_TEXT_MAX = 63;
+
+struct TaillightSettingRange { uint16_t low, high; };
+inline bool taillightSettingRange(uint8_t key, TaillightSettingRange& range) {
+  static const TaillightSettingRange ranges[taillight_setting::COUNT] = {
+      {10, 255}, {5, 35}, {200, 1500}, {0, 1}, {50, 1500}, {0, 1500}, {50, 1500}, {50, 200}, {50, 200},
+      {50, 200}, {10, 100}, {0, 6}, {0, 7}, {0, 3}, {0, 5}, {0, 3}, {0, 1}, {0, 1}, {50, 200},
+      {0, TAILLIGHT_SHOW_MAX}, {0, 1}};
+  if (key < 1 || key > taillight_setting::COUNT) return false;
+  range = ranges[key - 1];
+  return true;
+}
+inline CanFrame packTaillightSetting(uint8_t key, uint16_t value) {
+  CanFrame frame{};
+  frame.id = ID_TAILLIGHT_COMMAND;
+  frame.dlc = 4;
+  frame.data[0] = taillight_command::SET_SETTING;
+  frame.data[1] = key;
+  encodeU16BE(value, frame.data[2], frame.data[3]);
+  return frame;
+}
+inline CanFrame packTaillightColor(uint8_t which, uint8_t red, uint8_t green, uint8_t blue) {
+  CanFrame frame{};
+  frame.id = ID_TAILLIGHT_COMMAND;
+  frame.dlc = 5;
+  frame.data[0] = taillight_command::SET_COLOR;
+  frame.data[1] = which;
+  frame.data[2] = red;
+  frame.data[3] = green;
+  frame.data[4] = blue;
+  return frame;
+}
+// One chunk of up to six characters starting at offset. Send offset 0 first;
+// a chunk shorter than six characters (or containing NUL) ends the text.
+inline CanFrame packTaillightShowText(uint8_t offset, const char* chunk, uint8_t length) {
+  CanFrame frame{};
+  frame.id = ID_TAILLIGHT_COMMAND;
+  if (length > 6) length = 6;
+  frame.dlc = static_cast<uint8_t>(2 + length);
+  frame.data[0] = taillight_command::SET_SHOW_TEXT;
+  frame.data[1] = offset;
+  for (uint8_t i = 0; i < length; ++i) frame.data[2 + i] = static_cast<uint8_t>(chunk[i]);
+  return frame;
+}
+inline CanFrame packTaillightAction(uint8_t action, uint8_t argument = 0) {
+  CanFrame frame{};
+  frame.id = ID_TAILLIGHT_COMMAND;
+  frame.dlc = 3;
+  frame.data[0] = taillight_command::SETTINGS_ACTION;
+  frame.data[1] = action;
+  frame.data[2] = argument;
+  return frame;
+}
+inline CanFrame packTaillightAck(uint8_t command, uint8_t status, uint8_t subject, uint16_t value, uint8_t revision) {
+  CanFrame frame{};
+  frame.id = ID_TAILLIGHT_STATUS;
+  frame.dlc = 8;
+  frame.data[0] = taillight_report::ACK;
+  frame.data[1] = command;
+  frame.data[2] = status;
+  frame.data[3] = subject;
+  encodeU16BE(value, frame.data[4], frame.data[5]);
+  frame.data[6] = revision;
+  frame.data[7] = CAN_PROTOCOL_SCHEMA_VERSION;
+  return frame;
+}
+inline CanFrame packTaillightSettingReport(uint8_t key, uint16_t value, uint8_t revision, uint8_t flags) {
+  CanFrame frame{};
+  frame.id = ID_TAILLIGHT_STATUS;
+  frame.dlc = 8;
+  frame.data[0] = taillight_report::SETTING;
+  frame.data[1] = key;
+  encodeU16BE(value, frame.data[2], frame.data[3]);
+  frame.data[4] = revision;
+  frame.data[5] = flags;
+  return frame;
+}
+inline CanFrame packTaillightColorReport(uint8_t which, uint8_t red, uint8_t green, uint8_t blue, uint8_t revision, uint8_t flags) {
+  CanFrame frame{};
+  frame.id = ID_TAILLIGHT_STATUS;
+  frame.dlc = 8;
+  frame.data[0] = taillight_report::COLOR;
+  frame.data[1] = which;
+  frame.data[2] = red;
+  frame.data[3] = green;
+  frame.data[4] = blue;
+  frame.data[5] = revision;
+  frame.data[6] = flags;
+  return frame;
+}
+inline CanFrame packTaillightTextReport(uint8_t offset, const char* text) {
+  CanFrame frame{};
+  frame.id = ID_TAILLIGHT_STATUS;
+  frame.dlc = 8;
+  frame.data[0] = taillight_report::TEXT;
+  frame.data[1] = offset;
+  for (uint8_t i = 0; i < 6 && text[i]; ++i) frame.data[2 + i] = static_cast<uint8_t>(text[i]);
+  return frame;
+}
+// phaseX16: milliseconds since the driver-side animation began, divided by 16.
+inline CanFrame packTaillightStatus(uint8_t revision, uint8_t flags, uint8_t showAnim, uint8_t profileSlots, uint16_t phaseX16) {
+  CanFrame frame{};
+  frame.id = ID_TAILLIGHT_STATUS;
+  frame.dlc = 8;
+  frame.data[0] = taillight_report::STATUS;
+  frame.data[1] = revision;
+  frame.data[2] = flags;
+  frame.data[3] = showAnim;
+  frame.data[4] = profileSlots;
+  encodeU16BE(phaseX16, frame.data[5], frame.data[6]);
   return frame;
 }
 // END FROGDASH ADDITIVE EXTENSION

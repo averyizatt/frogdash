@@ -23,7 +23,15 @@ COMPILER = shutil.which('g++') or shutil.which('clang++')
 def vectors():
     with tempfile.TemporaryDirectory() as directory:
         exe = Path(directory) / 'vectors.exe'
-        compiled = subprocess.run([COMPILER, '-std=c++11', '-Wall', '-Wextra', '-Werror',
+        # can_protocol.h must stay C++11 (water/meth Nano). The gateway header needs
+        # C++14 and is only used by ESP32 builds, so the combined vectors use C++17.
+        header_only = Path(directory) / 'cxx11.cpp'
+        header_only.write_text('#include "can_contract/can_protocol.h"\nint main() { return 0; }\n')
+        compiled = subprocess.run([COMPILER, '-std=c++11', '-Wall', '-Wextra', '-Werror', '-pedantic',
+                        '-I', str(PACKAGE / 'include'), str(header_only), '-o', str(exe)], capture_output=True, text=True)
+        if compiled.returncode:
+            raise AssertionError(compiled.stderr)
+        compiled = subprocess.run([COMPILER, '-std=c++17', '-Wall', '-Wextra', '-Werror',
                         '-I', str(PACKAGE / 'include'), str(ROOT / 'tests/can_contract_vectors.cpp'),
                         '-o', str(exe)], capture_output=True, text=True)
         if compiled.returncode:
@@ -71,18 +79,25 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
     async def test_actual_dashboard_commands_match_firmware_builders(self):
         values = {'meth.arm':1, 'meth.test':25, 'meth.boost':40, 'knock.enable':1,
                   'knock.threshold':20, 'knock.multiplier':24, 'lighting.brightness':128, 'lighting.mode':1,
-                  'lighting.show':7, 'lighting.override':0x23, 'lighting.custom':2}
+                  'lighting.show':7, 'lighting.override':0x23, 'lighting.custom':2,
+                  'lighting.setting':(13 << 16) | 5, 'lighting.color':(1 << 24) | 0xFF6400,
+                  'lighting.text':'FOX', 'lighting.action':(5 << 8) | 2,
+                  'interior.light':(1 << 32) | (0xFFFFFF << 8) | 35}
         for action in COMMANDS:
             state = State(clock=lambda: 10)
             state.connected = True
             state.samples['ecu.rpm', 1520] = dict(value=0,quality='live',seen=10,source_id=1520,timestamp_ms=0)
-            for identifier, data in [(0x300, '0000640000282800'), (0x307, '13140fb400000000'), (0x100, '01010202ff3c00')]:
+            for identifier, data in [(0x300, '0000640000282800'), (0x307, '13140fb400000000'), (0x100, '01010202ff3c00'),
+                                     (0x103, '0501000000000000'),  # Taillight firmware with the settings extension.
+                                     (0x503, '01000000000100')]:  # Sensor gateway interior lights online.
                 state.ingest(identifier, bytes.fromhex(data))
             sent = []
             async def send(identifier, data):
                 sent.append((identifier,data))
                 if identifier == 0x301:
                     state.ingest(0x30A,bytes([data[0],0,data[1] if len(data)>1 else 0,2]))
+                if identifier == 0x101:
+                    state.ingest(0x103,bytes([1,data[0],0,0,0,0,1,2]))
             state.controls.attach(send); state.controls.ready_at=0
             try:
                 await state.controls.execute(action,values.get(action),owner=self)

@@ -1,6 +1,9 @@
 """Typed CAN controls. No arbitrary frame injection or automatic command retries."""
 import asyncio
+import json
+from .driving import atomic_write
 from .parking import moving, parked
+from .taillight import COLORS, PROFILE_COUNT, SETTINGS
 
 
 # CustomTaillights (dd4d971): 33 show animations, override states 0..6, custom one-shots 1..3.
@@ -28,7 +31,17 @@ COMMANDS = {
     "lighting.override": (0x101, 0x02, 0, 0x66, False),
     "lighting.clear": (0x101, 0x03, None, None, False),
     "lighting.custom": (0x101, 0x04, 1, 0x037E7E, False),
+    # Settings extension (can_protocol.h extension 3). Values pack several fields:
+    # setting = key << 16 | value; color = which << 24 | RGB; action = action << 8 | argument.
+    "lighting.setting": (0x101, 0x06, 1 << 16, (21 << 16) | 0xFFFF, False),
+    "lighting.color": (0x101, 0x07, 0, (3 << 24) | 0xFFFFFF, False),
+    "lighting.text": (0x101, 0x08, None, None, False),
+    "lighting.action": (0x101, 0x09, 0, (6 << 8) | 0xFF, False),
+    # Sensor-gateway interior LEDs (gateway_protocol.h 0x502): channel << 32 | RGB << 8 | brightness.
+    "interior.light": (0x502, None, 0, (2 << 32) | 0xFFFFFFFF, False),
 }
+INTERIOR_REFRESH = .5  # The gateway turns a channel off 5 s after its last command.
+SHOW_MODE_KEY = 21
 PARKED_LIGHTING = ('lighting.show', 'lighting.demo', 'lighting.override', 'lighting.custom')
 LABELS = {
     'meth.arm': 'water/meth mode', 'meth.test': 'pump test', 'meth.stop': 'pump test stop',
@@ -56,6 +69,21 @@ class Controls:
         self.lighting_reset_at = float('-inf')
         self.lighting_guard = None
         self.lighting_moving_since = None
+        self.interior = {1: [0, 0, 0, 0], 2: [0, 0, 0, 0]}  # channel: R, G, B, brightness
+        self.interior_path = None
+        self.interior_sent = float('-inf')
+
+    def load_interior(self, path):
+        """Restore the last interior colors so they come back after a restart."""
+        self.interior_path = path
+        try:
+            saved = json.loads(path.read_text(encoding='utf-8'))
+            for channel in (1, 2):
+                values = saved[str(channel)]
+                if len(values) == 4 and all(type(v) is int and 0 <= v <= 255 for v in values):
+                    self.interior[channel] = values
+        except (OSError, ValueError, KeyError, TypeError):
+            pass
 
     def attach(self, sender):
         self.sender = sender
@@ -106,9 +134,16 @@ class Controls:
                 if self.state.clock() - self.last_stop < 3: return 'Pump test cooldown (3 seconds)'
         elif action.startswith('knock.'):
             if self.live('knock.status_flags', 0x307) is None: return 'Knock controller is offline'
+        elif action == 'interior.light':
+            if self.live('interior.upper.brightness', 0x503, 1) is None and self.live('interior.lower.brightness', 0x503, 1) is None:
+                return 'Sensor gateway interior lights are offline'
         elif action.startswith('lighting.'):
             if self.live('lighting.brightness', 0x100) is None: return 'Taillight controller is offline'
             if action in PARKED_LIGHTING and not parked(self.state):
+                return 'Park first: shows and overrides replace the turn signals'
+            if action in ('lighting.setting', 'lighting.color', 'lighting.text', 'lighting.action') and not self.state.taillight.supported:
+                return 'Taillight firmware without the settings extension'
+            if action == 'lighting.setting' and value is not None and value >> 16 == SHOW_MODE_KEY and value & 0xFFFF and not parked(self.state):
                 return 'Park first: shows and overrides replace the turn signals'
         return None
 
@@ -116,6 +151,7 @@ class Controls:
         reasons = {name: self.reason(name, 1 if name == 'meth.arm' else None) for name in COMMANDS}
         reasons['meth.disarm'] = self.reason('meth.arm', 0)
         return {'reasons': reasons, 'pending': self.pending['action'] if self.pending else None,
+                'interior': {'upper': self.interior[1], 'lower': self.interior[2]},
                 'lighting_active': self.lighting_active,
                 'test_active': self.test_owner is not None, 'last_result': self.last,
                 'meth_config_conflict': self.conflict()}
@@ -125,6 +161,19 @@ class Controls:
         if not pending or pending['future'].done(): return
         if can_id == 0x301:
             pending['future'].set_result(('unknown', 'Another controller sent a command; outcome cannot be attributed'))
+        elif can_id == 0x103 and len(data) == 8 and data[0] == 1 and pending['action'].startswith('lighting.') and data[1] == pending['code']:
+            status = data[2]
+            applied = int.from_bytes(data[4:6], 'big')
+            if status == 0:
+                pending['future'].set_result(('acknowledged', 'Taillights applied the change'))
+            elif status == 3:
+                pending['future'].set_result(('adjusted', f'Taillights limited the value to {applied}'))
+            elif status == 4:
+                pending['future'].set_result(('rejected', 'Taillights could not save to memory'))
+            elif status == 5:
+                pending['future'].set_result(('rejected', 'That profile slot is empty'))
+            else:
+                pending['future'].set_result(('rejected', 'Taillights rejected the command: ' + ('unsupported' if status == 1 else 'invalid')))
         elif can_id == 0x304 and pending['action'].startswith('meth.'):
             pending['future'].set_result(('unknown', 'CCM meth settings may override this command'))
         elif can_id == 0x30A and len(data) == 4 and data[3] == 2 and data[0] == pending['code']:
@@ -143,10 +192,17 @@ class Controls:
         if action not in COMMANDS: raise ValueError('Unknown control action')
         if action == 'meth.test' and owner is None: raise ValueError('Pump test requires a connected control session')
         identifier, code, low, high, ack = COMMANDS[action]
-        if low is None:
+        if action == 'lighting.text':
+            pass  # Validated below; sent as 6-character chunks.
+        elif low is None:
             if value is not None: raise ValueError('This command has no value')
         elif type(value) is not int or not low <= value <= high:
             raise ValueError(f'Value must be an integer from {low} to {high}')
+        if action == 'lighting.text':
+            if not isinstance(value, str) or len(value) > 63 or any(not 0x20 <= ord(c) <= 0x7E for c in value):
+                raise ValueError('Show text must be up to 63 plain characters')
+        elif action in ('lighting.setting', 'lighting.color', 'lighting.action'):
+            self.validate_setting(action, value)
         if action == 'lighting.override' and (value >> 4 > 6 or value & 15 > 6):
             raise ValueError('Override sides must each be a light state from 0 to 6')
         if action == 'lighting.custom' and not self.valid_custom(value):
@@ -165,6 +221,8 @@ class Controls:
             self.test_owner = None
             self.last_stop = now
         payload = self.payload(action, code, value)
+        # Firmware with the settings extension acknowledges every 0x101 command on 0x103.
+        ack = ack or (identifier == 0x101 and self.state.taillight.supported)
         future = asyncio.get_running_loop().create_future()
         pending = {'future': future, 'code': code, 'value': value or 0, 'action': action}
         self.pending = pending
@@ -175,13 +233,24 @@ class Controls:
             if self.watchdog is None or self.watchdog.done():
                 self.watchdog = asyncio.create_task(self.guard_test())
         try:
-            await self.sender(identifier, payload)
+            if action == 'lighting.text':
+                chunks = [value[i:i + 6] for i in range(0, len(value), 6)] or ['']
+                if len(chunks[-1]) == 6:
+                    chunks.append('')  # A short final chunk marks the end of the text.
+                for offset, chunk in enumerate(chunks):
+                    await self.sender(identifier, bytes([code, offset * 6]) + chunk.encode('ascii'))
+            else:
+                await self.sender(identifier, payload)
             if ack:
                 try:
                     status, message = await asyncio.wait_for(future, 1.5)
                 except TimeoutError:
                     status, message = 'unknown', 'No controller acknowledgement; check live telemetry'
-                self.quiet_until[code] = self.state.clock() + 1.5
+                if identifier == 0x301:
+                    # Late 0x30A replies are only matched by command byte. Taillight
+                    # acknowledgements name their command on their own ID, so settings
+                    # can change quickly (for example while dragging a slider).
+                    self.quiet_until[code] = self.state.clock() + 1.5
             else:
                 status, message = 'sent', 'Sent; this controller has no command acknowledgement. Check live telemetry.'
             if self.conflict() and stop:
@@ -191,6 +260,13 @@ class Controls:
             # A missing ACK does not prove the test failed to start. Send STOP.
             if action == 'meth.test' and status != 'acknowledged':
                 await self.stop_test('Pump test stopped after an unconfirmed request')
+            if action == 'interior.light':
+                channels = (1, 2) if value >> 32 == 0 else (value >> 32,)
+                for channel in channels:
+                    self.interior[channel] = [(value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF]
+                self.interior_sent = self.state.clock()
+                if self.interior_path:
+                    await asyncio.to_thread(atomic_write, self.interior_path, {str(k): v for k, v in self.interior.items()})
             if action in PARKED_LIGHTING:
                 self.lighting_active = True
             elif action in ('lighting.clear', 'lighting.mode'):
@@ -202,6 +278,24 @@ class Controls:
             return self.last
         finally:
             if self.pending is pending: self.pending = None
+
+    @staticmethod
+    def validate_setting(action, value):
+        if type(value) is not int or value < 0:
+            raise ValueError('Invalid taillight setting value')
+        if action == 'lighting.setting':
+            key, number = value >> 16, value & 0xFFFF
+            if key not in SETTINGS:
+                raise ValueError('Unknown taillight setting')
+            _, low, high = SETTINGS[key]
+            if not low <= number <= high:
+                raise ValueError(f'{SETTINGS[key][0]} must be {low} to {high}')
+        elif action == 'lighting.color' and value >> 24 >= len(COLORS):
+            raise ValueError('Unknown taillight color')
+        elif action == 'lighting.action':
+            kind, argument = value >> 8, value & 0xFF
+            if kind > 6 or (kind >= 4 and argument >= PROFILE_COUNT) or (kind < 4 and argument):
+                raise ValueError('Invalid taillight settings action')
 
     @staticmethod
     def valid_custom(value):
@@ -217,6 +311,11 @@ class Controls:
         if action == 'lighting.show': return bytes([code, 2, value])
         if action == 'lighting.demo': return bytes([code, 3, 0])
         if action == 'lighting.override': return bytes([code, value >> 4, value & 15])
+        if action == 'interior.light': return bytes([value >> 32, (value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF, 1])
+        if action == 'lighting.setting': return bytes([code, value >> 16, (value >> 8) & 0xFF, value & 0xFF])
+        if action == 'lighting.color': return bytes([code, value >> 24, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF])
+        if action == 'lighting.action': return bytes([code, value >> 8, value & 0xFF])
+        if action == 'lighting.text': return b''
         if action == 'lighting.custom':
             if value >> 16 == CUSTOM_SCROLL_TWO:
                 return bytes([code, CUSTOM_SCROLL_TWO, 0, 0, (value >> 8) & 0xFF, value & 0xFF])
@@ -238,6 +337,34 @@ class Controls:
         while not self.closing:
             await asyncio.sleep(.25)
             await self.check_lighting()
+            await self.sync_taillight()
+            await self.refresh_interior()
+
+    async def refresh_interior(self):
+        """Keep lit interior channels alive; the gateway expires them after 5 s of silence."""
+        now = self.state.clock()
+        if (self.state.mode != 'socketcan' or not self.sender or not self.state.connected
+                or self.pending or now - self.interior_sent < INTERIOR_REFRESH):
+            return
+        self.interior_sent = now
+        for channel, (red, green, blue, brightness) in self.interior.items():
+            if brightness:
+                try:
+                    await self.sender(0x502, bytes([channel, red, green, blue, brightness, 1]))
+                except (OSError, TimeoutError):
+                    return
+
+    async def sync_taillight(self):
+        """Ask for a full settings report whenever the controller's revision moved."""
+        mirror = self.state.taillight
+        if (self.state.mode != 'socketcan' or not self.sender or not self.state.connected
+                or self.pending or not mirror.needs_report()):
+            return
+        mirror.requested()
+        try:
+            await self.sender(0x101, bytes([0x09, 3, 0]))
+        except (OSError, TimeoutError):
+            pass
 
     async def check_lighting(self):
         sides = [self.live(f'lighting.{side}_state', 0x100, 1) for side in ('left', 'right')]

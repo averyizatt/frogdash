@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <iostream>
 #include "can_contract/can_protocol.h"
+#include "can_contract/gateway_protocol.h"
 using namespace can_protocol;
 void emit(const char* name, const CanFrame& f) {
   std::cout << name << " " << std::hex << f.id << " ";
@@ -69,6 +70,12 @@ int main() {
   taillight = CanFrame{}; taillight.id = ID_TAILLIGHT_COMMAND; taillight.dlc = 6;
   taillight.data[0] = taillight_command::TRIGGER_CUSTOM_ANIMATION; taillight.data[1] = 2; taillight.data[4] = 3; taillight.data[5] = 150;
   emit("lighting.custom", taillight);
+  emit("lighting.setting", packTaillightSetting(taillight_setting::TURN_ANIM, 5));
+  emit("lighting.color", packTaillightColor(taillight_color::TURN, 0xFF, 0x64, 0x00));
+  emit("lighting.text", packTaillightShowText(0, "FOX", 3));
+  emit("lighting.action", packTaillightAction(taillight_action::PROFILE_SAVE, 2));
+  gateway::Light interior; interior.channel = 1; interior.red = interior.green = interior.blue = 255; interior.brightness = 35;
+  emit("interior.light", gateway::packLight(interior));
   emit("wheel", packSteeringButtons(steering_button::RIGHT, 255));
   FuelLevelState fuel{}; fuel.percent_x10=500; fuel.status=FuelLevelStatus::VALID;
   CanFrame frame=packFuelLevelState(fuel); emit("fuel",frame);
