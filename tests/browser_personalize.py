@@ -67,6 +67,10 @@ async def preview(browser):
     assert await page.locator('button[data-look][aria-pressed="true"]').count() == 0
     await page.reload()
     assert await page.evaluate('JSON.parse(localStorage.getItem("frogdash.appearance.v1")).look') == 'expedition'
+    # boot.js applies this snapshot before first paint so the default look never flashes.
+    paint = await page.evaluate('JSON.parse(localStorage.getItem("frogdash.appearance.paint.v1"))')
+    assert paint['data']['preset'] == 'expedition' and '--accent' in paint['style'], paint
+    assert '--custom-background' not in paint['style']
     assert await page.locator('html').get_attribute('data-finish') == 'dusk'
     assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--surface").trim()') == '#192018'
     await page.evaluate("frogdashDemo.scenario('night')")

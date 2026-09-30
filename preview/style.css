@@ -464,6 +464,9 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 .appearance-body #appearance-transparency { padding:0; min-height:32px; accent-color:var(--accent); background:transparent; border:0; }
 .range-captions { display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-bottom:14px; }
 
+/* boot.js: keep the dashboard hidden until an enabled startup splash is covering it. */
+:root[data-splash-pending="true"] .display { visibility:hidden; }
+
 /* Preview-only playback controls. */
 .demo-playback { display:flex; gap:6px; }
 .demo-control { min-height:40px; padding:7px 11px; border:1px solid var(--line); border-radius:6px; background:var(--raised); color:var(--text); font-size:13px; font-weight:750; }

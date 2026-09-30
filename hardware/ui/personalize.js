@@ -185,6 +185,13 @@
     for (const button of document.querySelectorAll('button[data-look]')) button.setAttribute('aria-pressed', String(button.dataset.look === prefs.look && exact));
     for (const button of document.querySelectorAll('button[data-background]')) button.setAttribute('aria-pressed', String(button.dataset.background === prefs.finish));
     window.dispatchEvent(new Event('frogdash-appearance'));
+    // Snapshot for boot.js, which applies it before first paint on the next start.
+    // The uploaded background stays only in the main profile to avoid storing it twice.
+    try {
+      const style = root.getAttribute('style').replace(/--custom-background:[^;]*;?/, '');
+      const data = Object.fromEntries(['instrumentStyle', 'gauges', 'preset', 'font', 'shape', 'edge', 'glow', 'finish', 'scene'].map(name => [name, root.dataset[name]]));
+      localStorage.setItem('frogdash.appearance.paint.v1', JSON.stringify({style, data, splash: prefs.splash !== 'off'}));
+    } catch { /* The page still applies the look normally on the next start. */ }
     if (save) {
       try { localStorage.setItem(key, JSON.stringify(prefs)); appearanceMessage('Saved on this display. Night mode uses your Drive workspace colors and brightness.'); }
       catch { appearanceMessage('Applied for now, but browser storage is full or unavailable. Remove an image to save.'); }
@@ -278,6 +285,8 @@
   $('appearance-reset').onclick = () => { prefs = {...defaults}; slot = 'accent'; collection('signature'); applyAppearance(); };
   applyAppearance(false);
   if (prefs.splash !== 'off') showSplash();
+  // boot.js hid the dashboard until the splash could cover it; it is now open (or off).
+  delete document.documentElement.dataset.splashPending;
 
   let latest = {}, online = false, raceBusy = false, raceError = '';
   let demoStart = 0;
