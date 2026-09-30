@@ -162,10 +162,22 @@ cd /opt/frogdash
 sudo git pull --ff-only
 sudo install -m 0644 hardware/systemd/frogdash.service /etc/systemd/system/frogdash.service
 sudo install -m 0644 hardware/systemd/frogdash-console@.service /etc/systemd/system/
+sudo install -m 0644 hardware/systemd/frogdash-readahead.service /etc/systemd/system/
 sudo systemctl daemon-reload
+sudo systemctl enable frogdash-readahead.service
 sudo systemctl restart frogdash.service
 sudo systemctl restart frogdash-console@foxbody.service
 ```
+
+**Cold-start fixes.** On a measured cold boot the first kiosk start failed with
+Cage's `Timeout waiting session to become active` after 10 seconds, and only the
+systemd retry rendered (first frame at 32 s). The console unit now switches to
+tty7 before opening the session, so the first start behaves like the retry.
+`frogdash-readahead.service` reads Chromium's files into memory from about two
+seconds into boot, in parallel with the backend; the measured Chromium first
+render was 10 s cold versus 4 s warm. Chromium also skips sync, component-update
+and push-registration traffic, and the kiosk does not start the accessibility
+bus or GVFS daemon. Re-measure with `tools/boot_report.py` after installing.
 
 The kiosk restart briefly blanks the display and loads the new timing logger.
 No PiSugar services or user environment files are replaced. Existing systemd

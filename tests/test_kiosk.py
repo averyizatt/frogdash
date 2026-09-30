@@ -28,6 +28,8 @@ class KioskTests(unittest.TestCase):
         self.assertIn('--password-store=basic', args)
         self.assertFalse(any(arg.startswith('--password-store') for arg in browser_args('chromium')))
         self.assertNotIn('--no-sandbox', args)
+        for flag in ('--disable-background-networking', '--disable-component-update', '--disable-sync'):
+            self.assertIn(flag, args)
         self.assertNotIn('--incognito', args)
         self.assertEqual(args[-1], 'http://127.0.0.1:8080/')
         self.assertFalse(any(arg.startswith('--user-data-dir') for arg in browser_args('chromium')))

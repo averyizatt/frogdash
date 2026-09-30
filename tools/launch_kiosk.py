@@ -35,7 +35,10 @@ def http_probe(port):
 
 def browser_args(binary, port=8080, wayland=False, profile=None, allow_audio=False):
     args = [binary, '--kiosk', '--no-first-run', '--no-default-browser-check',
-            '--disable-session-crashed-bubble']
+            '--disable-session-crashed-bubble',
+            # A local-only dashboard needs no sync, update or push-registration traffic.
+            '--disable-background-networking', '--disable-component-update', '--disable-sync',
+            '--disable-breakpad', '--disable-features=Translate,MediaRouter,OptimizationHints']
     if wayland:
         args.append('--ozone-platform=wayland')
     if profile:

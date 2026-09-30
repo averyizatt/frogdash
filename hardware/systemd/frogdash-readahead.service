@@ -1,0 +1,17 @@
+# Optional SYSTEM service: read Chromium's files into the page cache early in boot,
+# in parallel with the backend, so the kiosk's first launch is not limited by
+# microSD reads. Read-only; changes nothing and exits when done.
+[Unit]
+Description=Warm Chromium files for a faster Frogdash kiosk start
+DefaultDependencies=no
+After=local-fs.target
+Before=shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'cat /usr/lib/chromium/chromium /usr/lib/chromium/*.so /usr/lib/chromium/*.pak /usr/lib/chromium/*.dat /usr/lib/chromium/*.bin /usr/lib/chromium/locales/en-US.pak > /dev/null 2>&1; exit 0'
+TimeoutStartSec=60
+
+[Install]
+WantedBy=multi-user.target

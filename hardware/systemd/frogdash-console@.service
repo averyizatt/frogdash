@@ -17,6 +17,9 @@ PAMName=frogdash-kiosk
 Environment=XDG_SESSION_TYPE=wayland
 Environment=XDG_SESSION_DESKTOP=frogdash
 Environment=LIBSEAT_BACKEND=logind
+# No accessibility bridge or GVFS daemon activation: faster cold Chromium start.
+Environment=NO_AT_BRIDGE=1
+Environment=GIO_USE_VFS=local
 TTYPath=/dev/tty7
 StandardInput=tty-fail
 StandardOutput=journal
@@ -27,6 +30,11 @@ TTYVHangup=no
 TTYVTDisallocate=no
 UtmpIdentifier=tty7
 UtmpMode=user
+# Bring tty7 to the front before the session opens. Otherwise logind may not
+# mark the new session active in time on a cold boot, Cage times out after
+# 10 seconds ("Timeout waiting session to become active") and systemd retries.
+# Non-fatal: if chvt fails, the helper below still activates the session.
+ExecStartPre=-+/usr/bin/chvt 7
 # Keep the dashboard on one output; Cage otherwise extends across connectors.
 ExecStart=/usr/bin/dbus-run-session -- /usr/bin/cage -s -m last -- /usr/bin/python3 /opt/frogdash/tools/launch_kiosk.py --wayland --dedicated-profile --allow-audio
 ExecStartPost=+/usr/bin/python3 /opt/frogdash/tools/activate_kiosk.py --pid ${MAINPID} --user %i --tty tty7
