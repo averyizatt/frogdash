@@ -1,24 +1,29 @@
 /* Runs in <head> before first paint: apply the saved look so the default appearance
-   never flashes, and keep the dashboard hidden until an enabled splash is showing. */
+   never flashes, and keep the dashboard hidden until an enabled splash is showing.
+   The Pi normally serves the look inside the page already; browser storage is the
+   fallback (and the only source in the standalone preview). */
 (() => {
   'use strict';
+  const root = document.documentElement;
   try {
-    const root = document.documentElement;
-    const paint = JSON.parse(localStorage.getItem('frogdash.appearance.paint.v1'));
-    if (!paint || typeof paint !== 'object') return;
-    if (typeof paint.style === 'string' && paint.style.length < 20000) root.setAttribute('style', paint.style);
-    for (const [name, value] of Object.entries(paint.data || {})) {
-      if (/^[a-zA-Z]{1,30}$/.test(name) && typeof value === 'string' && /^[\w-]{1,40}$/.test(value)) root.dataset[name] = value;
+    if (!root.hasAttribute('style')) {
+      const paint = JSON.parse(localStorage.getItem('frogdash.appearance.paint.v1'));
+      if (paint && typeof paint === 'object') {
+        if (typeof paint.style === 'string' && paint.style.length < 20000) root.setAttribute('style', paint.style);
+        for (const [name, value] of Object.entries(paint.data || {})) {
+          if (/^[a-zA-Z]{1,30}$/.test(name) && typeof value === 'string' && /^[\w-]{1,40}$/.test(value)) root.dataset[name] = value;
+        }
+        if (paint.splash === true) root.dataset.splashPending = 'true';
+      }
     }
-    // The uploaded background image lives only in the main profile, not in the snapshot.
-    if (paint.data?.finish === 'image') {
+  } catch { /* No snapshot or storage: the page applies the look normally. */ }
+  try {
+    // The uploaded background image lives only in the main profile, never in a snapshot.
+    if (root.dataset.finish === 'image') {
       const background = JSON.parse(localStorage.getItem('frogdash.appearance.v1'))?.background;
       if (typeof background === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(background)) root.style.setProperty('--custom-background', `url("${background}")`);
     }
-    if (paint.splash === true) {
-      root.dataset.splashPending = 'true';
-      // Failsafe: the gauges are never kept hidden for long, whatever else happens.
-      setTimeout(() => { delete root.dataset.splashPending; }, 3000);
-    }
-  } catch { /* No snapshot or storage: the page applies the look normally. */ }
+  } catch { /* The page loads the image itself shortly after. */ }
+  // Failsafe: the gauges are never kept hidden for long, whatever else happens.
+  if (root.dataset.splashPending) setTimeout(() => { delete root.dataset.splashPending; }, 3000);
 })();

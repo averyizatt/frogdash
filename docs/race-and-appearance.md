@@ -132,6 +132,15 @@ Profiles saved before the color studio adopt their look's updated colors once.
 Warning/fault colors remain unchanged. Background images are dimmed behind
 the adjustable instrument surfaces, and splash images use contain rather than cropping.
 
+**Startup appearance.** The dashboard sends a small snapshot of the current look
+(colors, layout, shape and splash on/off; never uploaded images) to the Pi, which
+writes it atomically to `/var/lib/frogdash/appearance-paint.json` and serves it inside
+the page. The first paint therefore uses your look, and an enabled splash appears
+before the dashboard, even if Chromium's own storage was not flushed before key-off.
+Only CSS custom properties and simple layout names are accepted, from the Pi itself.
+If the dashboard is still hidden three seconds after the page loads, it is shown
+regardless. The first start after updating uses the look saved on the previous run.
+
 The splash is the dashboard application's startup screen, not the Raspberry Pi
 firmware or Linux boot logo. It defaults off and starts when the page loads.
 Startup splash automatically dismisses for moving GPS telemetry or reported

@@ -41,7 +41,7 @@
   const key = 'frogdash.appearance.v1';
   const isHex = value => /^#[0-9a-f]{6}$/i.test(value);
   const validImage = value => typeof value === 'string' && value.length < 1500000 && /^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(value);
-  let prefs = {...defaults}, splashTimer, splashPreview = false, slot = 'accent';
+  let prefs = {...defaults}, splashTimer, splashPreview = false, slot = 'accent', paintTimer, postedPaint = '';
   try {
     const stored = JSON.parse(localStorage.getItem(key));
     if (stored && typeof stored === 'object') {
@@ -188,9 +188,17 @@
     // Snapshot for boot.js, which applies it before first paint on the next start.
     // The uploaded background stays only in the main profile to avoid storing it twice.
     try {
-      const style = root.getAttribute('style').replace(/--custom-background:[^;]*;?/, '');
+      // Built per property: an image data URL contains ';', so trimming the string is unsafe.
+      const style = [...root.style].filter(name => name !== '--custom-background').map(name => `${name}: ${root.style.getPropertyValue(name)}`).join('; ');
       const data = Object.fromEntries(['instrumentStyle', 'gauges', 'preset', 'font', 'shape', 'edge', 'glow', 'finish', 'scene'].map(name => [name, root.dataset[name]]));
-      localStorage.setItem('frogdash.appearance.paint.v1', JSON.stringify({style, data, splash: prefs.splash !== 'off'}));
+      const snapshot = JSON.stringify({style, data, splash: prefs.splash !== 'off'});
+      localStorage.setItem('frogdash.appearance.paint.v1', snapshot);
+      // The Pi also keeps it on disk: browser storage may not be flushed before key-off.
+      if (typeof FrogdashDemoSocket === 'undefined' && location.protocol.startsWith('http') && snapshot !== postedPaint) {
+        clearTimeout(paintTimer);
+        paintTimer = setTimeout(() => fetch('/ui/appearance', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: snapshot})
+          .then(response => { if (response.ok) postedPaint = snapshot; }).catch(() => {}), 400);
+      }
     } catch { /* The page still applies the look normally on the next start. */ }
     if (save) {
       try { localStorage.setItem(key, JSON.stringify(prefs)); appearanceMessage('Saved on this display. Night mode uses your Drive workspace colors and brightness.'); }

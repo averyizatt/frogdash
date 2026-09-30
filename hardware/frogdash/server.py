@@ -21,6 +21,7 @@ from .operations import Operations
 from .backlight import Backlight
 from .supervision import watchdog
 from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
+from .paint import Paint, validate as validate_paint
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
 
@@ -303,7 +304,26 @@ def create_app(state, adapter=None, connectivity=None):
         name = request.match_info.get("name", "index.html")
         if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "boot.js"}:
             raise web.HTTPNotFound()
+        if name == 'index.html' and state.paint and state.paint.value:
+            page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')
+            return web.Response(text=state.paint.inject(page), content_type='text/html', headers={"Cache-Control": "no-store"})
         return web.FileResponse(WEB / name, headers={"Cache-Control": "no-store"})
+
+    async def appearance_snapshot(request):
+        # The dashboard's current look, written to disk so the next start paints it first.
+        require_local(request)
+        if not state.paint:
+            raise web.HTTPNotFound()
+        raw = await request.read()
+        if len(raw) > 32768:
+            raise web.HTTPBadRequest(text='Snapshot too large')
+        try:
+            value = validate_paint(json.loads(raw))
+        except (ValueError, TypeError):
+            raise web.HTTPBadRequest(text='Invalid appearance snapshot')
+        if value != state.paint.value:
+            await asyncio.to_thread(state.paint.save, value)
+        return web.Response(status=204)
 
     async def operations(request):
         require_local(request)
@@ -396,6 +416,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get('/drives', drives), web.get('/drives/{name}', drive_review),
                     web.get('/trip', trip), web.post('/trip', trip),
                     web.get('/operations/{action}', operations), web.post('/operations/{action}', operations),
+                    web.post('/ui/appearance', appearance_snapshot),
                     web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),
                     web.get('/ui/heartbeat/{token}', heartbeat), web.post('/ui/heartbeat/{token}', heartbeat),
                     web.get("/", asset), web.get("/{name}", asset)])
@@ -443,6 +464,7 @@ def main():
     state.operations = Operations(state, args.data_dir / 'replay' if args.replay else args.data_dir)
     state.backlight = Backlight(args.backlight_name)
     state.health = Health(state, args.interface, args.log_dir or args.data_dir)
+    state.paint = Paint((args.data_dir / 'replay' if args.replay else args.data_dir) / 'appearance-paint.json')
     state.shutdown_history = ShutdownHistory((args.data_dir / 'replay' if args.replay else args.data_dir) / 'shutdown.json')
     if args.log_dir:
         try:

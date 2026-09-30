@@ -34,6 +34,7 @@ class State:
         self.gps = None
         self.recorder = None
         self.camera = None
+        self.paint = None
         self.race = Race(clock=clock, wall=wall)
         self.driving = Driving(self)
         self.trip = Trip(self)
