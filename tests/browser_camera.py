@@ -86,6 +86,10 @@ async def preview(browser):
     await page.locator('#camera-test').click()
     assert await page.locator('#camera-dialog').is_visible()
     await page.locator('#camera-close').click()
+    # Speaker test sits beside the camera test and reports what it is playing.
+    for kind, text in (('left', 'LEFT'), ('right', 'RIGHT'), ('sweep', '80 Hz'), ('chime', 'chime')):
+        await page.locator(f'[data-speaker-test="{kind}"]').click()
+        await page.wait_for_function("t => document.getElementById('speaker-test-status').textContent.includes(t)", arg=text, timeout=3000)
     await inspect(page, '#operations-dialog')
     await page.locator('#operations-close').click()
     await page.locator('#drive-close').click()
@@ -173,7 +177,7 @@ async def main(executable):
         await preview(browser)
         await production(browser)
         await browser.close()
-    print('Reverse camera: auto-open, linger, manual close when moving, guides, persistence, layouts, live/frozen/missing feeds passed.')
+    print('Reverse camera and speaker test: auto-open, linger, manual close when moving, guides, persistence, layouts, live/frozen/missing feeds passed.')
 
 
 if __name__ == '__main__':

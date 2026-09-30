@@ -23,6 +23,12 @@
       <section class="driver-panel ops-panel control-section" data-ops-panel="support" hidden><div class="ops-columns"><div class="setting-card"><h3>Support report</h3><p id="support-version" class="control-note"></p><button id="diagnostic-download" type="button">Download diagnostics</button><p class="control-note">Includes connection quality, CAN errors, GPS status, recorder and Pi health, fuel level quality. Excludes GPS coordinates, raw logs, Wi-Fi secrets and artwork.</p><div id="controller-capabilities" class="ops-capabilities"></div></div><div class="setting-card ops-list"><h3>Vehicle acceptance checks</h3><p class="control-note">Mark passed only after performing each test on the car. These are records, not automatic hardware certification.</p><div id="acceptance-list"></div></div></div></section>
     </div></div><footer class="command-result" id="operations-result" role="status">Connect to the dash service to save configuration.</footer>`;
   document.body.append(dialog);
+  dialog.querySelector('[data-ops-panel="support"] .ops-columns').firstElementChild.insertAdjacentHTML('beforeend',
+    '<div class="speaker-test"><div><span>Speaker test</span><small id="speaker-test-status">Uses the chime volume from Drive &gt; Alerts.</small></div>' +
+    '<div class="speaker-test-buttons">' + [['left', 'Left'], ['right', 'Right'], ['sweep', 'Sweep'], ['chime', 'Chime']].map(([kind, label]) => `<button type="button" data-speaker-test="${kind}">${label}</button>`).join('') + '</div></div>');
+  dialog.querySelectorAll('[data-speaker-test]').forEach(button => button.onclick = async () => {
+    $('speaker-test-status').textContent = await window.FrogdashAudio.speakerTest(button.dataset.speakerTest);
+  });
   const launch = el('button', 'Dash management', 'close-button'); launch.id = 'operations-launch'; launch.type = 'button';
   $('drive-close').before(launch);
   function tab(key) { document.querySelectorAll('[data-ops-panel]').forEach(n => n.hidden = n.dataset.opsPanel !== key); document.querySelectorAll('[data-ops-tab]').forEach(n => n.setAttribute('aria-selected', String(n.dataset.opsTab === key))); }

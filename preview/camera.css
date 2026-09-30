@@ -57,3 +57,12 @@
 .camera-test[data-state="warning"] strong { color:var(--warn); }
 #camera-test { flex:none; min-height:48px; padding:8px 18px; }
 @media (max-aspect-ratio:11/5) and (max-width:600px) { .camera-test { flex-direction:column; align-items:stretch; } }
+
+/* Support & testing: speaker test row. */
+.speaker-test { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:18px; padding:14px 16px; border:1px solid var(--line); border-radius:10px; }
+.speaker-test > div:first-child { min-width:0; }
+.speaker-test span { display:block; font-size:17px; font-weight:750; }
+.speaker-test small { display:block; margin-top:4px; color:var(--muted); font-size:12px; line-height:1.4; }
+.speaker-test-buttons { display:flex; gap:8px; flex:none; }
+.speaker-test-buttons button { min-height:44px; padding:6px 14px; }
+@media (max-aspect-ratio:11/5) and (max-width:600px) { .speaker-test { flex-direction:column; align-items:stretch; } .speaker-test-buttons button { flex:1; } }

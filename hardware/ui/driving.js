@@ -291,6 +291,32 @@
     prefs.chimeVolume = Number(e.target.value); saveDisplay(); flushAudio();
   };
   $('test-chime').onclick = () => { pendingTest = performance.now() + 2000; enableAudio(); };
+  // Speaker test: left, right, a full-range sweep, or the warning chime, at the chime volume.
+  async function speakerTest(kind) {
+    if (prefs.chimeVolume === 0) return 'Chime volume is muted (Drive > Alerts). Raise it to hear the test.';
+    enableAudio();
+    for (let i = 0; i < 20 && audio?.state !== 'running' && !audioError; i++) await new Promise(r => setTimeout(r, 100));
+    if (audioError || audio?.state !== 'running') return 'Audio could not start. Check the Linux audio output (see docs/screen-audio.md).';
+    if (kind === 'chime') { soundChime(); return 'Playing the warning chime.'; }
+    const level = .2 * prefs.chimeVolume / 100, start = audio.currentTime + .05;
+    const length = kind === 'sweep' ? 3 : 1;
+    const o = audio.createOscillator(), g = audio.createGain(), pan = audio.createStereoPanner();
+    o.type = kind === 'sweep' ? 'sine' : 'triangle';
+    if (kind === 'sweep') { o.frequency.setValueAtTime(80, start); o.frequency.exponentialRampToValueAtTime(8000, start + length); }
+    else o.frequency.value = kind === 'left' ? 440 : 660;
+    pan.pan.value = kind === 'left' ? -1 : kind === 'right' ? 1 : 0;
+    g.gain.setValueAtTime(.0001, start);
+    g.gain.exponentialRampToValueAtTime(level, start + .03);
+    g.gain.setValueAtTime(level, start + length - .06);
+    g.gain.exponentialRampToValueAtTime(.0001, start + length);
+    o.connect(g); g.connect(pan); pan.connect(audio.destination);
+    o.start(start); o.stop(start + length + .02);
+    o.onended = () => { o.disconnect(); g.disconnect(); pan.disconnect(); };
+    const mono = audio.destination.maxChannelCount < 2;
+    return {left: 'Playing a low tone on the LEFT speaker only.', right: 'Playing a higher tone on the RIGHT speaker only.',
+      sweep: 'Sweeping from 80 Hz to 8 kHz on both speakers. Listen for rattles or dropouts.'}[kind] + (mono ? ' The audio output is mono, so both speakers play everything.' : '');
+  }
+  window.FrogdashAudio = {speakerTest};
   function unlockAudio() { if (currentDrive().settings?.chime && (!audio || audio.state !== 'running' || audioError)) enableAudio(); }
   document.addEventListener('pointerdown', unlockAudio, {passive: true});
   document.addEventListener('keydown', unlockAudio, {passive: true});

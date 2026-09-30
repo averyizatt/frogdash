@@ -32,6 +32,14 @@ even with automatic warning chimes off. On a fresh browser/profile, volume is 50
 The same controls appear in the standalone web preview; preview alert settings
 are simulated and reset when reloading, while its display volume stays saved.
 
+## Speaker test
+
+**Drive > Dash management > Support & testing > Speaker test** plays a low tone on
+the left speaker only, a higher tone on the right only, an 80 Hz to 8 kHz sweep
+on both (listen for rattles or dropouts), or the warning chime. It uses the chime
+volume from **Drive > Alerts**; at 0% it reports that audio is muted. If the Linux
+output is mono, it says so, and both speakers play every test.
+
 ## Startup and Linux audio output
 
 Both supplied kiosk units pass `--allow-audio` to `tools/launch_kiosk.py`, which
