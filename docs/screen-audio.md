@@ -14,8 +14,24 @@ While parked, open **Drive > Alerts** (or **Alerts** in the footer):
 1. Enable **Warning chimes** and press **Save alert settings**. They default off.
 2. Adjust **Volume**, then press **Test chime** to check audibility. Volume saves
    immediately on this display; zero mutes both warnings and the test tone.
-3. Also set the monitor's own volume and the Linux output/mixer. The dashboard
-   slider changes chime amplitude, not Linux master volume.
+3. Also set the monitor's own volume. HDMI audio on the Pi has no Linux volume
+   control, so the dashboard slider sets the digital level: 100% plays at 0.9 of
+   full scale. The chime is a bell-like 1 kHz tone with a softer octave, which
+   small built-in display speakers reproduce far louder than a low pure tone.
+
+For HDMI speakers (for example the Prechen 12.3-inch bar display), unplug any cable
+from the display's 3.5 mm jack: it is a headphone output and mutes the speakers.
+Point ALSA at the HDMI port the display uses (card 1 is `vc4hdmi0` / HDMI-A-1):
+
+```sh
+printf 'defaults.pcm.card 1
+defaults.ctl.card 1
+' | sudo tee /etc/asound.conf
+speaker-test -c 2 -t wav -l 1
+```
+
+Use the card number from `aplay -l`; `plughw:` devices fail on Pi HDMI because
+it needs IEC958 samples, while `default:` and `hdmi:` convert automatically.
 
 Low oil pressure, lean-under-boost, high coolant, water/meth faults and knock
 use the existing alert rules. Chimes announce new current, unacknowledged

@@ -263,16 +263,26 @@
       flushAudio();
     } catch { audioError = true; audioStatus(); }
   }
+  // HDMI audio has no Linux volume control, so loudness comes from the level played here.
+  // 100% is 0.9 of full scale (headroom against clipping); small display speakers are far
+  // more efficient near 1-2 kHz than at the old 880 Hz pure tone.
+  const outputLevel = () => .9 * prefs.chimeVolume / 100;
   function soundChime() {
     try {
       for (const delay of [0, .2]) {
-        const o = audio.createOscillator(), g = audio.createGain(), start = audio.currentTime + delay;
-        o.frequency.value = 880;
+        const start = audio.currentTime + delay, g = audio.createGain();
         g.gain.setValueAtTime(.0001, start);
-        g.gain.exponentialRampToValueAtTime(.2 * prefs.chimeVolume / 100, start + .015);
+        g.gain.exponentialRampToValueAtTime(outputLevel(), start + .015);
         g.gain.exponentialRampToValueAtTime(.0001, start + .15);
-        o.connect(g); g.connect(audio.destination); o.start(start); o.stop(start + .16);
-        o.onended = () => { o.disconnect(); g.disconnect(); };
+        g.connect(audio.destination);
+        // A bell-like fundamental plus a softer octave; the mix peaks at the output level.
+        for (const [frequency, share] of [[1047, 1 / 1.35], [2094, .35 / 1.35]]) {
+          const o = audio.createOscillator(), mix = audio.createGain();
+          o.frequency.value = frequency; mix.gain.value = share;
+          o.connect(mix); mix.connect(g); o.start(start); o.stop(start + .16);
+          o.onended = () => { o.disconnect(); mix.disconnect(); };
+        }
+        setTimeout(() => g.disconnect(), (delay + .3) * 1000);
       }
       lastChime = performance.now();
     } catch { audioError = true; }
@@ -298,12 +308,12 @@
     for (let i = 0; i < 20 && audio?.state !== 'running' && !audioError; i++) await new Promise(r => setTimeout(r, 100));
     if (audioError || audio?.state !== 'running') return 'Audio could not start. Check the Linux audio output (see docs/screen-audio.md).';
     if (kind === 'chime') { soundChime(); return 'Playing the warning chime.'; }
-    const level = .2 * prefs.chimeVolume / 100, start = audio.currentTime + .05;
+    const level = outputLevel(), start = audio.currentTime + .05;
     const length = kind === 'sweep' ? 3 : 1;
     const o = audio.createOscillator(), g = audio.createGain(), pan = audio.createStereoPanner();
     o.type = kind === 'sweep' ? 'sine' : 'triangle';
     if (kind === 'sweep') { o.frequency.setValueAtTime(80, start); o.frequency.exponentialRampToValueAtTime(8000, start + length); }
-    else o.frequency.value = kind === 'left' ? 440 : 660;
+    else o.frequency.value = kind === 'left' ? 880 : 1320;
     pan.pan.value = kind === 'left' ? -1 : kind === 'right' ? 1 : 0;
     g.gain.setValueAtTime(.0001, start);
     g.gain.exponentialRampToValueAtTime(level, start + .03);
@@ -313,7 +323,7 @@
     o.start(start); o.stop(start + length + .02);
     o.onended = () => { o.disconnect(); g.disconnect(); pan.disconnect(); };
     const mono = audio.destination.maxChannelCount < 2;
-    return {left: 'Playing a low tone on the LEFT speaker only.', right: 'Playing a higher tone on the RIGHT speaker only.',
+    return {left: 'Playing a lower tone on the LEFT speaker only.', right: 'Playing a higher tone on the RIGHT speaker only.',
       sweep: 'Sweeping from 80 Hz to 8 kHz on both speakers. Listen for rattles or dropouts.'}[kind] + (mono ? ' The audio output is mono, so both speakers play everything.' : '');
   }
   window.FrogdashAudio = {speakerTest};

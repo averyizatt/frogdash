@@ -19,7 +19,9 @@ TRACE = """(() => {
   window.tones = [];
   const start = OscillatorNode.prototype.start;
   OscillatorNode.prototype.start = function(when) {
-    tones.push({when, at: performance.now(), activated: navigator.userActivation.hasBeenActive}); return start.call(this, when);
+    // A beep may layer several oscillators starting together; count beeps, not oscillators.
+    if (!tones.some(t => t.when === when)) tones.push({when, at: performance.now(), activated: navigator.userActivation.hasBeenActive});
+    return start.call(this, when);
   };
   window.peaks = [];
   const ramp = AudioParam.prototype.exponentialRampToValueAtTime;
@@ -81,7 +83,7 @@ async def check(browser, url, state):
         await volume(page, 25)
         await page.locator('#test-chime').click()
         await count(page, 4)
-        assert abs(await page.evaluate('peaks.at(-1)') - .05) < .00001
+        assert abs(await page.evaluate('peaks.at(-1)') - .9 * .25) < .00001  # 100% = 0.9 of full scale
         # A second incident inside the throttle window is queued, then cancelled on recovery.
         incident()
         await page.wait_for_timeout(200)
