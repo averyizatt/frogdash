@@ -61,7 +61,8 @@ the server another way, that user must be in the `video` group.
 | Flag | Default | Meaning |
 | --- | --- | --- |
 | `--camera` | off | Enable the reverse camera |
-| `--camera-size WxH` | `640x480` | Capture size. Larger sizes add delay and CPU/heat |
+| `--camera-size WxH` | `1024x768` | Capture size. Keep 4:3 for the v2.1's full view (for example `1296x972`); larger sizes add delay and heat |
+| `--camera-quality` | `high` | JPEG quality: `medium`, `high` or `max`. Higher looks better and uses more CPU on the dash |
 | `--camera-fps N` | `30` | Frame rate, 5–60 |
 | `--camera-rotate 180` | `0` | For an upside-down mount |
 | `--camera-keep-warm` | off | Keep capturing between views so the picture appears faster, at the cost of power and heat |

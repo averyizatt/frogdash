@@ -421,7 +421,8 @@ def main():
     parser.add_argument('--race-file', type=Path, default=Path('/var/lib/frogdash/race.json'), help='Saved start/finish and last 50 race sessions')
     parser.add_argument('--data-dir', type=Path, default=Path('/var/lib/frogdash'), help='Alert settings and bounded drive reviews')
     parser.add_argument('--camera', action='store_true', help='Enable the Raspberry Pi CSI reverse camera (python3-picamera2)')
-    parser.add_argument('--camera-size', default='640x480', help='Capture size WIDTHxHEIGHT (default 640x480)')
+    parser.add_argument('--camera-size', default='1024x768', help='Capture size WIDTHxHEIGHT (default 1024x768)')
+    parser.add_argument('--camera-quality', choices=('medium', 'high', 'max'), default='high', help='MJPEG image quality (default high)')
     parser.add_argument('--camera-fps', type=int, default=30)
     parser.add_argument('--camera-rotate', type=int, choices=(0, 180), default=0, help='180 if the camera is mounted upside down')
     parser.add_argument('--camera-keep-warm', action='store_true', help='Keep the camera running between views for instant display')
@@ -450,12 +451,12 @@ def main():
         except ValueError as exc:
             parser.error(str(exc))
         state.recorder = Recorder(state, config)
-    if (args.camera_keep_warm or args.camera_size != '640x480' or args.camera_fps != 30 or args.camera_rotate) and not args.camera:
+    if (args.camera_keep_warm or args.camera_size != '1024x768' or args.camera_quality != 'high' or args.camera_fps != 30 or args.camera_rotate) and not args.camera:
         parser.error('Camera options require --camera')
     if args.camera:
         try:
             width, height = (int(n) for n in args.camera_size.lower().split('x'))
-            state.camera = Camera(width, height, args.camera_fps, args.camera_rotate, idle_s=10 ** 9 if args.camera_keep_warm else 20)
+            state.camera = Camera(width, height, args.camera_fps, args.camera_rotate, idle_s=10 ** 9 if args.camera_keep_warm else 20, quality=args.camera_quality)
         except ValueError as exc:
             parser.error(f'Invalid camera option: {exc}')
     if args.gpsd:

@@ -38,7 +38,8 @@ def open_picamera2(camera):
             main={'size': (camera.width, camera.height)}, transform=Transform(hflip=flip, vflip=flip),
             controls={'FrameRate': camera.fps})
         picam.configure(config)
-        picam.start_recording(MJPEGEncoder(), FileOutput(Sink()), quality=Quality.MEDIUM)
+        quality = {'medium': Quality.MEDIUM, 'high': Quality.HIGH, 'max': Quality.VERY_HIGH}[camera.quality]
+        picam.start_recording(MJPEGEncoder(), FileOutput(Sink()), quality=quality)
     except Exception:
         picam.close()
         raise
@@ -52,10 +53,10 @@ def open_picamera2(camera):
 
 
 class Camera:
-    def __init__(self, width=640, height=480, fps=30, rotate=0, idle_s=20.0, opener=open_picamera2, clock=time.monotonic):
-        if width not in range(160, 1921) or height not in range(120, 1081) or not 5 <= fps <= 60 or rotate not in (0, 180):
-            raise ValueError('Camera size must be 160x120 to 1920x1080, 5-60 fps, rotation 0 or 180')
-        self.width, self.height, self.fps, self.rotate, self.idle_s = width, height, fps, rotate, idle_s
+    def __init__(self, width=1024, height=768, fps=30, rotate=0, idle_s=20.0, opener=open_picamera2, clock=time.monotonic, quality='high'):
+        if width not in range(160, 1921) or height not in range(120, 1081) or not 5 <= fps <= 60 or rotate not in (0, 180) or quality not in ('medium', 'high', 'max'):
+            raise ValueError('Camera size must be 160x120 to 1920x1080, 5-60 fps, rotation 0 or 180, quality medium/high/max')
+        self.width, self.height, self.fps, self.rotate, self.idle_s, self.quality = width, height, fps, rotate, idle_s, quality
         self.opener, self.clock = opener, clock
         self.frame = None
         self.frame_at = None
@@ -77,7 +78,7 @@ class Camera:
         now = self.clock()
         span = self.times[-1] - self.times[0] if len(self.times) > 1 else 0
         return {'enabled': True, 'running': self.running, 'viewers': self.viewers, 'error': self.error,
-                'width': self.width, 'height': self.height, 'rotate': self.rotate,
+                'width': self.width, 'height': self.height, 'rotate': self.rotate, 'quality': self.quality,
                 'frame_age_ms': None if self.frame_at is None else round((now - self.frame_at) * 1000),
                 'fps': round((len(self.times) - 1) / span, 1) if span > 0 else 0.0}
 

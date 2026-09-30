@@ -76,6 +76,7 @@
     else if (age == null) setLost(performance.now() - openedAt > 3000, 'Waiting for the first frame');
     else if (age > 1000) setLost(true, `No new frame for ${(age / 1000).toFixed(1)} s`);
     else { setLost(false); $('camera-state').textContent = `REAR CAMERA · ${Math.round(status.fps)} FPS`; }
+    if (status?.width && status?.height) document.querySelector('.camera-stage').style.aspectRatio = `${status.width} / ${status.height}`;
     if (dialog.dataset.lost === 'true' && performance.now() - openedAt > 3000 && !retryTimer) retryTimer = setTimeout(() => { retryTimer = null; if (dialog.open) connectFeed(); }, 2000);
   }
   // A failed stream hides the broken image and asks the service for the actual reason.

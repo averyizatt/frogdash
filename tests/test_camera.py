@@ -99,7 +99,7 @@ class CameraTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(await camera.next_frame(0, timeout=.01))
 
     def test_invalid_configuration(self):
-        for kwargs in ({'width': 50}, {'fps': 120}, {'rotate': 90}):
+        for kwargs in ({'width': 50}, {'fps': 120}, {'rotate': 90}, {'quality': 'ultra'}):
             with self.assertRaises(ValueError):
                 Camera(**kwargs)
 
