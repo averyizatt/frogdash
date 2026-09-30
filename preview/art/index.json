@@ -1,0 +1,52 @@
+[
+ {
+  "name": "bg-foxbody-stripes.jpg",
+  "kind": "background",
+  "title": "Fox-body stripes"
+ },
+ {
+  "name": "bg-night-highway.jpg",
+  "kind": "background",
+  "title": "Night highway"
+ },
+ {
+  "name": "bg-carbon-red.jpg",
+  "kind": "background",
+  "title": "Carbon and red"
+ },
+ {
+  "name": "bg-blueprint-coupe.jpg",
+  "kind": "background",
+  "title": "Blueprint coupe"
+ },
+ {
+  "name": "bg-tach-glow.jpg",
+  "kind": "background",
+  "title": "Tach glow"
+ },
+ {
+  "name": "splash-made-by-avery-izatt.jpg",
+  "kind": "splash",
+  "title": "Made by Avery Izatt"
+ },
+ {
+  "name": "splash-five-point-oh.jpg",
+  "kind": "splash",
+  "title": "5.0 retro"
+ },
+ {
+  "name": "splash-fox-body.jpg",
+  "kind": "splash",
+  "title": "Fox body"
+ },
+ {
+  "name": "splash-built-not-bought.jpg",
+  "kind": "splash",
+  "title": "Built not bought"
+ },
+ {
+  "name": "splash-frogdash.jpg",
+  "kind": "splash",
+  "title": "Frogdash"
+ }
+]

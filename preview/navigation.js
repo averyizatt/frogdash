@@ -167,16 +167,26 @@
     fp.dialog.showModal(); focus(fp.dialog.querySelector('.close-button')); describe();
     let files = [], folder = '/var/lib/frogdash/import';
     try {
-      if (demoMode()) { files = await sampleImages(); folder = 'the preview (generated samples)'; }
+      if (demoMode()) {
+        // The published preview ships the same bundled art; opened from disk it cannot be fetched.
+        try {
+          const manifest = await (await fetch('art/index.json', {cache: 'no-store'})).json();
+          files = manifest.map(item => ({...item, type: 'image/jpeg', size: 0, source: 'Frogdash art', url: `art/${encodeURIComponent(item.name)}`}));
+          folder = 'Frogdash art';
+        } catch { files = await sampleImages(); folder = 'the preview (generated samples)'; }
+      }
       else {
         const listing = await (await fetch('/ui/import', {cache: 'no-store'})).json();
         folder = listing.directory || folder;
         files = listing.files.map(f => ({...f, url: `/ui/import/${encodeURIComponent(f.name)}`}));
-        if (listing.error) throw new Error(listing.error);
+        if (listing.error && !files.length) throw new Error(listing.error);
+        if (listing.error) folder += ` (import folder unavailable: ${listing.error})`;
       }
     } catch (error) { fp.note.textContent = `Could not list files: ${error.message}`; return; }
     if (!fp.dialog.open || fpTarget !== target) return;
     files = files.filter(f => accepts(target, f));
+    const wanted = /splash/i.test(target.id) ? 'splash' : 'background';
+    files.sort((a, b) => (a.kind === wanted ? 0 : a.kind ? 2 : 1) - (b.kind === wanted ? 0 : b.kind ? 2 : 1));
     fp.note.textContent = files.length ? `From ${folder}` : `No matching files. Copy them to ${folder} on the Pi (SSH or USB stick), then try again.`;
     for (const file of files) {
       const b = button('', async () => {
@@ -188,7 +198,8 @@
         } catch (error) { fp.note.textContent = `Could not load ${file.name}: ${error.message}`; }
       }, {cls: 'wheel-file'});
       if (file.type.startsWith('image/')) { const img = ns('img'); img.src = file.url; img.alt = ''; img.loading = 'lazy'; b.append(img); }
-      b.append(ns('strong', null, file.name), ns('small', null, file.size < 1024 ? `${file.size} bytes` : `${Math.round(file.size / 1024)} KB`));
+      const size = !file.size ? '' : file.size < 1024 ? ` · ${file.size} bytes` : ` · ${Math.round(file.size / 1024)} KB`;
+      b.append(ns('strong', null, file.title || file.name), ns('small', null, `${file.source || 'Your imports'}${size}`));
       fpList.append(b);
     }
     if (fpList.firstElementChild) focus(fpList.firstElementChild);

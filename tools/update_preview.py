@@ -33,6 +33,12 @@ def assets():
     return {'index.html': html, 'style.css': css, 'app.js': js, 'personalize.js': personalize, **extra}
 
 
+def art():
+    """Bundled artwork is copied byte-for-byte so the published preview offers the same images."""
+    source = ROOT / 'hardware' / 'art'
+    return {path.name: path.read_bytes() for path in sorted(source.iterdir()) if path.is_file()}
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
@@ -44,4 +50,19 @@ if __name__ == '__main__':
                 raise SystemExit(f'Preview is out of date: {name}. Run python tools/update_preview.py')
         else:
             dest.write_text(content, encoding='utf-8', newline='\n')
+    art_dir = ROOT / 'preview' / 'art'
+    art_dir.mkdir(exist_ok=True)
+    expected = art()
+    for name, content in expected.items():
+        dest = art_dir / name
+        if args.check:
+            if not dest.is_file() or dest.read_bytes() != content:
+                raise SystemExit(f'Preview is out of date: art/{name}. Run python tools/update_preview.py')
+        else:
+            dest.write_bytes(content)
+    for stale in art_dir.iterdir():
+        if stale.name not in expected:
+            if args.check:
+                raise SystemExit(f'Preview has stale art/{stale.name}. Run python tools/update_preview.py')
+            stale.unlink()
     print('Preview assets match the production design.' if args.check else 'Updated standalone preview assets.')

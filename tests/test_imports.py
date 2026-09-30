@@ -43,6 +43,28 @@ class ImportTests(unittest.IsolatedAsyncioTestCase):
         response = await self.client.get('/ui/import/art.png', headers={'Origin': 'http://evil.example'})
         self.assertEqual(response.status, 403)
 
+    async def test_bundled_art_is_listed_and_your_file_wins(self):
+        art = Path(self.tmp.name) / 'art'
+        art.mkdir()
+        (art / 'logo.jpg').write_bytes(b'bundled')
+        (art / 'art.png').write_bytes(b'bundled art')
+        (art / 'unlisted.jpg').write_bytes(b'not in catalogue')
+        (art / 'index.json').write_text('[{"name": "logo.jpg", "kind": "splash", "title": "Logo"}, {"name": "art.png", "kind": "background", "title": "Art"}, {"name": "../x.jpg"}]', encoding='utf-8')
+        imports = Imports(self.folder, art)
+        files = imports.listing()['files']
+        self.assertEqual([(f['name'], f['source']) for f in files], [('art.png', 'Your imports'), ('Backup 2026.json', 'Your imports'), ('logo.jpg', 'Frogdash art')])
+        self.assertEqual(files[2]['title'], 'Logo')
+        self.assertEqual(imports.path('art.png').read_bytes(), (self.folder / 'art.png').read_bytes())  # Your file shadows the bundled one.
+        self.assertEqual(imports.path('logo.jpg').read_bytes(), b'bundled')
+        self.assertIsNone(imports.path('unlisted.jpg'))
+
+    def test_repository_art_catalogue_is_valid(self):
+        root = Path(__file__).resolve().parents[1] / 'hardware' / 'art'
+        imports = Imports(Path(self.tmp.name) / 'empty', root)
+        files = imports.listing()['files']
+        self.assertGreaterEqual(len(files), 8)
+        self.assertTrue(all(f['kind'] in ('background', 'splash') and f['type'] == 'image/jpeg' for f in files))
+
     def test_name_rules(self):
         self.assertTrue(safe('My Car (2).webp'))
         for name in ('../x.png', 'a/b.png', 'x.exe', '.png', 'x..png', ''):
