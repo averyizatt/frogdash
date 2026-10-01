@@ -368,11 +368,11 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 .driver-alert-row button:first-child { flex:1; text-align:left; color:var(--warn); }
 #alert-capture { overflow:auto; overflow-wrap:anywhere; min-height:0; max-height:115px; }
 #audio-status { margin-top:auto; font-size:12px; }
-.health-cards { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:20px; }
+.health-cards { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:8px; }
 .health-cards .setting-card { min-height:96px; }
 .health-cards .setting-card[data-quality="good"] { border-color:color-mix(in srgb,var(--accent) 45%,var(--line)); }
 .health-cards .setting-card[data-quality="warning"] { border-color:var(--warn); }
-.health-cards small { display:block; margin-top:8px; color:var(--muted); font-size:12px; line-height:1.4; }
+.health-cards small { display:block; margin-top:4px; color:var(--muted); font-size:12px; line-height:1.4; }
 .health-cards span { display:block; color:var(--muted); font-size:13px; }
 .health-cards strong { display:block; font-size:25px; margin-top:10px; overflow-wrap:anywhere; }
 .display[data-layout="tuning"] .primary-instruments { grid-template-columns:.9fr .85fr 1.35fr; }
@@ -502,3 +502,12 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 }
 /* Pointer stays hidden until the mouse actually moves (wheel/keyboard-driven kiosk). */
 html.cursor-hidden, html.cursor-hidden * { cursor:none !important; }
+
+/* Bottom nav: icons only, clear of the dash hump in the middle; the name shows when selected. */
+.dashboard-nav { margin-left:auto; }
+.dashboard-nav button { position:relative; justify-content:center; min-width:66px; padding:0 18px; gap:10px; }
+.dashboard-nav button svg { width:28px; height:28px; }
+.dashboard-nav .nav-label { display:none; position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); white-space:nowrap; padding:5px 12px; border-radius:8px; background:var(--panel,#111a20); border:1px solid color-mix(in srgb,var(--accent) 45%,transparent); color:var(--text); font-size:15px; pointer-events:none; z-index:5; }
+.dashboard-nav button:last-child .nav-label { left:auto; right:0; transform:none; }
+.dashboard-nav button:is(:hover,:focus-visible,.wheel-focus) .nav-label { display:block; }
+.dashboard-nav button[data-warning="true"]::after { content:""; position:absolute; top:8px; right:8px; width:10px; height:10px; border-radius:50%; background:#ffb84d; box-shadow:0 0 0 2px var(--bg,#0b1014); }

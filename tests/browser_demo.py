@@ -47,7 +47,7 @@ async def main(path):
             await page.set_viewport_size({'width':width,'height':height})
             await page.wait_for_timeout(80)
             assert await page.locator('.topbar').evaluate("""bar => {
-              const children=[...bar.children].filter(x=>x.checkVisibility()).map(x=>x.getBoundingClientRect());
+              const children=[...bar.children].filter(x=>x.checkVisibility()).map(x=>x.getBoundingClientRect()).sort((a,b)=>a.left-b.left);
               return children.every((r,i)=>!i || r.left >= children[i-1].right - 1);
             }"""), 'Preview controls overlap the header'
         await page.screenshot(path=str(ROOT / '.tmp/demo-dynamic.png'))

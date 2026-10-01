@@ -159,6 +159,14 @@
       c.toBlob(blob => resolve({name, type: 'image/png', size: blob.size, blob, url: URL.createObjectURL(blob)}), 'image/png');
     })));
   }
+  // The kiosk has no usable system file browser: mouse and touch open this picker too.
+  document.addEventListener('click', event => {
+    const target = event.target.closest?.('input[type="file"]');
+    const kiosk = ['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname) || demoMode();
+    if (!kiosk || !target || target.disabled || target.dataset.nativePicker !== undefined) return;
+    event.preventDefault();
+    openFiles(target);
+  }, true);
   async function openFiles(target) {
     fpTarget = target;
     fp.title.textContent = labelFor(target);

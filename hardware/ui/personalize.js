@@ -278,7 +278,7 @@
       if (!validImage(data)) throw new Error('Image is too detailed to save; try a smaller image.');
       prefs[field] = data;
       if (field === 'background') prefs.finish = 'image'; else prefs.splash = 'image';
-      applyAppearance();
+      applyAppearance(); storeImage(field);
     } catch (error) { $('appearance-feedback').textContent = error.message || 'Could not read this image.'; }
     finally {
       if (url) URL.revokeObjectURL(url);
@@ -286,13 +286,36 @@
       for (const el of document.querySelectorAll('#appearance-dialog input[type=file], #appearance-reset')) el.disabled = false;
     }
   }
+  // Images are also kept on the Pi's disk; browser storage may not be flushed before key-off.
+  const onPi = typeof FrogdashDemoSocket === 'undefined' && location.protocol.startsWith('http');
+  const imageUrl = field => `/ui/appearance/image/${field === 'background' ? 'background' : 'splash'}`;
+  function storeImage(field) {
+    if (!onPi) return;
+    const data = prefs[field];
+    fetch(imageUrl(field), data ? {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({data})} : {method: 'DELETE'})
+      .then(response => { if (!response.ok) throw new Error(); })
+      .catch(() => appearanceMessage('Image applied, but the Pi could not save it to disk.'));
+  }
+  async function restoreImages() {
+    if (!onPi) return;
+    for (const field of ['background', 'splashImage']) {
+      const wanted = field === 'background' ? prefs.finish === 'image' : prefs.splash === 'image';
+      if (!wanted || prefs[field]) continue;
+      try {
+        const response = await fetch(imageUrl(field), {cache: 'no-store'});
+        const {data} = response.ok ? await response.json() : {};
+        if (validImage(data)) { prefs[field] = data; applyAppearance(); }
+      } catch { /* Offline server: keep the look without the image. */ }
+    }
+  }
   $('appearance-background').onchange = event => uploadImage(event.target, 'background');
   $('appearance-splash-image').onchange = event => uploadImage(event.target, 'splashImage');
-  $('appearance-clear-background').onclick = () => { prefs.background = ''; prefs.finish = 'midnight'; applyAppearance(); };
-  $('appearance-clear-splash').onclick = () => { prefs.splashImage = ''; prefs.splash = 'wordmark'; applyAppearance(); };
+  $('appearance-clear-background').onclick = () => { prefs.background = ''; prefs.finish = 'midnight'; applyAppearance(); storeImage('background'); };
+  $('appearance-clear-splash').onclick = () => { prefs.splashImage = ''; prefs.splash = 'wordmark'; applyAppearance(); storeImage('splashImage'); };
   $('appearance-transparency').addEventListener('input', event => { prefs.transparency = Number(event.target.value); applyAppearance(); });
-  $('appearance-reset').onclick = () => { prefs = {...defaults}; slot = 'accent'; collection('signature'); applyAppearance(); };
+  $('appearance-reset').onclick = () => { prefs = {...defaults}; slot = 'accent'; collection('signature'); applyAppearance(); storeImage('background'); storeImage('splashImage'); };
   applyAppearance(false);
+  restoreImages();
   if (prefs.splash !== 'off') showSplash();
   // boot.js hid the dashboard until the splash could cover it; it is now open (or off).
   delete document.documentElement.dataset.splashPending;

@@ -35,6 +35,31 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(state.gps.conflict)
         self.assertIn('BLOCKED', state.gps.tx_status)
 
+    async def test_gps_transmit_failure_keeps_reception_online(self):
+        # Alone on the bus nothing ACKs, the TX queue fills and send fails; CAN must stay live.
+        state = State()
+        state.gps = GPS()
+        state.gps.connected = True
+        state.gps.update({'class': 'TPV', 'mode': 3, 'speed': 21, 'altMSL': -10})
+        bus = MagicMock()
+        bus.__enter__.return_value = bus
+        loop = MagicMock()
+        loop.time.side_effect = [0, 2.1, 2.1, 2.2]
+        loop.sock_sendall = AsyncMock(side_effect=OSError(105, 'No buffer space available'))
+        states = []
+        async def receive(*_):
+            states.append(state.connected)
+            if len(states) == 2:
+                raise asyncio.CancelledError()
+            return CAN_FRAME.pack(0x202, 8, bytes.fromhex('0D7A000001010000'))
+        loop.sock_recv = receive
+        with patch('hardware.frogdash.adapters.socket.socket', return_value=bus),              patch.multiple('hardware.frogdash.adapters.socket', AF_CAN=29, CAN_RAW=1, SOL_CAN_RAW=101, create=True),              patch('hardware.frogdash.adapters.asyncio.get_running_loop', return_value=loop):
+            with self.assertRaises(asyncio.CancelledError):
+                await socketcan(state, 'can0')
+        self.assertEqual(states, [True, True])
+        self.assertEqual(bus.__enter__.call_count, 1)
+        self.assertEqual((loop.sock_sendall.await_count, state.gps.tx_count), (1, 0))
+
     async def test_snapshot_staleness_reconnect_and_assets(self):
         state = State()
         state.connected = True

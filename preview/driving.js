@@ -354,12 +354,12 @@
     const m = health.can_module, can = health.can || {};
     const label = 'CAN module link';
     if (!online || !m) return [label, 'Unavailable', 'unknown', 'Needs the Pi'];
-    if (!m.present) return [label, 'Not detected', 'warning', 'MCP2515 did not answer over SPI at boot: check wiring, 3.3 V, the mcp2515 overlay and the oscillator setting'];
-    const traffic = `RX ${can.rx_packets ?? '—'} · TX ${can.tx_packets ?? '—'} · IRQ ${m.interrupts ?? '—'}`;
-    const where = `${m.driver || 'driver ?'} on ${m.spi || 'SPI ?'}`;
-    if (!m.up) return [label, 'Found, interface down', 'warning', `${where} · run: sudo ip link set can0 up type can bitrate 500000`];
-    if (can.state === 'BUS-OFF') return [label, 'Talking, bus-off', 'warning', `${where} · no other node acknowledging: check CAN-H/L, termination, bitrate · ${traffic}`];
-    return [label, 'Talking to Pi', 'good', `${where} · ${can.state || 'state ?'} · ${traffic}${can.rx_packets ? '' : ' · bus quiet (fine with nothing connected)'}`];
+    if (!m.present) return [label, 'Not detected', 'warning', 'No SPI answer at boot: check wiring, overlay, oscillator'];
+    const traffic = `RX ${can.rx_packets ?? '—'} · TX ${can.tx_packets ?? '—'}`;
+    const where = m.spi || 'SPI';
+    if (!m.up) return [label, 'Found, interface down', 'warning', `${where} · bring can0 up`];
+    if (can.state === 'BUS-OFF') return [label, 'Talking, bus-off', 'warning', `${where} · no node ACKs: check CAN-H/L, termination`];
+    return [label, 'Talking to Pi', 'good', `${where} · ${can.state || 'state ?'} · ${can.rx_packets ? traffic : 'bus quiet'}`];
   }
   function renderHealth() {
     const demoMode = latest.mode === 'demo';
@@ -367,7 +367,7 @@
     const num = (v, suffix = '') => online && Number.isFinite(v) ? v.toFixed(1) + suffix : 'Unavailable';
     const flag = v => !online || v === undefined ? 'Unavailable' : v ? 'Detected' : 'Clear';
     const hz = demoMode ? 10 : latest.race?.interval ? 1 / latest.race.interval : null;
-    const entries = [['Storage free', num(health.disk?.free_bytes == null ? null : health.disk.free_bytes / 1073741824, ' GiB')], ['Pi temperature', num(health.cpu_c, ' °C')], ['Undervoltage now / boot', `${flag(health.power?.undervoltage_now)} / ${flag(health.power?.undervoltage_since_boot)}`], ['Throttling now / boot', `${flag(health.power?.throttled_now)} / ${flag(health.power?.throttled_since_boot)}`], ['USB GPS update rate', demoMode || latest.race?.fresh ? num(hz, ' Hz') : 'No fresh USB fix'], ['CAN controller', online ? health.can?.state || 'Unavailable' : 'Disconnected'], ['CAN RX / TX errors', online ? `${health.can?.rx_errors ?? '—'} / ${health.can?.tx_errors ?? '—'}` : 'Unavailable'], ['Recorder dropped samples', online ? `${latest.recording?.dropped ?? '—'}` : 'Unavailable']];
+    const entries = [['Storage free', num(health.disk?.free_bytes == null ? null : health.disk.free_bytes / 1073741824, ' GiB')], ['Pi temperature', num(health.cpu_c, ' °C')], ['Undervoltage now / boot', `${flag(health.power?.undervoltage_now)} / ${flag(health.power?.undervoltage_since_boot)}`], ['Throttling now / boot', `${flag(health.power?.throttled_now)} / ${flag(health.power?.throttled_since_boot)}`], ['USB GPS update rate', demoMode || latest.race?.fresh ? num(hz, ' Hz') : 'No fresh USB fix'], ['CAN RX / TX errors', online ? `${health.can?.rx_errors ?? '—'} / ${health.can?.tx_errors ?? '—'}` : 'Unavailable'], ['Recorder dropped samples', online ? `${latest.recording?.dropped ?? '—'}` : 'Unavailable']];
     const ups = online && health.ups?.available ? health.ups : {};
     const previous = online ? health.shutdown?.previous : null;
     const shutdownState = !online ? 'Unavailable' : !previous ? 'No record' : ({saved: 'Data synced', running: 'Unconfirmed', save_failed: 'Save failed'}[previous.state] || 'Unconfirmed');

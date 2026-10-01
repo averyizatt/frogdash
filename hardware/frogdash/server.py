@@ -2,6 +2,7 @@
 import argparse
 import asyncio
 import json
+import re
 from collections import deque
 from contextlib import suppress
 from pathlib import Path
@@ -13,7 +14,7 @@ from .gps import GPS, gpsd
 from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
 from .connectivity import Connectivity, require_local
 from .race import Race
-from .driving import Driving
+from .driving import Driving, atomic_write
 from .health import Health
 from .shutdown import ShutdownHistory
 from .trip import Trip
@@ -23,6 +24,8 @@ from .supervision import watchdog
 from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
 from .paint import Paint, validate as validate_paint
 from .imports import Imports
+
+IMAGE_DATA = re.compile(r"data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+")
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
 
@@ -347,6 +350,32 @@ def create_app(state, adapter=None, connectivity=None):
             await asyncio.to_thread(state.paint.save, value)
         return web.Response(status=204)
 
+    async def appearance_image(request):
+        # Background/splash images on disk: browser storage may not reach the SD card before key-off.
+        require_local(request)
+        field = request.match_info['field']
+        if not state.paint:
+            raise web.HTTPNotFound()
+        path = state.paint.path.with_name(f'appearance-{field}.json')
+        if request.method == 'GET':
+            try:
+                data = await asyncio.to_thread(lambda: json.loads(path.read_text(encoding='utf-8'))['data'])
+            except (OSError, ValueError, KeyError, TypeError):
+                raise web.HTTPNotFound()
+            return web.json_response({'data': data}, headers={'Cache-Control': 'no-store'})
+        if request.method == 'DELETE':
+            await asyncio.to_thread(path.unlink, missing_ok=True)
+            return web.Response(status=204)
+        raw = await request.read()
+        try:
+            data = json.loads(raw)['data']
+        except (ValueError, KeyError, TypeError):
+            raise web.HTTPBadRequest(text='Invalid image')
+        if not isinstance(data, str) or len(data) >= 1500000 or not IMAGE_DATA.fullmatch(data):
+            raise web.HTTPBadRequest(text='Invalid image')
+        await asyncio.to_thread(atomic_write, path, {'data': data})
+        return web.Response(status=204)
+
     async def operations(request):
         require_local(request)
         action = request.match_info['action']
@@ -439,6 +468,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get('/trip', trip), web.post('/trip', trip),
                     web.get('/operations/{action}', operations), web.post('/operations/{action}', operations),
                     web.post('/ui/appearance', appearance_snapshot),
+                    web.route('*', '/ui/appearance/image/{field:background|splash}', appearance_image),
                     web.get('/taillights/{name}', taillight_frames),
                     web.get('/ui/import', import_list), web.get('/ui/import/{name}', import_file),
                     web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),

@@ -43,10 +43,15 @@ async def socketcan(state, interface):
                 while True:
                     gps = state.gps
                     if gps and gps.transmit and not gps.conflict and loop.time() >= next_tx:
-                        await send_control(0x203, gps.frame())
-                        gps.tx_count += 1
-                        gps.tx_status = "broadcasting 0x203 at 2 Hz"
                         next_tx = loop.time() + .5
+                        # A full TX queue (no node ACKing) must not drop reception.
+                        try:
+                            await send_control(0x203, gps.frame())
+                        except OSError as exc:  # Includes TimeoutError and ENOBUFS.
+                            gps.tx_status = f"0x203 not sent: {exc or 'TX timeout'} (no other node ACKing?)"
+                        else:
+                            gps.tx_count += 1
+                            gps.tx_status = "broadcasting 0x203 at 2 Hz"
                     try:
                         packet = await asyncio.wait_for(loop.sock_recv(bus, CAN_FRAME.size), .1)
                     except TimeoutError:

@@ -53,6 +53,8 @@
     $('log-status').textContent = demo ? 'Preview only — no files are recorded here.' : !connected ? 'Connection lost — recording status unknown.' :
       recordingState === 'recording' ? `${recording.file} · ${recording.rows} samples · ${recording.dropped} dropped` :
       recordingState === 'error' ? `Recording paused: ${recording.error}` : recordingState === 'disabled' ? 'Recording disabled. Enable a log directory in the service configuration.' : 'Waiting for recorder';
+    // Module status lives under Sensors; flag the Sensors icon when any module is not live.
+    $('diagnostics-launch').dataset.warning = String([...$('module-strip').children].some(tag => tag.dataset.quality && tag.dataset.quality !== 'live'));
     for (const tag of $('module-strip').children) {
       const quality = connected ? (snapshot.modules[tag.dataset.module] || 'unavailable') : 'stale';
       tag.dataset.quality = quality;
