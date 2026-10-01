@@ -24,7 +24,7 @@ async def main():
         await page.select_option('#tl-set-brake_anim', '5')
         await page.wait_for_function(f"document.querySelector('{sync}').textContent.includes('Unsaved')")
         await page.locator('#tl-show-text').fill('fast')
-        await page.locator('#tl-panel-style [data-compute="text"]').click()
+        await page.locator('#tl-panel-style [data-compute="show-text"]').click()
         await page.locator('#tl-tab-colors').click()
         await page.locator('#tl-color-turn').evaluate("el => { el.value = '#00ff00'; el.dispatchEvent(new Event('change')); }")
         await page.locator('#tl-set-turn_blink_ms').fill('900')

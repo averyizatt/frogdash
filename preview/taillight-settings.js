@@ -50,7 +50,7 @@
   const textRow = document.createElement('div'); textRow.className = 'tl-pair';
   const textInput = Object.assign(document.createElement('input'), {id: 'tl-show-text', type: 'text', maxLength: 63, autocomplete: 'off', spellcheck: false});
   const textButton = Object.assign(document.createElement('button'), {type: 'button', textContent: 'APPLY TEXT'});
-  textButton.dataset.action = 'lighting.text'; textButton.dataset.compute = 'text';
+  textButton.dataset.action = 'lighting.text'; textButton.dataset.compute = 'show-text';
   textRow.append(label('Scrolling text for text shows', textInput), textButton);
   style.append(textRow);
 
