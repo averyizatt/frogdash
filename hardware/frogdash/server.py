@@ -486,6 +486,8 @@ def main():
     parser.add_argument("--gpsd", action="store_true", help="Use local gpsd USB GPS and broadcast 0x203")
     parser.add_argument("--gps-device", help="gpsd device path; otherwise lock to first receiver")
     parser.add_argument("--gps-no-transmit", action="store_true", help="Use USB GPS locally without CAN GPS transmission")
+    parser.add_argument("--no-engine-runtime", action="store_true",
+                        help="Do not publish 0x309 engine RPM for water/meth (use when the CCM dashboard firmware sends it)")
     parser.add_argument('--log-dir', type=Path, help='Enable rotating MLG recording in this dedicated directory')
     parser.add_argument('--log-hz', type=float, default=20)
     parser.add_argument('--log-minutes', type=float, default=30)
@@ -512,6 +514,8 @@ def main():
     if (args.gps_device or args.gps_no_transmit) and not args.gpsd:
         parser.error("GPS options require --gpsd")
     state = State("replay" if args.replay else "socketcan")
+    if args.no_engine_runtime:
+        state.runtime.enabled, state.runtime.status = False, 'disabled (--no-engine-runtime)'
     state.race = Race(args.race_file if not args.replay else None)
     state.driving = Driving(state, args.data_dir / 'replay' if args.replay else args.data_dir)
     state.trip = Trip(state, (args.data_dir / 'replay' if args.replay else args.data_dir) / 'trip.json')

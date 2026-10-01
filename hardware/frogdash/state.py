@@ -11,9 +11,10 @@ from .trip import Trip
 from .operations import Operations
 from .backlight import Backlight
 from .wheel import SteeringWheel
+from .runtime import EngineRuntime
 
 ALIASES = {
-    "engine.rpm": ("ecu.rpm", "tach.rpm"),
+    "engine.rpm": ("ecu.rpm", "tach.rpm", "gateway.rpm"),
     "engine.coolant_c": ("ecu.coolant_c",),
     "engine.afr": ("ecu.afr",),
     "engine.ego_correction_pct": ("ecu.ego_correction_pct",),
@@ -47,6 +48,7 @@ class State:
         self.shutdown_history = None
         self.can_errors = {'frames': 0, 'bus_off': 0, 'restarts': 0}
         self.taillight = TaillightSettings(clock)
+        self.runtime = EngineRuntime(self, enabled=mode == 'socketcan')
         self.controls = Controls(self)
 
     def ingest(self, can_id, data, extended=False, remote=False, error=False):
@@ -149,13 +151,16 @@ class State:
             values['race.' + key] = {'value': value, 'quality': 'live' if key == 'phase' else race_quality if value is not None else 'unavailable',
                                     'source_id': None, 'source': 'GPS timer', 'timestamp_ms': int(self.wall() * 1000)}
         modules = {}
-        for name, source in (("taillights", 0x100), ("comfort", 0x200), ("watermeth", 0x300), ("knock", 0x307)):
-            matching = [v for v in values.values() if v["source_id"] == source]
+        # The comfort module is live from its dashboard heartbeat or its sensor-gateway frames.
+        for name, sources in (("taillights", (0x100,)), ("comfort", (0x200, 0x500, 0x501, 0x503)),
+                              ("watermeth", (0x300,)), ("knock", (0x307,))):
+            matching = [v for v in values.values() if v["source_id"] in sources]
             modules[name] = "live" if any(v["quality"] == "live" for v in matching) else "stale" if matching else "unavailable"
         return {"type": "state", "seq": self.seq, "timestamp_ms": int(self.wall() * 1000),
                 "mode": self.mode, "values": values, "modules": modules,
                 "transport": {"connected": self.connected, "status": self.status,
                               "received": self.received, "malformed": self.malformed, "ignored": self.ignored},
+                "runtime": self.runtime.snapshot(),
                 "gps": {"status": self.gps.status, "tx_status": self.gps.tx_status,
                         "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
                 "controls": self.controls.status(), "taillight": self.taillight.snapshot(), "events": list(self.events), "race": race,

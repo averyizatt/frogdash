@@ -41,9 +41,9 @@ async def socketcan(state, interface):
                 # publisher. RAW_RECV_OWN_MSGS stays disabled on this socket.
                 next_tx = loop.time() + 2
                 while True:
-                    gps = state.gps
-                    if gps and gps.transmit and not gps.conflict and loop.time() >= next_tx:
-                        next_tx = loop.time() + .5
+                    gps, now = state.gps, loop.time()
+                    if gps and gps.transmit and not gps.conflict and now >= next_tx:
+                        next_tx = now + .5
                         # A full TX queue (no node ACKing) must not drop reception.
                         try:
                             await send_control(0x203, gps.frame())
@@ -52,6 +52,14 @@ async def socketcan(state, interface):
                         else:
                             gps.tx_count += 1
                             gps.tx_status = "broadcasting 0x203 at 2 Hz"
+                    runtime = state.runtime
+                    if runtime and runtime.due(now):
+                        try:
+                            await send_control(0x309, runtime.frame())
+                        except OSError as exc:
+                            runtime.sent(False, exc)
+                        else:
+                            runtime.sent(True)
                     try:
                         packet = await asyncio.wait_for(loop.sock_recv(bus, CAN_FRAME.size), .1)
                     except TimeoutError:
@@ -61,6 +69,8 @@ async def socketcan(state, interface):
                         if gps and gps.transmit and frame[0] == 0x203 and not any(frame[2:]):
                             gps.conflict = True
                             gps.tx_status = "BLOCKED: another 0x203 sender; disable CCM GPS TX and restart Frogdash"
+                        if state.runtime:
+                            state.runtime.observe(frame[0])
                         state.ingest(*frame)
                     except ValueError:
                         state.malformed += 1
@@ -70,6 +80,8 @@ async def socketcan(state, interface):
             await asyncio.sleep(1)
         finally:
             state.connected = False
+            if state.runtime:
+                state.runtime.reset()
             state.controls.detach()
             if state.gps and state.gps.transmit and not state.gps.conflict:
                 state.gps.tx_status = "CAN disconnected"

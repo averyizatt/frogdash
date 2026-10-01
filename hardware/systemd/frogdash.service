@@ -1,8 +1,8 @@
 [Unit]
 Description=Frogdash CAN and GPS state service
 # HTTP and GPS use loopback; do not serialize startup behind NetworkManager.
-After=gpsd.socket
-Wants=gpsd.socket
+After=gpsd.socket frogdash-can.service
+Wants=gpsd.socket frogdash-can.service
 
 [Service]
 Type=notify

@@ -68,6 +68,7 @@
     }
     $('source-health').textContent = Object.entries(snapshot.modules).map(([k, v]) => `${k.toUpperCase()} ${connected ? v : 'stale'}`).join(' · ');
     if (snapshot.gps) $('connection').textContent += ` · ${snapshot.gps.status} · GPS TX: ${snapshot.gps.tx_status}`;
+    if (snapshot.runtime) $('connection').textContent += ` · Engine RPM 0x309: ${snapshot.runtime.status}`;
     const rpm = display('rpm-value', 'engine.rpm');
     $('rpm-bar-fill').setAttribute('stroke-dasharray', `${rpm === null ? 0 : clamp(rpm / 7000 * 100, 0, 100)} 100`);
     document.querySelector('.tach').dataset.tone = rpm !== null && rpm >= 6000 ? 'danger' : 'normal';

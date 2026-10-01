@@ -14,7 +14,10 @@ and the [MCP2515 setup](mcp2515.md) provide the Pi transport. IDs below are hex.
 | Publisher | IDs | Purpose |
 | --- | --- | --- |
 | Taillights | 100, 102 | Left/right state and inputs, brightness, thermal status, fault events |
-| CCM | 200, 202, 309 | Heartbeat, tach status, RPM/MAP runtime for the Nano |
+| CCM dashboard firmware | 200, 202, 309 | Heartbeat, tach status, RPM runtime for the Nano |
+| CCM sensor-gateway firmware | 202, 500, 501, 503 | Tach status, speed/RPM/fuel, cruise buttons, interior light state |
+| Dash (Pi), when no other sender | 309 | RPM runtime for the Nano, from MicroSquirt, tach or gateway RPM |
+| Dash (Pi) | 502 | Interior light commands to the sensor gateway |
 | CCM or Pi, one owner | 203 | GPS speed, altitude, satellites and validity |
 | External fuel controller | 204 | Fuel percentage and validity, new additive contract |
 | CCM wheel input task | 205 | Five debounced button levels and report sequence, new additive contract |
@@ -31,7 +34,11 @@ When moving GPS to the Pi, apply `comfort-disable-gps-tx.patch` and set
 `CCM_CAN_GPS_TX_ENABLED=0`. When moving meth/knock control to the Pi, apply
 `comfort-disable-meth-control.patch` and set `CCM_CAN_METH_CONTROL_ENABLED=0`.
 Both patches are in `hardware/compat/`; rebuild and flash the CCM afterward.
-Keep CCM runtime transmission enabled: the Nano consumes 309. The GPS patch
+The Nano consumes 309 to arm knock detection above its minimum RPM. With the CCM
+dashboard firmware, keep its runtime transmission enabled and start the dash with
+`--no-engine-runtime`. With the sensor-gateway firmware (which sends no 309), the
+dash publishes it every 50 ms after listening 2 s for another sender; if one
+appears it stops for that run and Sensors → Connection details shows BLOCKED. The GPS patch
 only disables CCM transmission; it does not add an external-GPS display to CCM.
 Frogdash's duplicate-GPS-owner detection blocks its GPS TX until the conflict
 is resolved and the service restarted. See [controls](controls.md) for command
