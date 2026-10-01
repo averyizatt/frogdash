@@ -14,7 +14,7 @@
   dialog.id = 'taillight-dialog'; dialog.className = 'workspace-dialog taillight-dialog';
   dialog.setAttribute('aria-labelledby', 'taillight-title');
   dialog.innerHTML = `<header class="dialog-header"><div><span class="eyebrow">CUSTOM TAILLIGHTS</span><h2 id="taillight-title">Taillights</h2><p id="tl-status">Waiting for the taillight controller</p></div>
-    <nav class="appearance-tabs" role="tablist" aria-label="Taillight sections">${[['modes', 'Mode'], ['shows', 'Shows'], ['tests', 'Test & effects']].map(([key, label], i) =>
+    <nav class="appearance-tabs" role="tablist" aria-label="Taillight sections">${[['modes', 'Mode'], ['shows', 'Shows'], ['tests', 'Test & effects'], ['style', 'Style'], ['colors', 'Colors & timing'], ['profiles', 'Profiles']].map(([key, label], i) =>
       `<button id="tl-tab-${key}" data-tl-tab="${key}" type="button" role="tab" aria-selected="${!i}" aria-controls="tl-panel-${key}"${i ? ' tabindex="-1"' : ''}>${label}</button>`).join('')}</nav>
     <button type="button" class="tl-normal" data-action="lighting.clear">Normal lights</button>
     <button id="tl-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
@@ -41,6 +41,9 @@
         <h3>One-shot effects</h3><div class="control-row"><button type="button" data-action="lighting.custom" data-value="1">BRAKE CHECK</button><button type="button" data-action="lighting.custom" data-value="2">AMBER FLASH</button></div>
         <div class="tl-pair"><label for="tl-text">Scroll 2 characters<input id="tl-text" type="text" maxlength="2" value="V8" autocomplete="off"></label><button type="button" data-action="lighting.custom" data-compute="text">SCROLL</button></div>
       </section>
+      <section id="tl-panel-style" role="tabpanel" aria-labelledby="tl-tab-style" class="tl-panel tl-settings" hidden></section>
+      <section id="tl-panel-colors" role="tabpanel" aria-labelledby="tl-tab-colors" class="tl-panel tl-settings" hidden></section>
+      <section id="tl-panel-profiles" role="tabpanel" aria-labelledby="tl-tab-profiles" class="tl-panel tl-settings" hidden></section>
     </div>
   </div>`;
   document.body.append(dialog);

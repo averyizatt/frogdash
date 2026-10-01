@@ -26,6 +26,16 @@
   const TL_STATES = ['OFF', 'RUNNING', 'BRAKE', 'TURN', 'REVERSE', 'BRAKE_TURN', 'HAZARD'];
   const TL_PARKED = ['lighting.show', 'lighting.demo', 'lighting.override', 'lighting.custom'];
   let tl = {show: null, override: null, customUntil: 0}, tlResult = null;
+  // Simulated taillight settings (can_protocol.h extension 3), with a saved copy for revert.
+  const TL_KEYS = {1: 'brightness', 2: 'brightness_dim', 3: 'turn_blink_ms', 4: 'turn_custom', 5: 'turn_sweep_ms', 6: 'turn_hold_ms',
+    7: 'turn_off_ms', 8: 'brake_speed', 9: 'reverse_speed', 10: 'run_speed', 11: 'frame_ms', 12: 'brake_anim', 13: 'turn_anim',
+    14: 'reverse_anim', 15: 'run_anim', 16: 'lens_preset', 17: 'startup_anim', 18: 'rest_mode', 19: 'show_speed', 20: 'show_anim', 21: 'show_mode'};
+  const TL_DEFAULTS = {settings: {brightness: 255, brightness_dim: 15, turn_blink_ms: 700, turn_custom: 0, turn_sweep_ms: 350, turn_hold_ms: 200,
+    turn_off_ms: 300, brake_speed: 100, reverse_speed: 100, run_speed: 100, frame_ms: 20, brake_anim: 0, turn_anim: 0, reverse_anim: 0,
+    run_anim: 0, lens_preset: 1, startup_anim: 1, rest_mode: 0, show_speed: 100, show_anim: 0, show_mode: 0},
+    colors: {brake: '#ff0000', turn: '#ff7a00', reverse: '#ffffff', running: '#ff0000'}, text: 'FOX BODY'};
+  const tlCopy = value => JSON.parse(JSON.stringify(value));
+  let tlSaved = tlCopy(TL_DEFAULTS), tlLive = tlCopy(TL_DEFAULTS), tlProfiles = [tlCopy(TL_DEFAULTS), null, null, null, null, null], tlRevision = 1, tlAck = null;
   // Keyframes model acceleration, brief gear changes, cruise, braking and idle.
   const cycle = [
     [0,0,900,-60], [2,5,1600,-30], [6,42,5200,70], [6.4,46,3300,0],
@@ -145,6 +155,9 @@
       this.emit({type: 'state', mode: 'demo', values, events: [],
         modules: Object.fromEntries(['taillights', 'comfort', 'watermeth', 'knock'].map(name => [name, scenario === 'offline' ? 'stale' : 'live'])),
         transport: {connected: scenario !== 'offline', status: 'Design preview — simulated data', received: tick, malformed: 0},
+        taillight: {supported: scenario !== 'offline', complete: true, revision: tlRevision, unsaved: JSON.stringify(tlLive) !== JSON.stringify(tlSaved),
+          show: false, demo: false, custom: false, override: false, show_anim: tlLive.settings.show_anim, phase_ms: 0,
+          profiles: tlProfiles.map(Boolean), settings: tlLive.settings, colors: tlLive.colors, text: tlLive.text, last_ack: tlAck},
         controls: {reasons, test_active: test, lighting_active: tl.show !== null || !!tl.override, ...(tlResult ? {last_result: tlResult} : {})}});
     }
     send(data) {
@@ -184,6 +197,21 @@
             readings[`interior.${key}.color`] = '#' + rgb.toString(16).padStart(6, '0'); readings[`interior.${key}.brightness`] = level;
           }
           detail = level ? 'Simulated interior lights on.' : 'Simulated interior lights off.'; break;
+        }
+        case 'lighting.setting': tlLive.settings[TL_KEYS[Math.floor(value / 65536)]] = value % 65536; tlRevision++; detail = 'Simulated taillight setting applied.'; break;
+        case 'lighting.color': tlLive.colors[['brake', 'turn', 'reverse', 'running'][Math.floor(value / 2 ** 24)]] = '#' + (value % 2 ** 24).toString(16).padStart(6, '0'); tlRevision++; detail = 'Simulated taillight color applied.'; break;
+        case 'lighting.text': tlLive.text = String(value); tlRevision++; detail = 'Simulated show text applied.'; break;
+        case 'lighting.action': {
+          const kind = Math.floor(value / 256), slot = value % 256;
+          let status = 0;
+          if (kind === 0) tlSaved = tlCopy(tlLive);
+          else if (kind === 1) tlLive = tlCopy(tlSaved);
+          else if (kind === 2) tlLive = tlCopy(TL_DEFAULTS);
+          else if (kind === 4) { if (tlProfiles[slot]) tlLive = tlCopy(tlProfiles[slot]); else status = 5; }
+          else if (kind === 5) tlProfiles[slot] = tlCopy(tlLive);
+          else if (kind === 6) tlProfiles[slot] = null;
+          tlAck = {command: 9, status, subject: kind, value: slot, revision: ++tlRevision};
+          detail = status ? 'That profile slot is empty.' : 'Simulated taillight action done.'; break;
         }
         default: this.emit({type: 'command_result', request_id, status: 'rejected', message: 'This command is not supported in the preview.'}); return;
       }

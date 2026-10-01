@@ -335,7 +335,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "boot.js", "taillights.js", "taillights.css"}:
+        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js"}:
             raise web.HTTPNotFound()
         if name == 'index.html' and state.paint and state.paint.value:
             page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')

@@ -28,6 +28,27 @@ running. So:
   was started from the taillight's Wi-Fi page (reported as SHOW). Missing speed
   data counts as moving. Stock/Sequential and brightness are never blocked.
 
+## Settings over CAN
+
+Needs the CustomTaillights PCB firmware with the CAN settings extension
+(`can_protocol.h` extension 3: subcommands 0x06-0x09 on 0x101, reports on 0x103).
+Three tabs in the taillight studio:
+
+- **Style:** brake, turn, reverse and running animations; taillight style (lens
+  preset); simple or custom turn timing; startup animation; rest mode; and the
+  scrolling text used by text shows.
+- **Colors & timing:** brake, turn, reverse and running colors; saved brightness;
+  running light level; blink, sweep, hold and off times; animation and show
+  speeds; frame time.
+- **Profiles:** save to the taillights, undo unsaved changes, factory defaults
+  (press twice), and six profile slots to load, save or delete (delete needs a
+  second press).
+
+Every field shows the value the controller reports, refreshed whenever its
+settings revision changes, so it always reflects what the lamps will do. Changes
+apply immediately; **Save** writes them to the controller's flash, otherwise they are
+lost at power off. Older firmware without the extension leaves these tabs disabled.
+
 ## Live mirror
 
 The left of the screen draws both lamps LED by LED: the clear 21×5 top strip in

@@ -40,3 +40,19 @@
 /* Controls > Lighting: output, turn pattern and taillight studio side by side. */
 #panel-lighting .settings-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
 @media (max-aspect-ratio:11/5) and (max-width:1200px) { #panel-lighting .settings-grid { grid-template-columns:1fr; } }
+/* Settings tabs (Style, Colors & timing, Profiles). */
+.tl-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 14px; }
+.tl-field { display:flex; flex-direction:column; gap:5px; font-size:13px; color:var(--muted); min-width:0; }
+.tl-field :is(select,input) { min-height:42px; font-size:15px; color:var(--text); background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:6px 10px; min-width:0; }
+.tl-field input[type=color] { padding:3px; height:42px; }
+.tl-field :is(select,input):disabled { opacity:.45; }
+.tl-colors { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.tl-sync[data-state="unsaved"] { color:var(--warn,#ffb84d); }
+.tl-sync[data-state="off"] { color:var(--muted); }
+.tl-profiles { display:flex; flex-direction:column; gap:8px; }
+.tl-profile { display:grid; grid-template-columns:110px 70px repeat(3,minmax(0,1fr)); align-items:center; gap:8px; }
+.tl-profile[data-used="false"] [data-compute="load"], .tl-profile[data-used="false"] [data-compute="remove"] { opacity:.45; }
+.tl-profile span { font-size:13px; color:var(--muted); }
+@media (max-aspect-ratio:11/5) and (max-width:900px) { .tl-grid, .tl-colors { grid-template-columns:1fr; } .tl-profile { grid-template-columns:1fr 1fr; } }
+/* The parked-only notice is about shows and tests, not settings. */
+.tl-controls:has(.tl-settings:not([hidden])) #tl-gate { display:none; }
