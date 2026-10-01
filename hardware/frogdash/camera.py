@@ -31,7 +31,10 @@ def open_picamera2(camera):
             camera.publish_threadsafe(bytes(data))
             return len(data)
 
-    picam = Picamera2()
+    try:
+        picam = Picamera2()
+    except IndexError:  # picamera2 indexes an empty camera list when none is detected.
+        raise RuntimeError('No CSI camera detected: check the ribbon cable and run rpicam-hello --list-cameras') from None
     try:
         flip = camera.rotate == 180
         config = picam.create_video_configuration(
