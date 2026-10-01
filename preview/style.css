@@ -511,6 +511,12 @@ html.cursor-hidden, html.cursor-hidden * { cursor:none !important; }
 .dashboard-nav button:last-child .nav-label { left:auto; right:0; transform:none; }
 .dashboard-nav button:is(:hover,:focus-visible,.wheel-focus) .nav-label { display:block; }
 .dashboard-nav button[data-warning="true"]::after { content:""; position:absolute; top:8px; right:8px; width:10px; height:10px; border-radius:50%; background:#ffb84d; box-shadow:0 0 0 2px var(--bg,#0b1014); }
+/* Menus stop above the dash hump that covers the bottom-centre of the screen:
+   the same layout, scaled to 608px tall (full width kept) and raised clear of it. */
+:root { --hump-fit:.894; }
+@media not all and (max-aspect-ratio: 11/5) {
+  .workspace-dialog:not(.splash-dialog,.camera-dialog) { width:calc(1864px / var(--hump-fit)); transform:translate(-50%,calc(-50% - 36px * var(--panel-scale,1))) scale(calc(var(--panel-scale,1) * var(--hump-fit))); }
+}
 
 /* Preview-only playback controls. */
 .demo-playback { display:flex; gap:6px; }

@@ -388,7 +388,7 @@
     }));
     const shutdownNotes = [];
     if (previous?.state === 'saved') {
-      shutdownNotes.push('Previous ' + (health.shutdown?.scope === 'service' ? 'service run' : 'boot') + ': Frogdash saved and synced its data before exiting.');
+      shutdownNotes.push('Previous ' + (health.shutdown?.scope === 'service' ? 'service run' : 'boot') + ': the dash saved and synced its data before exiting.');
       if (previous.recording_enabled === false) shutdownNotes.push('MLG recording was disabled.');
       if (previous.recording_enabled && previous.log_rows === 0) shutdownNotes.push('No MLG rows were recorded.');
       if (previous.dropped_samples) shutdownNotes.push(`${previous.dropped_samples} recording samples were dropped during that run.`);

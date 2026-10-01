@@ -42,7 +42,7 @@ class Imports:
             try:
                 if name in taken or not path.is_file() or path.stat().st_size > MAX_BYTES:
                     continue
-                files.append({'name': name, 'type': mime(name), 'size': path.stat().st_size, 'source': 'Frogdash art', **info})
+                files.append({'name': name, 'type': mime(name), 'size': path.stat().st_size, 'source': 'Bundled art', **info})
             except OSError:
                 continue
         return files

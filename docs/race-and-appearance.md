@@ -132,18 +132,22 @@ Profiles saved before the color studio adopt their look's updated colors once.
 Warning/fault colors remain unchanged. Background images are dimmed behind
 the adjustable instrument surfaces, and splash images use contain rather than cropping.
 
-**Bundled artwork.** `hardware/art/` ships original backgrounds (Fox-body stripes,
-night highway, carbon and red, blueprint coupe, tach glow) and splash images
-(Made by Avery Izatt, 5.0, Fox body, Built not bought, Frogdash). They update with
-`git pull` and appear in the file picker (select a background or splash image
-control and press OK) as **Frogdash art**, listed before your own imports. The
-published preview offers the same images. To change or add designs, edit
+**Bundled artwork.** `hardware/art/` ships generated backgrounds (Fox-body stripes,
+night highway, carbon and red, blueprint coupe, tach glow), darkened photo
+backgrounds of real Fox-body Mustangs (red GT, black GT convertible, pace car,
+fastback, blue GT) and splash images (Made by Avery Izatt, Ford oval, 5.0, Fox body
+pace car, Built not bought). They update with `git pull` and appear first in the file
+picker as **Bundled art**; selecting an image control with the wheel, mouse or touch
+opens that picker. Chosen images are also saved on the Pi, so they survive key-off.
+The published preview offers the same images. To change or add designs, edit
 `tools/make_art.py` and run it, then `python tools/update_preview.py`.
 
-The bundled art contains no manufacturer logos. To use a logo you have (for
-example a manufacturer badge), copy it to `/var/lib/frogdash/import/` on the Pi; it
-stays on your car and is not added to the repository. A file there with the same
-name as a bundled image replaces it in the picker.
+The photos come from Wikimedia Commons under Creative Commons licenses; the source
+files and required credits are in `tools/art-src/` (`CREDITS.md`), and each photo
+splash carries a small credit line. The Ford oval is a trademark of Ford Motor Company,
+included only for display on the owner's car; this project is not affiliated with Ford.
+To use other images, copy them to `/var/lib/frogdash/import/` on the Pi. A file there
+with the same name as a bundled image replaces it in the picker.
 
 **Startup appearance.** The dashboard sends a small snapshot of the current look
 (colors, layout, shape and splash on/off; never uploaded images) to the Pi, which

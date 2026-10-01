@@ -52,7 +52,7 @@ class ImportTests(unittest.IsolatedAsyncioTestCase):
         (art / 'index.json').write_text('[{"name": "logo.jpg", "kind": "splash", "title": "Logo"}, {"name": "art.png", "kind": "background", "title": "Art"}, {"name": "../x.jpg"}]', encoding='utf-8')
         imports = Imports(self.folder, art)
         files = imports.listing()['files']
-        self.assertEqual([(f['name'], f['source']) for f in files], [('art.png', 'Your imports'), ('Backup 2026.json', 'Your imports'), ('logo.jpg', 'Frogdash art')])
+        self.assertEqual([(f['name'], f['source']) for f in files], [('art.png', 'Your imports'), ('Backup 2026.json', 'Your imports'), ('logo.jpg', 'Bundled art')])
         self.assertEqual(files[2]['title'], 'Logo')
         self.assertEqual(imports.path('art.png').read_bytes(), (self.folder / 'art.png').read_bytes())  # Your file shadows the bundled one.
         self.assertEqual(imports.path('logo.jpg').read_bytes(), b'bundled')

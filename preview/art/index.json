@@ -25,28 +25,53 @@
   "title": "Tach glow"
  },
  {
+  "name": "bg-photo-gt-red.jpg",
+  "kind": "background",
+  "title": "Red GT (photo)"
+ },
+ {
+  "name": "bg-photo-convertible.jpg",
+  "kind": "background",
+  "title": "Black GT convertible (photo)"
+ },
+ {
+  "name": "bg-photo-pace-car.jpg",
+  "kind": "background",
+  "title": "Pace car (photo)"
+ },
+ {
+  "name": "bg-photo-fastback.jpg",
+  "kind": "background",
+  "title": "Fastback (photo)"
+ },
+ {
+  "name": "bg-photo-gt-blue.jpg",
+  "kind": "background",
+  "title": "Blue GT (photo)"
+ },
+ {
   "name": "splash-made-by-avery-izatt.jpg",
   "kind": "splash",
   "title": "Made by Avery Izatt"
  },
  {
+  "name": "splash-ford-oval.jpg",
+  "kind": "splash",
+  "title": "Ford oval"
+ },
+ {
   "name": "splash-five-point-oh.jpg",
   "kind": "splash",
-  "title": "5.0 retro"
+  "title": "5.0"
  },
  {
   "name": "splash-fox-body.jpg",
   "kind": "splash",
-  "title": "Fox body"
+  "title": "Fox body pace car"
  },
  {
   "name": "splash-built-not-bought.jpg",
   "kind": "splash",
   "title": "Built not bought"
- },
- {
-  "name": "splash-frogdash.jpg",
-  "kind": "splash",
-  "title": "Frogdash"
  }
 ]

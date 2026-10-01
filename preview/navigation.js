@@ -179,8 +179,8 @@
         // The published preview ships the same bundled art; opened from disk it cannot be fetched.
         try {
           const manifest = await (await fetch('art/index.json', {cache: 'no-store'})).json();
-          files = manifest.map(item => ({...item, type: 'image/jpeg', size: 0, source: 'Frogdash art', url: `art/${encodeURIComponent(item.name)}`}));
-          folder = 'Frogdash art';
+          files = manifest.map(item => ({...item, type: 'image/jpeg', size: 0, source: 'Bundled art', url: `art/${encodeURIComponent(item.name)}`}));
+          folder = 'Bundled art';
         } catch { files = await sampleImages(); folder = 'the preview (generated samples)'; }
       }
       else {

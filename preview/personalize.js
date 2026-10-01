@@ -4,7 +4,7 @@
   const $ = id => document.getElementById(id);
   // A look sets structure (gauges, typeface, panel shape/edges, glow) as well as color.
   const looks = {
-    original: {name: 'Frogdash', note: 'Electric mint · cyan duotone · soft panels', accent: '#1cf29a', accent2: '#00c3ff', finish: 'midnight', surface: '#111a20', raised: '#18232b', line: '#2b3943'},
+    original: {name: 'Fox Mint', note: 'Electric mint · cyan duotone · soft panels', accent: '#1cf29a', accent2: '#00c3ff', finish: 'midnight', surface: '#111a20', raised: '#18232b', line: '#2b3943'},
     glacier: {name: 'Glacier', note: 'Arctic blue · rounded glass · soft glow', accent: '#29b6ff', accent2: '#8ae6ff', finish: 'horizon', surface: '#111c29', raised: '#1b2c3c', line: '#34485c', shape: 'round', edge: 'glow', glow: 25, transparency: 15},
     heritage: {name: 'Heritage', note: 'Amber analog dials · serif numerals', accent: '#ffa000', accent2: '#ff6a00', needle: '#ff5a1f', numeral: '#fff1d6', gauges: 'analog', font: 'serif', finish: 'graphite', surface: '#211c17', raised: '#2c251e', line: '#4b4035', shape: 'round'},
     afterhours: {name: 'After hours', note: 'Ultraviolet · magenta glow · dusk', accent: '#a24dff', accent2: '#ff2fd0', finish: 'dusk', surface: '#1b1726', raised: '#292137', line: '#443853', shape: 'round', edge: 'glow', glow: 55},
@@ -37,7 +37,7 @@
   const colorFields = ['accent', 'accent2', 'numeral', 'needle'];
   const styleOf = look => ({accent: look.accent, accent2: look.accent2 || look.accent, numeral: look.numeral || '#f4f7f6', needle: look.needle || '#f5f0df', finish: look.finish, transparency: look.transparency || 0, gauges: look.gauges || 'standard', font: look.font || 'sans', shape: look.shape || 'soft', edge: look.edge || 'hairline', glow: look.glow || 0});
   const collectionOf = look => look.collection || (look.style ? 'performance' : 'signature');
-  const defaults = {look: 'original', ...styleOf(looks.original), background: '', splash: 'off', splashImage: '', title: 'FROGDASH', duration: 2};
+  const defaults = {look: 'original', ...styleOf(looks.original), background: '', splash: 'off', splashImage: '', title: 'FOX BODY', duration: 2};
   const key = 'frogdash.appearance.v1';
   const isHex = value => /^#[0-9a-f]{6}$/i.test(value);
   const validImage = value => typeof value === 'string' && value.length < 1500000 && /^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(value);
@@ -215,7 +215,7 @@
     if (hasImage) $('splash-image').src = prefs.splashImage;
     else $('splash-image').removeAttribute('src');
     document.querySelector('.splash-wordmark').hidden = hasImage;
-    $('splash-title').textContent = prefs.title || 'FROGDASH';
+    $('splash-title').textContent = prefs.title || 'FOX BODY';
     $('splash-dialog').showModal();
     clearTimeout(splashTimer);
     splashTimer = setTimeout(hideSplash, prefs.duration * 1000);
