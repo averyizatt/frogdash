@@ -80,16 +80,20 @@ def live(host):
             return
         time.sleep(.5)
     # The app keeps a notification connection on port 5000 open while watching.
-    notify = socket.create_connection((host, 5000), timeout=4)
+    try:
+        notify = socket.create_connection((host, 5000), timeout=4)
+    except OSError as exc:
+        print(f'port 5000 refused ({exc}); trying video anyway')
+        notify = socket.socket()
     notify.settimeout(2)
     try:
         time.sleep(1.5)
         try:
             print('port 5000 says:', notify.recv(512).decode('utf-8', 'replace').strip()[:200])
-        except socket.timeout:
+        except OSError:
             print('port 5000: connected (no message yet)')
-        for url in (f'rtsp://{host}:554/', f'rtsp://{host}/live', f'rtsp://{host}:554/live/tcp/ch1', f'rtsp://{host}:554/stream0'):
-            _, replies = rtsp_handshake(host, 554, url.split(':554', 1)[-1] if ':554' in url else url.split(host, 1)[1])
+        for path in ('/', '/live', '/live/tcp/ch1', '/stream0', '/front'):
+            url, replies = rtsp_handshake(host, 554, path)
             print(f'\n{url}')
             for method, text in replies.items():
                 print(f'  {method}: ' + text.strip().replace('\r\n', ' | ')[:300])
