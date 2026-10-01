@@ -3,6 +3,8 @@ Description=Frogdash CAN and GPS state service
 # HTTP and GPS use loopback; do not serialize startup behind NetworkManager.
 After=gpsd.socket frogdash-can.service
 Wants=gpsd.socket frogdash-can.service
+# Never stop retrying: a brief crash loop (cold boot, SD hiccup) must not leave the dash dead.
+StartLimitIntervalSec=0
 
 [Service]
 Type=notify

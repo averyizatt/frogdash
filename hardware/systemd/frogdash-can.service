@@ -16,4 +16,5 @@ ProtectSystem=strict
 ProtectHome=yes
 
 [Install]
-WantedBy=multi-user.target
+# Also start whenever can0 (re)appears, e.g. after an MCP2515 driver reset.
+WantedBy=multi-user.target sys-subsystem-net-devices-can0.device
