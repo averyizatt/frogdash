@@ -1,97 +1,110 @@
-"""Probe a Wi-Fi dash cam (Viidure-app cameras such as Wanlipo) for live video and GPS.
+"""Gently probe a Viidure-app Wi-Fi dash cam (Wanlipo, eeasytech/HUAXIN) for live video.
 
-Connect the Pi (or a laptop) to the dash cam's Wi-Fi first, then run:
+Connect to the dash cam's Wi-Fi first (camera at 192.168.169.1), close the phone app,
+then run:
 
-    python3 tools/dashcam_probe.py                 # read-only probe
-    python3 tools/dashcam_probe.py --live          # also ask the camera to start live view
+    python3 tools/dashcam_probe.py
 
-It only sends HTTP GET requests (nothing is changed except, with --live, the camera's
-live-view mode, the same thing the phone app does when you open it) and tests RTSP
-URLs with ffprobe when installed (sudo apt install ffmpeg). The report is printed and
-saved to dashcam-probe.json; send that file back for the dashboard integration.
+The camera's small web server is fragile: bursts of unknown requests can stop it
+answering until the camera is power-cycled. This probe therefore sends only the
+requests the Viidure app itself makes, one at a time with pauses and the app's
+headers, then one RTSP handshake on the reported port and a short ffprobe. Nothing
+on the camera is changed. The report is printed and saved to dashcam-probe.json.
 """
 import argparse
 import json
 import shutil
 import socket
 import subprocess
+import time
 import urllib.error
 import urllib.request
 
-HOSTS = ['192.168.169.1', '192.168.1.254', '192.168.0.1', '192.72.1.1', '192.168.42.1']
-INFO = ['/app/getproductinfo', '/app/getdeviceattr', '/app/getmediainfo', '/app/getsdinfo',
-        '/app/getrecduration', '/app/getparamitems?param=all', '/app/getparamvalue?param=all',
-        '/app/capability']
-GPS = ['/app/getgpsinfo', '/app/getgps', '/app/gpsinfo', '/app/getlocation', '/app/getgpsdata',
-       '/app/getparamvalue?param=gps', '/app/getspeed']
-LIVE = ['/app/enterrecorder', '/app/startlive', '/app/setparamvalue?param=switchcam&value=0']
-NOVATEK = ['/?custom=1&cmd=3016', '/?custom=1&cmd=3012', '/?custom=1&cmd=3014']
-RTSP_PATHS = ['', '/', '/live', '/live/tcp/ch1', '/liveRTSP/av1', '/xxx.mov', '/live/ch0', '/stream0', '/1', '/front', '/rear']
-PORTS = [80, 554, 5000, 6035, 8080, 8192, 8554]
+HEADERS = {'Connection': 'close', 'Accept-Encoding': '',
+           'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 13; M2103K19G Build/TP1A.220624.014)'}
+PAUSE = 1.5
 
 
-def get(url, timeout=3):
+def get(host, path, timeout=4):
     try:
-        with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'Viidure'}), timeout=timeout) as response:
-            body = response.read(4096)
-            return {'status': response.status, 'type': response.headers.get('Content-Type'), 'body': body.decode('utf-8', 'replace')}
+        request = urllib.request.Request(f'http://{host}{path}', headers={**HEADERS, 'Host': host})
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return {'status': response.status, 'body': response.read(4096).decode('utf-8', 'replace')}
     except urllib.error.HTTPError as exc:
         return {'status': exc.code}
     except (OSError, ValueError) as exc:
         return {'error': f'{type(exc).__name__}: {exc}'[:120]}
 
 
-def port_open(host, port):
+def rtsp_handshake(host, port, path=''):
+    """One OPTIONS and DESCRIBE exchange; shows whether the port really speaks RTSP."""
+    url = f'rtsp://{host}:{port}{path}'
+    replies = {}
     try:
-        with socket.create_connection((host, port), timeout=1.5):
-            return True
-    except OSError:
-        return False
+        with socket.create_connection((host, port), timeout=4) as conn:
+            conn.settimeout(4)
+            for seq, method in enumerate(('OPTIONS', 'DESCRIBE'), 1):
+                extra = 'Accept: application/sdp\r\n' if method == 'DESCRIBE' else ''
+                conn.sendall(f'{method} {url} RTSP/1.0\r\nCSeq: {seq}\r\nUser-Agent: Viidure\r\n{extra}\r\n'.encode())
+                time.sleep(.5)
+                try:
+                    replies[method] = conn.recv(2048).decode('utf-8', 'replace')
+                except socket.timeout:
+                    replies[method] = '(no reply)'
+    except OSError as exc:
+        replies['error'] = f'{type(exc).__name__}: {exc}'
+    return url, replies
 
 
-def rtsp(url):
+def ffprobe(url):
     if not shutil.which('ffprobe'):
-        return {'skipped': 'ffprobe not installed (sudo apt install ffmpeg)'}
-    result = {}
-    for transport in ('tcp', 'udp'):
-        try:
-            out = subprocess.run(['ffprobe', '-v', 'error', '-rtsp_transport', transport, '-timeout', '4000000',
-                                  '-show_entries', 'stream=codec_name,width,height,avg_frame_rate', '-of', 'json', url],
-                                 capture_output=True, text=True, timeout=12)
-            streams = json.loads(out.stdout or '{}').get('streams') if out.returncode == 0 else None
-            result[transport] = streams or (out.stderr.strip().splitlines() or ['failed'])[-1][:160]
-            if streams:
-                break
-        except (subprocess.TimeoutExpired, ValueError) as exc:
-            result[transport] = f'{type(exc).__name__}'
-    return result
+        return 'ffprobe not installed (sudo apt install ffmpeg)'
+    try:
+        out = subprocess.run(['ffprobe', '-v', 'error', '-rtsp_transport', 'tcp', '-timeout', '5000000',
+                              '-show_entries', 'stream=codec_name,width,height,avg_frame_rate', '-of', 'json', url],
+                             capture_output=True, text=True, timeout=15)
+        streams = json.loads(out.stdout or '{}').get('streams') if out.returncode == 0 else None
+        return streams or (out.stderr.strip().splitlines() or ['failed'])[-1][:200]
+    except (subprocess.TimeoutExpired, ValueError) as exc:
+        return type(exc).__name__
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--host', help='Camera IP if known')
-    parser.add_argument('--live', action='store_true', help='Ask the camera to enter live view first')
+    parser.add_argument('--host', default='192.168.169.1')
     args = parser.parse_args()
-    report = {'hosts': {}}
-    hosts = [args.host] if args.host else HOSTS
-    for host in hosts:
-        ports = {port: port_open(host, port) for port in PORTS}
-        if not any(ports.values()):
-            report['hosts'][host] = 'no open ports'
-            continue
-        print(f'== {host}: open ports {[p for p, ok in ports.items() if ok]}')
-        entry = report['hosts'][host] = {'ports': ports, 'http': {}, 'rtsp': {}}
-        if ports[80]:
-            for path in INFO + GPS + NOVATEK + (LIVE if args.live else []):
-                entry['http'][path] = result = get(f'http://{host}{path}')
-                print(f'  GET {path} -> {result.get("status", result.get("error"))} {str(result.get("body", ""))[:100]!r}')
-        for port in (p for p in (554, 5000, 8554, 6035) if ports[p]):
-            for path in RTSP_PATHS:
-                url = f'rtsp://{host}:{port}{path}'
-                entry['rtsp'][url] = result = rtsp(url)
-                print(f'  {url} -> {result}')
-                if any(isinstance(v, list) for v in result.values()):
-                    break  # One working URL per port is enough.
+    host, report = args.host, {}
+    for path in ('/app/getproductinfo', '/app/getdeviceattr', '/app/getsdinfo', '/app/getmediainfo'):
+        report[path] = result = get(host, path)
+        print(f'GET {path} -> {result.get("status", result.get("error"))} {result.get("body", "")[:300]}')
+        time.sleep(PAUSE)
+    # The app retries media info while the camera finishes switching to app mode.
+    media = {}
+    for attempt in range(4):
+        try:
+            media = json.loads(report['/app/getmediainfo'].get('body', '{}').replace('result:', '"result":'))
+        except ValueError:
+            media = {}
+        if media.get('result') == 0:
+            break
+        time.sleep(3)
+        report['/app/getmediainfo'] = result = get(host, '/app/getmediainfo')
+        print(f'GET /app/getmediainfo (retry {attempt + 1}) -> {result.get("status", result.get("error"))} {result.get("body", "")[:300]}')
+    info = media.get('info') or {}
+    port = int(info.get('port') or 5000)
+    base = (info.get('rtsp') or f'rtsp://{host}').rstrip('/')
+    report['rtsp'] = {}
+    for path in ('', '/', '/live', '/stream'):
+        url, replies = rtsp_handshake(host, port, path)
+        print(f'\n{url} handshake:')
+        for method, text in replies.items():
+            print(f'  {method}: ' + text.strip().replace('\r\n', ' | ')[:400])
+        report['rtsp'][url] = {'handshake': replies}
+        time.sleep(PAUSE)
+        if 'RTSP/1.0 200' in replies.get('DESCRIBE', ''):
+            report['rtsp'][url]['ffprobe'] = probe = ffprobe(f'{base}:{port}{path}')
+            print(f'  ffprobe: {probe}')
+            break
     with open('dashcam-probe.json', 'w', encoding='utf-8') as out:
         json.dump(report, out, indent=1)
     print('\nSaved dashcam-probe.json')
