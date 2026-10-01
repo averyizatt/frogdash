@@ -65,6 +65,8 @@ def create_app(state, adapter=None, connectivity=None):
         yield
         if state.camera:
             await state.camera.close()
+        if state.dashcam:
+            await state.dashcam.close()
         notify_task.cancel()
         with suppress(asyncio.CancelledError):
             await notify_task
@@ -279,9 +281,35 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def camera_stream(request):
         require_local(request)
-        camera = state.camera
-        if not camera:
+        if not state.camera:
             raise web.HTTPNotFound(text='Reverse camera is not enabled (--camera)')
+        return await mjpeg(request, state.camera)
+
+    async def dashcam_status(request):
+        require_local(request)
+        body = state.dashcam.status() if state.dashcam else {'enabled': False}
+        return web.json_response(body, headers={'Cache-Control': 'no-store'})
+
+    async def dashcam_stream(request):
+        require_local(request)
+        if not state.dashcam:
+            raise web.HTTPNotFound(text='Dash cam is not enabled (--dashcam)')
+        return await mjpeg(request, state.dashcam)
+
+    async def dashcam_side(request):
+        require_local(request)
+        if not state.dashcam:
+            raise web.HTTPNotFound(text='Dash cam is not enabled (--dashcam)')
+        try:
+            side = (await request.json()).get('side')
+            await asyncio.to_thread(state.dashcam.switch, side)
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise web.HTTPBadRequest(text=str(exc) or 'Invalid side')
+        except (OSError, RuntimeError) as exc:
+            raise web.HTTPServiceUnavailable(text=f'Dash cam did not switch: {exc}'[:200])
+        return web.json_response(state.dashcam.status())
+
+    async def mjpeg(request, camera):
         try:
             await camera.acquire()
         except Exception:
@@ -307,7 +335,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "boot.js", "taillights.js", "taillights.css"}:
+        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "boot.js", "taillights.js", "taillights.css"}:
             raise web.HTTPNotFound()
         if name == 'index.html' and state.paint and state.paint.value:
             page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')
@@ -472,6 +500,8 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get('/taillights/{name}', taillight_frames),
                     web.get('/ui/import', import_list), web.get('/ui/import/{name}', import_file),
                     web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),
+                    web.get('/dashcam/status', dashcam_status), web.get('/dashcam/stream', dashcam_stream),
+                    web.post('/dashcam/side', dashcam_side),
                     web.get('/ui/heartbeat/{token}', heartbeat), web.post('/ui/heartbeat/{token}', heartbeat),
                     web.get("/", asset), web.get("/{name}", asset)])
     return app
@@ -502,6 +532,9 @@ def main():
     parser.add_argument('--camera-quality', choices=('medium', 'high', 'max'), default='high', help='MJPEG image quality (default high)')
     parser.add_argument('--camera-fps', type=int, default=30)
     parser.add_argument('--camera-rotate', type=int, choices=(0, 180), default=0, help='180 if the camera is mounted upside down')
+    parser.add_argument('--dashcam', action='store_true', help='Enable the Wi-Fi dash cam view (Viidure-app cameras; needs ffmpeg)')
+    parser.add_argument('--dashcam-host', default='192.168.169.1', help="Dash cam IP on its Wi-Fi (default 192.168.169.1)")
+    parser.add_argument('--dashcam-width', type=int, default=1280, help='Displayed width; the stream is scaled down to this (default 1280)')
     parser.add_argument('--camera-keep-warm', action='store_true', help='Keep the camera running between views for instant display')
     parser.add_argument('--backlight-name', help='Explicit Linux /sys/class/backlight device; requires write permission')
     args = parser.parse_args()
@@ -535,6 +568,12 @@ def main():
         state.recorder = Recorder(state, config)
     if (args.camera_keep_warm or args.camera_size != '1024x768' or args.camera_quality != 'high' or args.camera_fps != 30 or args.camera_rotate) and not args.camera:
         parser.error('Camera options require --camera')
+    if args.dashcam:
+        from .dashcam import Dashcam
+        try:
+            state.dashcam = Dashcam(args.dashcam_host, width=args.dashcam_width)
+        except ValueError as exc:
+            parser.error(f'Invalid dash cam option: {exc}')
     if args.camera:
         try:
             width, height = (int(n) for n in args.camera_size.lower().split('x'))

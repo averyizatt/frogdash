@@ -66,3 +66,8 @@
 .speaker-test-buttons { display:flex; gap:8px; flex:none; }
 .speaker-test-buttons button { min-height:44px; padding:6px 14px; }
 @media (max-aspect-ratio:11/5) and (max-width:600px) { .speaker-test { flex-direction:column; align-items:stretch; } .speaker-test-buttons button { flex:1; } }
+/* Dash cam: wide 16:9 picture, narrow controls on the right (clear of the dash hump). */
+.dashcam-dialog .camera-stage { aspect-ratio:16 / 9; max-width:none; flex:1 1 auto; }
+.dashcam-dialog .camera-stage img { width:100%; height:100%; object-fit:contain; }
+.dashcam-dialog .camera-side { flex:0 0 330px; }
+.dashcam-dialog .camera-toggles { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
