@@ -55,6 +55,36 @@ def read_ups(path=Path('/run/frogdash-power/status.json'), now=None):
         return unknown
 
 
+def can_module(interface, net=Path('/sys/class/net'), interrupts=Path('/proc/interrupts')):
+    """Whether the MCP2515 answers the Pi over SPI, independent of any bus traffic.
+
+    The mcp251x driver resets and reads back the chip during probe; can0 only exists
+    when that SPI handshake succeeded. The interrupt count proves the INT line works."""
+    result = {'present': False, 'driver': None, 'spi': None, 'up': False, 'interrupts': None}
+    device = net / interface
+    if not device.exists():
+        return result
+    result['present'] = True
+    try:
+        result['driver'] = (device / 'device' / 'driver').resolve().name
+        result['spi'] = (device / 'device').resolve().name
+    except OSError:
+        pass
+    try:
+        result['up'] = (device / 'operstate').read_text().strip() != 'down' and bool(int((device / 'flags').read_text(), 16) & 1)
+    except (OSError, ValueError):
+        pass
+    try:
+        lines = interrupts.read_text().splitlines()
+        cpus = len(lines[0].split()) if lines else 0
+        counts = [sum(int(field) for field in line.split()[1:1 + cpus] if field.isdigit())
+                  for line in lines[1:] if 'mcp251' in line or interface in line]
+        result['interrupts'] = sum(counts) if counts else None
+    except OSError:
+        pass
+    return result
+
+
 class Health:
     def __init__(self, state, interface='can0', directory=None):
         self.state, self.interface = state, interface
@@ -88,6 +118,7 @@ class Health:
             data['power'] = throttled_flags(command(vcgencmd, 'get_throttled'))
         except (OSError, ValueError, subprocess.SubprocessError):
             data['notes'].append('Pi voltage/throttling status unavailable to this service')
+        data['can_module'] = can_module(self.interface)
         ip = shutil.which('ip')
         try:
             if not ip or not re.fullmatch(r'[a-zA-Z0-9_.-]{1,15}', self.interface):
@@ -100,7 +131,8 @@ class Health:
                            'bitrate': info.get('bittiming', {}).get('bitrate'),
                            'error_counters': info.get('berr_counter'),
                            'rx_errors': stats.get('rx', {}).get('errors'), 'tx_errors': stats.get('tx', {}).get('errors'),
-                           'rx_dropped': stats.get('rx', {}).get('dropped'), 'tx_dropped': stats.get('tx', {}).get('dropped')}
+                           'rx_dropped': stats.get('rx', {}).get('dropped'), 'tx_dropped': stats.get('tx', {}).get('dropped'),
+                           'rx_packets': stats.get('rx', {}).get('packets'), 'tx_packets': stats.get('tx', {}).get('packets')}
         except (OSError, ValueError, KeyError, IndexError, TypeError, subprocess.SubprocessError):
             data['notes'].append('CAN interface diagnostics unavailable')
         return data

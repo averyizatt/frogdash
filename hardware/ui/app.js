@@ -396,7 +396,7 @@
   });
   setInterval(() => {
     const date = new Date();
-    $('clock-time').textContent = date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', hour12: false});
+    $('clock-time').textContent = date.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit', hour12: true});
     $('clock-tz').textContent = '';
     if (connected && performance.now() - lastMessage > 1500) { disconnect(); ws.close(); }
   }, 250);

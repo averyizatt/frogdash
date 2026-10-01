@@ -27,3 +27,16 @@
   // Failsafe: the gauges are never kept hidden for long, whatever else happens.
   if (root.dataset.splashPending) setTimeout(() => { delete root.dataset.splashPending; }, 3000);
 })();
+
+// Hide the mouse pointer unless a mouse is in use; it returns on movement and hides after 3 s idle.
+(() => {
+  const root = document.documentElement;
+  let timer;
+  root.classList.add('cursor-hidden');
+  addEventListener('pointermove', event => {
+    if (event.pointerType !== 'mouse') return;
+    root.classList.remove('cursor-hidden');
+    clearTimeout(timer);
+    timer = setTimeout(() => root.classList.add('cursor-hidden'), 3000);
+  }, {passive: true});
+})();

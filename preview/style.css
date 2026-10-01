@@ -500,6 +500,8 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
   .wheel-swatches { grid-template-columns:repeat(6,minmax(0,1fr)); }.wheel-color-sliders { grid-template-columns:1fr; }
   .wheel-files { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
+/* Pointer stays hidden until the mouse actually moves (wheel/keyboard-driven kiosk). */
+html.cursor-hidden, html.cursor-hidden * { cursor:none !important; }
 
 /* Preview-only playback controls. */
 .demo-playback { display:flex; gap:6px; }

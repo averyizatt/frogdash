@@ -349,9 +349,21 @@
     finally { setTimeout(() => { markBusy = false; $('bookmark-launch').disabled = !online; $('bookmark-launch').textContent = 'Mark log'; }, 1500); }
   };
   document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'b' && !e.repeat && !e.target.matches('input,select,textarea') && !document.querySelector('dialog[open]')) $('bookmark-launch').click(); });
+  // Pi <-> MCP2515 link, judged from the driver handshake rather than bus traffic.
+  function canModuleCard(online, health) {
+    const m = health.can_module, can = health.can || {};
+    const label = 'CAN module link';
+    if (!online || !m) return [label, 'Unavailable', 'unknown', 'Needs the Pi'];
+    if (!m.present) return [label, 'Not detected', 'warning', 'MCP2515 did not answer over SPI at boot: check wiring, 3.3 V, the mcp2515 overlay and the oscillator setting'];
+    const traffic = `RX ${can.rx_packets ?? '—'} · TX ${can.tx_packets ?? '—'} · IRQ ${m.interrupts ?? '—'}`;
+    const where = `${m.driver || 'driver ?'} on ${m.spi || 'SPI ?'}`;
+    if (!m.up) return [label, 'Found, interface down', 'warning', `${where} · run: sudo ip link set can0 up type can bitrate 500000`];
+    if (can.state === 'BUS-OFF') return [label, 'Talking, bus-off', 'warning', `${where} · no other node acknowledging: check CAN-H/L, termination, bitrate · ${traffic}`];
+    return [label, 'Talking to Pi', 'good', `${where} · ${can.state || 'state ?'} · ${traffic}${can.rx_packets ? '' : ' · bus quiet (fine with nothing connected)'}`];
+  }
   function renderHealth() {
     const demoMode = latest.mode === 'demo';
-    const health = demoMode ? {cpu_c: 51, disk: {free_bytes: 24 * 1073741824}, power: {undervoltage_now: false, undervoltage_since_boot: false, throttled_now: false, throttled_since_boot: false}, can: {state: 'ERROR-ACTIVE', bitrate: 500000, rx_errors: 0, tx_errors: 0}, ups: {available: true, battery_percent: 86, battery_volts: 4.05, input_present: true, charging: true, auto_power_on: true}, shutdown: {tracking: true, scope: 'boot', previous: {state: 'saved', ended_ms: Date.now() - 3600000, recording_enabled: true, dropped_samples: 0}}, notes: ['Simulated system health; no Pi hardware is accessed']} : latest.system || {};
+    const health = demoMode ? {cpu_c: 51, disk: {free_bytes: 24 * 1073741824}, power: {undervoltage_now: false, undervoltage_since_boot: false, throttled_now: false, throttled_since_boot: false}, can: {state: 'ERROR-ACTIVE', bitrate: 500000, rx_errors: 0, tx_errors: 0, rx_packets: 0, tx_packets: 0}, can_module: {present: true, driver: 'mcp251x', spi: 'spi0.0', up: true, interrupts: 0}, ups: {available: true, battery_percent: 86, battery_volts: 4.05, input_present: true, charging: true, auto_power_on: true}, shutdown: {tracking: true, scope: 'boot', previous: {state: 'saved', ended_ms: Date.now() - 3600000, recording_enabled: true, dropped_samples: 0}}, notes: ['Simulated system health; no Pi hardware is accessed']} : latest.system || {};
     const num = (v, suffix = '') => online && Number.isFinite(v) ? v.toFixed(1) + suffix : 'Unavailable';
     const flag = v => !online || v === undefined ? 'Unavailable' : v ? 'Detected' : 'Clear';
     const hz = demoMode ? 10 : latest.race?.interval ? 1 / latest.race.interval : null;
@@ -361,7 +373,7 @@
     const shutdownState = !online ? 'Unavailable' : !previous ? 'No record' : ({saved: 'Data synced', running: 'Unconfirmed', save_failed: 'Save failed'}[previous.state] || 'Unconfirmed');
     const shutdownQuality = previous?.state === 'saved' ? 'good' : previous ? 'warning' : 'unknown';
     const stamp = Number.isFinite(previous?.ended_ms) ? new Date(previous.ended_ms).toLocaleString() : 'No completed save recorded';
-    entries.unshift(
+    entries.unshift(canModuleCard(online, health),
       ['UPS battery', num(ups.battery_percent, '%'), Number.isFinite(ups.battery_percent) ? (ups.battery_percent <= 15 ? 'warning' : 'good') : 'unknown', `${num(ups.battery_volts, ' V')} \u00b7 ${ups.charging === true ? 'Charging' : ups.charging === false ? 'Not charging' : 'Charge state unavailable'}`],
       ['UPS input power', ups.input_present === true ? 'External power' : ups.input_present === false ? 'On battery' : 'Unavailable', ups.input_present === true ? 'good' : ups.input_present === false ? 'warning' : 'unknown', health.ups?.dry_run ? 'Observer only; shutdown disabled' : ups.state === 'shutdown_failed' ? 'Shutdown request failed' : ups.state === 'shutdown_requested' ? 'Linux shutdown requested' : ups.input_present === false ? 'Input-loss shutdown policy active' : 'PiSugar 3 Plus'],
       ['Startup on power return', ups.auto_power_on === true ? 'Enabled' : ups.auto_power_on === false ? 'Disabled' : 'Unavailable', ups.auto_power_on === true ? 'good' : ups.auto_power_on === false ? 'warning' : 'unknown', 'After UPS output turns off'],
