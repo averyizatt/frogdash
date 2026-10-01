@@ -8,6 +8,8 @@ JobTimeoutSec=10s
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+# The bitrate can only be set while the link is down (it may already be up by hand).
+ExecStartPre=-/usr/sbin/ip link set dev can0 down
 ExecStart=/usr/sbin/ip link set dev can0 up type can bitrate 500000 restart-ms 100
 ExecStop=/usr/sbin/ip link set dev can0 down
 CapabilityBoundingSet=CAP_NET_ADMIN
