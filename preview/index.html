@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#090f13">
   <link rel="icon" href="data:,">
   <title>Fox Body · Driver display</title>
-  <link rel="stylesheet" href="style.css?v=53e5a6b4f8c0">
+  <link rel="stylesheet" href="style.css?v=4a0dd6c3741d">
   <link rel="stylesheet" href="review.css?v=4131615d94e6">
   <link rel="stylesheet" href="responsive.css?v=2eaa09f6d5dc">
 <link rel="stylesheet" href="instruments.css?v=c974b6f0161d">
@@ -121,7 +121,8 @@
       <button id="tab-meth" role="tab" aria-selected="true" aria-controls="panel-meth" tabindex="0" data-tab="meth"><span>01</span>Water / meth</button>
       <button id="tab-knock" role="tab" aria-selected="false" aria-controls="panel-knock" tabindex="-1" data-tab="knock"><span>02</span>Knock monitor</button>
       <button id="tab-lighting" role="tab" aria-selected="false" aria-controls="panel-lighting" tabindex="-1" data-tab="lighting"><span>03</span>Lighting</button>
-      <button id="tab-wifi" role="tab" aria-selected="false" aria-controls="panel-wifi" tabindex="-1" data-tab="wifi"><span>04</span>Wi-Fi</button>
+      <button id="tab-interior" role="tab" aria-selected="false" aria-controls="panel-interior" tabindex="-1" data-tab="interior"><span>04</span>Interior</button>
+      <button id="tab-wifi" role="tab" aria-selected="false" aria-controls="panel-wifi" tabindex="-1" data-tab="wifi"><span>05</span>Wi-Fi</button>
       <p>Live readings come from the vehicle. Changes are confirmed where supported.</p>
     </div>
     <div class="control-panels">
@@ -186,6 +187,40 @@
           </div>
           <div class="setting-card"><h3>Taillight studio</h3><p class="control-note">All 33 shows, demo, per-side tests and one-shot effects, with a live LED view of both lamps.</p>
             <button id="tl-launch" type="button">OPEN TAILLIGHTS</button>
+          </div>
+        </div>
+      </section>
+      <section class="control-section" id="panel-interior" role="tabpanel" aria-labelledby="tab-interior" hidden>
+        <p id="interior-live-summary">Waiting for the sensor gateway</p>
+        <div class="settings-grid interior-grid">
+          <div class="setting-card"><h3>Zone</h3>
+            <div class="control-row" role="group" aria-label="Interior light zone">
+              <button type="button" data-interior-zone="0" aria-pressed="true">BOTH</button>
+              <button type="button" data-interior-zone="1" aria-pressed="false">UPPER</button>
+              <button type="button" data-interior-zone="2" aria-pressed="false">LOWER</button>
+            </div>
+            <div id="interior-zones" class="interior-zones" aria-live="polite"></div>
+          </div>
+          <div class="setting-card"><h3>Color</h3>
+            <div class="interior-swatches" role="group" aria-label="Color presets">
+              <button type="button" data-interior-color="#ffb46b" style="--swatch:#ffb46b" aria-label="Warm white"></button>
+              <button type="button" data-interior-color="#ffffff" style="--swatch:#ffffff" aria-label="White"></button>
+              <button type="button" data-interior-color="#ff1a1a" style="--swatch:#ff1a1a" aria-label="Red"></button>
+              <button type="button" data-interior-color="#ff7a00" style="--swatch:#ff7a00" aria-label="Amber"></button>
+              <button type="button" data-interior-color="#1a5cff" style="--swatch:#1a5cff" aria-label="Blue"></button>
+              <button type="button" data-interior-color="#00e5ff" style="--swatch:#00e5ff" aria-label="Ice"></button>
+              <button type="button" data-interior-color="#1cf29a" style="--swatch:#1cf29a" aria-label="Mint"></button>
+              <button type="button" data-interior-color="#a020ff" style="--swatch:#a020ff" aria-label="Purple"></button>
+            </div>
+            <label>Custom color <input id="interior-color" type="color" value="#ffb46b"></label>
+          </div>
+          <div class="setting-card"><h3>Brightness</h3>
+            <label>Level <output id="interior-brightness-value" for="interior-brightness">50%</output><input id="interior-brightness" type="range" min="1" max="100" step="1" value="50"></label>
+            <div class="control-row">
+              <button type="button" data-action="interior.light" data-compute data-interior-apply>TURN ON / APPLY</button>
+              <button type="button" class="stop-control" data-action="interior.light" data-compute data-interior-off>OFF</button>
+            </div>
+            <p class="control-note">The dash keeps the lights on and restores your last colors after a restart. The gateway turns them off within 5 seconds if the dash goes away.</p>
           </div>
         </div>
       </section>
@@ -402,7 +437,7 @@
 <script src="navigation.js?v=7fe0efdb80bf"></script>
 <script src="camera.js?v=c4823f92b6b9"></script>
 <script src="taillights.js?v=0b27254e0a9f"></script>
-<script src="demo.js?v=3ce03932f640"></script>
-<script src="app.js?v=7b459b82656e"></script>
+<script src="demo.js?v=4c774291dcf2"></script>
+<script src="app.js?v=ef7c649dc1b5"></script>
 </body>
 </html>

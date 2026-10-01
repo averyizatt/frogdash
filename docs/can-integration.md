@@ -152,6 +152,34 @@ Key compatibility details:
 No CAN IDs for the car's unrelated OEM traffic are guessed. The receiver can show
 that traffic raw; additional gauges require a documented matching decoder.
 
+## Sensor gateway and interior lights
+
+The comfort module's sensor-gateway build (`gateway_protocol.h`) shares the bus:
+
+| ID | Direction | Use in the dash |
+| --- | --- | --- |
+| `0x500` | gateway → dash | Speed (fallback when no USB GPS), RPM, fuel |
+| `0x501` | gateway → dash | Cruise buttons as wheel input: ON = OK, OFF = back, SET/ACCEL = up, COAST = down, RESUME = right |
+| `0x502` | dash → gateway | Interior light command: zone (0 both, 1 upper, 2 lower), R, G, B, brightness, version 1 |
+| `0x503` | gateway → dash | Interior light state per zone, every 80 ms |
+
+**Controls → Interior** picks a zone, a preset or custom color and a brightness, with
+**Turn on / apply** and **Off**; everything is reachable from the steering wheel. The
+gateway turns a zone off 5 s after its last command, so the dash repeats the current
+color every 0.5 s while a zone is lit and restores the last colors after a restart
+(`interior.json` in the data directory). If the dash stops, the lights go out within
+5 s. The tab is disabled with "Sensor gateway interior lights are offline" until
+`0x503` arrives.
+
+To test from the Pi without the screen (both zones, warm white, full brightness, then off):
+
+```sh
+cansend can0 502#00FFB46BFF01
+cansend can0 502#00FFB46B0001
+```
+
+Without the dash repeating it, a `cansend` command lasts 5 seconds.
+
 ## Services and shutdown
 
 Install this checkout at `/opt/frogdash` (readable by a service user), create its

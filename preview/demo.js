@@ -16,7 +16,9 @@
     'knock.enabled': true, 'knock.learned': true, 'knock.warning': false,
     'knock.critical': false, 'knock.event_count': 0, 'knock.last_rpm': 0,
     'knock.last_boost_kpa': 0, 'knock.config.threshold_offset': 20,
-    'knock.config.multiplier': 2
+    'knock.config.multiplier': 2,
+    'interior.upper.color': '#ffb46b', 'interior.upper.brightness': 0,
+    'interior.lower.color': '#ffb46b', 'interior.lower.brightness': 0
   };
   let scenario = 'drive', paused = false, elapsed = 3, previous = performance.now();
   let tick = 0, testTimer, boostStart = 25, lightingMode = 0;
@@ -176,6 +178,13 @@
         case 'lighting.override': tl = {show: null, override: [value >> 4, value & 15], customUntil: 0}; detail = 'Simulated per-side test.'; break;
         case 'lighting.clear': tl = {show: null, override: null, customUntil: 0}; detail = 'Simulated normal lights.'; break;
         case 'lighting.custom': tl.customUntil = Date.now() + (value === 1 ? 6000 : 1500); detail = 'Simulated one-shot effect.'; break;
+        case 'interior.light': {
+          const zone = Math.floor(value / 2 ** 32), rgb = Math.floor(value / 256) % 2 ** 24, level = value % 256;
+          for (const [channel, key] of [[1, 'upper'], [2, 'lower']]) if (!zone || zone === channel) {
+            readings[`interior.${key}.color`] = '#' + rgb.toString(16).padStart(6, '0'); readings[`interior.${key}.brightness`] = level;
+          }
+          detail = level ? 'Simulated interior lights on.' : 'Simulated interior lights off.'; break;
+        }
         default: this.emit({type: 'command_result', request_id, status: 'rejected', message: 'This command is not supported in the preview.'}); return;
       }
       // Match the asynchronous command/state order without pretending hardware acknowledged.

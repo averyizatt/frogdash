@@ -285,6 +285,7 @@
       controls.reasons['meth.test'] || 'Test ready. Closing this panel or losing the connection stops the test.';
     const knockEnabled = live('knock.enabled');
     $('knock-live-summary').textContent = `${knockEnabled === null ? 'No live status' : knockEnabled ? 'Enabled' : 'Disabled'} · Offset ${text('knock.config.threshold_offset')} · Multiplier ${text('knock.config.multiplier')}`;
+    renderInterior();
     $('lighting-live-summary').textContent = `Applied brightness ${text('lighting.brightness')} / 255 · Left ${text('lighting.left_state')} · Right ${text('lighting.right_state')}`;
     const result = JSON.stringify(controls.last_result || null);
     if (result !== lastControlResult && controls.last_result) {
@@ -323,6 +324,38 @@
       } else if (button.dataset.value !== undefined) value = Number(button.dataset.value);
       sendCommand(button.dataset.action, value);
     };
+  }
+  // Interior LEDs on the sensor gateway (0x502): zone 0 both, 1 upper, 2 lower.
+  let interiorZone = 0;
+  const interiorLevel = () => Math.round(Number($('interior-brightness').value) * 2.55);
+  function interiorValue(brightness) {
+    const rgb = parseInt($('interior-color').value.slice(1), 16);
+    return interiorZone * 2 ** 32 + rgb * 256 + brightness;
+  }
+  for (const button of document.querySelectorAll('[data-interior-zone]')) button.onclick = () => {
+    interiorZone = Number(button.dataset.interiorZone);
+    for (const other of document.querySelectorAll('[data-interior-zone]')) other.setAttribute('aria-pressed', String(other === button));
+  };
+  for (const swatch of document.querySelectorAll('[data-interior-color]')) swatch.onclick = () => {
+    $('interior-color').value = swatch.dataset.interiorColor;
+    sendCommand('interior.light', interiorValue(interiorLevel()));
+  };
+  $('interior-brightness').addEventListener('input', () => { $('interior-brightness-value').textContent = `${$('interior-brightness').value}%`; });
+  document.querySelector('[data-interior-apply]').onclick = () => sendCommand('interior.light', interiorValue(interiorLevel()));
+  document.querySelector('[data-interior-off]').onclick = () => sendCommand('interior.light', interiorValue(0));
+  function renderInterior() {
+    const zones = [['upper', 'Upper'], ['lower', 'Lower']].map(([key, name]) => {
+      const level = live(`interior.${key}.brightness`), color = live(`interior.${key}.color`);
+      const row = document.createElement('div'); row.className = 'interior-zone';
+      const dot = document.createElement('span'); dot.className = 'interior-dot';
+      dot.style.background = level ? color : 'transparent';
+      const text = document.createElement('span');
+      text.textContent = level === null ? `${name}: no signal` : level ? `${name}: on · ${Math.round(level / 2.55)}%` : `${name}: off`;
+      row.append(dot, text); return row;
+    });
+    $('interior-zones').replaceChildren(...zones);
+    const reason = (snapshot.controls?.reasons || {})['interior.light'];
+    $('interior-live-summary').textContent = reason || 'Sensor gateway connected · changes apply immediately';
   }
   function stopLocalTest() {
     if (testRequested) sendCommand('meth.stop');
