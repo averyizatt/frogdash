@@ -43,7 +43,7 @@ def rtsp_handshake(host, port, path=''):
     try:
         with socket.create_connection((host, port), timeout=4) as conn:
             conn.settimeout(4)
-            for seq, method in enumerate(('OPTIONS', 'DESCRIBE'), 1):
+            for seq, method in enumerate(('OPTIONS', 'DESCRIBE'), 1):  # one request each, short timeouts
                 extra = 'Accept: application/sdp\r\n' if method == 'DESCRIBE' else ''
                 conn.sendall(f'{method} {url} RTSP/1.0\r\nCSeq: {seq}\r\nUser-Agent: Viidure\r\n{extra}\r\n'.encode())
                 time.sleep(.5)
@@ -69,10 +69,45 @@ def ffprobe(url):
         return type(exc).__name__
 
 
+def live(host):
+    """Copy the Viidure app's live-view sequence, then probe the RTSP stream on port 554."""
+    stamp = time.strftime('%Y%m%d%H%M%S')
+    for path in ('/app/getproductinfo', f'/app/setsystime?date={stamp}', '/app/getdeviceattr', '/app/enterrecorder'):
+        result = get(host, path)
+        print(f'GET {path} -> {result.get("status", result.get("error"))} {result.get("body", "")[:200]}')
+        if 'error' in result:
+            print('Camera web server is not answering: power-cycle the camera and reconnect (sudo nmcli con up dashcam).')
+            return
+        time.sleep(.5)
+    # The app keeps a notification connection on port 5000 open while watching.
+    notify = socket.create_connection((host, 5000), timeout=4)
+    notify.settimeout(2)
+    try:
+        time.sleep(1.5)
+        try:
+            print('port 5000 says:', notify.recv(512).decode('utf-8', 'replace').strip()[:200])
+        except socket.timeout:
+            print('port 5000: connected (no message yet)')
+        for url in (f'rtsp://{host}:554/', f'rtsp://{host}/live', f'rtsp://{host}:554/live/tcp/ch1', f'rtsp://{host}:554/stream0'):
+            _, replies = rtsp_handshake(host, 554, url.split(':554', 1)[-1] if ':554' in url else url.split(host, 1)[1])
+            print(f'\n{url}')
+            for method, text in replies.items():
+                print(f'  {method}: ' + text.strip().replace('\r\n', ' | ')[:300])
+            if 'RTSP/1.0 200' in replies.get('DESCRIBE', ''):
+                print('  ffprobe:', ffprobe(url))
+                break
+            get(host, '/app/getparamvalue?param=rec')  # The app's keep-alive poll.
+    finally:
+        notify.close()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--host', default='192.168.169.1')
+    parser.add_argument('--live', action='store_true', help="Copy the app's live-view sequence and probe the RTSP video")
     args = parser.parse_args()
+    if args.live:
+        return live(args.host)
     host, report = args.host, {}
     for path in ('/app/getproductinfo', '/app/getdeviceattr', '/app/getsdinfo', '/app/getmediainfo'):
         report[path] = result = get(host, path)
