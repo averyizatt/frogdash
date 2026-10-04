@@ -8,6 +8,9 @@ TIMEOUT = .35
 GATEWAY_TIMEOUT = .5  # gateway_protocol.h: consumers expire button state after 500 ms.
 DIRECTIONS = {1: 'up', 2: 'down', 4: 'left', 8: 'right'}
 BACK = 32
+HOLD_BACK = .8       # Hold OK this long: back.
+HOLD_HOME_OK = 3.0   # Keep holding OK: close every menu (home).
+HOLD_HOME_BACK = 1.5 # Hold the back button (cruise OFF): home.
 # Cruise-control buttons (gateway bits 0..4) to navigation bits.
 CRUISE = {1: 16, 2: BACK, 4: 2, 8: 1, 16: 8}  # ON=OK, OFF=back, COAST=down, SET ACCEL=up, RESUME=right
 
@@ -23,7 +26,7 @@ class SteeringWheel:
         self.mask = 0
         self.armed = False
         self.started = self.repeat_at = 0
-        self.long_sent = False
+        self.long_sent = self.home_sent = False
         self.timeout = TIMEOUT
 
     def reset(self):
@@ -43,9 +46,13 @@ class SteeringWheel:
             return
         if not self.armed:
             return
-        if self.mask == 16 and not self.long_sent and now - self.started >= .8:
+        held = now - self.started
+        if self.mask == 16 and not self.long_sent and held >= HOLD_BACK:
             self.emit('back')
             self.long_sent = True
+        elif self.mask in (16, BACK) and not self.home_sent and held >= (HOLD_HOME_OK if self.mask == 16 else HOLD_HOME_BACK):
+            self.emit('home')  # A long hold always gets out, however deep the menu.
+            self.home_sent = True
         elif self.mask in DIRECTIONS and now >= self.repeat_at:
             self.emit(DIRECTIONS[self.mask])
             self.repeat_at = now + .15  # Never catch up a backlog of repeats.
@@ -97,13 +104,13 @@ class SteeringWheel:
             self.tick()
             return
         if previous == 16 and mask == 0 and not self.long_sent:
-            self.emit('back' if now - self.started >= .8 else 'ok')
+            self.emit('back' if now - self.started >= HOLD_BACK else 'ok')
         if mask == BACK:
             self.emit('back')  # OFF is a dedicated back button: no hold needed.
         self.mask = mask
         self.started = now
         self.repeat_at = now + .45
-        self.long_sent = False
+        self.long_sent = self.home_sent = False
         if mask in DIRECTIONS:
             self.emit(DIRECTIONS[mask])
 

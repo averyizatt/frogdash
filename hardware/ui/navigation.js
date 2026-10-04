@@ -28,7 +28,7 @@
     el?.scrollIntoView({block: 'center', inline: 'nearest'});
   }
   function describe() {
-    message(editing ? 'EDIT: arrows change value | OK done | Hold OK back' : scope().dataset.wheelHint || 'WHEEL: arrows move | OK select | Hold OK back');
+    message(editing ? 'EDIT: arrows change value | OK done | Hold OK back' : scope().dataset.wheelHint || 'WHEEL: SET/COAST move | ON select | OFF back | Hold OFF: home');
   }
   // Grids (keyboard keys, swatches, files) move in two dimensions; elsewhere arrows walk the list.
   function spatial(items, from, direction) {
@@ -243,7 +243,22 @@
   }
   function action(name) {
     nativeInput = null; // Wheel navigation explicitly takes ownership again.
-    if (document.hidden || !['up', 'down', 'left', 'right', 'ok', 'back'].includes(name)) return;
+    if (document.hidden || !['up', 'down', 'left', 'right', 'ok', 'back', 'home'].includes(name)) return;
+    if (name === 'home') {
+      // Long hold: leave edit mode and close every open menu, innermost first.
+      clearEdit();
+      for (let guard = 0; guard < 8; guard++) {
+        const open = [...document.querySelectorAll('dialog[open]')].pop();
+        if (!open) break;
+        const close = [...open.querySelectorAll('.close-button')].find(visible);
+        if (close) close.click();
+        if (open.open) open.close();
+      }
+      document.querySelectorAll('.wheel-focus').forEach(el => el.classList.remove('wheel-focus'));
+      document.activeElement?.blur?.();
+      message('HOME: all menus closed');
+      return;
+    }
     const before = scope();
     const items = candidates();
     if (editing && (!visible(editing) || !before.contains(editing))) clearEdit();

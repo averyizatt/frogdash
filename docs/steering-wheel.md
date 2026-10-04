@@ -118,3 +118,18 @@ Automated checks cover the C++ frame builder, decoder, edge/hold timing, sequenc
 wrap, stale/duplicate/invalid frames, replay exclusion and live browser navigation.
 Bench-test the real switches, bounce, quick taps, long holds, CAN loss and CCM
 restart before using the wheel as the main input device.
+
+## Cruise buttons (sensor gateway) and hold shortcuts
+
+| Button | Tap | Hold |
+| --- | --- | --- |
+| ON | Select the highlighted item; in edit mode, finish editing | 0.8 s: back. Keep holding to 3 s: home (close every menu) |
+| OFF | Back: leave edit mode, else close the top menu | 1.5 s: home (close every menu) |
+| SET / ACCEL | Up / previous item; in edit mode, raise the value | Repeats after 0.45 s, then every 0.15 s; numbers step faster the longer it is held |
+| COAST | Down / next item; in edit mode, lower the value | Same repeat as SET / ACCEL |
+| RESUME | Right: into a tab's panel, next tab on a horizontal tab row, right in grids; in edit mode, raise the value | Same repeat |
+
+Two buttons at once cancel the gesture until all are released. Home leaves edit mode,
+closes every open menu and removes the highlight; the next press starts again from the
+bottom bar. These are dash-side timings only (`hardware/frogdash/wheel.py`); the CAN
+messages are unchanged.

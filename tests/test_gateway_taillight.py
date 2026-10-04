@@ -64,6 +64,21 @@ class CruiseButtonTests(unittest.TestCase):
         self.wheel.tick()                  # Silence beyond 500 ms releases everything.
         self.assertEqual(self.wheel.snapshot(True)['status'], 'unavailable')
 
+    def test_long_holds_go_home_once(self):
+        self.press(0)
+        for _ in range(45):                # ON held 3.6 s: back at 0.8 s, home at 3 s.
+            self.press(1)
+        self.press(0)
+        self.assertEqual(self.actions(), ['back', 'home'])
+        self.wheel.events.clear()
+        for _ in range(25):                # OFF held 2 s: back at once, home at 1.5 s.
+            self.press(2)
+        self.press(0)
+        self.assertEqual(self.actions(), ['back', 'home'])
+        self.wheel.events.clear()
+        self.press(2); self.press(0)       # A tap of OFF is still just back.
+        self.assertEqual(self.actions(), ['back'])
+
     def test_on_held_goes_back_and_chords_cancel(self):
         self.press(0)
         for _ in range(12):
