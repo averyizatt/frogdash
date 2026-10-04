@@ -21,7 +21,13 @@ before=$(git -C $REPO rev-parse HEAD) || { report failed "Not a git checkout: $R
 # borrow that adapter: join a saved Wi-Fi network, update, then return to the dash cam.
 borrowed=""
 restore() {
-    [ -n "$borrowed" ] && { nmcli con down "$borrowed" >/dev/null 2>&1; nmcli --wait 20 con up dashcam >/dev/null 2>&1; }
+    [ -n "$borrowed" ] || return 0
+    nmcli con down "$borrowed" >/dev/null 2>&1
+    # The scan list is stale after another network; rescan, and retry while the dash cam wakes.
+    for attempt in 1 2 3 4; do
+        nmcli dev wifi rescan ifname "$device" >/dev/null 2>&1; sleep 5
+        nmcli --wait 20 con up dashcam >/dev/null 2>&1 && return 0
+    done
 }
 trap restore EXIT
 if ! timeout 30 git -C $REPO fetch --quiet origin; then
