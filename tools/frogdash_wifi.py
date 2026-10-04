@@ -79,6 +79,16 @@ def main():
         if password:
             nmcli('con', 'delete', name)
             code, _, error = nmcli('--wait', '30', 'dev', 'wifi', 'connect', ssid, 'password', password, 'ifname', device, 'name', name)
+            if code:
+                # "Secrets were required" with a correct password: nmcli guessed the wrong
+                # security mode (WPA2/WPA3 mixed routers). Create the profile explicitly.
+                for key_mgmt in ('wpa-psk', 'sae'):
+                    nmcli('con', 'delete', name)
+                    nmcli('con', 'add', 'type', 'wifi', 'ifname', device, 'con-name', name, 'ssid', ssid,
+                          'wifi-sec.key-mgmt', key_mgmt, 'wifi-sec.psk', password)
+                    code, _, error = nmcli('--wait', '30', 'con', 'up', name)
+                    if not code:
+                        break
         else:
             code, _, error = nmcli('--wait', '30', 'con', 'up', name, 'ifname', device)
             if code:
