@@ -24,7 +24,7 @@ from .supervision import watchdog
 from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
 from .paint import Paint, validate as validate_paint
 from .imports import Imports
-from . import cancheck
+from . import cancheck, selftest
 
 WIFI_SSID, WIFI_PASSWORD = re.compile(r"[\x20-\x7E]{1,32}"), re.compile(r"[\x20-\x7E]{8,63}")
 IMAGE_DATA = re.compile(r"data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+")
@@ -218,6 +218,27 @@ def create_app(state, adapter=None, connectivity=None):
             status = {'state': 'idle', 'message': 'Press Scan to look for networks', 'networks': []}
         status['pending'] = (folder / 'wifi-request.json').exists()
         return web.json_response(status, headers={'Cache-Control': 'no-store'})
+
+    async def self_test(request):
+        folder = state.paint.path.parent if state.paint else None
+        return web.json_response(await asyncio.to_thread(selftest.report, state, folder), headers={'Cache-Control': 'no-store'})
+
+    async def can_capture(request):
+        # Record raw CAN traffic for a few seconds, then download it in candump log format.
+        require_local(request)
+        now = state.clock()
+        if request.method == 'POST':
+            try:
+                seconds = int((await request.json()).get('seconds', 10))
+            except (ValueError, AttributeError, TypeError):
+                raise web.HTTPBadRequest(text='seconds must be a number')
+            state.capture, state.capture_until = [], now + max(1, min(120, seconds))
+        if request.query.get('download') and state.capture is not None:
+            return web.Response(text='\n'.join(state.capture) + '\n', content_type='text/plain',
+                                headers={'Content-Disposition': 'attachment; filename="frogdash-can.log"', 'Cache-Control': 'no-store'})
+        return web.json_response({'frames': len(state.capture or []), 'recording': state.capture is not None and now <= state.capture_until,
+                                  'remaining_s': max(0, round(state.capture_until - now)), 'available': state.capture is not None},
+                                 headers={'Cache-Control': 'no-store'})
 
     async def can_check(request):
         return web.json_response(cancheck.report(state), headers={'Cache-Control': 'no-store'})
@@ -533,7 +554,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/update", update), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/update", update), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),

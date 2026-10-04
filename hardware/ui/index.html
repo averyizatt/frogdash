@@ -258,7 +258,11 @@
     <table><thead><tr><th>Signal</th><th>Reading</th><th>Quality</th><th>Source</th></tr></thead><tbody id="signals"></tbody></table>
     <details><summary>Connection details</summary><p id="connection">Connecting</p><p id="source-health">Waiting for data</p></details>
     <details><summary>Event history</summary><p>Received events since startup, not a list of currently active faults.</p><pre id="fault-history"></pre></details>
-    <details id="can-check-details" open><summary>CAN check: what each module is sending</summary><p id="can-check-summary" class="control-note"></p><div id="can-check" class="can-check"></div></details>
+    <details id="selftest-details" open><summary>System check: test everything</summary>
+      <div class="control-row"><button id="selftest-run" type="button">RUN SYSTEM CHECK</button><button id="capture-run" type="button">RECORD CAN FOR 20 S</button><a id="capture-download" class="close-button" href="/can/capture?download=1" hidden>Download recording</a></div>
+      <p id="selftest-summary" class="control-note">Checks the CAN bus, every module, GPS, cameras, power, storage and updates. It only reads; nothing is sent to the car.</p>
+      <div id="selftest" class="can-check"></div></details>
+    <details id="can-check-details"><summary>CAN check: what each module is sending</summary><p id="can-check-summary" class="control-note"></p><div id="can-check" class="can-check"></div></details>
     <details><summary>Raw CAN traffic</summary><pre id="raw-frames"></pre></details>
   </div>
 </dialog>

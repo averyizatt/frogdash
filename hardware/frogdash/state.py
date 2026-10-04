@@ -31,6 +31,7 @@ class State:
         self.status = "starting"
         self.samples = {}
         self.raw = OrderedDict()
+        self.capture, self.capture_until = None, 0.0  # Timed raw capture for the CAN recorder tool.
         self.frames = {}  # Per standard ID: count, first/last time, last payload and decode error.
         self.events = deque(maxlen=100)
         self.received = self.malformed = self.ignored = self.seq = 0
@@ -67,6 +68,8 @@ class State:
         self.raw.move_to_end(raw_key)
         while len(self.raw) > 256:
             self.raw.popitem(last=False)
+        if self.capture is not None and now <= self.capture_until and len(self.capture) < 200000:
+            self.capture.append(f"({stamp / 1000:.6f}) can0 {can_id:0{8 if extended else 3}X}#{'R' if remote else data.hex().upper()}")
         if extended or remote or error:
             self.ignored += 1
             return

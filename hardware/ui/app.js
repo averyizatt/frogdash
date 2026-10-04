@@ -487,7 +487,7 @@
     const labels = {ok: 'OK', fault: 'FAULT', rejected: 'REJECTED', stopped: 'STOPPED', missing: 'MISSING'};
     $('can-check-summary').textContent = `${check.received} frames received · ${check.malformed} rejected` + (check.other_ids.length ? ` · other IDs seen: ${check.other_ids.join(' ')}` : '');
     $('can-check').replaceChildren(...check.rows.map(row => {
-      const item = document.createElement('div'); item.className = 'can-check-row'; item.dataset.status = row.status;
+      const item = document.createElement('div'); item.className = 'can-check-row'; item.tabIndex = 0; item.dataset.status = row.status;
       const head = document.createElement('div'); head.className = 'can-check-head';
       const badge = document.createElement('b'); badge.textContent = labels[row.status] || row.status;
       const name = document.createElement('strong'); name.textContent = `${row.module} ${row.id}`;
@@ -498,6 +498,44 @@
       return item;
     }));
   }
+  // System check: one pass/warn/fail line per subsystem, with the fix for anything not OK.
+  async function runSelfTest() {
+    if (snapshot.mode === 'demo') { $('selftest-summary').textContent = 'The system check needs the Pi; the preview has no hardware.'; return; }
+    $('selftest-summary').textContent = 'Checking…';
+    try {
+      const check = await (await fetch('/selftest', {cache: 'no-store', signal: AbortSignal.timeout(5000)})).json();
+      const labels = {ok: 'PASS', warn: 'CHECK', fail: 'FAIL', skip: 'SKIPPED'}, c = check.counts;
+      $('selftest-summary').textContent = `${c.fail ? `${c.fail} failed` : 'Nothing failed'} · ${c.warn} to check · ${c.ok} passed · ${c.skip} skipped · ${new Date(check.time_ms).toLocaleTimeString()}`;
+      const order = {fail: 0, warn: 1, ok: 2, skip: 3};
+      $('selftest').replaceChildren(...[...check.lines].sort((a, b) => order[a.status] - order[b.status]).map(item => {
+        const row = document.createElement('div'); row.className = 'can-check-row'; row.tabIndex = 0;
+        row.dataset.status = {ok: 'ok', warn: 'stopped', fail: 'fault', skip: 'skip'}[item.status];
+        const head = document.createElement('div'); head.className = 'can-check-head';
+        const badge = document.createElement('b'); badge.textContent = labels[item.status];
+        const name = document.createElement('strong'); name.textContent = `${item.group}: ${item.name}`;
+        const detail = document.createElement('span'); detail.textContent = item.detail;
+        head.append(badge, name, detail); row.append(head);
+        if (item.fix) { const fix = document.createElement('p'); fix.textContent = `Fix: ${item.fix}`; row.append(fix); }
+        return row;
+      }));
+    } catch { $('selftest-summary').textContent = 'System check unavailable: the dash service did not answer.'; }
+  }
+  $('selftest-run').onclick = runSelfTest;
+  // CAN recorder: capture raw traffic for 20 s and offer it as a candump-format file.
+  let captureTimer = null;
+  $('capture-run').onclick = async () => {
+    if (snapshot.mode === 'demo') { $('selftest-summary').textContent = 'CAN recording needs the Pi.'; return; }
+    try {
+      await fetch('/can/capture', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({seconds: 20})});
+      $('capture-download').hidden = true; $('capture-run').disabled = true;
+      clearInterval(captureTimer);
+      captureTimer = setInterval(async () => {
+        const s = await (await fetch('/can/capture', {cache: 'no-store'})).json();
+        $('capture-run').textContent = s.recording ? `RECORDING ${s.remaining_s} S · ${s.frames} FRAMES` : 'RECORD CAN FOR 20 S';
+        if (!s.recording) { clearInterval(captureTimer); $('capture-run').disabled = false; $('capture-download').hidden = false; $('capture-download').textContent = `Download recording (${s.frames} frames)`; }
+      }, 1000);
+    } catch { $('selftest-summary').textContent = 'CAN recording unavailable.'; }
+  };
   let rawPending = false;
   setInterval(async () => {
     if (!$('diagnostics').open || rawPending) return;

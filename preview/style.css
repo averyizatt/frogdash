@@ -539,6 +539,8 @@ html.cursor-hidden, html.cursor-hidden * { cursor:none !important; }
 .can-check-head span { color:var(--muted); }
 .can-check-row p { margin:4px 0 0 96px; }
 .can-check-row code { display:block; margin:4px 0 0 96px; color:var(--muted); font-size:12px; }
+.can-check-row[data-status="skip"] { opacity:.6; }
+.can-check-row:is(:focus-visible,.wheel-focus) { outline:2px solid var(--accent); }
 
 /* Preview-only playback controls. */
 .demo-playback { display:flex; gap:6px; }
