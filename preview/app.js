@@ -126,11 +126,11 @@
     if (!connected) warnings.push('DATA CONNECTION LOST');
     else if (!snapshot.transport.connected) warnings.push('CAN OFFLINE');
     if (snapshot.gps?.conflict) warnings.push('GPS TRANSMITTER CONFLICT');
-    if (snapshot.drive) warnings.push(...snapshot.drive.alerts.filter(a => a.active || a.latched).map(a => a.title));
+    if (snapshot.drive) warnings.push(...snapshot.drive.alerts.filter(a => a.active || a.latched).map(a => a.key === 'meth' && a.active ? methFaultTitle(flags) : a.title));
     else {
       if (live('knock.critical')) warnings.push('KNOCK CRITICAL');
       else if (live('knock.warning')) warnings.push('KNOCK WARNING');
-      if (flags || live('meth.state') === 'FAULT') warnings.push('WATER/METH FAULT');
+      if (flags || live('meth.state') === 'FAULT') warnings.push(methFaultTitle(flags));
       if (live('engine.coolant_c') !== null && live('engine.coolant_c') >= 112) warnings.push('COOLANT HIGH');
     }
     const bad = Object.entries(snapshot.values).filter(([key, v]) => !key.startsWith('race.') && v.quality === 'fault').length;
@@ -267,6 +267,12 @@
   $('diagnostics-launch').onclick = () => { $('diagnostics').showModal(); renderDiagnostics(); loadLogs(); };
   $('diagnostics-close').onclick = () => $('diagnostics').close();
   $('signal-filter').addEventListener('input', renderDiagnostics);
+  // Name the water/meth fault instead of a bare "fault" (bits from the controller firmware).
+  function methFaultTitle(flags) {
+    return flags & 1 ? 'WATER/METH OFF: TANK LEVEL SENSOR LOW' : flags & 2 ? 'WATER/METH OFF: MAP SENSOR INVALID'
+      : flags & 8 ? 'WATER/METH: OVERBOOST EMERGENCY' : flags & 16 ? 'WATER/METH OFF: INVALID SETTING' : 'WATER/METH FAULT';
+  }
+  window.FrogdashMethFault = methFaultTitle;
   function renderControls() {
     const controls = snapshot.controls || {reasons: {}};
     $('control-connection').textContent = !connected ? 'Disconnected — controls unavailable' :

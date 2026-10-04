@@ -51,6 +51,22 @@ LABELS = {
 }
 
 
+# Water/meth controller fault bits (methFaultFlagsFor in its firmware), most actionable first.
+METH_FAULTS = [
+    (1, 'the tank level sensor reads LOW. Fill the tank, or check the float switch wiring and polarity'),
+    (2, "the controller's MAP sensor reading is invalid. Check its wiring and vacuum line"),
+    (8, 'an overboost emergency is latched. Check boost control, then Clear faults'),
+    (16, 'the blend or boost setting is invalid. Re-apply the boost start value'),
+]
+
+
+def meth_fault_reason(flags):
+    for bit, text in METH_FAULTS:
+        if flags and flags & bit:
+            return f'Injection disabled: {text}'
+    return 'Injection disabled: the water/meth controller reports a fault (see Sensors > CAN check)'
+
+
 class Controls:
     def __init__(self, state):
         self.state = state
@@ -122,10 +138,12 @@ class Controls:
             if action == 'meth.arm' and (mode == 'TEST' or self.test_owner is not None):
                 return 'Stop the pump test before arming'
             if action in ('meth.arm', 'meth.test'):
-                if self.live('meth.fault_flags', 0x300) != 0 or mode == 'FAULT':
-                    return 'Resolve the water/meth fault before enabling the pump'
+                flags = self.live('meth.fault_flags', 0x300)
+                if flags or mode == 'FAULT':
+                    return meth_fault_reason(flags)
                 tank = self.live('meth.tank_pct', 0x300)
-                if tank is None or tank <= 10: return 'Water/meth tank is low or unavailable'
+                if tank is None or tank <= 10:
+                    return 'Injection disabled: the tank level sensor reads LOW. Fill the tank or check the float switch'
             if action in ('meth.test', 'meth.boost') and mode != 'OFF':
                 return 'Disarm water/meth first'
             if action == 'meth.test':

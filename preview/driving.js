@@ -418,7 +418,7 @@
     if (signature !== alertSignature) {
       alertSignature = signature; $('driver-alerts').replaceChildren(...alerts.map(a => {
         const card = el('div', undefined, 'driver-alert-row'), info = el('button', `${a.title} · ${a.condition === 'unknown' ? 'SIGNAL LOST' : a.active ? 'ACTIVE' : 'RECOVERED'}${a.acknowledged ? ' · ACK' : ''}`); info.type = 'button';
-        info.onclick = () => { $('alert-capture').textContent = Object.entries(a.context || {}).map(([k, v]) => `${k}: ${v.quality === 'live' ? v.value : v.quality}`).join(' · '); };
+        info.onclick = () => { const shown = v => v.quality !== 'live' ? v.quality : typeof v.value === 'number' && !Number.isInteger(v.value) ? v.value.toFixed(1) : v.value; const flags = a.context?.['meth.fault_flags']; $('alert-capture').textContent = (a.key === 'meth' && flags?.quality === 'live' && flags.value ? window.FrogdashMethFault(flags.value) + ' — ' : '') + Object.entries(a.context || {}).map(([k, v]) => `${k}: ${shown(v)}`).join(' · '); };
         const acknowledge = el('button', 'ACK'); acknowledge.type = 'button'; acknowledge.disabled = a.acknowledged; acknowledge.onclick = () => ack(a.key); card.append(info, acknowledge); return card;
       }));
       if (!alerts.length) $('driver-alerts').append(el('p', 'No active or unacknowledged alerts.', 'control-note'));
