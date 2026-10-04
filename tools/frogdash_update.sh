@@ -21,6 +21,7 @@ before=$(git -C $REPO rev-parse HEAD) || { report failed "Not a git checkout: $R
 # borrow that adapter: join a saved Wi-Fi network, update, then return to the dash cam.
 borrowed=""
 restore() {
+    rm -f /run/frogdash-wifi.lock
     [ -n "$borrowed" ] || return 0
     nmcli con down "$borrowed" >/dev/null 2>&1
     # The scan list is stale after another network; rescan, and retry while the dash cam wakes.
@@ -34,6 +35,7 @@ if ! timeout 30 git -C $REPO fetch --quiet origin; then
     device=$(nmcli -g connection.interface-name con show dashcam 2>/dev/null)
     [ -n "$device" ] || device=$(nmcli -t -f DEVICE,TYPE dev | awk -F: '$2=="wifi"{print $1; exit}')
     report running "No internet: switching Wi-Fi from the dash cam to a saved network"
+    touch /run/frogdash-wifi.lock   # Tell the Wi-Fi keeper the adapter is borrowed.
     nmcli con down dashcam >/dev/null 2>&1
     nmcli dev wifi rescan ifname "$device" >/dev/null 2>&1; sleep 4
     nmcli -t -f NAME,TYPE con show | awk -F: '$2=="802-11-wireless" && $1!="dashcam" && $1!="preconfigured"{print $1}' > /tmp/frogdash-wifi-names

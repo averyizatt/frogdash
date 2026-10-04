@@ -94,3 +94,33 @@ The update also refreshes any installed systemd unit files that changed. From a
 laptop on the same hotspot you can still use `ssh` and `sudo sh
 /opt/frogdash/tools/frogdash_update.sh`. Firmware for the ESP32 modules and the
 Nano is separate and still flashed over USB.
+
+## One Wi-Fi adapter for the dash cam and internet
+
+If the Pi's built-in Wi-Fi cannot reach your networks (for example it only receives
+5 GHz, or your router rejects it), one USB adapter does both jobs:
+
+- **Wi-Fi keeper** (`frogdash-netkeeper.service`) keeps the adapter on the dash cam. Every
+  10 s, if the dash cam connection is down and nothing is borrowing the adapter, it
+  rescans and reconnects. No commands needed after an update, a reboot or a dash cam restart.
+- **Update now** borrows the adapter: joins a saved network in range, updates, hands it back.
+- **Controls > Wi-Fi > Internet** borrows it too when `/etc/frogdash/wifi-internet` names
+  that adapter: Scan and Connect save a network for updates, then return to the dash cam.
+
+```sh
+sudo cp hardware/systemd/frogdash-netkeeper.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now frogdash-netkeeper.service
+sudo mkdir -p /etc/frogdash && echo wlan1 | sudo tee /etc/frogdash/wifi-internet
+```
+
+Give the dash cam connection a fixed address (its DHCP is slow) and keep saved
+internet networks from grabbing the adapter on their own:
+
+```sh
+sudo nmcli con modify dashcam ipv4.method manual ipv4.addresses 192.168.169.88/24 ipv4.never-default yes
+sudo nmcli con modify home connection.autoconnect no connection.interface-name ""
+```
+
+To use the adapter by hand for a while (the keeper would otherwise take it back),
+hold the lock: `sudo touch /run/frogdash-wifi.lock`; it expires after 5 minutes, or
+`sudo rm /run/frogdash-wifi.lock` to release it.

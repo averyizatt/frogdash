@@ -25,14 +25,29 @@ def nmcli(*args, timeout=45):
     return result.returncode, result.stdout, result.stderr.strip()
 
 
-def interface():
-    """The Wi-Fi adapter for internet: whichever one the dash cam connection does not use.
+LOCK = Path('/run/frogdash-wifi.lock')
+CHOICE = Path('/etc/frogdash/wifi-internet')  # Optional: the adapter to use for internet, e.g. wlan1.
 
-    The dash cam profile ("dashcam") is tied to one adapter with connection.interface-name;
-    internet uses the other. With no dash cam profile, the built-in adapter is used.
+
+def dashcam_device():
+    return nmcli('-g', 'connection.interface-name', 'con', 'show', 'dashcam')[1].strip()
+
+
+def interface():
+    """The Wi-Fi adapter for internet.
+
+    /etc/frogdash/wifi-internet names it when set (use the dash cam's adapter when the
+    built-in Wi-Fi cannot reach your networks: it is then borrowed and handed back).
+    Otherwise the adapter the dash cam connection does not use, or the built-in one.
     """
     devices = sorted(p.name for p in Path('/sys/class/net').glob('wlan*'))
-    dashcam = nmcli('-g', 'connection.interface-name', 'con', 'show', 'dashcam')[1].strip()
+    try:
+        chosen = CHOICE.read_text(encoding='utf-8').strip()
+        if chosen in devices:
+            return chosen
+    except OSError:
+        pass
+    dashcam = dashcam_device()
     others = [d for d in devices if d != dashcam]
     if dashcam in devices and others:
         return others[0]
@@ -73,6 +88,18 @@ def write(state, message, device):
 
 def main():
     device = interface()
+    borrowing = device == dashcam_device()
+    if borrowing:  # One usable adapter: take it off the dash cam; the Wi-Fi keeper returns it.
+        LOCK.touch()
+        nmcli('con', 'down', 'dashcam')
+    try:
+        run(device, borrowing)
+    finally:
+        if borrowing:
+            LOCK.unlink(missing_ok=True)
+
+
+def run(device, borrowing):
     try:
         request = json.loads(REQUEST.read_text(encoding='utf-8'))
     except (OSError, ValueError):
@@ -104,6 +131,12 @@ def main():
         if code:
             wrong = 'Secrets were required' in error or '802-11-wireless-security' in error
             return write('failed', 'Wrong password' if wrong else f'Could not join {ssid}: {error[:120]}', device)
+        if borrowing:
+            # Saved for updates; the adapter goes back to the dash cam afterwards.
+            nmcli('con', 'modify', name, 'connection.autoconnect', 'no', 'connection.interface-name', '')
+            write('connected', f'Saved {ssid} for updates (internet checked). Returning to the dash cam', device)
+            nmcli('con', 'down', name)
+            return
         nmcli('con', 'modify', name, 'connection.autoconnect', 'yes', 'connection.autoconnect-priority', '10')
         return write('connected', f'Joined {ssid}', device)
     if action == 'disconnect':

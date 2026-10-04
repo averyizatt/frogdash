@@ -1,0 +1,12 @@
+[Unit]
+Description=Frogdash Wi-Fi keeper (keeps the dash cam connection up)
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+ExecStart=/bin/sh /opt/frogdash/tools/frogdash_netkeeper.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
