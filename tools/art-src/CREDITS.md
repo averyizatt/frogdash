@@ -14,3 +14,6 @@ It is included only for display on the owner's own car. This project is not affi
 | `mustang-fox-fastback.jpg` | [File:FOX-Fastback.jpg](https://commons.wikimedia.org/wiki/File:FOX-Fastback.jpg) | Accord14 | CC BY-SA 4.0 |
 | `mustang-pace-car.jpg` | [File:Ford Fox Body Mustang Pace Car (15386407392).jpg](https://commons.wikimedia.org/wiki/File:Ford_Fox_Body_Mustang_Pace_Car_(15386407392).jpg) | priceman 141 | CC BY 2.0 |
 | `ford-oval.png` | [File:Ford logo flat.svg](https://commons.wikimedia.org/wiki/File:Ford_logo_flat.svg) | Ford Motor Company | Public domain |
+| `mustang-script.png` | [File:Mustang logo.png](https://commons.wikimedia.org/wiki/File:Mustang_logo.png) | Arosio Stefano | Public domain (trademark of Ford Motor Company) |
+
+The car line art in the splash screens is original (drawn in `tools/make_art.py`).

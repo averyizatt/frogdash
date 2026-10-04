@@ -133,19 +133,18 @@ Warning/fault colors remain unchanged. Background images are dimmed behind
 the adjustable instrument surfaces, and splash images use contain rather than cropping.
 
 **Bundled artwork.** `hardware/art/` ships generated backgrounds (Fox-body stripes,
-night highway, carbon and red, blueprint coupe, tach glow), darkened photo
-backgrounds of real Fox-body Mustangs (red GT, black GT convertible, pace car,
-fastback, blue GT) and splash images (Made by Avery Izatt, Ford oval, 5.0, Fox body
-pace car, Built not bought). They update with `git pull` and appear first in the file
-picker as **Bundled art**; selecting an image control with the wheel, mouse or touch
-opens that picker. Chosen images are also saved on the Pi, so they survive key-off.
-The published preview offers the same images. To change or add designs, edit
-`tools/make_art.py` and run it, then `python tools/update_preview.py`.
+night highway, carbon and red, blueprint coupe, tach glow), darkened photo backgrounds
+of Fox-body Mustangs, and seven splash screens: Made by Avery Izatt, Ford oval,
+Mustang outline, Mustang script, Fox body sticker, 5.0 and Built not bought. The
+splashes use original line art of a notchback (drawn in `tools/make_art.py`), the
+Ford oval and the 1980s Mustang script badge; captions stay clear of the dash hump
+at the bottom centre. They update with `git pull` and appear first in the file picker
+as **Bundled art**. Chosen images are also saved on the Pi, so they survive key-off.
+To change or add designs, edit `tools/make_art.py`, run it, then `python tools/update_preview.py`.
 
-The photos come from Wikimedia Commons under Creative Commons licenses; the source
-files and required credits are in `tools/art-src/` (`CREDITS.md`), and each photo
-splash carries a small credit line. The Ford oval is a trademark of Ford Motor Company,
-included only for display on the owner's car; this project is not affiliated with Ford.
+Photo backgrounds come from Wikimedia Commons under Creative Commons licenses, and the
+Ford oval and Mustang script are public-domain images of Ford trademarks; sources and
+credits are in `tools/art-src/CREDITS.md`. This project is not affiliated with Ford.
 To use other images, copy them to `/var/lib/frogdash/import/` on the Pi. A file there
 with the same name as a bundled image replaces it in the picker.
 

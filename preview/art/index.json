@@ -60,14 +60,24 @@
   "title": "Ford oval"
  },
  {
-  "name": "splash-five-point-oh.jpg",
+  "name": "splash-mustang-outline.jpg",
   "kind": "splash",
-  "title": "5.0"
+  "title": "Mustang outline"
+ },
+ {
+  "name": "splash-mustang-script.jpg",
+  "kind": "splash",
+  "title": "Mustang script"
  },
  {
   "name": "splash-fox-body.jpg",
   "kind": "splash",
-  "title": "Fox body pace car"
+  "title": "Fox body sticker"
+ },
+ {
+  "name": "splash-five-point-oh.jpg",
+  "kind": "splash",
+  "title": "5.0"
  },
  {
   "name": "splash-built-not-bought.jpg",

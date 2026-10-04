@@ -8,6 +8,7 @@ rendered at the dash's 1920 x 720 with Chromium, so it is easy to edit and re-ru
 """
 import asyncio
 import base64
+import math
 import json
 from pathlib import Path
 
@@ -18,7 +19,7 @@ OUT = ROOT / 'hardware' / 'art'
 BASE = '<style>html,body{margin:0;width:1920px;height:720px;overflow:hidden;background:#000;font-family:"DejaVu Sans","Segoe UI",Arial,sans-serif}</style>'
 
 SRC = ROOT / 'tools' / 'art-src'
-FONTS = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;700&display=block">'
+FONTS = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Michroma&family=Oswald:wght@400;500;700&display=block">'
 
 
 def data(name):
@@ -40,6 +41,60 @@ def photo_bg(name, focus):
 def credit(text):
     return f'<div style="position:absolute;right:18px;bottom:12px;font:13px Oswald,sans-serif;letter-spacing:1px;color:#ffffff70">{text}</div>'
 
+
+# ---- Original line art: Fox-body notchback side profile (front at left), 1000 x 300 units ----
+FOX_BODY = ('M50 240 L42 214 L40 196 Q40 184 48 178 L62 163 C140 147 236 126 320 112 L410 39 C444 30 560 27 610 34 L690 99 '
+            'C762 100 880 102 944 109 L951 122 L953 176 Q957 204 947 218 L941 240 L807.8 242 A70 70 0 1 0 676.2 242 L305.8 244 A70 70 0 1 0 174.2 242 Z')
+
+
+def fox_wheel(cx, cy, ink, paper, solid):
+    spokes = ''
+    for i in range(5):
+        a = math.radians(-90 + i * 72)
+        points = [(10, a - .34), (40, a - .12), (40, a + .12), (10, a + .34)]
+        spokes += '<path d="M' + ' L'.join(f'{cx + r * math.cos(t):.1f} {cy + r * math.sin(t):.1f}' for r, t in points) + f'Z" fill="{paper if solid else ink}"/>'
+    if solid:
+        return (f'<circle cx="{cx}" cy="{cy}" r="64" fill="{ink}"/><circle cx="{cx}" cy="{cy}" r="44" fill="{paper}"/>'
+                f'<circle cx="{cx}" cy="{cy}" r="40" fill="{ink}"/>{spokes}<circle cx="{cx}" cy="{cy}" r="9" fill="{paper}"/><circle cx="{cx}" cy="{cy}" r="4" fill="{ink}"/>')
+    return (f'<circle cx="{cx}" cy="{cy}" r="62" fill="{paper}" stroke="{ink}" stroke-width="5"/><circle cx="{cx}" cy="{cy}" r="43" fill="none" stroke="{ink}" stroke-width="3"/>'
+            f'{spokes}<circle cx="{cx}" cy="{cy}" r="10" fill="{ink}"/><circle cx="{cx}" cy="{cy}" r="4" fill="{paper}"/>')
+
+
+def fox(width, ink='#f2f2f2', paper='#0b0d10', glass='#262d34', solid=False, border=0, flip=False, style=''):
+    """The car as an inline SVG. The body is squashed 10% towards the ground for a lowered
+    stance; wheels stay round. border > 0 adds a sticker-style outer outline."""
+    body = ''
+    if border:
+        body += f'<path d="{FOX_BODY}" fill="{ink}" stroke="{ink}" stroke-width="{border}" stroke-linejoin="round"/>'
+    body += f'<path d="{FOX_BODY}" fill="{paper}" stroke="{ink}" stroke-width="5" stroke-linejoin="round"/>'
+    body += f'<path d="M342 110 L416 47 L541 41 L548 107 Z" fill="{glass}"/><path d="M562 106 L556 41 L600 42 L648 103 Z" fill="{glass}"/>'
+    body += f'<path d="M672 101 L622 44 L614 43 L662 102 Z" fill="{glass}"/>'
+    line = f'stroke="{ink}" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"'
+    body += f'<path d="M333 113 L328 240 M553 109 L557 241 M333 113 L553 109" {line}/>'
+    body += f'<path d="M62 186 L178 181 M302 178 L680 176 M804 176 L951 178 M48 214 L170 210 M812 210 L951 208" {line}/>'
+    body += f'<path d="M100 157 C180 142 250 130 316 120" {line}/>'
+    body += f'<path d="M320 112 L332 99 L348 99 L340 111 Z" fill="{ink}"/><rect x="508" y="127" width="27" height="6" rx="3" fill="{ink}"/>'
+    body += f'<path d="M58 166 L88 160 L88 177 L52 180 Z" fill="{ink}"/><path d="M926 113 L950 122 L952 164 L926 162 Z" fill="{ink}"/>'
+    wheels = ''
+    if border:
+        wheels += ''.join(f'<circle cx="{cx}" cy="216" r="{64 + border / 2}" fill="{ink}"/>' for cx in (240, 742))
+    wheels += fox_wheel(240, 216, ink, paper, solid) + fox_wheel(742, 216, ink, paper, solid)
+    flipped = ' transform="translate(1000,0) scale(-1,1)"' if flip else ''
+    return (f'<svg viewBox="-24 -4 1048 304" width="{width}" style="position:absolute;{style}"><g{flipped}>'
+            f'<g transform="translate(0,28.2) scale(1,.9)">{body}</g>{wheels}</g></svg>')
+
+
+def stage(inner, glow='#1a2129'):
+    """Shared dark studio background for the splash screens."""
+    return (f'<div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 85% at 50% 42%,{glow},#06080a 78%)"></div>'
+            '<div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,#ffffff04 0 1px,transparent 1px 4px)"></div>' + inner)
+
+
+def notice(text):
+    return f'<div style="position:absolute;right:18px;bottom:12px;font:12px Oswald,sans-serif;letter-spacing:1px;color:#ffffff55">{text}</div>'
+
+
+WIDE = "font-family:Michroma,'Eurostile Extended',sans-serif;text-transform:uppercase"
 
 # (file name, kind, title, HTML). Backgrounds stay dark and low-contrast behind gauges.
 ART = [
@@ -77,39 +132,44 @@ ART = [
     ('bg-photo-pace-car.jpg', 'background', 'Pace car (photo)', photo_bg('mustang-pace-car.jpg', '50% 70%')),
     ('bg-photo-fastback.jpg', 'background', 'Fastback (photo)', photo_bg('mustang-fox-fastback.jpg', '50% 50%')),
     ('bg-photo-gt-blue.jpg', 'background', 'Blue GT (photo)', photo_bg('mustang-1985-gt-blue.jpg', '60% 60%')),
-    ('splash-made-by-avery-izatt.jpg', 'splash', 'Made by Avery Izatt', f"""
-{photo('mustang-1986-gt-red.jpg', 'right 0 top 0 / 1240px auto', 'brightness(.9) saturate(1.1)')}
-<div style="position:absolute;inset:0;background:linear-gradient(90deg,#050608 0 38%,#050608e6 50%,#05060800 78%)"></div>
-<div style="position:absolute;left:120px;top:210px">
-  <div style="font:500 30px/1 Oswald,sans-serif;letter-spacing:14px;color:#d23a3a">MADE BY</div>
-  <div style="font:700 132px/1 Oswald,sans-serif;letter-spacing:4px;color:#f4f4f4;margin-top:14px;text-transform:uppercase">Avery Izatt</div>
-  <div style="width:520px;height:6px;margin-top:26px;background:linear-gradient(90deg,#d23a3a 0 34%,#ffffff 34% 66%,#2f6fd8 66%)"></div>
-  <div style="font:400 26px/1 Oswald,sans-serif;letter-spacing:9px;color:#9aa3ab;margin-top:24px">FOX BODY · 5.0</div>
-</div>{credit('Photo: Sicnag, CC BY 2.0')}"""),
+    # Splash screens: original line art, the Ford oval and the 1980s Mustang script (see CREDITS.md).
+    ('splash-made-by-avery-izatt.jpg', 'splash', 'Made by Avery Izatt', stage(
+        fox(1060, style='left:430px;top:22px') + f"""
+<div style="position:absolute;left:0;right:0;top:364px;text-align:center;font:500 26px/1 Oswald,sans-serif;letter-spacing:18px;color:#d23a3a">MADE BY</div>
+<div style="position:absolute;left:0;right:0;top:406px;text-align:center;{WIDE};font-size:118px;line-height:1;letter-spacing:6px;color:#f4f4f4">Avery Izatt</div>
+<div style="position:absolute;left:660px;top:556px;width:600px;height:5px;background:linear-gradient(90deg,#d23a3a 0 33.3%,#f4f4f4 33.3% 66.6%,#2f6fd8 66.6%)"></div>
+<div style="position:absolute;left:0;right:0;top:582px;text-align:center;font:400 22px/1 Oswald,sans-serif;letter-spacing:10px;color:#8d98a2">FOX BODY · 5.0</div>""")),
     ('splash-ford-oval.jpg', 'splash', 'Ford oval', f"""
 <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 75% at 50% 50%,#1b2a4a,#05070c 75%)"></div>
 <div style="position:absolute;inset:0;background:repeating-linear-gradient(90deg,#ffffff05 0 1px,transparent 1px 4px)"></div>
 <img src="{data('ford-oval.png')}" style="position:absolute;left:50%;top:44%;width:760px;transform:translate(-50%,-50%);filter:drop-shadow(0 18px 40px #000c)">
 <div style="position:absolute;left:0;right:0;top:560px;text-align:center;font:500 30px/1 Oswald,sans-serif;letter-spacing:18px;color:#c9d3e4">FOX BODY MUSTANG</div>
-{credit('Ford oval is a trademark of Ford Motor Company · not affiliated')}"""),
-    ('splash-five-point-oh.jpg', 'splash', '5.0', f"""
-{photo('mustang-1985-gt-blue.jpg', 'left -40px top -60px / 1300px auto', 'brightness(.75)')}
-<div style="position:absolute;inset:0;background:linear-gradient(270deg,#040507 0 36%,#040507d9 50%,#04050700 76%)"></div>
-<div style="position:absolute;right:130px;top:120px;text-align:right">
-  <div style="font:400 380px/.9 'Bebas Neue',Oswald,sans-serif;color:#f2f2f2;letter-spacing:6px;text-shadow:0 10px 40px #000">5.0</div>
-  <div style="font:500 34px/1 Oswald,sans-serif;letter-spacing:16px;color:#e04848;margin-top:6px">HIGH OUTPUT</div>
-</div>{credit('Photo: Sicnag, CC BY 2.0')}"""),
-    ('splash-fox-body.jpg', 'splash', 'Fox body pace car', f"""
-{photo('mustang-pace-car.jpg', 'center 62% / cover', 'brightness(.62) saturate(.9)')}
-<div style="position:absolute;inset:0;background:linear-gradient(180deg,#000000b0 0,#00000000 34%,#00000000 66%,#000000c0)"></div>
-<div style="position:absolute;left:0;right:0;top:70px;text-align:center;font:700 120px/1 Oswald,sans-serif;letter-spacing:30px;color:#fff;text-shadow:0 6px 30px #000">FOX BODY</div>
-<div style="position:absolute;left:0;right:0;bottom:84px;text-align:center;font:400 28px/1 Oswald,sans-serif;letter-spacing:14px;color:#d8d8d8">1979 – 1993</div>
-{credit('Photo: priceman 141, CC BY 2.0')}"""),
-    ('splash-built-not-bought.jpg', 'splash', 'Built not bought', f"""
-{photo('mustang-1988-gt-convertible.jpg', 'right -80px top -40px / 1280px auto', 'brightness(.8) contrast(1.05)')}
-<div style="position:absolute;inset:0;background:linear-gradient(90deg,#060606 0 36%,#060606e0 48%,#06060600 76%)"></div>
-<div style="position:absolute;left:120px;top:190px;font:700 150px/.95 Oswald,sans-serif;color:#f5f5f5;text-transform:uppercase">Built<br><span style="color:#e2b13c">not bought</span></div>
-{credit('Photo: Sicnag, CC BY 2.0')}"""),
+{notice('Ford oval is a trademark of Ford Motor Company · not affiliated')}"""),
+    ('splash-mustang-outline.jpg', 'splash', 'Mustang outline', stage(
+        fox(1180, style='left:370px;top:14px') + f"""
+<div style="position:absolute;left:0;right:0;top:344px;text-align:center;{WIDE};font-size:208px;line-height:1;letter-spacing:10px;color:#f4f4f4;-webkit-text-stroke:5px #f4f4f4">Mustang</div>
+<div style="position:absolute;left:0;right:0;top:590px;text-align:center;font:400 22px/1 Oswald,sans-serif;letter-spacing:14px;color:#8d98a2">1979 – 1993</div>""")),
+    ('splash-mustang-script.jpg', 'splash', 'Mustang script', stage(f"""
+<img src="{data('mustang-script.png')}" style="position:absolute;left:50%;top:292px;width:1060px;transform:translate(-50%,-50%);filter:invert(1) drop-shadow(0 14px 30px #000a)">
+<div style="position:absolute;left:560px;top:498px;width:800px;height:4px;background:#d23a3a"></div>
+<div style="position:absolute;left:0;right:0;top:530px;text-align:center;font:500 30px/1 Oswald,sans-serif;letter-spacing:20px;color:#d9dee3">5.0 LITER · HIGH OUTPUT</div>
+{notice('Mustang is a trademark of Ford Motor Company · not affiliated')}""", glow='#231416')),
+    ('splash-fox-body.jpg', 'splash', 'Fox body sticker', f"""
+<div style="position:absolute;inset:0;background:linear-gradient(160deg,#4a5057,#23272c 70%)"></div>
+<div style="position:absolute;inset:0;background:repeating-linear-gradient(115deg,#ffffff06 0 2px,transparent 2px 7px)"></div>
+{fox(1240, ink='#0c0d0f', paper='#f6f6f4', glass='#0c0d0f', solid=True, border=26, flip=True, style='left:340px;top:36px;filter:drop-shadow(0 22px 26px #0009)')}
+<div style="position:absolute;left:0;right:0;top:468px;text-align:center;{WIDE};font-size:84px;line-height:1;letter-spacing:22px;color:#f6f6f4">Fox Body</div>
+<div style="position:absolute;left:0;right:0;top:576px;text-align:center;font:400 24px/1 Oswald,sans-serif;letter-spacing:14px;color:#c3c9cf">NOTCHBACK · 1979 – 1993</div>"""),
+    ('splash-five-point-oh.jpg', 'splash', '5.0', stage(
+        fox(1000, style='left:820px;top:190px') + f"""
+<div style="position:absolute;left:120px;top:150px;{WIDE};font-size:330px;line-height:1;letter-spacing:-6px;color:transparent;-webkit-text-stroke:5px #f4f4f4">5.0</div>
+<div style="position:absolute;left:132px;top:520px;width:640px;height:5px;background:#d23a3a"></div>
+<div style="position:absolute;left:132px;top:548px;font:500 34px/1 Oswald,sans-serif;letter-spacing:18px;color:#e04848">HIGH OUTPUT</div>""")),
+    ('splash-built-not-bought.jpg', 'splash', 'Built not bought', stage(
+        fox(900, style='left:960px;top:214px') + f"""
+<div style="position:absolute;left:120px;top:176px;font:700 150px/.95 Oswald,sans-serif;color:#f5f5f5;text-transform:uppercase">Built<br><span style="color:#e2b13c">not bought</span></div>
+<div style="position:absolute;left:124px;top:490px;width:520px;height:5px;background:#e2b13c"></div>
+<div style="position:absolute;left:124px;top:518px;font:400 26px/1 Oswald,sans-serif;letter-spacing:12px;color:#8d98a2">GARAGE MADE</div>""", glow='#221d12')),
 ]
 
 
