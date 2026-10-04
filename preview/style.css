@@ -541,6 +541,12 @@ html.cursor-hidden, html.cursor-hidden * { cursor:none !important; }
 .can-check-row code { display:block; margin:4px 0 0 96px; color:var(--muted); font-size:12px; }
 .can-check-row[data-status="skip"] { opacity:.6; }
 .can-check-row:is(:focus-visible,.wheel-focus) { outline:2px solid var(--accent); }
+/* Terminal tab and three-column Wi-Fi tab. */
+.terminal-line { display:flex; gap:10px; }
+.terminal-line input { flex:1; min-width:0; font:15px ui-monospace,Consolas,monospace; min-height:44px; padding:6px 12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); }
+.terminal-output { flex:1; min-height:120px; max-height:300px; overflow:auto; margin:0; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:#05080a; color:#cfe8d8; font:13px/1.45 ui-monospace,Consolas,monospace; white-space:pre-wrap; overflow-wrap:anywhere; }
+#panel-wifi .settings-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+@media (max-aspect-ratio:11/5) and (max-width:1200px) { #panel-wifi .settings-grid { grid-template-columns:1fr; } }
 
 /* Preview-only playback controls. */
 .demo-playback { display:flex; gap:6px; }

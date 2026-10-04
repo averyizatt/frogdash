@@ -14,7 +14,7 @@
   const dialog = el('dialog', null, 'workspace-dialog'); dialog.id = 'operations-dialog'; dialog.setAttribute('aria-labelledby', 'operations-title');
   dialog.innerHTML = `<header class="dialog-header"><div><span class="eyebrow">SETUP / SERVICE / SUPPORT</span><h2 id="operations-title">Dash management</h2><p id="operations-summary"></p></div><button id="demo-park" class="close-button" type="button" hidden>Park demo</button><button id="operations-close" class="close-button" type="button">Close ×</button></header>
     <div class="control-workspace"><nav class="control-tabs driver-tabs" aria-label="Management sections">
-    ${[['setup','Setup checklist'],['service','Maintenance'],['backup','Backup & restore'],['display','Units & backlight'],['support','Support & testing']].map(([key,label]) => `<button type="button" data-ops-tab="${key}" aria-selected="false">${label}</button>`).join('')}</nav>
+    ${[['setup','Setup checklist'],['service','Maintenance'],['backup','Backup & restore'],['display','Units & backlight'],['support','Support & testing'],['terminal','Terminal']].map(([key,label]) => `<button type="button" data-ops-tab="${key}" aria-selected="false">${label}</button>`).join('')}</nav>
     <div class="driver-panels">
       <section class="driver-panel ops-panel control-section" data-ops-panel="setup"><div class="ops-columns"><div class="setting-card"><h3>1 · Check connected hardware</h3><div id="setup-hardware"></div><p class="control-note">Live presence confirms data is arriving. Verify wiring, CAN oscillator/bitrate and sensor accuracy during commissioning.</p></div><div class="setting-card"><h3>2 · Complete calibration and display</h3><div id="setup-calibration"></div><p class="control-note">3 · Run the vehicle checks under Support & testing. Completion is recorded only when you mark a physical test passed.</p><button type="button" data-ops-go="support">Vehicle test checklist</button></div></div></section>
       <section class="driver-panel ops-panel control-section" data-ops-panel="service" hidden><div class="ops-columns"><form id="maintenance-form" class="setting-card ops-edit"><h3>Add a service reminder</h3><label>Service name<input id="maintenance-name" maxlength="60" required placeholder="Engine oil & filter"></label><div class="ops-fields"><label id="maintenance-distance-label">Distance · km<input id="maintenance-distance" type="number" min="0" max="100000" value="0" required></label><label>Engine hours<input id="maintenance-hours" type="number" min="0" max="10000" value="0" required></label><label>Days<input id="maintenance-days" type="number" min="0" max="3650" value="0" required></label></div><p class="control-note">Zero disables an interval. Due when any enabled interval is reached. Distance and engine hours count only while the dash receives live data; enter intervals remaining until your next service.</p><button type="submit">Add reminder</button></form><div class="setting-card ops-list" id="maintenance-list" aria-live="polite"></div></div></section>
@@ -31,8 +31,8 @@
   });
   // Software update over Wi-Fi: asks the Pi's update helper to pull and restart.
   dialog.querySelector('[data-ops-panel="support"] .ops-columns').lastElementChild.insertAdjacentHTML('afterbegin',
-    '<div class="speaker-test"><div><span>Software update</span><small id="update-status">Needs the Pi on Wi-Fi with internet (for example your phone hotspot).</small></div>' +
-    '<div class="speaker-test-buttons"><button type="button" id="update-run">Update now</button></div></div>');
+    '<div class="speaker-test"><div><span>Software update</span><small id="update-status">Uses a saved Wi-Fi network (home or phone hotspot) and returns to the dash cam afterwards.</small></div>' +
+    '<div class="speaker-test-buttons"><button type="button" id="update-run">Update now</button><button type="button" id="update-check">Show version</button></div></div>');
   let updateTimer = null;
   async function updatePoll() {
     try {
@@ -41,6 +41,7 @@
       if (!s.pending && s.state !== 'running') { clearInterval(updateTimer); updateTimer = null; $('update-run').disabled = false; }
     } catch { $('update-status').textContent = 'Dash restarting…'; }
   }
+  $('update-check').onclick = () => updatePoll();
   $('update-run').onclick = async () => {
     $('update-run').disabled = true;
     $('update-status').textContent = 'Requesting update…';
@@ -50,6 +51,38 @@
       clearInterval(updateTimer); updateTimer = setInterval(updatePoll, 2000);
     } catch { $('update-status').textContent = 'Update is not available here'; $('update-run').disabled = false; }
   };
+  // Terminal (optional, --terminal): commands run as the dash's unprivileged service user.
+  dialog.querySelector('[data-ops-panel="support"]').insertAdjacentHTML('afterend',
+    '<section class="driver-panel ops-panel control-section" data-ops-panel="terminal" hidden><div class="terminal-line"><input id="terminal-command" type="text" maxlength="2000" autocomplete="off" spellcheck="false" placeholder="Command, for example: ip -br addr">' +
+    '<button type="button" id="terminal-run">Run</button><button type="button" id="terminal-clear">Clear</button></div>' +
+    '<p id="terminal-note" class="control-note">Runs as the dash service user: no sudo and not interactive. Good for checking status (ip, nmcli, ping, ls, cat). Use a keyboard; press Enter to run.</p>' +
+    '<pre id="terminal-output" class="terminal-output" tabindex="0"></pre></section>');
+  const terminalHistory = [];
+  let terminalIndex = 0;
+  async function terminalRun() {
+    const command = $('terminal-command').value.trim();
+    if (!command) return;
+    terminalHistory.push(command); terminalIndex = terminalHistory.length;
+    const out = $('terminal-output');
+    out.textContent += `$ ${command}\n`;
+    $('terminal-command').value = ''; $('terminal-run').disabled = true;
+    try {
+      const response = await fetch('/terminal', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({command})});
+      if (!response.ok) throw new Error(await response.text());
+      const result = await response.json();
+      out.textContent += result.output + (result.exit ? `[exit ${result.exit}]\n` : '') + '\n';
+    } catch (error) { out.textContent += `${error.message || 'Terminal unavailable'}\n\n`; }
+    $('terminal-run').disabled = false;
+    out.scrollTop = out.scrollHeight;
+  }
+  $('terminal-run').onclick = terminalRun;
+  $('terminal-clear').onclick = () => { $('terminal-output').textContent = ''; };
+  $('terminal-command').addEventListener('keydown', event => {
+    if (event.key === 'Enter') { event.preventDefault(); terminalRun(); }
+    else if (event.key === 'ArrowUp' && terminalIndex > 0) { $('terminal-command').value = terminalHistory[--terminalIndex]; event.preventDefault(); }
+    else if (event.key === 'ArrowDown' && terminalIndex < terminalHistory.length) { $('terminal-command').value = terminalHistory[++terminalIndex] || ''; event.preventDefault(); }
+  });
+  fetch('/terminal').then(r => { if (!r.ok) $('terminal-note').textContent = 'Terminal is off. Add --terminal to FROGDASH_ARGS in /etc/default/frogdash and restart frogdash.service to enable it.'; }).catch(() => {});
   const launch = el('button', 'Dash management', 'close-button'); launch.id = 'operations-launch'; launch.type = 'button';
   $('drive-close').before(launch);
   function tab(key) { document.querySelectorAll('[data-ops-panel]').forEach(n => n.hidden = n.dataset.opsPanel !== key); document.querySelectorAll('[data-ops-tab]').forEach(n => n.setAttribute('aria-selected', String(n.dataset.opsTab === key))); }

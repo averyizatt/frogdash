@@ -253,17 +253,16 @@
 
 <dialog id="diagnostics" class="workspace-dialog" aria-labelledby="diagnostics-title">
   <header class="dialog-header"><div><span class="eyebrow">VEHICLE TELEMETRY</span><h2 id="diagnostics-title">Sensors &amp; connections</h2><p id="module-health"></p></div><button id="diagnostics-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
-  <div class="diagnostics-toolbar"><label for="signal-filter">Find a signal</label><input id="signal-filter" type="search" placeholder="Search name, e.g. oil or GPS" autocomplete="off"><span>LIVE / STALE / FAULT / NO SIGNAL</span></div>
+  <div class="diagnostics-toolbar"><label for="signal-filter">Find a signal</label><input id="signal-filter" type="search" placeholder="Search name, e.g. oil or GPS" autocomplete="off"><span>LIVE / STALE / FAULT / NO SIGNAL</span><button id="selftest-run" class="close-button" type="button">RUN SYSTEM CHECK</button><button id="capture-run" class="close-button" type="button">RECORD CAN FOR 20 S</button><a id="capture-download" class="close-button" href="/can/capture?download=1" hidden>Download recording</a></div>
   <div class="diagnostics-body">
+    <details id="selftest-details" open><summary>System check: test everything</summary>
+      <p id="selftest-summary" class="control-note">Checks the CAN bus, every module, GPS, cameras, power, storage and updates. It only reads; nothing is sent to the car.</p>
+      <div id="selftest" class="can-check"></div></details>
+    <details id="can-check-details"><summary>CAN check: what each module is sending</summary><p id="can-check-summary" class="control-note"></p><div id="can-check" class="can-check"></div></details>
     <details id="log-details"><summary>Saved data logs</summary><p id="log-status">Recording disabled</p><button id="refresh-logs" class="close-button" type="button">Refresh files</button><ul id="log-files" class="log-files"></ul></details>
     <table><thead><tr><th>Signal</th><th>Reading</th><th>Quality</th><th>Source</th></tr></thead><tbody id="signals"></tbody></table>
     <details><summary>Connection details</summary><p id="connection">Connecting</p><p id="source-health">Waiting for data</p></details>
     <details><summary>Event history</summary><p>Received events since startup, not a list of currently active faults.</p><pre id="fault-history"></pre></details>
-    <details id="selftest-details" open><summary>System check: test everything</summary>
-      <div class="control-row"><button id="selftest-run" type="button">RUN SYSTEM CHECK</button><button id="capture-run" type="button">RECORD CAN FOR 20 S</button><a id="capture-download" class="close-button" href="/can/capture?download=1" hidden>Download recording</a></div>
-      <p id="selftest-summary" class="control-note">Checks the CAN bus, every module, GPS, cameras, power, storage and updates. It only reads; nothing is sent to the car.</p>
-      <div id="selftest" class="can-check"></div></details>
-    <details id="can-check-details"><summary>CAN check: what each module is sending</summary><p id="can-check-summary" class="control-note"></p><div id="can-check" class="can-check"></div></details>
     <details><summary>Raw CAN traffic</summary><pre id="raw-frames"></pre></details>
   </div>
 </dialog>

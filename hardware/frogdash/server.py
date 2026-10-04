@@ -240,6 +240,33 @@ def create_app(state, adapter=None, connectivity=None):
                                   'remaining_s': max(0, round(state.capture_until - now)), 'available': state.capture is not None},
                                  headers={'Cache-Control': 'no-store'})
 
+    async def terminal(request):
+        # Optional (--terminal): run a command as the dash's own unprivileged, sandboxed
+        # service user. Only from the dash's own screen; no sudo, not interactive.
+        require_local(request)
+        if not state.terminal_enabled or state.mode == 'replay':
+            raise web.HTTPNotFound(text='Terminal is not enabled (--terminal)')
+        if request.method == 'GET':
+            return web.json_response({'enabled': True})
+        try:
+            command = (await request.json()).get('command')
+            if not isinstance(command, str) or not command.strip() or len(command) > 2000:
+                raise ValueError()
+        except (ValueError, AttributeError, TypeError):
+            raise web.HTTPBadRequest(text='Type a command (up to 2000 characters)')
+        process = await asyncio.create_subprocess_exec('/bin/bash', '-c', command, stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT, env={'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'TERM': 'dumb', 'LC_ALL': 'C'})
+        try:
+            output, _ = await asyncio.wait_for(process.communicate(), 30)
+            code, note = process.returncode, ''
+        except asyncio.TimeoutError:
+            process.kill()
+            output, code, note = await process.stdout.read(), 124, '\n[stopped after 30 s]'
+        text = output.decode('utf-8', 'replace')
+        if len(text) > 100000:
+            text = '[earlier output trimmed]\n' + text[-100000:]
+        return web.json_response({'exit': code, 'output': text + note}, headers={'Cache-Control': 'no-store'})
+
     async def can_check(request):
         return web.json_response(cancheck.report(state), headers={'Cache-Control': 'no-store'})
 
@@ -562,7 +589,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/update", update), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.post("/terminal", terminal), web.get("/update", update), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),
@@ -591,6 +618,8 @@ def main():
     parser.add_argument("--gpsd", action="store_true", help="Use local gpsd USB GPS and broadcast 0x203")
     parser.add_argument("--gps-device", help="gpsd device path; otherwise lock to first receiver")
     parser.add_argument("--gps-no-transmit", action="store_true", help="Use USB GPS locally without CAN GPS transmission")
+    parser.add_argument("--terminal", action="store_true",
+                        help="Enable the Terminal tab: commands run as the unprivileged dash service user, local screen only")
     parser.add_argument("--no-engine-runtime", action="store_true",
                         help="Do not publish 0x309 engine RPM for water/meth (use when the CCM dashboard firmware sends it)")
     parser.add_argument('--log-dir', type=Path, help='Enable rotating MLG recording in this dedicated directory')
@@ -622,6 +651,7 @@ def main():
     if (args.gps_device or args.gps_no_transmit) and not args.gpsd:
         parser.error("GPS options require --gpsd")
     state = State("replay" if args.replay else "socketcan")
+    state.terminal_enabled = args.terminal and not args.replay
     if args.no_engine_runtime:
         state.runtime.enabled, state.runtime.status = False, 'disabled (--no-engine-runtime)'
     state.race = Race(args.race_file if not args.replay else None)
