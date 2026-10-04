@@ -236,6 +236,13 @@
             <dt>Network</dt><dd id="wifi-ssid">—</dd><dt>Wi-Fi password</dt><dd id="wifi-password">—</dd>
             <dt>Open in browser</dt><dd id="wifi-url">—</dd><dt>Dash access code</dt><dd id="wifi-code">—</dd>
           </dl><p class="control-note">Download completed logs and check system status. Vehicle controls stay on the dash.</p></div>
+          <div class="setting-card"><h3>Internet (for updates)</h3>
+            <p id="net-status" class="control-note" role="status">Press Scan to look for networks</p>
+            <label>Network <select id="net-ssid"><option value="">Scan first</option></select></label>
+            <label>Password <input id="net-password" type="text" maxlength="63" autocomplete="off" spellcheck="false" placeholder="Leave empty for a saved network"></label>
+            <div class="control-row"><button id="net-scan" type="button">SCAN</button><button id="net-connect" type="button">CONNECT</button><button id="net-disconnect" type="button" class="stop-control">DISCONNECT</button></div>
+            <p class="control-note">Joins your home Wi-Fi or phone hotspot with the Pi's built-in Wi-Fi and remembers it. Then use Dash management &rarr; Support &rarr; Update now.</p>
+          </div>
         </div>
       </section>
     </div>

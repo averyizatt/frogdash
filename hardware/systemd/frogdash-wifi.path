@@ -1,0 +1,9 @@
+[Unit]
+Description=Run a Frogdash Wi-Fi request (scan, join, disconnect)
+
+[Path]
+PathExists=/var/lib/private/frogdash/wifi-request.json
+Unit=frogdash-wifi.service
+
+[Install]
+WantedBy=multi-user.target

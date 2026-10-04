@@ -1,0 +1,8 @@
+[Unit]
+Description=Join a Wi-Fi network requested from the Frogdash screen
+After=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/frogdash/tools/frogdash_wifi.py
+TimeoutStartSec=120

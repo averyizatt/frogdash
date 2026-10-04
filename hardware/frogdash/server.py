@@ -26,6 +26,7 @@ from .paint import Paint, validate as validate_paint
 from .imports import Imports
 from . import cancheck
 
+WIFI_SSID, WIFI_PASSWORD = re.compile(r"[\x20-\x7E]{1,32}"), re.compile(r"[\x20-\x7E]{8,63}")
 IMAGE_DATA = re.compile(r"data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+")
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
@@ -191,6 +192,31 @@ def create_app(state, adapter=None, connectivity=None):
         except (OSError, ValueError):
             status = {'state': 'idle', 'message': 'No update has been run yet'}
         status['pending'] = (folder / 'update-request').exists()
+        return web.json_response(status, headers={'Cache-Control': 'no-store'})
+
+    async def wifi_client(request):
+        # Join a Wi-Fi network for internet: a root-owned path unit performs the request.
+        require_local(request)
+        folder = state.paint.path.parent if state.paint else None
+        if not folder or state.mode == 'replay':
+            raise web.HTTPNotFound()
+        if request.method == 'POST':
+            try:
+                body = await request.json()
+                action, ssid, password = body.get('action'), body.get('ssid', ''), body.get('password', '')
+                if action not in ('scan', 'connect', 'disconnect') or not isinstance(ssid, str) or not isinstance(password, str):
+                    raise ValueError()
+                if action == 'connect' and (not WIFI_SSID.fullmatch(ssid) or (password and not WIFI_PASSWORD.fullmatch(password))):
+                    raise ValueError()
+            except (ValueError, AttributeError, TypeError):
+                raise web.HTTPBadRequest(text='Network name up to 32 characters; password 8 to 63 characters')
+            await asyncio.to_thread(atomic_write, folder / 'wifi-request.json', {'action': action, 'ssid': ssid, 'password': password})
+            return web.json_response({'pending': True})
+        try:
+            status = json.loads(await asyncio.to_thread((folder / 'wifi-status.json').read_text))
+        except (OSError, ValueError):
+            status = {'state': 'idle', 'message': 'Press Scan to look for networks', 'networks': []}
+        status['pending'] = (folder / 'wifi-request.json').exists()
         return web.json_response(status, headers={'Cache-Control': 'no-store'})
 
     async def can_check(request):
@@ -507,7 +533,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/update", update), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/update", update), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),

@@ -376,8 +376,48 @@
       $(`panel-${button.dataset.tab}`).hidden = !active;
     }
     document.querySelector('.control-panels').scrollTop = 0;
-    if (name === 'wifi') loadWifi();
+    if (name === 'wifi') { loadWifi(); if (snapshot.mode !== 'demo') netPoll(); }
   }
+  // Internet: join a Wi-Fi network through the Pi's Wi-Fi helper (Controls > Wi-Fi).
+  let netTimer = null, netShown = '';
+  function netRender(s) {
+    const where = s.connected ? `Connected to ${s.connected}${s.address ? ` · ${s.address}` : ''} · internet ${s.internet ? 'OK' : 'not reachable'}` : 'Not connected';
+    $('net-status').textContent = s.pending ? 'Working…' : `${s.message || ''} · ${where}`;
+    const list = JSON.stringify((s.networks || []).map(n => [n.ssid, n.signal, n.saved, n.connected]));
+    if (list !== netShown && !$('net-ssid').classList.contains('wheel-editing')) {
+      netShown = list;
+      const chosen = $('net-ssid').value;
+      $('net-ssid').replaceChildren(...(s.networks?.length ? s.networks : [{ssid: '', none: true}]).map(n => {
+        const option = document.createElement('option'); option.value = n.ssid;
+        option.textContent = n.none ? 'No networks found: press Scan' : `${n.ssid} · ${n.signal}%${n.connected ? ' · connected' : n.saved ? ' · saved' : ''}${n.secure ? '' : ' · open'}`;
+        return option;
+      }));
+      if ([...$('net-ssid').options].some(o => o.value === chosen)) $('net-ssid').value = chosen;
+    }
+  }
+  async function netPoll() {
+    try {
+      const s = await (await fetch('/wifi-client', {cache: 'no-store'})).json();
+      netRender(s);
+      if (!s.pending) { clearInterval(netTimer); netTimer = null; }
+    } catch { $('net-status').textContent = 'Wi-Fi setup is not available here'; clearInterval(netTimer); netTimer = null; }
+  }
+  async function netSend(body) {
+    if (snapshot.mode === 'demo') { $('net-status').textContent = 'Preview only: no Wi-Fi changes are made'; return; }
+    $('net-status').textContent = 'Working…';
+    try {
+      const response = await fetch('/wifi-client', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+      if (!response.ok) throw new Error(await response.text());
+      clearInterval(netTimer); netTimer = setInterval(netPoll, 1500);
+    } catch (error) { $('net-status').textContent = error.message || 'Wi-Fi setup is not available here'; }
+  }
+  $('net-scan').onclick = () => netSend({action: 'scan'});
+  $('net-disconnect').onclick = () => netSend({action: 'disconnect'});
+  $('net-connect').onclick = () => {
+    if (!$('net-ssid').value) { $('net-status').textContent = 'Scan and choose a network first'; return; }
+    netSend({action: 'connect', ssid: $('net-ssid').value, password: $('net-password').value});
+    $('net-password').value = '';
+  };
   let wifiBusy = false, demoWifi = false;
   function renderWifi(status) {
     const demo = snapshot.mode === 'demo';

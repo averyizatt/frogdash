@@ -72,12 +72,22 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now frogdash-update.path
 ```
 
-The Pi needs internet on its built-in Wi-Fi. Save your phone hotspot once so it
-joins automatically whenever the hotspot is on:
+The Pi needs internet on its built-in Wi-Fi. Join a network from the dash:
+**Controls → Wi-Fi → Internet (for updates)**: Scan, pick the network, type the
+password with the on-screen keyboard and Connect. The network is remembered and
+rejoined automatically. One-time setup for that menu:
 
 ```sh
-sudo nmcli dev wifi connect "<hotspot name>" password "<password>" ifname wlan0 name phone
-sudo nmcli con modify phone connection.autoconnect yes connection.autoconnect-priority 10
+sudo cp hardware/systemd/frogdash-wifi.service hardware/systemd/frogdash-wifi.path /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now frogdash-wifi.path
+```
+
+Passwords are never stored in this repository; NetworkManager keeps them on the Pi.
+The same thing from a terminal:
+
+```sh
+sudo nmcli dev wifi connect "<network name>" password "<password>" ifname wlan0
 ```
 
 The update also refreshes any installed systemd unit files that changed. From a

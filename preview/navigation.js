@@ -24,7 +24,8 @@
   function focus(el) {
     document.querySelectorAll('.wheel-focus').forEach(item => item.classList.remove('wheel-focus'));
     el?.classList.add('wheel-focus'); el?.focus({preventScroll: true});
-    el?.scrollIntoView({block: 'nearest', inline: 'nearest'});
+    // Centre the focused control so the text around it scrolls into view too.
+    el?.scrollIntoView({block: 'center', inline: 'nearest'});
   }
   function describe() {
     message(editing ? 'EDIT: arrows change value | OK done | Hold OK back' : scope().dataset.wheelHint || 'WHEEL: arrows move | OK select | Hold OK back');
@@ -83,7 +84,7 @@
     if (kbValue.length < limit) kbValue += text;
     kbRender();
   }
-  for (const row of ['1234567890', 'QWERTYUIOP', 'ASDFGHJKL-', "ZXCVBNM.'&", ',/()!?#+:@']) {
+  for (const row of ['1234567890', 'QWERTYUIOP', 'ASDFGHJKL-', "ZXCVBNM.'&", ',/()!?#+:@', '_$%*=;"<>~']) {
     for (const char of row) kbGrid.append(button(char, () => kbType(/[A-Z]/.test(char) && !kbCaps ? char.toLowerCase() : char), {cls: 'wheel-key', data: /[A-Z]/.test(char) ? {char} : {}}));
   }
   kbGrid.append(
