@@ -42,8 +42,9 @@ class WifiInterfaceTests(unittest.TestCase):
         class Fake:
             def __init__(self, name): self.name = name
         for dashcam, expected in (('wlan0', 'wlan1'), ('wlan1', 'wlan0')):
-            with patch.object(helper, 'nmcli', lambda *a, **k: (0, dashcam + '
-', '')),                  patch.object(helper.Path, 'glob', lambda self, pattern: [Fake('wlan0'), Fake('wlan1')]):
+            reply = (0, dashcam, '')
+            with patch.object(helper, 'nmcli', lambda *a, **k: reply), \
+                 patch.object(helper.Path, 'glob', lambda self, pattern: [Fake('wlan0'), Fake('wlan1')]):
                 self.assertEqual(helper.interface(), expected)
 
 
