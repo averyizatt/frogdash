@@ -17,8 +17,28 @@ report() {  # state, message
 
 report running "Checking for updates"
 before=$(git -C $REPO rev-parse HEAD) || { report failed "Not a git checkout: $REPO"; exit 1; }
-if ! timeout 90 git -C $REPO fetch --quiet origin; then
-    report failed "No internet: connect the Pi to Wi-Fi (phone hotspot) and try again"; exit 1
+# With one usable Wi-Fi adapter, it is normally on the dash cam. If there is no internet,
+# borrow that adapter: join a saved Wi-Fi network, update, then return to the dash cam.
+borrowed=""
+restore() {
+    [ -n "$borrowed" ] && { nmcli con down "$borrowed" >/dev/null 2>&1; nmcli --wait 20 con up dashcam >/dev/null 2>&1; }
+}
+trap restore EXIT
+if ! timeout 30 git -C $REPO fetch --quiet origin; then
+    device=$(nmcli -g connection.interface-name con show dashcam 2>/dev/null)
+    [ -n "$device" ] || device=$(nmcli -t -f DEVICE,TYPE dev | awk -F: '$2=="wifi"{print $1; exit}')
+    report running "No internet: switching Wi-Fi from the dash cam to a saved network"
+    nmcli con down dashcam >/dev/null 2>&1
+    nmcli dev wifi rescan ifname "$device" >/dev/null 2>&1; sleep 4
+    nmcli -t -f NAME,TYPE con show | awk -F: '$2=="802-11-wireless" && $1!="dashcam" && $1!="preconfigured"{print $1}' > /tmp/frogdash-wifi-names
+    while IFS= read -r name; do
+        if nmcli --wait 25 con up "$name" ifname "$device" >/dev/null 2>&1; then borrowed=$name; break; fi
+    done < /tmp/frogdash-wifi-names
+    rm -f /tmp/frogdash-wifi-names
+    if [ -z "$borrowed" ] || ! timeout 90 git -C $REPO fetch --quiet origin; then
+        report failed "No internet: no saved Wi-Fi network in range. Join one in Controls > Wi-Fi, or turn on your phone hotspot"
+        exit 1
+    fi
 fi
 if ! out=$(git -C $REPO merge --ff-only --quiet FETCH_HEAD 2>&1); then
     report failed "Could not fast-forward (local changes on the Pi?). Update by hand with git pull"; exit 1
