@@ -23,6 +23,8 @@ TIMEOUTS = {0x100: .5, 0x103: 1.5, 0x200: 1.5, 0x202: .5, 0x203: 2, 0x204: 2, 0x
             0x500: .5, 0x501: .5, 0x503: .5,
             0x300: .5, 0x303: 1.5, 0x304: 3, 0x307: .5,
             0x309: .5, 0x30B: 1, 0x30C: 5, 0x30D: 5}
+# MicroSquirt broadcast groups can run at a few Hz; allow 1 s before calling them stale.
+ECU_TIMEOUT = 1.0
 EVENT_IDS = {0x102, 0x302, 0x308, 0x305, 0x306, 0x30A}
 ANALOG_BITS = {"engine.oil_pressure_psi": 0, "engine.fuel_pressure_psi": 1,
                "meth.pressure_psi": 2, "engine.boost_ref_psi": 3,

@@ -120,7 +120,7 @@ class FreshnessTests(unittest.TestCase):
 
     def test_unrelated_messages_do_not_refresh_old_rpm(self):
         self.state.ingest(0x5E8, bytes.fromhex('03840D7A08020000'))
-        self.now = .6
+        self.now = 1.1
         self.state.ingest(0x5EA, bytes.fromhex('937C03E800000000'))
         self.assertEqual(self.values()['engine.rpm']['quality'], 'stale')
         self.assertEqual(self.values()['engine.afr']['quality'], 'live')
@@ -183,11 +183,11 @@ class FreshnessTests(unittest.TestCase):
         self.now = .4
         self.state.ingest(0x5E8, struct.pack('>hHhh', 1000, 3000, 1800, 0))
         self.assertEqual(self.values()['engine.rpm']['value'], 3000)
-        self.now = .8
+        self.now = 1.3
         self.state.ingest(0x701, bytes(8))
         self.assertEqual(self.values()['engine.rpm']['quality'], 'live')
         self.assertEqual(self.values()['ecu.pw1_ms']['quality'], 'stale')
-        self.now = 1
+        self.now = 1.5
         self.state.ingest(0x701, bytes(8))
         self.assertEqual(self.values()['engine.rpm']['quality'], 'stale')
 
@@ -195,7 +195,7 @@ class FreshnessTests(unittest.TestCase):
         self.state.ingest(0x5E8, bytes.fromhex('03840D7A08020000'))
         self.state.ingest(0x202, bytes.fromhex('0BB8000001010000'))
         self.assertEqual(self.values()['engine.rpm']['value'], 3450)
-        self.now = .6
+        self.now = 1.1
         self.state.ingest(0x202, bytes.fromhex('0BB8000001010000'))
         self.assertEqual(self.values()['engine.rpm']['value'], 3000)
 

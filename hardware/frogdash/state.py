@@ -2,7 +2,7 @@
 from collections import OrderedDict, deque
 import time
 
-from .protocol import ANALOG_BITS, EVENT_IDS, TIMEOUTS, decode
+from .protocol import ANALOG_BITS, ECU_TIMEOUT, EVENT_IDS, TIMEOUTS, decode
 from .controls import Controls
 from .taillight import TaillightSettings
 from .race import Race
@@ -102,7 +102,8 @@ class State:
             value = {k: v for k, v in sample.items() if k != "seen"}
             age = now - sample["seen"]
             # Event/config replies describe history, not current fault state.
-            if source not in EVENT_IDS and (not self.connected or age > TIMEOUTS.get(source, .5)):
+            limit = ECU_TIMEOUT if 0x5E8 <= source <= 0x73F else TIMEOUTS.get(source, .5)
+            if source not in EVENT_IDS and (not self.connected or age > limit):
                 value["quality"] = "stale"
             previous = values.get(name)
             if previous is None or (value["quality"] == "live", value["timestamp_ms"]) > (previous["quality"] == "live", previous["timestamp_ms"]):
@@ -131,6 +132,11 @@ class State:
                 values[name] = dict(missing)
         boost = values.get("engine.boost_kpa")
         map_value, baro = values.get("ecu.map_kpa", missing), values.get("ecu.baro_kpa", missing)
+        # Barometric pressure barely changes: keep the last reading so boost follows MAP alone.
+        if baro["quality"] == "live":
+            self.last_baro = baro
+        elif map_value["quality"] == "live" and getattr(self, "last_baro", None):
+            baro = {**self.last_baro, "quality": "live", "timestamp_ms": map_value["timestamp_ms"]}
         if map_value["quality"] == baro["quality"] == "live":
             values["engine.boost_kpa"] = {**map_value, "value": map_value["value"] - baro["value"],
                                           "timestamp_ms": min(map_value["timestamp_ms"], baro["timestamp_ms"])}

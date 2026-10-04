@@ -41,3 +41,18 @@ sudo systemctl restart frogdash.service
 Check the hardware watchdog is armed: `systemctl show -p RuntimeWatchdogUSec`
 should print `RuntimeWatchdogUSec=15s`, and `dmesg | grep -i watchdog` should show
 the bcm2835 watchdog.
+
+## Clock from GPS
+
+The Pi has no battery-backed clock and the car has no internet, so set the time
+from the USB GPS (gpsd feeds chrony):
+
+```sh
+sudo apt install -y chrony
+sudo cp hardware/chrony/frogdash-gps.conf /etc/chrony/conf.d/
+sudo systemctl restart chrony gpsd
+sudo timedatectl set-timezone America/Denver
+```
+
+`chronyc sources` shows `#* GPS` once it has locked (needs a GPS fix). The dash
+clock follows within a minute. Pick your own zone with `timedatectl list-timezones`.
