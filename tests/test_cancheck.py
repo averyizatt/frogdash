@@ -45,6 +45,12 @@ class CanCheckTests(unittest.TestCase):
         self.assertIn('expected DLC 8, got 6', row['summary'])
         self.assertIn('Flash the current firmware', ' '.join(row['notes']))
 
+    def test_buttons_are_named(self):
+        self.state.ingest(0x501, bytes([9, 31, 4, 1]))
+        self.assertIn('Pressed now: ON + SET/ACCEL', self.row(0x501)['notes'][0])
+        self.state.ingest(0x501, bytes([0, 31, 5, 1]))
+        self.assertIn('Pressed now: nothing', self.row(0x501)['notes'][0])
+
     def test_realtime_base_1792_and_other_ids(self):
         self.state.ingest(0x700, bytes(8))
         self.state.ingest(0x123, bytes(2))

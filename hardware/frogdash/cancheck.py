@@ -30,6 +30,7 @@ METH_FAULTS = [
 ]
 SENSOR_BITS = ['Oil pressure', 'Fuel pressure', 'Meth pressure', 'Boost reference', 'Intake air temp',
                'Engine bay temp', 'Ambient temp', 'Cabin temp']
+BUTTONS = [(1, 'ON'), (2, 'OFF'), (4, 'COAST'), (8, 'SET/ACCEL'), (16, 'RESUME')]
 STATES = ['OFF', 'ARMED', 'SPRAYING', 'FAULT', 'TEST']
 FLOWS = ['UNKNOWN', 'OK', 'LOW_FLOW', 'NO_FLOW']
 
@@ -100,6 +101,16 @@ def report(state):
                 row['status'], row['summary'] = 'fault', 'Arriving; the controller reports a fault'
         elif can_id == 0x303 and len(data) == 8:
             row['notes'] += sensor_detail(data)
+        elif can_id == 0x501 and len(data) == 4:
+            names = [name for bit, name in BUTTONS if data[0] & bit]
+            row['notes'].append('Pressed now: ' + (' + '.join(names) if names else 'nothing') + f' · press count {data[2]}')
+            row['notes'].append('ON = select, OFF = back, SET/ACCEL = up, COAST = down, RESUME = right. '
+                                'If ON never shows here while pressed, the yellow wire is not reaching a HIGH level at the gateway pin.')
+            if len(names) > 1:
+                row['notes'].append('Two buttons at once cancel each other: if ON shows all the time, it is stuck high and blocks every other button.')
+        elif can_id == 0x500 and len(data) == 8:
+            row['notes'].append(f'Speed {int.from_bytes(data[0:2], "big") / 10:.1f} km/h, RPM {int.from_bytes(data[2:4], "big")}, '
+                                f'fuel raw {int.from_bytes(data[4:6], "big")}, fuel ' + ('invalid' if data[6] == 255 else f'{data[6]}%'))
         rows.append(row)
     unknown = sorted(i for i in state.frames if not any(i == e[1] for e in EXPECTED))
     return {'rows': rows, 'other_ids': [f'0x{i:03X}' for i in unknown][:80],
