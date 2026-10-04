@@ -3,8 +3,8 @@
 
 Run as root by frogdash-wifi.service when the dash writes wifi-request.json into its
 state directory (Controls > Wi-Fi > Internet). Only three fixed actions are accepted:
-scan, connect (SSID + password) and disconnect. It uses the Pi's built-in Wi-Fi so a
-USB adapter stays on the dash cam. The password is passed to NetworkManager, which
+scan, connect (SSID + password) and disconnect. It uses the Wi-Fi adapter that the
+dash cam connection does not use. The password is passed to NetworkManager, which
 stores it; the request file is deleted as soon as it is read.
 """
 import json
@@ -26,8 +26,16 @@ def nmcli(*args, timeout=45):
 
 
 def interface():
-    """The built-in Wi-Fi (not USB); the USB adapter is left for the dash cam."""
+    """The Wi-Fi adapter for internet: whichever one the dash cam connection does not use.
+
+    The dash cam profile ("dashcam") is tied to one adapter with connection.interface-name;
+    internet uses the other. With no dash cam profile, the built-in adapter is used.
+    """
     devices = sorted(p.name for p in Path('/sys/class/net').glob('wlan*'))
+    dashcam = nmcli('-g', 'connection.interface-name', 'con', 'show', 'dashcam')[1].strip()
+    others = [d for d in devices if d != dashcam]
+    if dashcam in devices and others:
+        return others[0]
     builtin = [d for d in devices if 'usb' not in os.path.realpath(f'/sys/class/net/{d}/device')]
     return (builtin or devices or ['wlan0'])[0]
 

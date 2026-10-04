@@ -37,6 +37,16 @@ class WifiHelperTests(unittest.TestCase):
         self.assertFalse(result['networks'][1]['secure'])
 
 
+class WifiInterfaceTests(unittest.TestCase):
+    def test_internet_uses_the_adapter_the_dash_cam_does_not(self):
+        class Fake:
+            def __init__(self, name): self.name = name
+        for dashcam, expected in (('wlan0', 'wlan1'), ('wlan1', 'wlan0')):
+            with patch.object(helper, 'nmcli', lambda *a, **k: (0, dashcam + '
+', '')),                  patch.object(helper.Path, 'glob', lambda self, pattern: [Fake('wlan0'), Fake('wlan1')]):
+                self.assertEqual(helper.interface(), expected)
+
+
 class WifiRouteTests(unittest.IsolatedAsyncioTestCase):
     async def test_requests_are_validated_and_written(self):
         with tempfile.TemporaryDirectory() as folder:
