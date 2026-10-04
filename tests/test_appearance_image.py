@@ -29,3 +29,20 @@ class AppearanceImageTests(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class UpdateRequestTests(unittest.IsolatedAsyncioTestCase):
+    async def test_update_button_writes_request_and_reports_status(self):
+        with tempfile.TemporaryDirectory() as folder:
+            state = State()
+            state.paint = Paint(Path(folder) / 'appearance-paint.json')
+            async with TestClient(TestServer(create_app(state))) as client:
+                status = await (await client.get('/update')).json()
+                self.assertEqual((status['state'], status['pending']), ('idle', False))
+                self.assertEqual((await client.post('/update')).status, 200)
+                self.assertTrue((Path(folder) / 'update-request').exists())
+                self.assertTrue((await (await client.get('/update')).json())['pending'])
+                (Path(folder) / 'update-request').unlink()
+                (Path(folder) / 'update-status.json').write_text('{"state":"updated","message":"Updated (3 changes). Restarting the dash","version":"abc1234","time":1}')
+                status = await (await client.get('/update')).json()
+                self.assertEqual((status['state'], status['version'], status['pending']), ('updated', 'abc1234', False))

@@ -56,3 +56,31 @@ sudo timedatectl set-timezone America/Denver
 
 `chronyc sources` shows `#* GPS` once it has locked (needs a GPS fix). The dash
 clock follows within a minute. Pick your own zone with `timedatectl list-timezones`.
+
+## Updating in the car (no Ethernet)
+
+**Dash management → Support & testing → Update now** pulls the latest version from
+GitHub and restarts the dash. It only fast-forwards; a failed download or local
+changes leave the running version untouched, and the result is shown next to the button.
+
+One-time setup:
+
+```sh
+cd /opt/frogdash && sudo git pull --ff-only
+sudo cp hardware/systemd/frogdash-update.service hardware/systemd/frogdash-update.path /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now frogdash-update.path
+```
+
+The Pi needs internet on its built-in Wi-Fi. Save your phone hotspot once so it
+joins automatically whenever the hotspot is on:
+
+```sh
+sudo nmcli dev wifi connect "<hotspot name>" password "<password>" ifname wlan0 name phone
+sudo nmcli con modify phone connection.autoconnect yes connection.autoconnect-priority 10
+```
+
+The update also refreshes any installed systemd unit files that changed. From a
+laptop on the same hotspot you can still use `ssh` and `sudo sh
+/opt/frogdash/tools/frogdash_update.sh`. Firmware for the ESP32 modules and the
+Nano is separate and still flashed over USB.

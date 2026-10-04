@@ -177,6 +177,22 @@ def create_app(state, adapter=None, connectivity=None):
     async def raw(request):
         return web.json_response(list(state.raw.values()))
 
+    async def update(request):
+        # The Update button: a root-owned path unit watches for the request file.
+        require_local(request)
+        folder = state.paint.path.parent if state.paint else None
+        if not folder or state.mode == 'replay':
+            raise web.HTTPNotFound()
+        if request.method == 'POST':
+            await asyncio.to_thread((folder / 'update-request').write_text, 'requested')
+            return web.json_response({'state': 'requested', 'message': 'Update requested'})
+        try:
+            status = json.loads(await asyncio.to_thread((folder / 'update-status.json').read_text))
+        except (OSError, ValueError):
+            status = {'state': 'idle', 'message': 'No update has been run yet'}
+        status['pending'] = (folder / 'update-request').exists()
+        return web.json_response(status, headers={'Cache-Control': 'no-store'})
+
     async def can_check(request):
         return web.json_response(cancheck.report(state), headers={'Cache-Control': 'no-store'})
 
@@ -491,7 +507,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get('/logs', logs), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/update", update), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),

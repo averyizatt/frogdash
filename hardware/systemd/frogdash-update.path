@@ -1,0 +1,9 @@
+[Unit]
+Description=Start a Frogdash update when the dash requests one
+
+[Path]
+PathExists=/var/lib/private/frogdash/update-request
+Unit=frogdash-update.service
+
+[Install]
+WantedBy=multi-user.target

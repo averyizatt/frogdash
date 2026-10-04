@@ -1,0 +1,8 @@
+[Unit]
+Description=Update Frogdash from GitHub and restart it
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /opt/frogdash/tools/frogdash_update.sh
+TimeoutStartSec=180

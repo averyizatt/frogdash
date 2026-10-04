@@ -29,6 +29,27 @@
   dialog.querySelectorAll('[data-speaker-test]').forEach(button => button.onclick = async () => {
     $('speaker-test-status').textContent = await window.FrogdashAudio.speakerTest(button.dataset.speakerTest);
   });
+  // Software update over Wi-Fi: asks the Pi's update helper to pull and restart.
+  dialog.querySelector('[data-ops-panel="support"] .ops-columns').lastElementChild.insertAdjacentHTML('afterbegin',
+    '<div class="speaker-test"><div><span>Software update</span><small id="update-status">Needs the Pi on Wi-Fi with internet (for example your phone hotspot).</small></div>' +
+    '<div class="speaker-test-buttons"><button type="button" id="update-run">Update now</button></div></div>');
+  let updateTimer = null;
+  async function updatePoll() {
+    try {
+      const s = await (await fetch('/update', {cache: 'no-store'})).json();
+      $('update-status').textContent = s.pending ? 'Waiting for the update helper… (is frogdash-update.path enabled?)' : `${s.message}${s.version ? ` · version ${s.version}` : ''}`;
+      if (!s.pending && s.state !== 'running') { clearInterval(updateTimer); updateTimer = null; $('update-run').disabled = false; }
+    } catch { $('update-status').textContent = 'Dash restarting…'; }
+  }
+  $('update-run').onclick = async () => {
+    $('update-run').disabled = true;
+    $('update-status').textContent = 'Requesting update…';
+    try {
+      const response = await fetch('/update', {method: 'POST'});
+      if (!response.ok) throw new Error();
+      clearInterval(updateTimer); updateTimer = setInterval(updatePoll, 2000);
+    } catch { $('update-status').textContent = 'Update is not available here'; $('update-run').disabled = false; }
+  };
   const launch = el('button', 'Dash management', 'close-button'); launch.id = 'operations-launch'; launch.type = 'button';
   $('drive-close').before(launch);
   function tab(key) { document.querySelectorAll('[data-ops-panel]').forEach(n => n.hidden = n.dataset.opsPanel !== key); document.querySelectorAll('[data-ops-tab]').forEach(n => n.setAttribute('aria-selected', String(n.dataset.opsTab === key))); }
