@@ -402,7 +402,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js"}:
+        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js"}:
             raise web.HTTPNotFound()
         if name == 'index.html' and state.paint and state.paint.value:
             page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')
@@ -428,6 +428,14 @@ def create_app(state, adapter=None, connectivity=None):
         if name not in {'frames.bin', 'frames.json'}:
             raise web.HTTPNotFound()
         return web.FileResponse(WEB / 'taillights' / name, headers={'Cache-Control': 'no-cache'})
+
+    async def map_data(request):
+        # Offline street maps built by tools/make_map.py (OpenStreetMap, ODbL).
+        name = request.match_info['name']
+        path = WEB.parent / 'maps' / name
+        if not re.fullmatch(r'[a-z0-9-]{1,40}\.json', name) or not path.is_file():
+            raise web.HTTPNotFound()
+        return web.FileResponse(path, headers={'Cache-Control': 'no-cache'})
 
     async def appearance_snapshot(request):
         # The dashboard's current look, written to disk so the next start paints it first.
@@ -564,7 +572,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get('/operations/{action}', operations), web.post('/operations/{action}', operations),
                     web.post('/ui/appearance', appearance_snapshot),
                     web.route('*', '/ui/appearance/image/{field:background|splash}', appearance_image),
-                    web.get('/taillights/{name}', taillight_frames),
+                    web.get('/taillights/{name}', taillight_frames), web.get('/maps/{name}', map_data),
                     web.get('/ui/import', import_list), web.get('/ui/import/{name}', import_file),
                     web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),
                     web.get('/dashcam/status', dashcam_status), web.get('/dashcam/stream', dashcam_stream),

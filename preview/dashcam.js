@@ -6,6 +6,11 @@
   const dialog = $('dashcam-dialog'), feed = $('dashcam-feed');
   const demo = () => typeof FrogdashDemoSocket !== 'undefined' || location.protocol === 'file:';
   let status = null, pollTimer = null, retryTimer = null, openedAt = 0, side = 'front', busy = false;
+  // Reverse view: the dash cam's rear camera opens in reverse when no Pi camera is fitted.
+  const KEY = 'frogdash.dashcam.v1';
+  let prefs = {auto: true, mirror: true}, enabled = false, csiCamera = false, reversing = false, openedForReverse = false, sideBeforeReverse = 'front';
+  try { const saved = JSON.parse(localStorage.getItem(KEY)); if (saved) prefs = {auto: saved.auto !== false, mirror: saved.mirror !== false}; } catch { /* Defaults. */ }
+  function savePrefs() { try { localStorage.setItem(KEY, JSON.stringify(prefs)); } catch { /* Session only. */ } renderSide(); }
 
   function setLost(lost, detail = '') {
     $('dashcam-lost').hidden = !lost;
@@ -15,7 +20,10 @@
   function renderSide() {
     $('dashcam-front').setAttribute('aria-pressed', String(side === 'front'));
     $('dashcam-rear').setAttribute('aria-pressed', String(side === 'rear'));
-    $('dashcam-state').textContent = `DASHCAM · ${side.toUpperCase()}`;
+    $('dashcam-state').textContent = openedForReverse ? 'REVERSE · DASH CAM REAR' : `DASHCAM · ${side.toUpperCase()}`;
+    $('dashcam-mirror').setAttribute('aria-pressed', String(prefs.mirror));
+    $('dashcam-auto').checked = prefs.auto;
+    dialog.dataset.mirror = String(prefs.mirror && side === 'rear');
   }
   function connectFeed() {
     clearTimeout(retryTimer);
@@ -56,6 +64,7 @@
     clearInterval(pollTimer); clearTimeout(retryTimer);
     feed.removeAttribute('src'); // Ends the stream so the dash cam's live mode can stop.
     if (dialog.open) dialog.close();
+    if (openedForReverse) { openedForReverse = false; choose(sideBeforeReverse); }
   }
   async function choose(next) {
     if (busy || next === side) return;
@@ -84,9 +93,24 @@
     try {
       const s = await (await fetch('/dashcam/status', {cache: 'no-store'})).json();
       $('dashcam-launch').hidden = !s.enabled;
+      enabled = !!s.enabled;
+      try { csiCamera = !!(await (await fetch('/camera/status', {cache: 'no-store'})).json()).enabled; } catch { csiCamera = false; }
       if (s.side) { side = s.side; renderSide(); }
     } catch { setTimeout(detect, 5000); }
   }
   detect();
+  $('dashcam-mirror').onclick = () => { prefs.mirror = !prefs.mirror; savePrefs(); };
+  $('dashcam-auto').onchange = event => { prefs.auto = event.target.checked; savePrefs(); };
+  window.addEventListener('frogdash-state', ({detail}) => {
+    const value = detail.snapshot.values?.['lighting.reverse'];
+    const now = detail.connected && value?.quality === 'live' && value.value === true;
+    if (now === reversing) return;
+    reversing = now;
+    if (demo() || !enabled || csiCamera || !prefs.auto) return;
+    if (reversing) {
+      if (!dialog.open) { openedForReverse = true; sideBeforeReverse = side; }
+      choose('rear'); open(); renderSide();
+    } else if (openedForReverse) close();
+  });
   window.FrogdashDashcam = {open, close};
 })();
