@@ -31,6 +31,7 @@ class State:
         self.status = "starting"
         self.samples = {}
         self.raw = OrderedDict()
+        self.frames = {}  # Per standard ID: count, first/last time, last payload and decode error.
         self.events = deque(maxlen=100)
         self.received = self.malformed = self.ignored = self.seq = 0
         self.gps = None
@@ -69,10 +70,15 @@ class State:
         if extended or remote or error:
             self.ignored += 1
             return
+        if can_id in self.frames or len(self.frames) < 512:
+            entry = self.frames.setdefault(can_id, {'count': 0, 'first': now, 'error': None, 'error_at': None})
+            entry.update(count=entry['count'] + 1, seen=now, data=data.hex().upper())
         try:
             signals = decode(can_id, data)
         except ValueError as exc:
             self.malformed += 1
+            if can_id in self.frames:
+                self.frames[can_id].update(error=str(exc), error_at=now)
             if can_id in (0x205, 0x501):
                 self.wheel.reset()
             self.status = str(exc)

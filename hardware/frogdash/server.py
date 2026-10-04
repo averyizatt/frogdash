@@ -24,6 +24,7 @@ from .supervision import watchdog
 from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
 from .paint import Paint, validate as validate_paint
 from .imports import Imports
+from . import cancheck
 
 IMAGE_DATA = re.compile(r"data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+")
 
@@ -175,6 +176,9 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def raw(request):
         return web.json_response(list(state.raw.values()))
+
+    async def can_check(request):
+        return web.json_response(cancheck.report(state), headers={'Cache-Control': 'no-store'})
 
     async def race_command(request):
         require_local(request)
@@ -487,7 +491,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get('/logs', logs), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get('/logs', logs), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),

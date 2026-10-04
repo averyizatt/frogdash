@@ -436,6 +436,22 @@
     $('clock-tz').textContent = '';
     if (connected && performance.now() - lastMessage > 1500) { disconnect(); ws.close(); }
   }, 250);
+  // Plain-language CAN check: one row per expected message, grouped by module.
+  function renderCanCheck(check) {
+    const labels = {ok: 'OK', fault: 'FAULT', rejected: 'REJECTED', stopped: 'STOPPED', missing: 'MISSING'};
+    $('can-check-summary').textContent = `${check.received} frames received · ${check.malformed} rejected` + (check.other_ids.length ? ` · other IDs seen: ${check.other_ids.join(' ')}` : '');
+    $('can-check').replaceChildren(...check.rows.map(row => {
+      const item = document.createElement('div'); item.className = 'can-check-row'; item.dataset.status = row.status;
+      const head = document.createElement('div'); head.className = 'can-check-head';
+      const badge = document.createElement('b'); badge.textContent = labels[row.status] || row.status;
+      const name = document.createElement('strong'); name.textContent = `${row.module} ${row.id}`;
+      const what = document.createElement('span'); what.textContent = `${row.purpose} · ${row.summary}` + (row.rate_hz ? ` · ${row.rate_hz} Hz` : '');
+      head.append(badge, name, what); item.append(head);
+      for (const note of row.notes) { const p = document.createElement('p'); p.textContent = note; item.append(p); }
+      if (row.data) { const raw = document.createElement('code'); raw.textContent = `Last data: ${row.data.replace(/(..)/g, '$1 ').trim()}`; item.append(raw); }
+      return item;
+    }));
+  }
   let rawPending = false;
   setInterval(async () => {
     if (!$('diagnostics').open || rawPending) return;
@@ -444,6 +460,7 @@
     try {
       const result = await fetch('/raw', {signal: AbortSignal.timeout(1500)});
       const frames = await result.json();
+      renderCanCheck(await (await fetch('/can/check', {signal: AbortSignal.timeout(1500)})).json());
       $('raw-frames').textContent = frames.map(f => `${f.extended ? 'EXT' : f.error ? 'ERR' : 'STD'} ${f.id.toString(16).toUpperCase()}#${f.data} ${f.remote ? 'RTR' : ''}`).join('\n');
     } catch { $('raw-frames').textContent = 'Raw traffic unavailable'; }
     finally { rawPending = false; }

@@ -528,3 +528,14 @@ html.cursor-hidden, html.cursor-hidden * { cursor:none !important; }
 .interior-dot { width:18px; height:18px; border-radius:50%; border:2px solid var(--line); }
 #panel-interior [data-interior-zone][aria-pressed="true"] { color:var(--accent); border-color:var(--accent); background:color-mix(in srgb,var(--accent) 14%,var(--bg)); }
 @media (max-aspect-ratio:11/5) and (max-width:1200px) { #panel-interior .interior-grid { grid-template-columns:1fr; } }
+/* CAN check (Sensors). */
+.can-check { display:flex; flex-direction:column; gap:6px; }
+.can-check-row { border:1px solid var(--line); border-left:5px solid var(--muted); border-radius:8px; padding:8px 12px; font-size:14px; }
+.can-check-row[data-status="ok"] { border-left-color:var(--accent); }
+.can-check-row:is([data-status="fault"],[data-status="rejected"]) { border-left-color:#ff5c5c; }
+.can-check-row:is([data-status="stopped"],[data-status="missing"]) { border-left-color:#ffb84d; }
+.can-check-head { display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; }
+.can-check-head b { min-width:84px; font-size:12px; letter-spacing:.06em; }
+.can-check-head span { color:var(--muted); }
+.can-check-row p { margin:4px 0 0 96px; }
+.can-check-row code { display:block; margin:4px 0 0 96px; color:var(--muted); font-size:12px; }
