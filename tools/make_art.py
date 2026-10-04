@@ -105,7 +105,7 @@ ART = [
 <div style="position:absolute;left:0;right:0;top:372px;text-align:center;font:500 26px/1 Oswald,sans-serif;letter-spacing:18px;color:#d23a3a">MADE BY</div>
 <div style="position:absolute;left:0;right:0;top:412px;text-align:center;{WIDE};font-size:118px;line-height:1;letter-spacing:6px;color:#f4f4f4">Avery Izatt</div>
 <div style="position:absolute;left:660px;top:560px;width:600px;height:5px;background:linear-gradient(90deg,#d23a3a 0 33.3%,#f4f4f4 33.3% 66.6%,#2f6fd8 66.6%)"></div>
-<div style="position:absolute;left:0;right:0;top:586px;text-align:center;font:400 22px/1 Oswald,sans-serif;letter-spacing:10px;color:#8d98a2">FOX BODY · 5.0</div>""")),
+<div style="position:absolute;left:0;right:0;top:586px;text-align:center;font:400 22px/1 Oswald,sans-serif;letter-spacing:10px;color:#8d98a2">FOX BODY · 2.3L</div>""")),
     ('splash-ford-oval.jpg', 'splash', 'Ford oval', f"""
 <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 75% at 50% 50%,#1b2a4a,#05070c 75%)"></div>
 <div style="position:absolute;inset:0;background:repeating-linear-gradient(90deg,#ffffff05 0 1px,transparent 1px 4px)"></div>
@@ -120,7 +120,7 @@ ART = [
         car(FRONT, 760, 'left:1060px;top:104px') + f"""
 <img src="{data('mustang-script.png')}" style="position:absolute;left:110px;top:176px;width:860px;filter:invert(1) drop-shadow(0 14px 30px #000a)">
 <div style="position:absolute;left:120px;top:460px;width:820px;height:4px;background:#d23a3a"></div>
-<div style="position:absolute;left:120px;top:490px;font:500 30px/1 Oswald,sans-serif;letter-spacing:19px;color:#d9dee3">5.0 LITER · HIGH OUTPUT</div>
+<div style="position:absolute;left:120px;top:490px;font:500 30px/1 Oswald,sans-serif;letter-spacing:19px;color:#d9dee3">2.3 LITER · FOX BODY</div>
 {notice('Mustang is a trademark of Ford Motor Company · not affiliated')}""", glow='#231416')),
     ('splash-fox-body.jpg', 'splash', 'Fox body', f"""
 <div style="position:absolute;inset:0;background:linear-gradient(160deg,#4a5057,#23272c 70%)"></div>
@@ -132,11 +132,6 @@ ART = [
         car(FRONT, 640, 'left:640px;top:14px') + f"""
 <div style="position:absolute;left:0;right:0;top:458px;text-align:center;{WIDE};font-size:96px;line-height:1;letter-spacing:26px;color:#f4f4f4">Fox Body</div>
 <div style="position:absolute;left:760px;top:574px;width:400px;height:4px;background:#f2b705"></div>""")),
-    ('splash-five-point-oh.jpg', 'splash', '5.0', stage(
-        car(SIDE, 1000, 'left:830px;top:180px') + f"""
-<div style="position:absolute;left:120px;top:150px;{WIDE};font-size:330px;line-height:1;letter-spacing:-6px;color:transparent;-webkit-text-stroke:5px #f4f4f4">5.0</div>
-<div style="position:absolute;left:132px;top:520px;width:640px;height:5px;background:#d23a3a"></div>
-<div style="position:absolute;left:132px;top:548px;font:500 34px/1 Oswald,sans-serif;letter-spacing:18px;color:#e04848">HIGH OUTPUT</div>""")),
     ('splash-built-not-bought.jpg', 'splash', 'Built not bought', stage(
         car(FRONT, 780, 'left:1040px;top:96px') + f"""
 <div style="position:absolute;left:120px;top:176px;font:700 150px/.95 Oswald,sans-serif;color:#f5f5f5;text-transform:uppercase">Built<br><span style="color:#e2b13c">not bought</span></div>
