@@ -134,10 +134,11 @@ the adjustable instrument surfaces, and splash images use contain rather than cr
 
 **Bundled artwork.** `hardware/art/` ships generated backgrounds (Fox-body stripes,
 night highway, carbon and red, blueprint coupe, tach glow), darkened photo backgrounds
-of Fox-body Mustangs, and seven splash screens: Made by Avery Izatt, Ford oval,
-Mustang outline, Mustang script, Fox body sticker, 5.0 and Built not bought. The
-splashes use original line art of a notchback (drawn in `tools/make_art.py`), the
-Ford oval and the 1980s Mustang script badge; captions stay clear of the dash hump
+of Fox-body Mustangs, and eight splash screens: Made by Avery Izatt, Ford oval,
+Mustang, Mustang script, Fox body, Fox body front, 5.0 and Built not bought. The car in
+every splash (and in the blueprint background) is Avery Izatt's own artwork
+(`tools/art-src/fox-side-avery.png`, `fox-front-avery.png`), alongside the Ford oval
+and the 1980s Mustang script badge; captions stay clear of the dash hump
 at the bottom centre. They update with `git pull` and appear first in the file picker
 as **Bundled art**. Chosen images are also saved on the Pi, so they survive key-off.
 To change or add designs, edit `tools/make_art.py`, run it, then `python tools/update_preview.py`.

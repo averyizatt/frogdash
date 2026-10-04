@@ -16,4 +16,5 @@ It is included only for display on the owner's own car. This project is not affi
 | `ford-oval.png` | [File:Ford logo flat.svg](https://commons.wikimedia.org/wiki/File:Ford_logo_flat.svg) | Ford Motor Company | Public domain |
 | `mustang-script.png` | [File:Mustang logo.png](https://commons.wikimedia.org/wiki/File:Mustang_logo.png) | Arosio Stefano | Public domain (trademark of Ford Motor Company) |
 
-The car line art in the splash screens is original (drawn in `tools/make_art.py`).
+The car artwork in the splash screens and the blueprint background (`fox-side-avery.png`,
+`fox-front-avery.png`) was made by Avery Izatt, the owner of this project.
