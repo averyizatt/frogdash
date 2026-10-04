@@ -45,11 +45,13 @@
     $('connection-summary').dataset.state = sourceState;
     $('connection-summary').textContent = sourceState === 'live' ? 'LIVE CAN' : sourceState === 'demo' ? 'DEMO · SIMULATED' : sourceState === 'replay' ? 'REPLAY · RECORDED' : connected ? 'CAN OFFLINE' : 'DISCONNECTED';
     if (demo && sourceState === 'offline') $('connection-summary').textContent = 'DEMO · OFFLINE';
+    $('connection-summary').hidden = sourceState === 'live'; // Normal running needs no label; faults still show.
     const recording = snapshot.recording || {state: 'disabled'};
     const recordingState = !connected ? 'unknown' : recording.state;
     $('recording-badge').dataset.state = recordingState;
     $('recording-badge').textContent = demo ? 'LOG DEMO' : recordingState === 'recording' ? `REC ${recording.hz} Hz` : recordingState === 'error' ? 'LOG ERROR' : recordingState === 'disabled' ? 'LOG OFF' : 'LOG WAIT';
     $('recording-badge').title = recording.error || recording.file || 'MLG recording status';
+    $('recording-badge').hidden = recordingState !== 'error';
     $('log-status').textContent = demo ? 'Preview only — no files are recorded here.' : !connected ? 'Connection lost — recording status unknown.' :
       recordingState === 'recording' ? `${recording.file} · ${recording.rows} samples · ${recording.dropped} dropped` :
       recordingState === 'error' ? `Recording paused: ${recording.error}` : recordingState === 'disabled' ? 'Recording disabled. Enable a log directory in the service configuration.' : 'Waiting for recorder';
@@ -487,7 +489,7 @@
     const labels = {ok: 'OK', fault: 'FAULT', rejected: 'REJECTED', stopped: 'STOPPED', missing: 'MISSING'};
     $('can-check-summary').textContent = `${check.received} frames received · ${check.malformed} rejected` + (check.other_ids.length ? ` · other IDs seen: ${check.other_ids.join(' ')}` : '');
     $('can-check').replaceChildren(...check.rows.map(row => {
-      const item = document.createElement('div'); item.className = 'can-check-row'; item.tabIndex = 0; item.dataset.status = row.status;
+      const item = document.createElement('div'); item.className = 'can-check-row'; item.dataset.status = row.status;
       const head = document.createElement('div'); head.className = 'can-check-head';
       const badge = document.createElement('b'); badge.textContent = labels[row.status] || row.status;
       const name = document.createElement('strong'); name.textContent = `${row.module} ${row.id}`;
@@ -508,7 +510,7 @@
       $('selftest-summary').textContent = `${c.fail ? `${c.fail} failed` : 'Nothing failed'} · ${c.warn} to check · ${c.ok} passed · ${c.skip} skipped · ${new Date(check.time_ms).toLocaleTimeString()}`;
       const order = {fail: 0, warn: 1, ok: 2, skip: 3};
       $('selftest').replaceChildren(...[...check.lines].sort((a, b) => order[a.status] - order[b.status]).map(item => {
-        const row = document.createElement('div'); row.className = 'can-check-row'; row.tabIndex = 0;
+        const row = document.createElement('div'); row.className = 'can-check-row';
         row.dataset.status = {ok: 'ok', warn: 'stopped', fail: 'fault', skip: 'skip'}[item.status];
         const head = document.createElement('div'); head.className = 'can-check-head';
         const badge = document.createElement('b'); badge.textContent = labels[item.status];
@@ -521,6 +523,15 @@
     } catch { $('selftest-summary').textContent = 'System check unavailable: the dash service did not answer.'; }
   }
   $('selftest-run').onclick = runSelfTest;
+  // Sensors sections.
+  for (const tab of document.querySelectorAll('[data-sensor-tab]')) tab.onclick = () => {
+    for (const other of document.querySelectorAll('[data-sensor-tab]')) {
+      const on = other === tab;
+      other.setAttribute('aria-selected', String(on)); other.tabIndex = on ? 0 : -1;
+      $(`sensor-panel-${other.dataset.sensorTab}`).hidden = !on;
+    }
+    if (tab.dataset.sensorTab === 'logs') loadLogs();
+  };
   // CAN recorder: capture raw traffic for 20 s and offer it as a candump-format file.
   let captureTimer = null;
   $('capture-run').onclick = async () => {

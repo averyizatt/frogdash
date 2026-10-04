@@ -253,17 +253,39 @@
 
 <dialog id="diagnostics" class="workspace-dialog" aria-labelledby="diagnostics-title">
   <header class="dialog-header"><div><span class="eyebrow">VEHICLE TELEMETRY</span><h2 id="diagnostics-title">Sensors &amp; connections</h2><p id="module-health"></p></div><button id="diagnostics-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
-  <div class="diagnostics-toolbar"><label for="signal-filter">Find a signal</label><input id="signal-filter" type="search" placeholder="Search name, e.g. oil or GPS" autocomplete="off"><span>LIVE / STALE / FAULT / NO SIGNAL</span><button id="selftest-run" class="close-button" type="button">RUN SYSTEM CHECK</button><button id="capture-run" class="close-button" type="button">RECORD CAN FOR 20 S</button><a id="capture-download" class="close-button" href="/can/capture?download=1" hidden>Download recording</a></div>
-  <div class="diagnostics-body">
-    <details id="selftest-details" open><summary>System check: test everything</summary>
-      <p id="selftest-summary" class="control-note">Checks the CAN bus, every module, GPS, cameras, power, storage and updates. It only reads; nothing is sent to the car.</p>
-      <div id="selftest" class="can-check"></div></details>
-    <details id="can-check-details"><summary>CAN check: what each module is sending</summary><p id="can-check-summary" class="control-note"></p><div id="can-check" class="can-check"></div></details>
-    <details id="log-details"><summary>Saved data logs</summary><p id="log-status">Recording disabled</p><button id="refresh-logs" class="close-button" type="button">Refresh files</button><ul id="log-files" class="log-files"></ul></details>
-    <table><thead><tr><th>Signal</th><th>Reading</th><th>Quality</th><th>Source</th></tr></thead><tbody id="signals"></tbody></table>
-    <details><summary>Connection details</summary><p id="connection">Connecting</p><p id="source-health">Waiting for data</p></details>
-    <details><summary>Event history</summary><p>Received events since startup, not a list of currently active faults.</p><pre id="fault-history"></pre></details>
-    <details><summary>Raw CAN traffic</summary><pre id="raw-frames"></pre></details>
+  <div class="control-workspace">
+    <div class="control-tabs sensor-tabs" role="tablist" aria-label="Sensor sections" aria-orientation="vertical"><button id="sensor-tab-check" role="tab" aria-selected="true" aria-controls="sensor-panel-check" tabindex="0" data-sensor-tab="check"><span>01</span>System check</button><button id="sensor-tab-can" role="tab" aria-selected="false" aria-controls="sensor-panel-can" tabindex="-1" data-sensor-tab="can"><span>02</span>CAN check</button><button id="sensor-tab-signals" role="tab" aria-selected="false" aria-controls="sensor-panel-signals" tabindex="-1" data-sensor-tab="signals"><span>03</span>Live signals</button><button id="sensor-tab-logs" role="tab" aria-selected="false" aria-controls="sensor-panel-logs" tabindex="-1" data-sensor-tab="logs"><span>04</span>Data logs</button><button id="sensor-tab-events" role="tab" aria-selected="false" aria-controls="sensor-panel-events" tabindex="-1" data-sensor-tab="events"><span>05</span>Events</button><button id="sensor-tab-raw" role="tab" aria-selected="false" aria-controls="sensor-panel-raw" tabindex="-1" data-sensor-tab="raw"><span>06</span>Raw CAN</button><button id="sensor-tab-connection" role="tab" aria-selected="false" aria-controls="sensor-panel-connection" tabindex="-1" data-sensor-tab="connection"><span>07</span>Connection</button></div>
+    <div class="control-panels diagnostics-body">
+      <section id="sensor-panel-check" class="sensor-panel" role="tabpanel" aria-labelledby="sensor-tab-check">
+        <div class="control-row"><button id="selftest-run" class="close-button" type="button">RUN SYSTEM CHECK</button></div>
+        <p id="selftest-summary" class="control-note">Checks the CAN bus, every module, GPS, cameras, power, storage and updates. It only reads; nothing is sent to the car.</p>
+        <div id="selftest" class="can-check" data-wheel-scroll tabindex="0" aria-label="System check results"></div>
+      </section>
+      <section id="sensor-panel-can" class="sensor-panel" role="tabpanel" aria-labelledby="sensor-tab-can" hidden>
+        <p id="can-check-summary" class="control-note"></p>
+        <div id="can-check" class="can-check" data-wheel-scroll tabindex="0" aria-label="CAN messages by module"></div>
+      </section>
+      <section id="sensor-panel-signals" class="sensor-panel" role="tabpanel" aria-labelledby="sensor-tab-signals" hidden>
+        <div class="diagnostics-toolbar"><label for="signal-filter">Find a signal</label><input id="signal-filter" type="search" placeholder="Search name, e.g. oil or GPS" autocomplete="off"><span>LIVE / STALE / FAULT / NO SIGNAL</span></div>
+        <div class="sensor-table" data-wheel-scroll data-wheel-first tabindex="0" aria-label="Signal list"><table><thead><tr><th>Signal</th><th>Reading</th><th>Quality</th><th>Source</th></tr></thead><tbody id="signals"></tbody></table></div>
+      </section>
+      <section id="sensor-panel-logs" class="sensor-panel" role="tabpanel" aria-labelledby="sensor-tab-logs" hidden>
+        <p id="log-status">Recording disabled</p>
+        <div class="control-row"><button id="refresh-logs" class="close-button" type="button">Refresh files</button></div>
+        <ul id="log-files" class="log-files"></ul>
+      </section>
+      <section id="sensor-panel-events" class="sensor-panel" role="tabpanel" aria-labelledby="sensor-tab-events" hidden>
+        <p class="control-note">Received events since startup, not a list of currently active faults.</p>
+        <pre id="fault-history" data-wheel-scroll tabindex="0" aria-label="Event history"></pre>
+      </section>
+      <section id="sensor-panel-raw" class="sensor-panel" role="tabpanel" aria-labelledby="sensor-tab-raw" hidden>
+        <div class="control-row"><button id="capture-run" class="close-button" type="button">RECORD CAN FOR 20 S</button><a id="capture-download" class="close-button" href="/can/capture?download=1" hidden>Download recording</a></div>
+        <pre id="raw-frames" data-wheel-scroll tabindex="0" aria-label="Raw CAN traffic"></pre>
+      </section>
+      <section id="sensor-panel-connection" class="sensor-panel" role="tabpanel" aria-labelledby="sensor-tab-connection" hidden>
+        <p id="connection">Connecting</p><p id="source-health" class="control-note">Waiting for data</p>
+      </section>
+    </div>
   </div>
 </dialog>
 

@@ -2,7 +2,7 @@
 (() => {
   'use strict';
   let editing = null, session = null, cursor = null, enterAt = null, enterTimer, nativeInput = null;
-  const selector = 'button, a[href], input:not([type="hidden"]), select, textarea, [tabindex]';
+  const selector = 'button, a[href], input:not([type="hidden"]), select, textarea, summary, [tabindex]';
   const hint = document.createElement('output');
   hint.id = 'wheel-hint'; hint.hidden = true; hint.setAttribute('aria-live', 'polite');
   document.body.append(hint);
@@ -28,7 +28,14 @@
     el?.scrollIntoView({block: 'center', inline: 'nearest'});
   }
   function describe() {
-    message(editing ? 'EDIT: arrows change value | OK done | Hold OK back' : scope().dataset.wheelHint || 'WHEEL: SET/COAST move | ON select | OFF back | Hold OFF: home');
+    const root = scope(), el = document.activeElement;
+    const tabs = root.matches('dialog') && typeof sections === 'function' ? sections(root) : [];
+    message(editing ? 'SET / COAST: change value  |  ON: done'
+      : root.dataset.wheelHint ? root.dataset.wheelHint
+      : tabs.includes(el) ? 'SET / COAST: choose section  |  ON: open  |  OFF: close  |  Hold OFF: home'
+      : el?.matches?.('[data-wheel-scroll]') ? 'SET / COAST: scroll this list, then move on  |  OFF: back'
+      : tabs.length ? 'SET / COAST: move  |  ON: select  |  OFF: back to sections'
+      : 'SET / COAST: move  |  ON: select  |  OFF: back  |  Hold OFF: home');
   }
   // Grids (keyboard keys, swatches, files) move in two dimensions; elsewhere arrows walk the list.
   function spatial(items, from, direction) {
@@ -241,9 +248,116 @@
     el.dispatchEvent(new Event('input', {bubbles: true}));
     el.dispatchEvent(new Event('change', {bubbles: true}));
   }
+  // ---- Menu model for five buttons (SET up, COAST down, RESUME right, ON select, OFF back) ----
+  // A menu with sections has two levels: the section list, then the open section's controls.
+  // SET/COAST stay inside the current level; ON or RESUME opens a section; OFF steps back out.
+  const TAB = '[role="tab"], [data-driver-tab], [data-ops-tab]';
+  const PANEL = '[role="tabpanel"], [data-driver-panel], [data-ops-panel]';
+  const closes = el => el.classList.contains('close-button') && /^(close|cancel|skip)/i.test(el.textContent.trim());
+  const selected = el => el.getAttribute('aria-selected') === 'true';
+  function sections(root) {
+    const first = [...root.querySelectorAll(TAB)].find(visible);
+    if (!first) return [];
+    const list = first.closest('[role="tablist"], nav') || first.parentElement;
+    return [...list.querySelectorAll(TAB)].filter(visible);
+  }
+  function openPanel(root, tabs) {
+    const active = tabs.find(selected) || tabs[0];
+    const named = document.getElementById(active?.getAttribute('aria-controls') || '');
+    return named && named.checkVisibility() ? named : [...root.querySelectorAll(PANEL)].find(panel => panel.checkVisibility()) || null;
+  }
+  const step = (list, current, direction) => list[(list.indexOf(current) + direction + list.length) % list.length];
+  function startOf(root) {
+    const all = candidates(), tabs = root.matches('dialog') ? sections(root) : [];
+    return all.find(el => el.hasAttribute('data-wheel-start')) || tabs.find(selected) || tabs[0] || all.find(el => !closes(el)) || all[0];
+  }
+  function clearFocus(blur = true) {
+    document.querySelectorAll('.wheel-focus').forEach(el => el.classList.remove('wheel-focus'));
+    if (blur) document.activeElement?.blur?.(); // Otherwise keep the focus the browser restored to the opener.
+    hint.hidden = true;
+  }
+  let pendingFocus = null; // A menu entry may name where the highlight should land.
+
+  // Quick menu: every destination in one list, opened by any button on the dashboard.
+  const menu = tool('wheel-menu', 'FOX BODY', 'SET / COAST: move  |  RESUME: next column  |  ON: open  |  OFF: close');
+  menu.title.textContent = 'Menu';
+  const menuGrid = ns('div', 'wheel-menu'); menuGrid.dataset.wheelGrid = ''; menu.body.append(menuGrid);
+  function destinations() {
+    const byId = id => document.getElementById(id);
+    const into = () => { const root = scope(), panel = openPanel(root, sections(root)); pendingFocus = candidates().find(el => panel?.contains(el)) || null; };
+    const launch = (id, tab) => () => { byId(id)?.click(); if (tab) { byId(tab)?.click(); into(); } };
+    const shown = id => byId(id) && !byId(id).hidden;
+    const entries = [
+      ['Map', 'Street map with your position', launch('map-launch'), shown('map-launch')],
+      ['Dashcam', 'Live front and rear view', launch('dashcam-launch'), shown('dashcam-launch')],
+      ['Reverse camera', 'Rear camera view', launch('camera-launch'), shown('camera-launch')],
+      ['Interior lights', 'Colour, brightness, on and off', launch('controls-launch', 'tab-interior'), true],
+      ['Taillights', 'Shows, styles, colours and profiles', () => window.FrogdashTaillights?.open(), !!window.FrogdashTaillights],
+      ['Water / meth', 'Arm, test and boost start', launch('controls-launch', 'tab-meth'), true],
+      ['Knock monitor', 'Live knock energy and events', launch('knock-launch'), true],
+      ['Drive & alerts', 'Display modes, trips, fuel and alerts', launch('drive-launch'), true],
+      ['Race timer', 'Acceleration and lap timing', launch('race-launch'), true],
+      ['Appearance', 'Looks, gauges, backgrounds and splash', launch('appearance-launch'), true],
+      ['Sensors & system check', 'Every signal, CAN check and tests', launch('diagnostics-launch'), true],
+      ['Wi-Fi', 'Hotspot and internet for updates', launch('controls-launch', 'tab-wifi'), true],
+      ['Dash management', 'Update, backup, units and setup', () => { byId('drive-launch')?.click(); byId('operations-launch')?.click(); }, shown('operations-launch') || !!byId('operations-launch')],
+      ['Edit gauges', 'Change what each gauge shows', () => { pendingFocus = document.querySelector('[data-gauge-slot]'); }, !!document.querySelector('[data-gauge-slot]')],
+    ].filter(entry => entry[3]);
+    return entries;
+  }
+  function openMenu() {
+    const entries = destinations();
+    menuGrid.style.setProperty('--rows', Math.ceil(entries.length / 2));
+    menuGrid.replaceChildren(...entries.map(([title, detail, run], index) => {
+      const item = button('', () => { menu.dialog.close(); run(); }, {cls: 'wheel-menu-item'});
+      item.append(ns('strong', null, title), ns('small', null, detail));
+      if (!index) item.dataset.wheelStart = '';
+      return item;
+    }));
+    menu.dialog.showModal();
+    focus(menuGrid.firstElementChild); describe();
+  }
+  // Shortcut bar: hold ON on the plain dashboard for the places used most.
+  const SHORTCUTS = ['Taillights', 'Knock monitor', 'Interior lights', 'Water / meth', 'Map', 'Dashcam', 'Sensors & system check'];
+  const taskbar = ns('dialog', 'wheel-taskbar'); taskbar.id = 'wheel-taskbar';
+  taskbar.setAttribute('aria-label', 'Shortcuts');
+  taskbar.dataset.wheelHint = 'SET / COAST: move  |  ON: open  |  OFF: close';
+  document.body.append(taskbar);
+  function openTaskbar() {
+    const entries = destinations().filter(entry => SHORTCUTS.includes(entry[0])).sort((a, b) => SHORTCUTS.indexOf(a[0]) - SHORTCUTS.indexOf(b[0]));
+    taskbar.replaceChildren(...entries.map(([title, , run]) => button(title === 'Sensors & system check' ? 'System check' : title, () => { taskbar.close(); run(); })));
+    taskbar.showModal();
+    focus(taskbar.firstElementChild); describe();
+  }
+  // Long read-only lists scroll with SET/COAST while highlighted, then let the highlight move on.
+  const canScroll = (el, direction) => direction < 0 ? el.scrollTop > 2 : el.scrollTop + el.clientHeight < el.scrollHeight - 2;
+  const page = (el, direction) => el.scrollBy({top: direction * Math.max(60, el.clientHeight * .8)});
+  function scrollHost(el, root) {
+    for (let node = el.parentElement; node && node !== root.parentElement; node = node.parentElement) {
+      if (node.scrollHeight > node.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(node).overflowY)) return node;
+    }
+    return null;
+  }
+
+  function activate(current) {
+    if (editable(current)) { editing = current; current.classList.add('wheel-editing'); }
+    else if (textInput(current)) openKeyboard(current);
+    else if (current.matches('input[type="color"]')) openColor(current);
+    else if (current.matches('input[type="file"]')) { openFiles(current); return false; }
+    else if (current.matches('[data-gauge-slot]')) current.dispatchEvent(new Event('gauge-hold'));
+    else if (current.matches('input[type="date"], input[type="time"]')) { message('Use a keyboard for dates and times'); return false; }
+    else current.click();
+    return true;
+  }
   function action(name) {
     nativeInput = null; // Wheel navigation explicitly takes ownership again.
-    if (document.hidden || !['up', 'down', 'left', 'right', 'ok', 'back', 'home'].includes(name)) return;
+    if (document.hidden || !['up', 'down', 'left', 'right', 'ok', 'back', 'home', 'hold'].includes(name)) return;
+    pendingFocus = null;
+    if (name === 'hold') {
+      // Holding ON: shortcuts on the plain dashboard, back everywhere else.
+      if (!scope().matches('dialog') && !candidates().includes(document.activeElement)) { openTaskbar(); return; }
+      name = 'back';
+    }
     if (name === 'home') {
       // Long hold: leave edit mode and close every open menu, innermost first.
       clearEdit();
@@ -254,68 +368,78 @@
         if (close) close.click();
         if (open.open) open.close();
       }
-      document.querySelectorAll('.wheel-focus').forEach(el => el.classList.remove('wheel-focus'));
-      document.activeElement?.blur?.();
+      clearFocus();
       message('HOME: all menus closed');
       return;
     }
-    const before = scope();
-    const items = candidates();
-    if (editing && (!visible(editing) || !before.contains(editing))) clearEdit();
-    let current = items.includes(document.activeElement) ? document.activeElement : null;
+    const root = scope(), inDialog = root.matches('dialog'), all = candidates();
+    if (editing && (!visible(editing) || !root.contains(editing))) clearEdit();
+    const tabs = inDialog ? sections(root) : [];
+    const panel = tabs.length ? openPanel(root, tabs) : null;
+    const inner = panel ? all.filter(el => panel.contains(el)) : [];
+    const outer = tabs.length ? [...tabs, ...all.filter(el => !tabs.includes(el) && !panel?.contains(el) && !closes(el))]
+      : all.some(el => !closes(el)) ? all.filter(el => !closes(el)) : all;
+    // A Close button focused by the browser when a menu opens does not count as the highlight.
+    const current = [...outer, ...inner].includes(document.activeElement) ? document.activeElement : null;
+    const deep = !!(current && panel?.contains(current));
+
     if (name === 'back') {
       if (editing) { clearEdit(); describe(); return; }
-      if (before.matches('dialog')) {
-        const close = [...before.querySelectorAll('.close-button')].find(visible);
-        if (close) close.click();
-        else if (before.dispatchEvent(new Event('cancel', {cancelable: true}))) before.close();
-      }
-      focus(candidates().includes(document.activeElement) ? document.activeElement : candidates()[0]);
-      describe(); return;
+      if (deep) { focus(tabs.find(selected) || tabs[0]); describe(); return; } // Out of the section, back to the list.
+      if (!inDialog) { clearFocus(); return; }
+      const close = [...root.querySelectorAll('.close-button')].find(visible);
+      if (close) close.click();
+      else if (root.dispatchEvent(new Event('cancel', {cancelable: true}))) root.close();
+      if (scope().matches('dialog')) { focus(startOf(scope())); describe(); } else clearFocus(false);
+      return;
     }
-    if (!current) {
-      current = before.matches('dialog') ? items[0] : document.getElementById('controls-launch');
-      focus(current);
-      if (name !== 'ok' || before.matches('dialog')) { describe(); return; }
-    }
+    if (!inDialog && !current) { openMenu(); return; }   // Any button on the plain dashboard opens the menu.
+    if (!current) { focus(startOf(root)); describe(); return; } // Opened by touch or mouse: first press shows the highlight.
+    const enter = () => {
+      if (!selected(current)) current.click();
+      const target = openPanel(root, sections(root));
+      const inside = candidates().filter(el => target?.contains(el));
+      const first = inside.find(el => el.hasAttribute('data-wheel-first')) || inside[0];
+      if (first) focus(first); else message('Nothing to adjust in this section');
+    };
+
     if (name === 'ok') {
       if (editing) clearEdit();
-      else if (editable(current)) { editing = current; current.classList.add('wheel-editing'); }
-      else if (textInput(current)) openKeyboard(current);
-      else if (current.matches('input[type="color"]')) openColor(current);
-      else if (current.matches('input[type="file"]')) { openFiles(current); return; }
-      else if (current.matches('[data-gauge-slot]')) current.dispatchEvent(new Event('gauge-hold'));
-      else if (current.matches('input[type="date"], input[type="time"]')) { message('Use a keyboard for dates and times'); return; }
-      else current.click();
-      // Newly opened dialogs get a stable starting point, then Up/Down visits every control.
+      else if (tabs.includes(current)) { enter(); if (!hint.hidden && hint.textContent.startsWith('Nothing')) return; }
+      else if (!activate(current)) return;
       const after = scope();
-      if (after !== before) {
-        const start = candidates().find(el => el.hasAttribute('data-wheel-start'));
-        const tab = candidates().find(el => el.getAttribute('aria-selected') === 'true');
-        focus(start || tab || candidates()[0]);
-      } else if (!visible(current)) focus(candidates()[0]);
+      if (after !== root) {
+        if (after.matches('dialog') || (pendingFocus && visible(pendingFocus))) focus(pendingFocus && visible(pendingFocus) ? pendingFocus : startOf(after));
+        else { clearFocus(false); return; }
+      } else if (!visible(current)) focus(startOf(root));
     } else if (editing) adjust(editing, ['up', 'right'].includes(name) ? 1 : -1);
-    else {
-      const tablist = current.closest('[role="tablist"]');
-      if (current.matches('[role="tab"]') && tablist) {
-        const vertical = tablist.getAttribute('aria-orientation') === 'vertical';
-        if ((vertical ? ['up', 'down'] : ['left', 'right']).includes(name)) {
-          const tabs = [...tablist.querySelectorAll('[role="tab"]')].filter(visible);
-          const step = ['up', 'left'].includes(name) ? -1 : 1;
-          const next = tabs[(tabs.indexOf(current) + step + tabs.length) % tabs.length];
-          next.click(); focus(next); describe(); return;
-        }
-        if (name === (vertical ? 'right' : 'down')) {
-          const panel = document.getElementById(current.getAttribute('aria-controls'));
-          const first = panel && [...panel.querySelectorAll(selector)].find(visible);
-          if (first) { focus(first); describe(); return; }
-        }
+    else if (tabs.length && !deep) {
+      // Section level: SET/COAST choose a section (shown live); RESUME or ON opens it.
+      if (name === 'right' && tabs.includes(current)) enter();
+      else {
+        const next = step(outer, current, ['up', 'left'].includes(name) ? -1 : 1);
+        if (tabs.includes(next) && !selected(next)) next.click();
+        focus(next);
       }
+    } else {
+      const list = tabs.length ? inner : outer;
+      const tablist = current.closest('[role="tablist"]');
       const grid = current.closest('[data-wheel-grid]');
       const neighbour = grid && spatial([...grid.querySelectorAll(selector)].filter(visible), current, name);
-      if (neighbour) { focus(neighbour); describe(); return; }
-      const index = items.indexOf(current), step = ['up', 'left'].includes(name) ? -1 : 1;
-      focus(items[(index + step + items.length) % items.length]);
+      if (current.matches('[role="tab"]') && tablist && ['left', 'right'].includes(name)) {
+        // A tab row inside a section: RESUME cycles through it.
+        const row = [...tablist.querySelectorAll('[role="tab"]')].filter(visible);
+        const next = step(row, current, name === 'left' ? -1 : 1);
+        next.click(); focus(next);
+      } else if (neighbour) focus(neighbour);
+      else {
+        const direction = ['up', 'left'].includes(name) ? -1 : 1;
+        const index = list.indexOf(current), atEdge = direction > 0 ? index === list.length - 1 : index <= 0;
+        const host = atEdge ? scrollHost(current, root) : null;
+        if (current.matches('[data-wheel-scroll]') && canScroll(current, direction)) page(current, direction);
+        else if (host && canScroll(host, direction)) page(host, direction); // Text beyond the last control.
+        else focus(step(list, current, direction));
+      }
     }
     describe();
   }
@@ -336,23 +460,39 @@
     clearEdit(); hint.hidden = true;
     document.querySelectorAll('.wheel-focus').forEach(el => el.classList.remove('wheel-focus'));
   }, true);
-  function cancelEnter() { clearTimeout(enterTimer); enterAt = null; }
+  // Keyboard stand-ins for the five wheel buttons (preview and a keyboard on the Pi):
+  // W = SET/ACCEL, S = COAST, D = RESUME, A = OFF, E / Space / Enter = ON, with the same holds.
+  let homeTimer, offTimer, offAt = null;
+  function cancelEnter() { clearTimeout(enterTimer); clearTimeout(homeTimer); clearTimeout(offTimer); enterAt = offAt = null; }
   document.addEventListener('visibilitychange', () => { cancelEnter(); clearEdit(); });
   window.addEventListener('blur', cancelEnter);
+  const MOVES = {ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Escape: 'back', w: 'up', s: 'down', d: 'right'};
+  const keyOf = event => event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  const isOn = key => key === 'Enter' || key === 'e' || key === ' ';
   document.addEventListener('keydown', event => {
     // After a touch/click, use the browser's normal slider/select/number keys.
     if (event.target === nativeInput && !editing && event.key !== 'Escape') return;
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || textInput(event.target)) return;
-    const name = {ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', Escape: 'back'}[event.key];
-    if (!name && event.key !== 'Enter') return;
+    const key = keyOf(event), name = MOVES[key];
+    if (!name && !isOn(key) && key !== 'a') return;
     event.preventDefault(); event.stopImmediatePropagation();
     if (name) { if (name !== 'back' || !event.repeat) action(name); return; }
+    if (key === 'a') {  // OFF: back at once, home after 1.5 s.
+      if (event.repeat || offAt !== null) return;
+      offAt = performance.now();
+      action('back');
+      offTimer = setTimeout(() => action('home'), 1500);
+      return;
+    }
     if (event.repeat || enterAt !== null) return;
-    enterAt = performance.now();
-    enterTimer = setTimeout(() => { if (enterAt !== null) { action('back'); enterAt = -1; } }, 800);
+    enterAt = performance.now();  // ON: select on release, hold at 0.8 s, home at 3 s.
+    enterTimer = setTimeout(() => { if (enterAt !== null) { action('hold'); enterAt = -1; } }, 800);
+    homeTimer = setTimeout(() => { if (enterAt !== null) action('home'); }, 3000);
   }, true);
   document.addEventListener('keyup', event => {
-    if (event.key !== 'Enter' || enterAt === null) return;
+    const key = keyOf(event);
+    if (key === 'a') { clearTimeout(offTimer); offAt = null; return; }
+    if (!isOn(key) || enterAt === null) return;
     event.preventDefault(); event.stopImmediatePropagation();
     if (enterAt >= 0) action('ok');
     cancelEnter();

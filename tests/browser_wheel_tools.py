@@ -104,7 +104,9 @@ async def wheel_session(browser, url, state, imports):
         await press(OK)
         await ok('#wheel-color .wheel-done')
         assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--numeral").trim()') != '#ff1a1a'
-        await ok('#appearance-close')
+        await press(OK, .95)   # Hold OK: back out of the section...
+        await press(OK, .95)   # ...and again to close (the wheel skips Close buttons).
+        await page.wait_for_function('!document.getElementById("appearance-dialog").open')
 
         # Gauges: reachable by the wheel; OK opens the reading picker.
         await ok('.sensor-row:not(.profile-sensors) [data-gauge-slot="sensor-0"]')

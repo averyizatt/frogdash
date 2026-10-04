@@ -37,20 +37,30 @@ async def check(browser, url, state):
     try:
         await page.goto(url)
         await page.wait_for_timeout(300)
+        # Any button on the plain dashboard opens the quick menu; entries deep-link into a section.
         await press(16)
-        await page.wait_for_function('document.getElementById("controls-dialog").open')
+        await page.wait_for_function('document.getElementById("wheel-menu").open')
+        for _ in range(3):
+            await press(2)                 # Map -> Interior lights -> Taillights -> Water / meth
+        await press(16)
+        await page.wait_for_function('document.getElementById("controls-dialog").open && !document.getElementById("wheel-menu").open')
+        await focused('meth-boost-input')  # Landed inside the section.
+        await press(16, .9)                # Back steps out to the section list first.
         await focused('tab-meth')
         await press(2)
         await focused('tab-knock')
         assert await page.locator('#panel-knock').is_visible()
-        await press(16, .9)
+        await press(1); await press(1)     # Up wraps within the section list, never into the panel.
+        assert await page.evaluate('document.activeElement.getAttribute("role")') == 'tab'
+        await press(16, .9)                # Back at the section list closes the menu.
         await page.wait_for_function('!document.getElementById("controls-dialog").open')
         # Old event history is never replayed after a reload.
         await page.reload()
         await page.wait_for_timeout(300)
         assert not await page.locator('#controls-dialog').evaluate('(el) => el.open')
         # Edit mode prevents arrows on an unfocused input from changing values.
-        await page.keyboard.press('Enter')
+        await page.locator('#controls-launch').click()
+        await page.keyboard.press('Enter')   # First press after touch only shows the highlight.
         await focused('tab-meth')
         await page.locator('#meth-boost-input').focus()
         await page.keyboard.press('Enter')
@@ -59,9 +69,12 @@ async def check(browser, url, state):
         await page.keyboard.press('ArrowRight')
         assert int(await page.locator('#meth-boost-input').input_value()) == before + 1
         await page.keyboard.press('Enter')
-        await page.keyboard.press('Escape')
+        await page.keyboard.press('Escape')  # Section -> section list.
+        await focused('tab-meth')
+        await page.keyboard.press('Escape')  # Section list -> closed.
         assert not await page.locator('#controls-dialog').evaluate('(el) => el.open')
         # Unavailable controller commands remain disabled and cannot be selected.
+        await page.locator('#controls-launch').click()
         await press(16)
         await press(8)  # Into meth panel: first enabled input, skipping commands.
         await focused('meth-boost-input')
@@ -91,7 +104,11 @@ async def preview(browser):
     try:
         await page.goto((ROOT / 'preview/index.html').as_uri())
         await page.keyboard.press('Enter')
-        assert await page.locator('#controls-dialog').evaluate('(el) => el.open')
+        assert await page.locator('#wheel-menu').evaluate('(el) => el.open')
+        await page.keyboard.press('Escape')
+        assert not await page.locator('#wheel-menu').evaluate('(el) => el.open')
+        await page.locator('#controls-launch').click()
+        await page.keyboard.press('Enter')
         await page.keyboard.press('ArrowDown')
         assert await page.locator('#panel-knock').is_visible()
         await page.keyboard.down('Enter')
@@ -101,9 +118,12 @@ async def preview(browser):
         # Gallery tabs and selects work through the same navigation layer.
         await page.locator('#appearance-launch').click()
         await page.locator('#appearance-tab-gallery').focus()
-        await page.keyboard.press('ArrowRight')
+        await page.keyboard.press('ArrowDown')   # Sections are chosen with up/down in every menu.
         assert await page.locator('#appearance-custom').is_visible()
-        await page.keyboard.press('Escape')
+        await page.keyboard.press('ArrowRight')  # Right opens the section.
+        assert await page.evaluate('document.getElementById("appearance-custom").contains(document.activeElement)')
+        await page.keyboard.press('Escape'); await page.keyboard.press('Escape')
+        assert not await page.locator('#appearance-dialog').evaluate('(el) => el.open')
     finally:
         await page.close()
 
@@ -127,7 +147,7 @@ async def main(path):
                 await browser.close()
     finally:
         await runner.cleanup()
-    print('CAN wheel navigation, long-back, reconnect, stale input, edit mode, disabled controls and preview keyboard passed.')
+    print('CAN wheel navigation: quick menu, two-level sections, long-back, reconnect, stale input, edit mode, disabled controls and preview keyboard passed.')
 
 
 if __name__ == '__main__':

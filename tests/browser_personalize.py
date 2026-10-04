@@ -83,7 +83,7 @@ async def preview(browser):
     await page.wait_for_timeout(150)
     await page.locator('#appearance-launch').click()
     await page.locator('#appearance-tab-gallery').focus()
-    await page.keyboard.press('ArrowRight')
+    await page.keyboard.press('ArrowDown')
     assert await page.locator('#appearance-custom').is_visible()
     await page.locator('#appearance-tab-custom').click()
     for transparency, alpha in [(0, 255), (50, 128), (100, 0)]:

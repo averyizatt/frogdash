@@ -48,7 +48,7 @@ class SteeringWheel:
             return
         held = now - self.started
         if self.mask == 16 and not self.long_sent and held >= HOLD_BACK:
-            self.emit('back')
+            self.emit('hold')  # Back in a menu; the shortcut bar on the plain dashboard.
             self.long_sent = True
         elif self.mask in (16, BACK) and not self.home_sent and held >= (HOLD_HOME_OK if self.mask == 16 else HOLD_HOME_BACK):
             self.emit('home')  # A long hold always gets out, however deep the menu.
@@ -104,7 +104,7 @@ class SteeringWheel:
             self.tick()
             return
         if previous == 16 and mask == 0 and not self.long_sent:
-            self.emit('back' if now - self.started >= HOLD_BACK else 'ok')
+            self.emit('hold' if now - self.started >= HOLD_BACK else 'ok')
         if mask == BACK:
             self.emit('back')  # OFF is a dedicated back button: no hold needed.
         self.mask = mask

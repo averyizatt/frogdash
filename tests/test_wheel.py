@@ -47,7 +47,7 @@ class WheelTests(unittest.TestCase):
         self.frame(16)
         for _ in range(20): self.frame(16)
         self.frame(0)
-        self.assertEqual(self.actions(), ['back'])
+        self.assertEqual(self.actions(), ['hold'])
 
     def test_repeat_stops_on_stale_and_duplicate_frames(self):
         self.frame(0)

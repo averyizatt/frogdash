@@ -69,7 +69,7 @@ class CruiseButtonTests(unittest.TestCase):
         for _ in range(45):                # ON held 3.6 s: back at 0.8 s, home at 3 s.
             self.press(1)
         self.press(0)
-        self.assertEqual(self.actions(), ['back', 'home'])
+        self.assertEqual(self.actions(), ['hold', 'home'])
         self.wheel.events.clear()
         for _ in range(25):                # OFF held 2 s: back at once, home at 1.5 s.
             self.press(2)
@@ -84,7 +84,7 @@ class CruiseButtonTests(unittest.TestCase):
         for _ in range(12):
             self.press(1)
         self.press(0)
-        self.assertEqual(self.actions(), ['back'])
+        self.assertEqual(self.actions(), ['hold'])
         self.wheel.events.clear()
         self.press(1 | 8); self.press(0); self.press(0)
         self.assertEqual(self.actions(), [])

@@ -104,6 +104,7 @@ async def check_preview(browser, errors):
     await page.locator('#wifi-off').click()
     await page.keyboard.press('Escape')
     await page.locator('#diagnostics-launch').click()
+    await page.locator('#sensor-tab-signals').click()
     await page.locator('#signal-filter').fill('oil')
     assert await page.locator('#signals tr').count() == 1
     await page.wait_for_timeout(1100)
@@ -176,7 +177,7 @@ async def main(browser_path=None):
             await page.locator('#knock-close').click()
             await page.locator('#diagnostics-launch').click()
             assert await page.locator('#signals tr').count() > 30
-            await page.locator('#log-details summary').click()
+            await page.locator('#sensor-tab-logs').click()
             await page.wait_for_function("document.getElementById('recording-badge').textContent === 'REC 20 Hz'")
             await page.wait_for_timeout(600)
             await page.locator('#refresh-logs').click()
@@ -186,7 +187,7 @@ async def main(browser_path=None):
             download = await download_info.value
             await download.save_as('.tmp/browser-download.mlg')
             assert inspect_mlg('.tmp/browser-download.mlg')['data_records'] > 0
-            await page.locator('#log-details summary').click()
+            await page.locator('#sensor-tab-check').click()
             await page.locator('#diagnostics-close').click()
             await page.locator('#controls-launch').click()
             await page.locator('[data-action="meth.arm"][data-value="1"]').click()
