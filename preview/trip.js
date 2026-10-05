@@ -15,7 +15,7 @@
   const simulated = {
     settings: {enabled: true, capacity_l: 15.4 * GAL, reserve_l: 3, injector_cc_min: 440, injectors: 4, pw2_injectors: 2, pulses_per_rev: .5, dead_ms: 1, correction: 1},
     counters: {a: {...freshBucket(), km: 84.2, moving_s: 3988, engine_s: 4200, fuel_l: 7.2, paired_km: 84.2, paired_l: 7.2}, b: {...freshBucket(), km: 286.1, moving_s: 13120, engine_s: 14000, fuel_l: 24.1, paired_km: 286.1, paired_l: 24.1}, total: {...freshBucket(), km: 1284.8}},
-    learned: {km: 84.2, litres: 7.2}, remaining_l: 32, fuel_source: 'Simulated fuel amount', error: ''
+    learned: {km: 84.2, litres: 7.2}, remaining_l: 32, fuel_source: 'Simulated fuel amount', error: '', odometer_km: 67456 * 1.609344
   };
   const demo = () => latest.mode === 'demo';
   const view = () => demo() ? simulated : latest.trip;
@@ -39,6 +39,7 @@
     const flow = simulated.fuel_live ? rpm.value > 0 ? 6.5 : 0 : null;
     simulated.flow_lph = flow;
     const km = kph !== null ? kph * dt / 3600 : 0, litres = flow !== null ? flow * dt / 3600 : 0;
+    simulated.odometer_km += km;
     for (const b of Object.values(simulated.counters)) {
       b.km += km; b.fuel_l += litres; b.moving_s += km > 0 ? dt : 0; b.engine_s += flow > 0 ? dt : 0;
       if (kph !== null && flow !== null) { b.paired_km += km; b.paired_l += litres; }
@@ -62,7 +63,7 @@
       $(`trip-${name}-distance`).innerHTML = `${fmt(u.distance(b.km))} <small>${u.distanceUnit}</small>`;
       $(`trip-${name}-detail`).textContent = `${duration(b.engine_s)} engine · ${fmt(b.moving_s ? u.distance(b.km) / (b.moving_s / 3600) : null)} ${u.speedUnit} moving avg · ${fmt(u.economy(b.mpg))} ${u.economyUnit}${b.missing_s > 1 ? ' · partial data' : ''}`;
     }
-    $('trip-total').textContent = `${fmt(u.distance(t.counters.total.km))} ${u.distanceUnit} tracked since installation · GPS distance, separate from the vehicle odometer.`;
+    $('trip-total').textContent = `${fmt(u.distance(t.counters.total.km))} ${u.distanceUnit} tracked by the dash since installation`;
     $('trip-range').innerHTML = `${fmt(connected ? t.range_km === null ? null : u.distance(t.range_km) : null, 0)} <small>${u.distanceUnit}</small>`;
     $('trip-instant').textContent = connected && t.coasting ? 'COAST' : fmt(connected ? u.economy(t.instant_mpg) : null);
     $('trip-average').textContent = fmt(u.economy(t.average_mpg));
@@ -119,9 +120,27 @@
   };
   $('fuel-amount-form').onsubmit = event => { event.preventDefault(); if ($('fuel-amount-form').reportValidity()) command({remaining_l: Number($('fuel-amount').value) * GAL}, 'fuel-settings-status'); };
   $('fuel-full').onclick = () => { if (view()) command({remaining_l: view().settings.capacity_l}, 'fuel-settings-status'); };
+  // Odometer: shown under the speed, set once from the cluster's reading on the Trips page.
+  function renderOdometer() {
+    const t = view(), km = t?.odometer_km;
+    const text = Number.isFinite(km) ? `${Math.floor(u.distance(km)).toLocaleString('en-US')} ${u.distanceUnit}` : '';
+    $('odometer').hidden = !text; $('odometer').textContent = text;
+    $('odometer-reading').textContent = text ? `Odometer ${text}` : 'Odometer not set';
+  }
+  $('odometer-apply').onclick = async () => {
+    const value = Number($('odometer-input').value.replace(/[, ]/g, ''));
+    if (!$('odometer-input').value.trim() || !Number.isFinite(value) || value < 0) { $('odometer-reading').textContent = 'Enter the reading from your cluster, digits only'; return; }
+    const km = u.metric ? value : value * MI;
+    if (demo()) { simulated.odometer_km = km; $('odometer-input').value = ''; renderOdometer(); return; }
+    try {
+      const response = await fetch('/trip', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({odometer_km: km})});
+      if (!response.ok) throw new Error(await response.text());
+      latest.trip = await response.json(); $('odometer-input').value = ''; renderOdometer();
+    } catch (error) { $('odometer-reading').textContent = error.message || 'Could not set the odometer'; }
+  };
   window.addEventListener('frogdash-state', event => {
     latest = event.detail.snapshot; connected = event.detail.connected;
     if (demo()) simulate();
-    render();
+    render(); renderOdometer();
   });
 })();

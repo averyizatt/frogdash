@@ -332,6 +332,8 @@ def create_app(state, adapter=None, connectivity=None):
                     state.trip.reset(body['reset'])
                 elif set(body) == {'remaining_l'}:
                     state.trip.set_fuel(body['remaining_l'])
+                elif set(body) == {'odometer_km'}:
+                    state.trip.set_odometer(body['odometer_km'])
                 else:
                     raise ValueError('Unknown trip command or fields')
             except (ValueError, TypeError) as exc:

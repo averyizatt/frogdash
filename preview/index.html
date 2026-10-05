@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#090f13">
   <link rel="icon" href="data:,">
   <title>Fox Body · Driver display</title>
-  <link rel="stylesheet" href="style.css?v=97b1f8368a5d">
+  <link rel="stylesheet" href="style.css?v=6909eaa0f3eb">
   <link rel="stylesheet" href="review.css?v=4131615d94e6">
   <link rel="stylesheet" href="responsive.css?v=2eaa09f6d5dc">
 <link rel="stylesheet" href="instruments.css?v=c974b6f0161d">
@@ -46,7 +46,7 @@
       <div class="warn-banner" id="warn-banner" role="status" hidden></div>
       <div class="speed-readout"><span id="speed-digits">—</span><span class="unit">MPH</span></div>
       <div id="track-lap-readout" hidden><span>LAST LAP <b id="track-last">—</b></span><span>BEST <b id="track-best">—</b></span></div>
-      <div class="speed-source"><span class="status-dot"></span><span id="gps-sats">GPS · NO FIX</span><span class="quality-label">No signal</span></div>
+      <div class="speed-source"><span class="status-dot"></span><span id="gps-sats">GPS · NO FIX</span><span id="odometer" class="odometer" hidden></span><span class="quality-label">No signal</span></div>
     </article>
 
     <div class="secondary-instruments">
@@ -193,37 +193,23 @@
       </section>
       <section class="control-section" id="panel-interior" role="tabpanel" aria-labelledby="tab-interior" hidden>
         <p id="interior-live-summary">Waiting for the sensor gateway</p>
-        <div class="settings-grid interior-grid">
-          <div class="setting-card"><h3>Zone</h3>
-            <div class="control-row" role="group" aria-label="Interior light zone">
-              <button type="button" data-interior-zone="0" aria-pressed="true">BOTH</button>
-              <button type="button" data-interior-zone="1" aria-pressed="false">UPPER</button>
-              <button type="button" data-interior-zone="2" aria-pressed="false">LOWER</button>
-            </div>
-            <div id="interior-zones" class="interior-zones" aria-live="polite"></div>
+        <div class="interior-layout">
+          <div class="interior-preview" aria-live="polite">
+            <div class="interior-strip" id="interior-strip-upper"><span>Upper</span><b>—</b></div>
+            <div class="interior-strip" id="interior-strip-lower"><span>Lower</span><b>—</b></div>
+            <div id="interior-zones" class="interior-zones"></div>
           </div>
-          <div class="setting-card"><h3>Color</h3>
-            <div class="interior-swatches" role="group" aria-label="Color presets">
-              <button type="button" data-interior-color="#ffb46b" style="--swatch:#ffb46b" aria-label="Warm white"></button>
-              <button type="button" data-interior-color="#ffffff" style="--swatch:#ffffff" aria-label="White"></button>
-              <button type="button" data-interior-color="#ff1a1a" style="--swatch:#ff1a1a" aria-label="Red"></button>
-              <button type="button" data-interior-color="#ff7a00" style="--swatch:#ff7a00" aria-label="Amber"></button>
-              <button type="button" data-interior-color="#1a5cff" style="--swatch:#1a5cff" aria-label="Blue"></button>
-              <button type="button" data-interior-color="#00e5ff" style="--swatch:#00e5ff" aria-label="Ice"></button>
-              <button type="button" data-interior-color="#1cf29a" style="--swatch:#1cf29a" aria-label="Mint"></button>
-              <button type="button" data-interior-color="#a020ff" style="--swatch:#a020ff" aria-label="Purple"></button>
-            </div>
-            <label>Custom color <input id="interior-color" type="color" value="#ffb46b"></label>
-          </div>
-          <div class="setting-card"><h3>Brightness</h3>
-            <label>Level <output id="interior-brightness-value" for="interior-brightness">50%</output><input id="interior-brightness" type="range" min="1" max="100" step="1" value="50"></label>
-            <div class="control-row">
-              <button type="button" data-action="interior.light" data-compute data-interior-apply>TURN ON / APPLY</button>
-              <button type="button" class="stop-control" data-action="interior.light" data-compute data-interior-off>OFF</button>
-            </div>
-            <p class="control-note">The dash keeps the lights on and restores your last colors after a restart. The gateway turns them off within 5 seconds if the dash goes away.</p>
+          <div class="interior-controls">
+            <div class="interior-row"><span>Power</span><div class="interior-buttons">
+              <button type="button" data-interior-on data-wheel-first>ON</button><button type="button" class="stop-control" data-interior-off>OFF</button></div></div>
+            <div class="interior-row"><span>Lights</span><div class="interior-buttons" role="group" aria-label="Which lights">
+              <button type="button" data-interior-zone="0" aria-pressed="true">Both</button><button type="button" data-interior-zone="1" aria-pressed="false">Upper</button><button type="button" data-interior-zone="2" aria-pressed="false">Lower</button></div></div>
+            <div class="interior-row"><span>Brightness</span><div class="interior-buttons" role="group" aria-label="Brightness"><button type="button" data-interior-level="10" aria-pressed="false">10%</button><button type="button" data-interior-level="25" aria-pressed="false">25%</button><button type="button" data-interior-level="50" aria-pressed="true">50%</button><button type="button" data-interior-level="75" aria-pressed="false">75%</button><button type="button" data-interior-level="100" aria-pressed="false">100%</button></div></div>
+            <div class="interior-row"><span>Colour</span><div class="interior-swatches" role="group" aria-label="Colour" data-wheel-grid><button type="button" data-interior-color="#ffb46b" style="--swatch:#ffb46b" aria-label="Warm white" aria-pressed="false"></button><button type="button" data-interior-color="#ffffff" style="--swatch:#ffffff" aria-label="White" aria-pressed="false"></button><button type="button" data-interior-color="#ff1a1a" style="--swatch:#ff1a1a" aria-label="Red" aria-pressed="false"></button><button type="button" data-interior-color="#ff7a00" style="--swatch:#ff7a00" aria-label="Amber" aria-pressed="false"></button><button type="button" data-interior-color="#ffe14a" style="--swatch:#ffe14a" aria-label="Yellow" aria-pressed="false"></button><button type="button" data-interior-color="#1cf29a" style="--swatch:#1cf29a" aria-label="Mint" aria-pressed="false"></button><button type="button" data-interior-color="#00e5ff" style="--swatch:#00e5ff" aria-label="Ice" aria-pressed="false"></button><button type="button" data-interior-color="#1a5cff" style="--swatch:#1a5cff" aria-label="Blue" aria-pressed="false"></button><button type="button" data-interior-color="#a020ff" style="--swatch:#a020ff" aria-label="Purple" aria-pressed="false"></button><button type="button" data-interior-color="#ff3fa4" style="--swatch:#ff3fa4" aria-label="Pink" aria-pressed="false"></button>
+              <label class="interior-custom" title="Custom colour">Custom<input id="interior-color" type="color" value="#ffb46b"></label></div></div>
           </div>
         </div>
+        <p class="control-note">Every button applies straight away. The dash keeps the lights on and restores them after a restart; they go out within 5 seconds if the dash stops.</p>
       </section>
       <section class="control-section" id="panel-wifi" role="tabpanel" aria-labelledby="tab-wifi" hidden>
         <p id="wifi-summary">Hotspot off</p>
@@ -444,7 +430,7 @@
         <div class="trip-workspace"><div class="trip-counters">
           <article class="setting-card trip-card"><div class="trip-card-heading"><h3>Trip A</h3><button type="button" data-trip-reset="a">RESET A</button></div><strong id="trip-a-distance" class="trip-distance">0.0 <small>mi</small></strong><p id="trip-a-detail"></p></article>
           <article class="setting-card trip-card"><div class="trip-card-heading"><h3>Trip B</h3><button type="button" data-trip-reset="b">RESET B</button></div><strong id="trip-b-distance" class="trip-distance">0.0 <small>mi</small></strong><p id="trip-b-detail"></p></article>
-          <p id="trip-total" class="control-note"></p>
+          <div class="odometer-set"><strong id="odometer-reading">Odometer not set</strong><label>Set to<input id="odometer-input" type="text" inputmode="numeric" maxlength="7" autocomplete="off" placeholder="e.g. 67456"></label><button id="odometer-apply" type="button">SET ODOMETER</button><span id="trip-total" class="control-note"></span></div>
         </div><div class="trip-economy">
           <article class="setting-card range-card"><span class="eyebrow">ESTIMATED RANGE &middot; RESERVE EXCLUDED</span><strong id="trip-range" class="trip-distance">&mdash; <small>mi</small></strong><p id="trip-fuel-source"></p></article>
           <div class="economy-cards"><article class="setting-card"><h3>Instant economy</h3><strong id="trip-instant">&mdash;</strong><span id="trip-flow">US MPG &middot; estimated</span></article><article class="setting-card"><h3>Learned average</h3><strong id="trip-average">&mdash;</strong><span id="trip-average-unit">US MPG &middot; sampled driving</span></article></div>
@@ -467,7 +453,7 @@
 <script src="review.js?v=c6ec99c5fdab"></script>
 <script src="instruments.js?v=d62830c49b98"></script>
 <script src="personalize.js?v=b0cfd4bc02b1"></script>
-<script src="trip.js?v=6b67863f329b"></script>
+<script src="trip.js?v=d38d5ba947a7"></script>
 <script src="driving.js?v=438cf127987a"></script>
 <script src="operations.js?v=100d22041e4f"></script>
 <script src="navigation.js?v=a7911aa294cf"></script>
@@ -477,6 +463,6 @@
 <script src="taillights.js?v=04906b265706"></script>
 <script src="taillight-settings.js?v=179b3ed31292"></script>
 <script src="demo.js?v=95ef1d00e8e1"></script>
-<script src="app.js?v=95fc0855410a"></script>
+<script src="app.js?v=53f7c951d6b9"></script>
 </body>
 </html>

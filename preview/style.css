@@ -517,30 +517,35 @@ html.cursor-hidden, html.cursor-hidden * { cursor:none !important; }
 @media not all and (max-aspect-ratio: 11/5) {
   .workspace-dialog:not(.splash-dialog,.camera-dialog) { width:calc(1864px / var(--hump-fit)); transform:translate(-50%,calc(-50% - 36px * var(--panel-scale,1))) scale(calc(var(--panel-scale,1) * var(--hump-fit))); }
 }
-/* Interior lights */
-#panel-interior .interior-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
-.interior-swatches { display:grid; grid-template-columns:repeat(4,44px); gap:10px; margin-bottom:12px; }
-.interior-swatches button { width:44px; height:44px; min-height:0; padding:0; border-radius:50%; background:var(--swatch) !important; border:2px solid var(--line); }
-.interior-swatches button:is(:focus-visible,.wheel-focus) { outline:3px solid var(--accent); outline-offset:3px; }
-#panel-interior input[type=range] { width:100%; }
-.interior-zones { display:flex; flex-direction:column; gap:8px; margin-top:12px; font-size:15px; }
-.interior-zone { display:flex; align-items:center; gap:10px; }
-.interior-dot { width:18px; height:18px; border-radius:50%; border:2px solid var(--line); }
-#panel-interior [data-interior-zone][aria-pressed="true"] { color:var(--accent); border-color:var(--accent); background:color-mix(in srgb,var(--accent) 14%,var(--bg)); }
-@media (max-aspect-ratio:11/5) and (max-width:1200px) { #panel-interior .interior-grid { grid-template-columns:1fr; } }
-/* CAN check (Sensors). */
-.can-check { display:flex; flex-direction:column; gap:6px; }
-.can-check-row { border:1px solid var(--line); border-left:5px solid var(--muted); border-radius:8px; padding:8px 12px; font-size:14px; }
-.can-check-row[data-status="ok"] { border-left-color:var(--accent); }
-.can-check-row:is([data-status="fault"],[data-status="rejected"]) { border-left-color:#ff5c5c; }
-.can-check-row:is([data-status="stopped"],[data-status="missing"]) { border-left-color:#ffb84d; }
-.can-check-head { display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; }
-.can-check-head b { min-width:84px; font-size:12px; letter-spacing:.06em; }
-.can-check-head span { color:var(--muted); }
-.can-check-row p { margin:4px 0 0 96px; }
-.can-check-row code { display:block; margin:4px 0 0 96px; color:var(--muted); font-size:12px; }
-.can-check-row[data-status="skip"] { opacity:.6; }
-.can-check-row:is(:focus-visible,.wheel-focus) { outline:2px solid var(--accent); }
+/* Interior lights: live preview on the left, one row per choice on the right. */
+.interior-layout { display:grid; grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr); gap:26px; align-items:start; }
+.interior-preview { display:flex; flex-direction:column; gap:14px; padding:18px; border:1px solid var(--line); border-radius:12px; background:#0a0f13; }
+.interior-strip { display:flex; justify-content:space-between; align-items:center; height:54px; padding:0 18px; border-radius:27px; border:1px solid var(--line); font-size:16px; font-weight:750;
+  background:color-mix(in srgb,var(--glow,transparent) calc(var(--level,0) * 70%),#11181d); box-shadow:0 0 calc(var(--level,0) * 34px) var(--glow,transparent); color:var(--text); }
+.interior-strip[data-state="on"] { color:#fff; border-color:transparent; text-shadow:0 1px 4px #000c; }
+.interior-strip b { font-size:15px; }
+.interior-zones { font-size:13px; color:var(--muted); white-space:pre-wrap; }
+.interior-controls { display:flex; flex-direction:column; gap:12px; }
+.interior-row { display:grid; grid-template-columns:110px minmax(0,1fr); align-items:center; gap:14px; }
+.interior-row > span { font-size:15px; font-weight:750; color:var(--muted); }
+.interior-buttons { display:flex; gap:10px; flex-wrap:wrap; }
+.interior-buttons button { min-width:96px; min-height:52px; font-size:16px; }
+#panel-interior button[aria-pressed="true"] { color:var(--accent); border-color:var(--accent); background:color-mix(in srgb,var(--accent) 14%,var(--bg)); }
+.interior-swatches { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.interior-swatches button { width:52px; height:52px; min-height:0; padding:0; border-radius:50%; background:var(--swatch) !important; border:2px solid var(--line) !important; }
+.interior-swatches button[aria-pressed="true"] { box-shadow:0 0 0 3px var(--bg), 0 0 0 6px #fff; }
+.interior-swatches button:is(:focus-visible,.wheel-focus) { outline:4px solid var(--accent) !important; outline-offset:4px; }
+.interior-custom { display:flex; align-items:center; gap:8px; margin-left:8px; font-size:14px; color:var(--muted); }
+.interior-custom input { width:60px; height:44px; padding:2px; border:1px solid var(--line); border-radius:8px; background:var(--surface); }
+@media (max-aspect-ratio:11/5) and (max-width:1200px) { .interior-layout { grid-template-columns:1fr; } }
+/* Odometer */
+.odometer { margin-left:14px; padding-left:14px; border-left:1px solid var(--line); font-variant-numeric:tabular-nums; }
+.odometer-set { display:flex; align-items:center; gap:10px 12px; flex-wrap:wrap; margin-top:6px; }
+.odometer-set strong { font-size:18px; margin-right:auto; }
+.odometer-set #trip-total { flex-basis:100%; margin:0; font-size:12px; }
+.odometer-set button { min-height:44px; padding:6px 14px; }
+.odometer-set label { display:flex; align-items:center; gap:8px; font-size:14px; color:var(--muted); }
+.odometer-set input { width:130px; min-height:44px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); font-size:16px; }
 /* Terminal tab and three-column Wi-Fi tab. */
 .terminal-line { display:flex; gap:10px; }
 .terminal-line input { flex:1; min-width:0; font:15px ui-monospace,Consolas,monospace; min-height:44px; padding:6px 12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); }
@@ -582,6 +587,11 @@ dialog.wheel-taskbar::backdrop { background:#0005; }
 .wheel-taskbar .wheel-app:is(.wheel-focus,:hover) .wheel-app-icon { transform:scale(1.34); }
 .wheel-taskbar .wheel-app:has(+ .wheel-focus) .wheel-app-icon, .wheel-taskbar .wheel-app.wheel-focus + .wheel-app .wheel-app-icon { transform:scale(1.12); }
 .wheel-taskbar #wheel-hint { position:absolute; top:calc(100% + 12px); bottom:auto; left:50%; transform:translateX(-50%); white-space:nowrap; }
+/* Trips page: slightly smaller trip numbers leave room for the odometer row. */
+.trip-counters .trip-distance { font-size:56px; margin:4px 0; }
+.trip-counters { gap:12px; }
+.trip-counters .trip-card { padding-top:14px; padding-bottom:12px; }
+.odometer-set { flex:none; }
 
 /* Preview-only playback controls. */
 .demo-playback { display:flex; gap:6px; }

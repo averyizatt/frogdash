@@ -50,6 +50,7 @@ class Trip:
         self.learned = dict(km=0., litres=0.)
         self.manual_l = None
         self.manual_valid = False
+        self.odometer_km = None  # Set once to the cluster's reading; then advances with distance driven.
         self.previous = None
         self.current = (None, None, None, None)
         self.error = ''
@@ -77,7 +78,11 @@ class Trip:
                 manual = data.get('manual_l')
                 if manual is not None and not number(manual, 0, settings['capacity_l']):
                     raise ValueError('Invalid tank amount')
+                odometer = data.get('odometer_km')
+                if odometer is not None and not number(odometer, 0, 3e6):
+                    raise ValueError('Invalid odometer')
                 self.settings, self.counters, self.learned, self.manual_l = settings, counters, learned, manual
+                self.odometer_km = odometer
                 # Fuel could have been used while this service was stopped.
             except (OSError, ValueError, TypeError, KeyError):
                 self.error = self.load_error = 'Could not read trip storage; counters start at zero'
@@ -131,6 +136,8 @@ class Trip:
         fuel = (flow + old_flow) * dt / 7200 if flow is not None and old_flow is not None else None
         running = rpm is not None and old_rpm is not None and rpm >= 300 and old_rpm >= 300
         stationary_engine = rpm == old_rpm == 0
+        if self.odometer_km is not None:
+            self.odometer_km += distance or 0
         for item in self.counters.values():
             item['km'] += distance or 0
             item['moving_s'] += dt if distance is not None and distance > 0 else 0
@@ -165,6 +172,11 @@ class Trip:
             raise ValueError('Only Trip A and Trip B can be reset')
         self.counters[name] = bucket()
 
+    def set_odometer(self, km):
+        if not number(km, 0, 3e6):
+            raise ValueError('Odometer must be between 0 and 1,864,000 miles')
+        self.odometer_km = float(km)
+
     def set_fuel(self, litres):
         if not self.settings['enabled'] or self.settings['capacity_l'] <= 0:
             raise ValueError('Enable calibrated fuel estimation and set tank capacity first')
@@ -197,7 +209,7 @@ class Trip:
         return dict(settings=dict(p), counters=counters, learned=dict(learned), flow_lph=flow,
                     instant_mpg=instant, average_mpg=MPG / economy if economy else None,
                     range_km=range_km, remaining_l=remaining, last_manual_l=self.manual_l,
-                    fuel_source=source, coasting=speed is not None and speed >= 1 and flow == 0,
+                    odometer_km=self.odometer_km, fuel_source=source, coasting=speed is not None and speed >= 1 and flow == 0,
                     gps_live=speed is not None, fuel_live=flow is not None,
                     error=self.error, estimated=True)
 
@@ -217,7 +229,7 @@ class Trip:
             if not force and now - self.last_save < 15:
                 return
             data = deepcopy(dict(version=1, settings=self.settings, counters=self.counters,
-                                 learned=self.learned, manual_l=self.manual_l))
+                                 learned=self.learned, manual_l=self.manual_l, odometer_km=self.odometer_km))
             self.last_save = now
             try:
                 await asyncio.to_thread(atomic_write, self.path, data)

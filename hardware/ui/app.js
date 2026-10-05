@@ -335,36 +335,38 @@
     };
   }
   // Interior LEDs on the sensor gateway (0x502): zone 0 both, 1 upper, 2 lower.
-  let interiorZone = 0;
-  const interiorLevel = () => Math.round(Number($('interior-brightness').value) * 2.55);
-  function interiorValue(brightness) {
-    const rgb = parseInt($('interior-color').value.slice(1), 16);
-    return interiorZone * 2 ** 32 + rgb * 256 + brightness;
+  // Every button applies at once with the current lights / brightness / colour selection.
+  const interior = {zone: 0, level: 50, color: '#ffb46b', seeded: false};
+  function interiorSend(percent) {
+    const reason = (snapshot.controls?.reasons || {})['interior.light'];
+    if (reason) { $('interior-live-summary').textContent = reason; return; }
+    const rgb = parseInt(interior.color.slice(1), 16);
+    sendCommand('interior.light', interior.zone * 2 ** 32 + rgb * 256 + Math.round(percent * 2.55));
   }
-  for (const button of document.querySelectorAll('[data-interior-zone]')) button.onclick = () => {
-    interiorZone = Number(button.dataset.interiorZone);
-    for (const other of document.querySelectorAll('[data-interior-zone]')) other.setAttribute('aria-pressed', String(other === button));
-  };
-  for (const swatch of document.querySelectorAll('[data-interior-color]')) swatch.onclick = () => {
-    $('interior-color').value = swatch.dataset.interiorColor;
-    sendCommand('interior.light', interiorValue(interiorLevel()));
-  };
-  $('interior-brightness').addEventListener('input', () => { $('interior-brightness-value').textContent = `${$('interior-brightness').value}%`; });
-  document.querySelector('[data-interior-apply]').onclick = () => sendCommand('interior.light', interiorValue(interiorLevel()));
-  document.querySelector('[data-interior-off]').onclick = () => sendCommand('interior.light', interiorValue(0));
+  for (const button of document.querySelectorAll('[data-interior-zone]')) button.onclick = () => { interior.zone = Number(button.dataset.interiorZone); renderInterior(); };
+  for (const button of document.querySelectorAll('[data-interior-level]')) button.onclick = () => { interior.level = Number(button.dataset.interiorLevel); interiorSend(interior.level); renderInterior(); };
+  for (const swatch of document.querySelectorAll('[data-interior-color]')) swatch.onclick = () => { interior.color = swatch.dataset.interiorColor; $('interior-color').value = interior.color; interiorSend(interior.level); renderInterior(); };
+  $('interior-color').addEventListener('change', () => { interior.color = $('interior-color').value; interiorSend(interior.level); renderInterior(); });
+  document.querySelector('[data-interior-on]').onclick = () => interiorSend(interior.level);
+  document.querySelector('[data-interior-off]').onclick = () => interiorSend(0);
   function renderInterior() {
     const zones = [['upper', 'Upper'], ['lower', 'Lower']].map(([key, name]) => {
       const level = live(`interior.${key}.brightness`), color = live(`interior.${key}.color`);
-      const row = document.createElement('div'); row.className = 'interior-zone';
-      const dot = document.createElement('span'); dot.className = 'interior-dot';
-      dot.style.background = level ? color : 'transparent';
-      const text = document.createElement('span');
-      text.textContent = level === null ? `${name}: no signal` : level ? `${name}: on · ${Math.round(level / 2.55)}%` : `${name}: off`;
-      row.append(dot, text); return row;
+      const strip = $(`interior-strip-${key}`), on = !!level;
+      strip.dataset.state = level === null ? 'unknown' : on ? 'on' : 'off';
+      strip.style.setProperty('--glow', on ? color : 'transparent');
+      strip.style.setProperty('--level', on ? Math.max(.25, level / 255) : 0);
+      strip.querySelector('b').textContent = level === null ? 'no signal' : on ? `${Math.round(level / 2.55)}%` : 'off';
+      // Start from what the lights are actually doing, once.
+      if (!interior.seeded && on && color) { interior.color = color; interior.level = [10, 25, 50, 75, 100].reduce((best, v) => Math.abs(v - level / 2.55) < Math.abs(best - level / 2.55) ? v : best, 50); interior.seeded = true; $('interior-color').value = color; }
+      return level === null ? `${name}: no signal` : on ? `${name}: on · ${Math.round(level / 2.55)}%` : `${name}: off`;
     });
-    $('interior-zones').replaceChildren(...zones);
+    $('interior-zones').textContent = zones.join('   ');
+    for (const button of document.querySelectorAll('[data-interior-zone]')) button.setAttribute('aria-pressed', String(Number(button.dataset.interiorZone) === interior.zone));
+    for (const button of document.querySelectorAll('[data-interior-level]')) button.setAttribute('aria-pressed', String(Number(button.dataset.interiorLevel) === interior.level));
+    for (const swatch of document.querySelectorAll('[data-interior-color]')) swatch.setAttribute('aria-pressed', String(swatch.dataset.interiorColor === interior.color));
     const reason = (snapshot.controls?.reasons || {})['interior.light'];
-    $('interior-live-summary').textContent = reason || 'Sensor gateway connected · changes apply immediately';
+    $('interior-live-summary').textContent = reason || 'Interior lights';
   }
   function stopLocalTest() {
     if (testRequested) sendCommand('meth.stop');
