@@ -41,11 +41,12 @@
       demoAngle += .01;
       return {lat: 39.0672 + Math.sin(demoAngle) * .006, lon: -108.5645 + Math.cos(demoAngle) * .009, track: (90 - demoAngle * 180 / Math.PI + 360 * 10) % 360, demo: true};
     }
-    const lat = live('gps.latitude'), lon = live('gps.longitude');
-    if (lat === null || lon === null) return null;
-    const heading = live('gps.track_deg'), speed = live('vehicle.speed_kph');
-    if (heading !== null && (speed === null || speed > 3)) track = heading; // Hold the last heading when stopped.
-    return {lat, lon, track};
+    // Fused position (hardware/frogdash/nav.py): GPS, or wheel-speed dead reckoning, or last known.
+    const value = key => latest.values?.[key]?.value ?? null;
+    const lat = value('nav.latitude'), lon = value('nav.longitude'), source = value('nav.source');
+    if (lat === null || lon === null || !source || source === 'none') return null;
+    track = value('nav.track_deg') ?? track;
+    return {lat, lon, track, source, accuracy: value('nav.accuracy_m')};
   }
   function draw() {
     const w = canvas.width = canvas.clientWidth, h = canvas.height = canvas.clientHeight;
@@ -103,7 +104,12 @@
     const [px, py] = project(cLat, cLon);
     ctx.save(); ctx.translate(px, py); ctx.rotate(prefs.heading ? 0 : centre.track * Math.PI / 180);
     ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(12, 14); ctx.lineTo(0, 7); ctx.lineTo(-12, 14); ctx.closePath();
-    ctx.fillStyle = fix ? '#1cf29a' : '#7b8791'; ctx.strokeStyle = '#0b1014'; ctx.lineWidth = 3; ctx.stroke(); ctx.fill(); ctx.restore();
+    const estimated = fix?.source === 'estimated', remembered = !fix || fix.source === 'last-known';
+    ctx.fillStyle = remembered ? '#7b8791' : estimated ? '#ffb347' : '#1cf29a'; ctx.strokeStyle = '#0b1014'; ctx.lineWidth = 3; ctx.stroke(); ctx.fill(); ctx.restore();
+    if (estimated && fix.accuracy > 12) { // Uncertainty grows with distance since the last fix.
+      ctx.beginPath(); ctx.arc(px, py, Math.min(fix.accuracy * pxPerM, Math.min(w, h) / 2), 0, Math.PI * 2);
+      ctx.strokeStyle = '#ffb34799'; ctx.lineWidth = 2; ctx.setLineDash([6, 6]); ctx.stroke(); ctx.setLineDash([]);
+    }
     // Scale bar.
     const barM = [50, 100, 200, 500, 1000, 2000, 5000].find(m => m * pxPerM >= 90) || 5000;
     ctx.fillStyle = '#e8eef2'; ctx.fillRect(24, h - 28, barM * pxPerM, 4);
@@ -115,7 +121,11 @@
     $('map-road').textContent = road || (inside ? '—' : 'Outside the map area');
     $('map-speed').textContent = speed === null ? '—' : Math.round(units ? units.distance(speed) : speed * .621371);
     $('map-speed-unit').textContent = units ? units.speedUnit : 'MPH';
-    $('map-status').textContent = fix?.demo ? 'Preview position (no GPS)' : fix ? `GPS fix · ${live('gps.satellites') ?? '—'} satellites` : lastFix ? 'GPS lost: showing the last position' : 'No GPS fix: showing the map centre';
+    $('map-status').textContent = fix?.demo ? 'Preview position (no GPS)'
+      : fix?.source === 'gps' ? `GPS fix · ${live('gps.satellites') ?? '—'} satellites`
+      : fix?.source === 'estimated' ? `GPS lost: estimating position${fix.accuracy ? ` · within about ${Math.round(fix.accuracy)} m` : ''}`
+      : fix?.source === 'last-known' ? 'No GPS fix yet: last known position'
+      : lastFix ? 'GPS lost: showing the last position' : 'No GPS fix: showing the map centre';
     $('map-heading').setAttribute('aria-pressed', String(prefs.heading));
     $('map-heading').textContent = prefs.heading ? 'HEADING UP' : 'NORTH UP';
     $('map-zoom-level').textContent = half >= 1000 ? `${half / 1000} km` : `${half} m`;

@@ -3,11 +3,16 @@ import asyncio
 import math
 import time
 
+STALL_S = 10  # Reopen the gpsd connection after this long without any report.
+
 
 class GPS:
     def __init__(self, clock=time.monotonic, wall=time.time, device=None, transmit=True):
         self.clock, self.wall = clock, wall
         self.device, self.transmit = device, transmit
+        self.device_fixed = device is not None  # Named by the user: never switch.
+        self.device_seen = float('-inf')
+        self.report_seen = float('-inf')
         self.connected = False
         self.status = "waiting for gpsd"
         self.mode = 0
@@ -23,10 +28,18 @@ class GPS:
         if kind not in ("TPV", "SKY"):
             return
         device = report.get("device")
+        self.report_seen = self.clock()
         if self.device and device != self.device:
-            return
+            # A receiver that re-plugs can come back under another name (ttyACM0 -> ttyACM1).
+            # Follow it once the old name has been silent for 10 s, unless the user named one.
+            if self.device_fixed or not device or self.clock() - self.device_seen <= 10:
+                return
+            self.device = device
+            self.fields.clear()
+            self.mode = 0
         if device and not self.device:
             self.device = device
+        self.device_seen = self.clock()
         if self.on_report:
             self.on_report(report)
         now, stamp = self.clock(), int(self.wall() * 1000)
@@ -112,6 +125,7 @@ async def gpsd(gps_state):
             gps_state.mode = 0
             gps_state.fix_seen = float("-inf")
             gps_state.connected, gps_state.status = True, "gpsd connected; waiting for fix"
+            gps_state.report_seen = gps_state.clock()
             while True:
                 if await asyncio.to_thread(session.waiting, .2):
                     report = await asyncio.to_thread(next_report, session)
@@ -119,6 +133,9 @@ async def gpsd(gps_state):
                         gps_state.update(report)
                 else:
                     await asyncio.sleep(.05)
+                if gps_state.clock() - gps_state.report_seen > STALL_S:
+                    # A connection that delivers nothing is treated as dead and reopened.
+                    raise ConnectionError(f"no GPS reports for {STALL_S} s")
         except (OSError, ValueError, KeyError, libgps.json_error) as exc:
             gps_state.status = f"gpsd disconnected: {exc}"
         finally:

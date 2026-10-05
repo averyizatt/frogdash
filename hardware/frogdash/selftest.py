@@ -97,6 +97,10 @@ def report(state, folder=None, wall=time.time):
                         'Another node also sends 0x203; disable its GPS transmit'))
     else:
         out.append(line('GPS and time', 'USB GPS', SKIP, 'Not enabled (--gpsd)'))
+    nav = state.nav.snapshot()
+    out.append(line('GPS and time', 'Position without GPS', OK if nav['calibrated'] and nav['map_loaded'] is not False else WARN,
+                    f"Now: {nav['source']} · wheel speed {'calibrated x' + format(nav['wheel_scale'], '.3f') if nav['calibrated'] else 'not calibrated yet'}",
+                    'Drive above 20 mph with a GPS fix for a minute so wheel speed can be calibrated; needs the gateway speed sensor'))
     year = time.gmtime(wall()).tm_year
     out.append(line('GPS and time', 'Clock', OK if year >= 2026 else FAIL, time.strftime('%Y-%m-%d %H:%M', time.localtime(wall())),
                     'Clock not set: install the GPS clock (docs/reliability.md, Clock from GPS)'))

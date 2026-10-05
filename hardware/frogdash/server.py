@@ -18,6 +18,7 @@ from .driving import Driving, atomic_write
 from .health import Health
 from .shutdown import ShutdownHistory
 from .trip import Trip
+from .nav import Navigator
 from .operations import Operations
 from .backlight import Backlight
 from .supervision import watchdog
@@ -55,6 +56,7 @@ def create_app(state, adapter=None, connectivity=None):
         race_task = asyncio.create_task(state.race.run())
         drive_task = asyncio.create_task(state.driving.run())
         trip_task = asyncio.create_task(state.trip.run())
+        nav_task = asyncio.create_task(state.nav.run())
         health_task = asyncio.create_task(state.health.run()) if state.health else None
         state.controls.start()
         if state.gps:
@@ -88,6 +90,8 @@ def create_app(state, adapter=None, connectivity=None):
         await drive_task
         state.trip.stopping = True
         await trip_task
+        state.nav.stopping = True
+        await nav_task
         if health_task:
             await health_task
         if state.recorder:
@@ -659,6 +663,7 @@ def main():
     state.race = Race(args.race_file if not args.replay else None)
     state.driving = Driving(state, args.data_dir / 'replay' if args.replay else args.data_dir)
     state.trip = Trip(state, (args.data_dir / 'replay' if args.replay else args.data_dir) / 'trip.json')
+    state.nav = Navigator(state.clock, state.wall, None if args.replay else args.data_dir / 'nav.json')
     state.operations = Operations(state, args.data_dir / 'replay' if args.replay else args.data_dir)
     state.backlight = Backlight(args.backlight_name)
     state.health = Health(state, args.interface, args.log_dir or args.data_dir)

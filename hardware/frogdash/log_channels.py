@@ -16,6 +16,8 @@ ENUMS = {
     'comfort.state': 'BOOT RUN WARN FAULT CONFIG'.split(),
     'lighting.left_state': 'OFF RUNNING BRAKE TURN REVERSE BRAKE_TURN HAZARD CUSTOM SHOW'.split(),
     'lighting.right_state': 'OFF RUNNING BRAKE TURN REVERSE BRAKE_TURN HAZARD CUSTOM SHOW'.split(),
+    'nav.source': ['none', 'gps', 'estimated', 'last-known'],
+    'nav.speed_source': ['none', 'gps', 'wheel', 'held'],
 }
 
 
@@ -80,6 +82,15 @@ def channels():
         Channel('gps.latitude', 'Latitude', 'deg', digits=6),
         Channel('gps.longitude', 'Longitude', 'deg', digits=6),
         Channel('gps.track_deg', 'Heading', 'deg'),
+        # Fused position (nav.py): GPS, or dead reckoning through a dropout.
+        Channel('nav.latitude', 'Nav Latitude', 'deg', digits=6),
+        Channel('nav.longitude', 'Nav Longitude', 'deg', digits=6),
+        Channel('nav.track_deg', 'Nav Heading', 'deg'),
+        Channel('nav.source', 'Nav source', digits=0),
+        Channel('nav.speed_source', 'Speed source', digits=0),
+        Channel('nav.accuracy_m', 'Nav accuracy', 'm', digits=0),
+        Channel('nav.since_fix_s', 'Since GPS fix', 's', digits=1),
+        Channel('nav.wheel_scale', 'Wheel speed scale', digits=4),
         Channel('gps.satellites', 'GPS.SatelliteCount', digits=0),
         Channel('race.phase', 'Race state', digits=0),
         Channel('dash.bookmark_id', 'Bookmark ID', digits=0),
@@ -136,7 +147,7 @@ def row_values(snapshot, elapsed, dropped=0):
 
 def info(mode, rate):
     return '\n'.join([
-        f'Frogdash schema 9; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
+        f'Frogdash schema 10; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
         'trip.* = tracked GPS counters; fuel.level_status = MCU status; other fuel.* = calibrated estimates, MPG uses US gallons.',
         'Time = monotonic seconds since this file started. Q fields: 0=unavailable,1=live,2=stale,3=fault.',
         'Non-live values are IEEE NaN. Drop count is cumulative for this recorder process.',

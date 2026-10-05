@@ -124,3 +124,45 @@ sudo nmcli con modify home connection.autoconnect no connection.interface-name "
 To use the adapter by hand for a while (the keeper would otherwise take it back),
 hold the lock: `sudo touch /run/frogdash-wifi.lock`; it expires after 5 minutes, or
 `sudo rm /run/frogdash-wifi.lock` to release it.
+
+## GPS dropouts: wheel-speed fallback and dead reckoning
+
+`hardware/frogdash/nav.py` fuses the USB GPS with the sensor gateway's wheel speed so
+speed and position do not blank when the fix drops (tunnels, garages, canyon walls,
+the first seconds after start-up).
+
+| Situation | Speed shown | Position on the map |
+| --- | --- | --- |
+| GPS has a fix | GPS speed | GPS (green arrow) |
+| Fix lost, wheel sensor working | Calibrated wheel speed, labelled **WHEEL SPEED · GPS LOST** | Estimated (amber arrow, dashed accuracy circle) |
+| Fix lost, no wheel speed, first 4 s | Last GPS speed, labelled **GPS SPEED · HOLDING** | Carried along the road at that speed (amber arrow) |
+| Fix lost, no wheel speed, after 4 s | Unavailable | Last position (grey arrow) |
+| Just started, no fix yet | Wheel speed if moving | Last saved position until the fix arrives |
+
+- **Calibration.** While both are live above 30 km/h (19 mph), the wheel-speed scale is
+  learned from GPS and saved, so tyre size and sensor differences cancel out. System
+  check shows whether it is calibrated yet.
+- **Dead reckoning.** Distance comes from wheel speed. Direction comes from following
+  the road in the bundled street map: the estimate snaps to the road being driven and
+  follows its bends, continuing onto the road that needs the least turn at each end.
+  Off the map, or off a mapped road, it carries straight on along the last heading.
+- **Limits.** There is no gyro or compass, so a turn at a junction during a dropout
+  cannot be seen; the estimate takes the straightest continuation. The accuracy figure
+  grows with distance (about 3% on a mapped road, 25% off-road) and the GPS position
+  replaces the estimate the moment a fix returns. Raw `gps.*` signals stay unavailable
+  during a dropout; the fused values are `nav.*`.
+- **Trips and odometer** keep counting on wheel speed during a dropout.
+
+GPS input hardening: a gpsd connection that delivers nothing for 10 s is reopened; a
+receiver that re-plugs under another device name is followed after 10 s of silence
+(unless one was named with `--gps-device`); the last position and calibration are saved
+every 20 s in `nav.json`.
+
+For the receiver itself, start gpsd without waiting for a client and give it a stable
+device path in `/etc/default/gpsd`:
+
+```sh
+ls -l /dev/serial/by-id/        # copy the name of your GPS
+sudo nano /etc/default/gpsd     # DEVICES="/dev/serial/by-id/<that name>"  GPSD_OPTIONS="-n"  USBAUTO="true"
+sudo systemctl restart gpsd.socket gpsd
+```

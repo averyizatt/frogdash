@@ -146,3 +146,7 @@ their embedded channel definitions and remain readable.
 
 Schema 8 includes the CCM steering button mask and report sequence. Replaying
 a CAN capture never executes wheel navigation actions. See [steering-wheel input](steering-wheel.md).
+
+Schema 10 adds the fused navigation channels (`nav.*`): position and heading that
+continue through GPS dropouts, their source (GPS, estimated, last known), the speed
+source, an accuracy figure, time since the last fix and the learned wheel-speed scale.

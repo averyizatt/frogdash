@@ -77,6 +77,8 @@
     display('speed-digits', 'vehicle.speed_kph', 0, window.FrogdashUnits.distance);
     document.body.dataset.speedLive = live('vehicle.speed_kph') !== null;
     $('gps-sats').textContent = live('vehicle.speed_kph') === null ? 'GPS · NO LIVE FIX' :
+      live('nav.speed_source') === 'wheel' && snapshot.gps ? 'WHEEL SPEED · GPS LOST' :
+      live('nav.speed_source') === 'held' ? 'GPS SPEED · HOLDING' :
       `GPS SPEED${live('gps.satellites') === null ? '' : ' · ' + live('gps.satellites') + ' SAT'}`;
     const temp = window.FrogdashUnits.temperature;
     bar('coolant-fill', display('coolant-val', 'engine.coolant_c', 0, temp), temp((100 - 32) / 1.8), temp((250 - 32) / 1.8));
