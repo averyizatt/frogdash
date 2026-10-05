@@ -278,54 +278,70 @@
   }
   let pendingFocus = null; // A menu entry may name where the highlight should land.
 
-  // Quick menu: every destination in one list, opened by any button on the dashboard.
-  const menu = tool('wheel-menu', 'FOX BODY', 'SET / COAST: move  |  RESUME: next column  |  ON: open  |  OFF: close');
-  menu.title.textContent = 'Menu';
-  const menuGrid = ns('div', 'wheel-menu'); menuGrid.dataset.wheelGrid = ''; menu.body.append(menuGrid);
+  // Destinations shared by the quick menu (tap) and the dock (hold ON): title, detail, action,
+  // shown, icon path (24 x 24 line art) and tile colour.
   function destinations() {
     const byId = id => document.getElementById(id);
     const into = () => { const root = scope(), panel = openPanel(root, sections(root)); pendingFocus = candidates().find(el => panel?.contains(el)) || null; };
     const launch = (id, tab) => () => { byId(id)?.click(); if (tab) { byId(tab)?.click(); into(); } };
     const shown = id => byId(id) && !byId(id).hidden;
-    const entries = [
-      ['Map', 'Street map with your position', launch('map-launch'), shown('map-launch')],
-      ['Dashcam', 'Live front and rear view', launch('dashcam-launch'), shown('dashcam-launch')],
-      ['Reverse camera', 'Rear camera view', launch('camera-launch'), shown('camera-launch')],
-      ['Interior lights', 'Colour, brightness, on and off', launch('controls-launch', 'tab-interior'), true],
-      ['Taillights', 'Shows, styles, colours and profiles', () => window.FrogdashTaillights?.open(), !!window.FrogdashTaillights],
-      ['Water / meth', 'Arm, test and boost start', launch('controls-launch', 'tab-meth'), true],
-      ['Knock monitor', 'Live knock energy and events', launch('knock-launch'), true],
-      ['Drive & alerts', 'Display modes, trips, fuel and alerts', launch('drive-launch'), true],
-      ['Race timer', 'Acceleration and lap timing', launch('race-launch'), true],
-      ['Appearance', 'Looks, gauges, backgrounds and splash', launch('appearance-launch'), true],
-      ['Sensors & system check', 'Every signal, CAN check and tests', launch('diagnostics-launch'), true],
-      ['Wi-Fi', 'Hotspot and internet for updates', launch('controls-launch', 'tab-wifi'), true],
-      ['Dash management', 'Update, backup, units and setup', () => { byId('drive-launch')?.click(); byId('operations-launch')?.click(); }, shown('operations-launch') || !!byId('operations-launch')],
-      ['Edit gauges', 'Change what each gauge shows', () => { pendingFocus = document.querySelector('[data-gauge-slot]'); }, !!document.querySelector('[data-gauge-slot]')],
+    return [
+      ['Map', 'Street map with your position', launch('map-launch'), shown('map-launch'), 'M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14', '#2f9e6b'],
+      ['Dashcam', 'Live front and rear view', launch('dashcam-launch'), shown('dashcam-launch'), 'M3 8h12v8H3zM15 10.5l6-3v9l-6-3', '#3d6fd6'],
+      ['Reverse camera', 'Rear camera view', launch('camera-launch'), shown('camera-launch'), 'M4 8h3l2-2h6l2 2h3v10H4zM12 10.5a2.8 2.8 0 1 0 .01 0', '#5a6b7a'],
+      ['Interior lights', 'Colour, brightness, on and off', launch('controls-launch', 'tab-interior'), true, 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5V15h8v-1.5A6 6 0 0 0 12 3z', '#d99a1c'],
+      ['Taillights', 'Shows, styles, colours and profiles', () => window.FrogdashTaillights?.open(), !!window.FrogdashTaillights, 'M3 8h18v8H3zM9 8v8M15 8v8', '#c8342f'],
+      ['Water / meth', 'Arm, test and boost start', launch('controls-launch', 'tab-meth'), true, 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z', '#1f9bc4'],
+      ['Knock monitor', 'Live knock energy and events', launch('knock-launch'), true, 'M2 13h5l3-8 4 15 3-7h5', '#c2572b'],
+      ['Drive & alerts', 'Display modes, trips, fuel and alerts', launch('drive-launch'), true, 'M3 15a9 9 0 0 1 18 0M12 15l4-5M3 19h18', '#22a37a'],
+      ['Race timer', 'Acceleration and lap timing', launch('race-launch'), true, 'M5 21V4M5 4h13l-3 4 3 4H5', '#8a4fd1'],
+      ['Appearance', 'Looks, gauges, backgrounds and splash', launch('appearance-launch'), true, 'M12 3a9 9 0 1 0 0 18c1.7 0 2-1.3 1.3-2.4-.8-1.2 0-2.6 1.4-2.6H17a4 4 0 0 0 4-4c0-5-4-9-9-9zM7.5 11h.01M10 7h.01M15 7h.01', '#c2408f'],
+      ['Sensors & system check', 'Every signal, CAN check and tests', launch('diagnostics-launch'), true, 'M5 20v-5M12 20V9M19 20V3', '#3f8fb5'],
+      ['Wi-Fi', 'Hotspot and internet for updates', launch('controls-launch', 'tab-wifi'), true, 'M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0M12 19.5h.01', '#3566c9'],
+      ['Dash management', 'Update, backup, units and setup', () => { byId('drive-launch')?.click(); byId('operations-launch')?.click(); }, !!byId('operations-launch'), 'M12 9a3 3 0 1 0 .01 0M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1', '#66727e'],
+      ['Edit gauges', 'Change what each gauge shows', () => { pendingFocus = document.querySelector('[data-gauge-slot]'); }, !!document.querySelector('[data-gauge-slot]'), 'M4 20l4-1L19 8l-3-3L5 16zM14 6l3 3', '#b08a2a'],
     ].filter(entry => entry[3]);
-    return entries;
   }
+  const SVG = 'http://www.w3.org/2000/svg';
+  function appButton([title, detail, run, , icon, colour], host, label = title) {
+    const item = button('', () => { host.close(); run(); }, {cls: 'wheel-app'});
+    const tile = ns('span', 'wheel-app-icon'); tile.style.setProperty('--tile', colour);
+    const svg = document.createElementNS(SVG, 'svg'); svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS(SVG, 'path'); path.setAttribute('d', icon); svg.append(path); tile.append(svg);
+    item.append(tile, ns('strong', null, label));
+    item.dataset.detail = detail; item.setAttribute('aria-label', `${title}: ${detail}`);
+    return item;
+  }
+  // Clicking the see-through area around the icons closes either overlay.
+  const dismissable = dialog => dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+
+  // Quick menu: every destination as a centred grid of icons over the dashboard.
+  const menu = {dialog: ns('dialog', 'wheel-launch')};
+  menu.dialog.id = 'wheel-menu'; menu.dialog.setAttribute('aria-label', 'Menu');
+  menu.dialog.dataset.wheelHint = 'SET / COAST: previous / next  |  ON: open  |  OFF: close';
+  const menuGrid = ns('div', 'wheel-launch-grid'), menuDetail = ns('p', 'wheel-launch-detail');
+  menu.dialog.append(menuGrid, menuDetail); document.body.append(menu.dialog); dismissable(menu.dialog);
+  menu.dialog.addEventListener('focusin', event => { menuDetail.textContent = event.target.dataset?.detail || ''; });
   function openMenu() {
     const entries = destinations();
-    menuGrid.style.setProperty('--rows', Math.ceil(entries.length / 2));
-    menuGrid.replaceChildren(...entries.map(([title, detail, run], index) => {
-      const item = button('', () => { menu.dialog.close(); run(); }, {cls: 'wheel-menu-item'});
-      item.append(ns('strong', null, title), ns('small', null, detail));
+    menuGrid.style.setProperty('--columns', Math.ceil(entries.length / 2));
+    menuGrid.replaceChildren(...entries.map((entry, index) => {
+      const item = appButton(entry, menu.dialog);
       if (!index) item.dataset.wheelStart = '';
       return item;
     }));
     menu.dialog.showModal();
     focus(menuGrid.firstElementChild); describe();
   }
-  // Shortcut bar: hold ON on the plain dashboard for the places used most.
+  // Dock: hold ON on the plain dashboard for the places used most.
   const SHORTCUTS = ['Taillights', 'Knock monitor', 'Interior lights', 'Water / meth', 'Map', 'Dashcam', 'Sensors & system check'];
   const taskbar = ns('dialog', 'wheel-taskbar'); taskbar.id = 'wheel-taskbar';
   taskbar.setAttribute('aria-label', 'Shortcuts');
-  taskbar.dataset.wheelHint = 'SET / COAST: move  |  ON: open  |  OFF: close';
-  document.body.append(taskbar);
+  taskbar.dataset.wheelHint = 'SET / COAST: previous / next  |  ON: open  |  OFF: close';
+  document.body.append(taskbar); dismissable(taskbar);
   function openTaskbar() {
     const entries = destinations().filter(entry => SHORTCUTS.includes(entry[0])).sort((a, b) => SHORTCUTS.indexOf(a[0]) - SHORTCUTS.indexOf(b[0]));
-    taskbar.replaceChildren(...entries.map(([title, , run]) => button(title === 'Sensors & system check' ? 'System check' : title, () => { taskbar.close(); run(); })));
+    taskbar.replaceChildren(...entries.map(entry => appButton(entry, taskbar, entry[0] === 'Sensors & system check' ? 'System check' : entry[0])));
     taskbar.showModal();
     focus(taskbar.firstElementChild); describe();
   }

@@ -129,10 +129,12 @@ restart before using the wheel as the main input device.
 | COAST | Down / next. In edit mode, lower the value | Same repeat |
 | RESUME | Open the highlighted section; right in grids and next column in the menu | Same repeat |
 
-**Dashboard.** Any tap opens the **quick menu**: every destination in one list (Map,
+**Dashboard.** Any tap opens the **quick menu**: every destination as a centred grid of
+icons over the dashboard; SET / COAST step through them and the highlighted one enlarges (Map,
 Dashcam, Interior lights, Taillights, Water / meth, Knock monitor, Drive & alerts, Race
 timer, Appearance, Sensors & system check, Wi-Fi, Dash management, Edit gauges). Entries
-jump straight into the right section. Holding ON opens the **shortcut bar** instead:
+jump straight into the right section. Holding ON opens the **dock** instead, a
+see-through bar of icons in the middle of the screen:
 Taillights, Knock monitor, Interior lights, Water / meth, Map, Dashcam and System check.
 
 **Inside a menu: two levels.** First the section list: SET / COAST choose a section (it
