@@ -118,8 +118,6 @@
       $(`turn-${side}`).dataset.on = connected && v.quality === 'live' && v.value ? 'true' : 'false';
       $(`turn-${side}`).title = `Turn signal: ${v.quality}`;
     }
-    $('icon-highbeam').dataset.quality = 'unavailable';
-    $('icon-highbeam').title = 'High beam source unavailable';
     for (const name of ['brake', 'running', 'reverse']) {
       const v = signal(`lighting.${name}`), icon = $(`icon-${name}`);
       icon.classList.toggle('on', v.quality === 'live' && v.value === true);
