@@ -63,6 +63,21 @@ clock follows within a minute. Pick your own zone with `timedatectl list-timezon
 GitHub and restarts the dash. It only fast-forwards; a failed download or local
 changes leave the running version untouched, and the result is shown next to the button.
 
+**A bad update undoes itself.** After the restart the new version has to prove itself:
+the service must come up, answer on its health page and stay up for 15 s, and the
+screen must reconnect if it was connected before. If it does not, the updater puts the
+previous version back (code and unit files), restarts it, and reports "Update undone".
+That commit is not installed again; **Update now** waits for a newer one. The failed
+start is saved for the fix:
+
+```sh
+cat /var/lib/frogdash/update-failure.log
+```
+
+**Undo update** (press twice) returns to the version before the last update when a
+version runs but misbehaves. **Update now** goes forward to the newest again. From a
+terminal: `sudo sh /opt/frogdash/tools/frogdash_update.sh rollback`.
+
 One-time setup:
 
 ```sh

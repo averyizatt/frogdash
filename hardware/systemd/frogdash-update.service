@@ -5,4 +5,5 @@ After=network-online.target
 [Service]
 Type=oneshot
 ExecStart=/bin/sh /opt/frogdash/tools/frogdash_update.sh
-TimeoutStartSec=180
+# Wi-Fi switching, the pull, the health check after the restart and a possible rollback.
+TimeoutStartSec=900

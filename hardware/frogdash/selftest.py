@@ -138,9 +138,11 @@ def report(state, folder=None, wall=time.time):
     out.append(line('Updates', 'Internet', OK if wifi and wifi.get('internet') else WARN,
                     f"{wifi.get('connected') or 'Not connected'}" + (' · internet OK' if wifi.get('internet') else ' · no internet') if wifi else 'Wi-Fi not checked yet',
                     'Controls > Wi-Fi > Internet: Scan and Connect (only needed for updates)'))
-    out.append(line('Updates', 'Last update', FAIL if update and update.get('state') == 'failed' else OK if update else SKIP,
+    undone = update and update.get('state') in ('rolledback', 'held')
+    out.append(line('Updates', 'Last update', FAIL if update and update.get('state') == 'failed' else WARN if undone else OK if update else SKIP,
                     f"{update['message']} · version {update.get('version', '?')}" if update else 'Update not run yet',
-                    'Dash management > Support > Update now, with internet connected'))
+                    'The dash is on the last version that worked; the failed start is saved in update-failure.log for the next fix'
+                    if undone else 'Dash management > Support > Update now, with internet connected'))
 
     counts = {s: sum(1 for item in out if item['status'] == s) for s in (OK, WARN, FAIL, SKIP)}
     return {'lines': out, 'counts': counts, 'time_ms': int(wall() * 1000)}

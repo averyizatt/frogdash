@@ -160,7 +160,9 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def health(request):
         snapshot = state.snapshot()
-        return web.json_response({key: snapshot[key] for key in ('mode', 'transport', 'modules', 'gps', 'recording', 'system', 'can_errors')})
+        # ui_clients lets the updater confirm the screen reconnected after a restart.
+        return web.json_response({**{key: snapshot[key] for key in ('mode', 'transport', 'modules', 'gps', 'recording', 'system', 'can_errors')},
+                                  'ui_clients': len(clients)})
 
     async def logs(request):
         files = await asyncio.to_thread(state.recorder.files) if state.recorder else []
@@ -189,8 +191,15 @@ def create_app(state, adapter=None, connectivity=None):
         if not folder or state.mode == 'replay':
             raise web.HTTPNotFound()
         if request.method == 'POST':
-            await asyncio.to_thread((folder / 'update-request').write_text, 'requested')
-            return web.json_response({'state': 'requested', 'message': 'Update requested'})
+            # 'rollback' returns to the version before the last update (tools/frogdash_update.sh).
+            undo = False
+            if request.can_read_body:
+                try:
+                    undo = (await request.json()).get('action') == 'rollback'
+                except (ValueError, AttributeError):
+                    raise web.HTTPBadRequest(text='Invalid update request')
+            await asyncio.to_thread((folder / 'update-request').write_text, 'rollback' if undo else 'requested')
+            return web.json_response({'state': 'requested', 'message': 'Going back requested' if undo else 'Update requested'})
         try:
             status = json.loads(await asyncio.to_thread((folder / 'update-status.json').read_text))
         except (OSError, ValueError):

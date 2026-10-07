@@ -46,3 +46,10 @@ class UpdateRequestTests(unittest.IsolatedAsyncioTestCase):
                 (Path(folder) / 'update-status.json').write_text('{"state":"updated","message":"Updated (3 changes). Restarting the dash","version":"abc1234","time":1}')
                 status = await (await client.get('/update')).json()
                 self.assertEqual((status['state'], status['version'], status['pending']), ('updated', 'abc1234', False))
+                self.assertEqual((await client.post('/update', json={'action': 'rollback'})).status, 200)
+                self.assertEqual((Path(folder) / 'update-request').read_text(), 'rollback')
+                self.assertEqual((await client.post('/update', json={'action': 'update'})).status, 200)
+                self.assertEqual((Path(folder) / 'update-request').read_text(), 'requested')
+                self.assertEqual((await client.post('/update', data='not json', headers={'Content-Type': 'application/json'})).status, 400)
+                # The updater's health check reads how many screens are connected.
+                self.assertEqual((await (await client.get('/health')).json())['ui_clients'], 0)

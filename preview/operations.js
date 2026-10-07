@@ -32,24 +32,36 @@
   // Software update over Wi-Fi: asks the Pi's update helper to pull and restart.
   dialog.querySelector('[data-ops-panel="support"] .ops-columns').lastElementChild.insertAdjacentHTML('afterbegin',
     '<div class="speaker-test"><div><span>Software update</span><small id="update-status">Uses a saved Wi-Fi network (home or phone hotspot) and returns to the dash cam afterwards.</small></div>' +
-    '<div class="speaker-test-buttons"><button type="button" id="update-run">Update now</button><button type="button" id="update-check">Show version</button></div></div>');
-  let updateTimer = null;
+    '<div class="speaker-test-buttons"><button type="button" id="update-run">Update now</button><button type="button" id="update-undo" disabled>Undo update</button><button type="button" id="update-check">Show version</button></div></div>');
+  let updateTimer = null, undoArmed = false;
   async function updatePoll() {
     try {
       const s = await (await fetch('/update', {cache: 'no-store'})).json();
       $('update-status').textContent = s.pending ? 'Waiting for the update helper… (is frogdash-update.path enabled?)' : `${s.message}${s.version ? ` · version ${s.version}` : ''}`;
-      if (!s.pending && s.state !== 'running') { clearInterval(updateTimer); updateTimer = null; $('update-run').disabled = false; }
+      const busy = s.pending || s.state === 'running';
+      if (!busy) { clearInterval(updateTimer); updateTimer = null; }
+      $('update-run').disabled = busy;
+      // Undo is offered while the version before the last update is still saved on the Pi.
+      $('update-undo').disabled = busy || !s.previous;
+      $('update-undo').textContent = 'Undo update'; undoArmed = false;
     } catch { $('update-status').textContent = 'Dash restarting…'; }
   }
-  $('update-check').onclick = () => updatePoll();
-  $('update-run').onclick = async () => {
-    $('update-run').disabled = true;
-    $('update-status').textContent = 'Requesting update…';
+  async function updateRequest(action, label) {
+    $('update-run').disabled = $('update-undo').disabled = true;
+    $('update-status').textContent = label;
     try {
-      const response = await fetch('/update', {method: 'POST'});
+      const response = await fetch('/update', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({action})});
       if (!response.ok) throw new Error();
       clearInterval(updateTimer); updateTimer = setInterval(updatePoll, 2000);
     } catch { $('update-status').textContent = 'Update is not available here'; $('update-run').disabled = false; }
+  }
+  $('update-check').onclick = () => updatePoll();
+  $('update-run').onclick = () => updateRequest('update', 'Requesting update…');
+  $('update-undo').onclick = () => {
+    // Two presses, so a stray button press cannot send the dash back a version.
+    if (undoArmed) return updateRequest('rollback', 'Going back to the previous version…');
+    undoArmed = true; $('update-undo').textContent = 'Press again';
+    $('update-status').textContent = 'Undo returns to the version before the last update. Press again to confirm.';
   };
   // Terminal (optional, --terminal): commands run as the dash's unprivileged service user.
   dialog.querySelector('[data-ops-panel="support"]').insertAdjacentHTML('afterend',
