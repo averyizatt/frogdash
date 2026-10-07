@@ -36,6 +36,16 @@ def moving(state, threshold_kph=5):
     return not parked(state)
 
 
+def rolling(state, threshold_kph=5):
+    """True only when a fresh speed reading says the car is moving.
+
+    Unlike moving(), a missing speed does not count: for conveniences that are fine in
+    a garage with no GPS fix, such as opening TunerStudio at idle.
+    """
+    speed = _fresh(state, 'vehicle.speed_kph')
+    return speed is not None and speed > threshold_kph
+
+
 def require_parked(state):
     if not parked(state):
         raise ValueError('Park first: need fresh stationary GPS or a fresh engine-off RPM signal')

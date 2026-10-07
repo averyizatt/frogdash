@@ -207,6 +207,26 @@ def create_app(state, adapter=None, connectivity=None):
         status['pending'] = (folder / 'update-request').exists()
         return web.json_response(status, headers={'Cache-Control': 'no-store'})
 
+    async def tune(request):
+        # TunerStudio over the dash: a request for the kiosk launcher to collect (tune.py).
+        require_local(request)
+        if state.mode == 'replay':
+            raise web.HTTPNotFound()
+        if request.method == 'POST':
+            try:
+                return web.json_response(state.tune.request((await request.json()).get('action')))
+            except (ValueError, AttributeError) as error:
+                raise web.HTTPConflict(text=str(error) or 'Invalid TunerStudio request')
+        return web.json_response(state.tune.snapshot(), headers={'Cache-Control': 'no-store'})
+
+    async def tune_kiosk(request):
+        # The kiosk launcher's 2 s report; the reply is what it should do now.
+        require_local(request)
+        try:
+            return web.json_response({'action': state.tune.report(await request.json())})
+        except (ValueError, AttributeError, TypeError):
+            raise web.HTTPBadRequest(text='Invalid kiosk report')
+
     async def wifi_client(request):
         # Join a Wi-Fi network for internet: a root-owned path unit performs the request.
         require_local(request)
@@ -604,7 +624,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.post("/terminal", terminal), web.get("/update", update), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),

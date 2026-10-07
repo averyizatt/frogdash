@@ -14,7 +14,7 @@
   const dialog = el('dialog', null, 'workspace-dialog'); dialog.id = 'operations-dialog'; dialog.setAttribute('aria-labelledby', 'operations-title');
   dialog.innerHTML = `<header class="dialog-header"><div><span class="eyebrow">SETUP / SERVICE / SUPPORT</span><h2 id="operations-title">Dash management</h2><p id="operations-summary"></p></div><button id="demo-park" class="close-button" type="button" hidden>Park demo</button><button id="operations-close" class="close-button" type="button">Close ×</button></header>
     <div class="control-workspace"><nav class="control-tabs driver-tabs" aria-label="Management sections">
-    ${[['setup','Setup checklist'],['service','Maintenance'],['backup','Backup & restore'],['display','Units & backlight'],['support','Support & testing'],['terminal','Terminal']].map(([key,label]) => `<button type="button" data-ops-tab="${key}" aria-selected="false">${label}</button>`).join('')}</nav>
+    ${[['setup','Setup checklist'],['service','Maintenance'],['backup','Backup & restore'],['display','Units & backlight'],['support','Support & testing'],['tune','TunerStudio'],['terminal','Terminal']].map(([key,label]) => `<button type="button" data-ops-tab="${key}" aria-selected="false">${label}</button>`).join('')}</nav>
     <div class="driver-panels">
       <section class="driver-panel ops-panel control-section" data-ops-panel="setup"><div class="ops-columns"><div class="setting-card"><h3>1 · Check connected hardware</h3><div id="setup-hardware"></div><p class="control-note">Live presence confirms data is arriving. Verify wiring, CAN oscillator/bitrate and sensor accuracy during commissioning.</p></div><div class="setting-card"><h3>2 · Complete calibration and display</h3><div id="setup-calibration"></div><p class="control-note">3 · Run the vehicle checks under Support & testing. Completion is recorded only when you mark a physical test passed.</p><button type="button" data-ops-go="support">Vehicle test checklist</button></div></div></section>
       <section class="driver-panel ops-panel control-section" data-ops-panel="service" hidden><div class="ops-columns"><form id="maintenance-form" class="setting-card ops-edit"><h3>Add a service reminder</h3><label>Service name<input id="maintenance-name" maxlength="60" required placeholder="Engine oil & filter"></label><div class="ops-fields"><label id="maintenance-distance-label">Distance · km<input id="maintenance-distance" type="number" min="0" max="100000" value="0" required></label><label>Engine hours<input id="maintenance-hours" type="number" min="0" max="10000" value="0" required></label><label>Days<input id="maintenance-days" type="number" min="0" max="3650" value="0" required></label></div><p class="control-note">Zero disables an interval. Due when any enabled interval is reached. Distance and engine hours count only while the dash receives live data; enter intervals remaining until your next service.</p><button type="submit">Add reminder</button></form><div class="setting-card ops-list" id="maintenance-list" aria-live="polite"></div></div></section>
@@ -33,6 +33,37 @@
   dialog.querySelector('[data-ops-panel="support"] .ops-columns').lastElementChild.insertAdjacentHTML('afterbegin',
     '<div class="speaker-test"><div><span>Software update</span><small id="update-status">Uses a saved Wi-Fi network (home or phone hotspot) and returns to the dash cam afterwards.</small></div>' +
     '<div class="speaker-test-buttons"><button type="button" id="update-run">Update now</button><button type="button" id="update-undo" disabled>Undo update</button><button type="button" id="update-check">Show version</button></div></div>');
+  // TunerStudio is a desktop program: the kiosk opens it over the dash (hardware/frogdash/tune.py).
+  dialog.querySelector('[data-ops-panel="support"]').insertAdjacentHTML('afterend',
+    '<section class="driver-panel ops-panel control-section" data-ops-panel="tune" hidden><div class="ops-columns">' +
+    '<div class="setting-card"><h3>Tune on this screen</h3><p id="tune-status" class="control-note" role="status"></p>' +
+    '<button type="button" id="tune-open" disabled>Open TunerStudio</button>' +
+    '<p class="control-note">TunerStudio opens over the dash. Exit it (File &gt; Exit), or hold OFF on the steering wheel, and the gauges come back.</p></div>' +
+    '<div class="setting-card"><h3>What it needs</h3>' +
+    '<p class="control-note">A keyboard and mouse plugged into the Pi.</p>' +
+    '<p class="control-note">The USB serial cable from the Pi to the MicroSquirt. The dash keeps reading the engine over CAN at the same time.</p>' +
+    '<p class="control-note">The car stopped: it will not open while the dash sees the car moving.</p></div></div></section>');
+  let tuneNote = '', tuneNoteUntil = 0;
+  const tuneStatus = () => latest.tune || {available: false, state: 'unavailable', message: 'Only on the dash screen in the car: the kiosk starts TunerStudio'};
+  function renderTune() {
+    const t = tuneStatus(), open = t.state === 'running' || t.state === 'starting';
+    $('tune-status').textContent = Date.now() < tuneNoteUntil ? tuneNote : t.available && t.moving && !open ? 'Stop the car first: TunerStudio covers the gauges' : t.message;
+    $('tune-open').textContent = open ? 'Close TunerStudio' : 'Open TunerStudio';
+    $('tune-open').disabled = !t.available || (t.moving && !open);
+  }
+  async function tuneRequest(action) {
+    try {
+      const response = await fetch('/tune', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({action})});
+      tuneNote = response.ok ? (action === 'open' ? 'Starting TunerStudio… it takes a few seconds to appear' : 'Closing TunerStudio…') : await response.text();
+    } catch { tuneNote = 'TunerStudio is not available here'; }
+    tuneNoteUntil = Date.now() + 6000; renderTune();
+  }
+  $('tune-open').onclick = () => tuneRequest(['running', 'starting'].includes(tuneStatus().state) ? 'close' : 'open');
+  window.FrogdashTune = {
+    get available() { return tuneStatus().available; },
+    // From the quick menu: show this page (for the status line) and start it.
+    open() { if (!dialog.open) { $('drive-launch')?.click(); launch.click(); } tab('tune'); if (tuneStatus().state !== 'running') tuneRequest('open'); },
+  };
   let updateTimer = null, undoArmed = false;
   async function updatePoll() {
     try {
@@ -134,6 +165,7 @@
   let listSignature = '';
   function render() {
     const s = status(), canEdit = canConfigure() && !busy && !s.restore_pending;
+    renderTune();
     $('operations-result').textContent = feedback || (demo() ? 'Preview configuration is editable while the gauges move. Changes are simulated.' : online ? 'Configuration ready. Changes save to the Pi; CAN telemetry is not required.' : 'Connecting to the dash service...');
     $('operations-summary').textContent = `${demo() ? 'SIMULATED · Preview editing enabled' : online ? 'Configuration available' : 'Connecting to the dash service'}${s.error ? ' · ' + s.error : ''}`;
     $('demo-park').hidden = !demo(); $('demo-park').textContent = parked() ? 'Drive demo' : 'Park demo';

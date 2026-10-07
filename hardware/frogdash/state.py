@@ -13,6 +13,7 @@ from .backlight import Backlight
 from .wheel import SteeringWheel
 from .runtime import EngineRuntime
 from .nav import Navigator
+from .tune import Tune
 
 ALIASES = {
     "engine.rpm": ("ecu.rpm", "tach.rpm", "gateway.rpm"),
@@ -54,6 +55,7 @@ class State:
         self.can_errors = {'frames': 0, 'bus_off': 0, 'restarts': 0}
         self.taillight = TaillightSettings(clock)
         self.runtime = EngineRuntime(self, enabled=mode == 'socketcan')
+        self.tune = Tune(self)
         self.nav = Navigator(clock, wall)
         self.controls = Controls(self)
 
@@ -181,7 +183,7 @@ class State:
                 "mode": self.mode, "values": values, "modules": modules,
                 "transport": {"connected": self.connected, "status": self.status,
                               "received": self.received, "malformed": self.malformed, "ignored": self.ignored},
-                "runtime": self.runtime.snapshot(), "nav": self.nav.snapshot(),
+                "runtime": self.runtime.snapshot(), "nav": self.nav.snapshot(), "tune": self.tune.snapshot(),
                 "gps": {"status": self.gps.status, "tx_status": self.gps.tx_status,
                         "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
                 "controls": self.controls.status(), "taillight": self.taillight.snapshot(), "events": list(self.events), "race": race,

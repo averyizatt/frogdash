@@ -123,7 +123,7 @@ async def main(browser_path=None, url=None):
                 if (width, height) in ((1980, 720), (1280, 480)):
                     await page.screenshot(path=str(ROOT / '.tmp' / f'menu-drive-{tab}-{width}x{height}.png'))
             await page.locator('#operations-launch').click()
-            for tab in ('setup', 'service', 'backup', 'display', 'support'):
+            for tab in ('setup', 'service', 'backup', 'display', 'support', 'tune'):
                 await page.locator(f'[data-ops-tab="{tab}"]').click()
                 await inspect(page, '#operations-dialog')
                 if (width, height) == (1980, 720):

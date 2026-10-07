@@ -298,6 +298,7 @@
       ['Appearance', 'Looks, gauges, backgrounds and splash', launch('appearance-launch'), true, 'M12 3a9 9 0 1 0 0 18c1.7 0 2-1.3 1.3-2.4-.8-1.2 0-2.6 1.4-2.6H17a4 4 0 0 0 4-4c0-5-4-9-9-9zM7.5 11h.01M10 7h.01M15 7h.01', '#c2408f'],
       ['Sensors & system check', 'Every signal, CAN check and tests', launch('diagnostics-launch'), true, 'M5 20v-5M12 20V9M19 20V3', '#3f8fb5'],
       ['Wi-Fi', 'Hotspot and internet for updates', launch('controls-launch', 'tab-wifi'), true, 'M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0M12 19.5h.01', '#3566c9'],
+      ['TunerStudio', 'Tune the ECU: needs keyboard and mouse', () => window.FrogdashTune.open(), !!window.FrogdashTune?.available, 'M4 6h16M4 12h16M4 18h16M8 4v4M15 10v4M10 16v4', '#b3541e'],
       ['Dash management', 'Update, backup, units and setup', () => { byId('drive-launch')?.click(); byId('operations-launch')?.click(); }, !!byId('operations-launch'), 'M12 9a3 3 0 1 0 .01 0M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1', '#66727e'],
       ['Edit gauges', 'Change what each gauge shows', () => { pendingFocus = document.querySelector('[data-gauge-slot]'); }, !!document.querySelector('[data-gauge-slot]'), 'M4 20l4-1L19 8l-3-3L5 16zM14 6l3 3', '#b08a2a'],
     ].filter(entry => entry[3]);

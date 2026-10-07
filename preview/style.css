@@ -388,6 +388,8 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 #shift-lights i { height:8px; flex:1; background:var(--line); border-radius:2px; }
 #shift-lights i[data-on="true"] { background:var(--accent); }
 #shift-lights[data-shift="true"] i { background:var(--warn); }
+/* Seven sections: slightly shorter rows so the list stays on screen without scrolling. */
+#operations-dialog .driver-tabs button { min-height:52px; padding-block:13px; }
 .ops-columns { display:grid; grid-template-columns:1fr 1fr; gap:22px; height:100%; min-height:0; }
 .ops-panel .setting-card { min-height:0; }
 .ops-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px 15px; }
