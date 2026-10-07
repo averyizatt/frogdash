@@ -42,14 +42,14 @@
     '<div class="setting-card"><h3>What it needs</h3>' +
     '<p class="control-note">A keyboard and mouse plugged into the Pi.</p>' +
     '<p class="control-note">The USB serial cable from the Pi to the MicroSquirt. The dash keeps reading the engine over CAN at the same time.</p>' +
-    '<p class="control-note">The car stopped: it will not open while the dash sees the car moving.</p></div></div></section>');
+    '<p class="control-note">It covers the gauges while it is open, including when the car is moving.</p></div></div></section>');
   let tuneNote = '', tuneNoteUntil = 0;
   const tuneStatus = () => latest.tune || {available: false, state: 'unavailable', message: 'Only on the dash screen in the car: the kiosk starts TunerStudio'};
   function renderTune() {
     const t = tuneStatus(), open = t.state === 'running' || t.state === 'starting';
-    $('tune-status').textContent = Date.now() < tuneNoteUntil ? tuneNote : t.available && t.moving && !open ? 'Stop the car first: TunerStudio covers the gauges' : t.message;
+    $('tune-status').textContent = Date.now() < tuneNoteUntil ? tuneNote : t.message;
     $('tune-open').textContent = open ? 'Close TunerStudio' : 'Open TunerStudio';
-    $('tune-open').disabled = !t.available || (t.moving && !open);
+    $('tune-open').disabled = !t.available;
   }
   async function tuneRequest(action) {
     try {

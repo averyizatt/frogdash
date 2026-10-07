@@ -55,8 +55,8 @@ sudo systemctl edit "frogdash-console@$USER"
 
 - **Exit:** File → Exit returns to the dash. Without a keyboard, hold **OFF** on the
   steering wheel for about two seconds: the dash closes TunerStudio.
-- **Stopped only:** it will not open while the dash sees the car moving (speed above
-  5 km/h). With no speed reading at all, such as in a garage without a GPS fix, it opens.
+- **No speed lockout:** it opens whether the car is stopped or moving, for road tuning.
+  It covers the gauges while it is open, so that is for a passenger to use.
 - **The dash underneath keeps running:** logging, alerts, CAN and the dash cam carry on.
   Only the picture is covered.
 - **Burn your changes** in TunerStudio before exiting, as on a laptop. Closing it from

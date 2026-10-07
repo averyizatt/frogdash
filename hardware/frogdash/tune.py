@@ -6,8 +6,6 @@ user; it starts TunerStudio over the dash and closes it again. This object is on
 mailbox between the two: the dash asks, the launcher reports every 2 s and collects the
 request. Nothing here starts a program, and the dash service needs no extra rights.
 """
-from .parking import rolling
-
 KIOSK_TIMEOUT = 8.0  # The launcher reports every 2 s; silent for this long means no kiosk.
 STATES = ('idle', 'running', 'failed')
 
@@ -24,15 +22,14 @@ class Tune:
         return self.kiosk is not None and self.state.clock() - self.seen < KIOSK_TIMEOUT
 
     def snapshot(self):
-        moving = rolling(self.state)
         if not self.linked():
-            return {'available': False, 'state': 'unavailable', 'moving': moving,
+            return {'available': False, 'state': 'unavailable',
                     'message': 'Only on the dash screen in the car: the kiosk starts TunerStudio'}
         if not self.kiosk['installed']:
-            return {'available': False, 'state': 'missing', 'moving': moving,
+            return {'available': False, 'state': 'missing',
                     'message': 'TunerStudio is not installed on the Pi (docs/tunerstudio.md)'}
         opening = self.want == 'open' and self.kiosk['state'] != 'running'
-        return {'available': True, 'state': 'starting' if opening else self.kiosk['state'], 'moving': moving,
+        return {'available': True, 'state': 'starting' if opening else self.kiosk['state'],
                 'message': 'Starting TunerStudio…' if opening else self.kiosk['message']}
 
     def request(self, action):
@@ -40,12 +37,9 @@ class Tune:
         if action not in ('open', 'close'):
             raise ValueError('Unknown TunerStudio action')
         status = self.snapshot()
-        if action == 'open':
-            if not status['available']:
-                raise ValueError(status['message'])
-            # Only a known speed blocks it: tuning at idle in a garage has no GPS fix.
-            if status['moving']:
-                raise ValueError('Stop the car first: TunerStudio covers the gauges')
+        # No speed check by the owner's choice: it opens while driving too (road tuning).
+        if action == 'open' and not status['available']:
+            raise ValueError(status['message'])
         self.want = action
         return self.snapshot()
 

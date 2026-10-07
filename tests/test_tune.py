@@ -43,19 +43,15 @@ class MailboxTests(unittest.IsolatedAsyncioTestCase):
             for bad in ({'installed': True, 'state': 'rooted', 'message': ''}, {'installed': 1, 'state': 'idle'}, {'installed': True, 'state': 'idle', 'message': 'x' * 301}):
                 self.assertEqual((await client.post('/tune/kiosk', json=bad)).status, 400)
 
-    def test_only_a_known_speed_blocks_opening(self):
+    def test_opens_while_the_car_is_moving(self):
+        # The owner removed the stopped-only check: road tuning with TunerStudio open.
         state = State(clock=lambda: 10)
         state.connected = True
+        state.samples['vehicle.speed_kph', 0x203] = dict(value=90, quality='live', seen=10, source_id=0x203, timestamp_ms=0)
         state.tune.report(READY)
-        state.tune.request('open')  # No speed at all (garage, no GPS fix): allowed.
-        state.tune.report(READY)
-        state.samples['vehicle.speed_kph', 0x203] = dict(value=40, quality='live', seen=10, source_id=0x203, timestamp_ms=0)
-        self.assertTrue(state.snapshot()['tune']['moving'])
-        with self.assertRaisesRegex(ValueError, 'Stop the car'):
-            state.tune.request('open')
-        state.tune.request('close')  # Closing is always allowed.
-        state.samples['vehicle.speed_kph', 0x203]['value'] = 0
-        state.tune.request('open')
+        self.assertEqual(state.tune.request('open')['state'], 'starting')
+        self.assertEqual(state.tune.report(READY), 'open')
+        self.assertNotIn('moving', state.snapshot()['tune'])
 
     def test_holding_off_on_the_wheel_closes_tunerstudio(self):
         state = State(clock=lambda: 10)
