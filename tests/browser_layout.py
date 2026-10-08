@@ -104,7 +104,7 @@ async def main(browser_path=None, url=None):
             await page.set_viewport_size({'width': width, 'height': height})
             await inspect_dashboard(page)
             await page.locator('#meth-cell').click()
-            for tab in ('meth', 'knock', 'lighting', 'wifi'):
+            for tab in ('meth', 'tune', 'knock', 'lighting', 'wifi'):
                 await page.locator(f'#tab-{tab}').click()
                 await inspect(page, '#controls-dialog', '.control-panels')
                 if (width, height) in ((1980, 720), (1280, 480)):

@@ -16,7 +16,8 @@
     'knock.enabled': true, 'knock.learned': true, 'knock.warning': false,
     'knock.critical': false, 'knock.event_count': 0, 'knock.last_rpm': 0,
     'knock.last_boost_kpa': 0, 'knock.config.threshold_offset': 20,
-    'knock.config.multiplier': 2,
+    'knock.config.multiplier': 2, 'knock.config.center_hz': 6000,
+    'knock.band_share_pct': 14, 'knock.hook.bias_adc': 512, 'knock.hook.envelope': 22,
     'interior.upper.color': '#ffb46b', 'interior.upper.brightness': 0,
     'interior.lower.color': '#ffb46b', 'interior.lower.brightness': 0
   };
@@ -119,6 +120,8 @@
         'lighting.left_state': scenario === 'night' ? 'RUNNING' : 'OFF',
         'lighting.right_state': scenario === 'night' ? 'RUNNING' : 'OFF',
         'knock.energy': scenario === 'warning' ? 75 : Math.round(23 + Math.sin(tick / 7) * 5),
+        'knock.band_share_pct': scenario === 'warning' ? 71 : Math.round(14 + Math.sin(tick / 5) * 4),
+        'knock.hook.envelope': scenario === 'warning' ? 96 : Math.round(22 + Math.sin(tick / 9) * 4),
         'knock.warning': scenario === 'warning',
         'engine.coolant_c': scenario === 'warning' ? 115 : readings['engine.coolant_c'],
         'engine.boost_kpa': scenario === 'vacuum' ? -55 : readings['engine.boost_kpa'],

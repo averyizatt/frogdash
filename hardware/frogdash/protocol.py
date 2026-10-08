@@ -152,6 +152,9 @@ def decode(can_id, data):
     elif can_id == 0x307:
         fields("knock", "status_flags energy baseline threshold event_count last_rpm last_boost_kpa reserved",
                [*d[:5], d[5] * 100, d[6], d[7]])
+        # The spare byte: how much of the sensor signal sits at the knock frequency (0..255).
+        # Firmware that predates the knock-band detector sends 0 here.
+        put("knock.band_share_pct", round(d[7] * 100 / 255))
         q = "fault" if d[0] & 0x60 else ("live" if d[0] & 3 == 3 else "unavailable")
         for key in ("energy", "baseline", "threshold"):
             put("knock." + key, out["knock." + key].value, q)

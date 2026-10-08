@@ -286,7 +286,7 @@
   <header class="dialog-header"><div><span class="eyebrow">ENGINE MONITORING</span><h2 id="knock-title">Knock monitor</h2><p id="knock-source">Waiting for signal</p></div><button class="close-button" id="knock-close" type="button">Close <span aria-hidden="true">×</span></button></header>
   <div class="knock-body">      <div class="knock-summary">
         <div class="knock-primary">
-          <span class="klab">Signal energy</span>
+          <span class="klab">Knock-band level</span>
           <span class="knock-big" id="knock-energy-num">—</span>
         </div>
         <div class="knock-summary-item"><span class="klab">Baseline</span><strong id="knock-baseline-num">—</strong></div>
@@ -336,6 +336,8 @@
         <div class="kstat"><span class="klab">Last event / RPM</span><span class="kval" id="knock-last-rpm">—</span></div>
         <div class="kstat"><span class="klab">Last event / boost</span><span class="kval" id="knock-last-boost">—</span></div>
         <div class="kstat"><span class="klab">Peak (window)</span><span class="kval" id="knock-peak">—</span></div>
+        <div class="kstat" title="How much of the sensor signal is at the knock frequency. Ringing is narrow; ordinary engine noise is spread out."><span class="klab">At knock frequency</span><span class="kval" id="knock-share">—</span></div>
+        <div class="kstat" title="Largest swing of the sensor signal as a share of the input range. Aim for 5 to 15% at idle and under 60% at full load."><span class="klab">Sensor swing</span><span class="kval" id="knock-swing">—</span></div>
       </div>
 
 </div>

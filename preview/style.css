@@ -210,7 +210,7 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 .knock-current-dot { fill:var(--accent); }
 .knock-legend { display:flex; justify-content:center; gap:24px; font-size:10px; font-weight:800; margin:6px 0; }
 .knock-legend .energy { color:var(--accent); }.knock-legend .baseline { color:#92aabd; }.knock-legend .threshold { color:var(--warn); }
-.knock-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; flex:none; }
+.knock-stats { display:grid; grid-template-columns:repeat(6,1fr); gap:16px; flex:none; }
 .kstat { border-left:2px solid var(--line); padding-left:16px; }
 .kval { font-size:24px; font-weight:800; }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none !important; } }

@@ -99,7 +99,7 @@
   .review-body { grid-template-columns:1fr; }
   .review-sidebar { max-height:170px; }
   .review-plots { min-height:330px; }
-  .knock-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .knock-stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .knock-status-pill { margin-left:0; }
 }
 @media (max-aspect-ratio: 11/5) and (max-width: 600px) {

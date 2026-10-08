@@ -177,7 +177,13 @@
     $('knock-status').textContent = energy === null ? signal('knock.energy').quality.toUpperCase() :
       live('knock.critical') ? 'CRITICAL' : live('knock.warning') ? 'WARNING' : !live('knock.learned') ? 'LEARNING' : 'OK';
     $('knock-status').dataset.status = $('knock-status').textContent;
-    $('knock-source').textContent = `${snapshot.mode === 'demo' ? 'SIMULATED' : snapshot.mode === 'replay' ? 'REPLAY' : 'KNOCK SENSOR'} · ${qualityNames[signal('knock.energy').quality].toUpperCase()}`;
+    // What the detector is listening at, and the amplifier's resting level and swing:
+    // the three things needed to check the sensor circuit from the driver's seat.
+    const centre = live('knock.config.center_hz'), rest = live('knock.hook.bias_adc'), swing = live('knock.hook.envelope'), share = live('knock.band_share_pct');
+    $('knock-source').textContent = `${snapshot.mode === 'demo' ? 'SIMULATED' : snapshot.mode === 'replay' ? 'REPLAY' : 'KNOCK SENSOR'} · ${qualityNames[signal('knock.energy').quality].toUpperCase()}` +
+      `${centre ? ` · LISTENING AT ${(centre / 1000).toFixed(1)} kHz` : ''}${rest === null ? '' : ` · AMPLIFIER RESTS AT ${(rest * 5 / 1024).toFixed(1)} V`}`;
+    $('knock-share').textContent = share === null ? '—' : `${share}%`;
+    $('knock-swing').textContent = swing === null ? '—' : `${Math.round(swing * 2 * 100 / 512)}%`;
     const now = performance.now();
     while (history.length && history[0].at < now - 6700) history.shift();
     const y = n => 270 - clamp(n, 0, 255) / 255 * 252;
