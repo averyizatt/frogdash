@@ -88,7 +88,15 @@ class RulesTests(unittest.TestCase):
         self.assertEqual(apply_setting(values, 'start_psi_x10', 250), 90)
         self.assertEqual(apply_setting(values, 'full_psi_x10', 10), 100)
         self.assertEqual(apply_setting(values, 'max_dose_pct', 99), 40)
+        # Hot-air pair: off by default, and ordered once it is on.
+        self.assertEqual((values['hot_start_c'], values['early_rpm']), (0, 3500))
+        self.assertEqual(apply_setting(values, 'hot_full_c', 20), 20)   # Off: any full value in range.
+        self.assertEqual(apply_setting(values, 'hot_start_c', 60), 15)  # Stops 5 degrees under full.
+        self.assertEqual(apply_setting(values, 'hot_full_c', 80), 80)
+        self.assertEqual(apply_setting(values, 'hot_start_c', 60), 60)
+        self.assertEqual(apply_setting(values, 'hot_full_c', 30), 65)
         self.assertTrue(valid(values))
+        self.assertFalse(valid({**values, 'hot_full_c': 62}))
 
     def test_plan_reaches_any_valid_target_from_any_valid_start(self):
         rng = random.Random(7)
@@ -97,6 +105,8 @@ class RulesTests(unittest.TestCase):
                 values = {name: rng.randint(low, high) for name, low, high, _ in SETTINGS.values()}
                 values['max_on_ms'] = min(values['max_on_ms'], values['period_ms'])
                 values['min_on_ms'] = min(values['min_on_ms'], values['max_on_ms'])
+                if rng.random() < .3:
+                    values['hot_start_c'] = 0
                 if valid(values):
                     return values
         candidates = [{**DEFAULTS, **timing} for timing in PRESETS.values()] + [some() for _ in range(60)]
@@ -173,7 +183,7 @@ class TuningTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((await state.controls.execute('meth.setting', (KEYS['min_rpm'] << 16) | 3000))['status'], 'acknowledged')
             self.tick(state, controller)
             self.assertEqual((await state.controls.execute('meth.setting', (KEYS['nozzle_ml_min'] << 16) | 100))['status'], 'acknowledged')
-            for bad in ((15 << 16) | 5, (KEYS['period_ms'] << 16) | 500, (KEYS['min_on_ms'] << 16) | 200, (KEYS['min_rpm'] << 16) | 9000,
+            for bad in ((18 << 16) | 5, (KEYS['period_ms'] << 16) | 500, (KEYS['hot_full_c'] << 16) | 10, (KEYS['min_on_ms'] << 16) | 200, (KEYS['min_rpm'] << 16) | 9000,
                         (KEYS['max_dose_pct'] << 16) | 41, 5):
                 with self.assertRaises(ValueError):
                     await state.controls.execute('meth.setting', bad)
@@ -206,7 +216,7 @@ class TuningTests(unittest.IsolatedAsyncioTestCase):
                     sent = [SETTINGS[data[1]][0] for identifier, data in controller.commands if data[0] == 0x10]
                     self.assertLess(sent.index('max_on_ms'), sent.index('min_on_ms'))  # Raising: maximum first.
                     self.assertNotIn('period_ms', sent)  # Unchanged settings are not re-sent.
-                    self.assertFalse({'meth_pct', 'max_dose_pct', 'nozzle_ml_min'} & set(sent))  # A flow preset leaves the tank mix alone.
+                    self.assertFalse({'meth_pct', 'max_dose_pct', 'nozzle_ml_min', 'early_rpm', 'hot_start_c', 'hot_full_c'} & set(sent))  # A flow preset leaves the tank mix and triggers alone.
                     await self.sync(state, controller)
                     self.assertEqual(state.snapshot()['meth_tune']['preset'], 'Standard')
                     # A tank mix changes the blend and the dose limit, nothing else.

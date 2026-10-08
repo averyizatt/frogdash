@@ -42,6 +42,9 @@ parked. The failsafes below are aimed there.
 - **No engine RPM, no pump.** The dash sends engine RPM (`0x309`). If that stops, or
   RPM is below your minimum, the pump stays off. A stalled engine cannot be filled.
   This also means **no injection if the dash is off or its CAN link fails**.
+- **Extra triggers stay inside the rules.** The early start and the hot-air addition
+  below never override disarmed, tank low, a fault, the RPM requirement, the dose
+  limit or the spray time limit.
 - **Dose limit.** The controller estimates fuel flow from RPM and its own boost sensor
   and holds fluid to a set share of it (10% for water by default). At low airflow the
   pump runs for less of each cycle, or not at all.
@@ -123,11 +126,34 @@ checking that nothing misfires. Standard holds the pump on at full boost, which 
 also the kindest to the relay because it does not switch at all there.
 
 **Custom 1–3** hold your own flow settings: choose a slot and press **Store current
-here**. A flow preset leaves the tank mix and nozzle size alone.
+here**. A flow preset leaves the tank mix, nozzle size, early-start RPM and hot-air
+temperatures alone.
 
 Pulsing a pump is a coarse way to meter fluid: the charge is wet for part of each
 cycle and dry for the rest. It is fine for testing and for cooling, but do not add
 ignition timing that depends on it.
+
+## Cooling before boost and in hot air
+
+Boost is not the only reason to inject when the goal is cooling and knock prevention.
+
+- **Early start at high RPM.** Above the RPM you set (3500 by default) injection starts
+  **before boost builds**, as long as the throttle is open: manifold pressure within
+  about 1.5 psi of atmospheric. Coasting at high RPM with the throttle shut is deep
+  vacuum and never triggers it. It runs the start-boost run time until boost takes
+  over. The intake is already cool and wet when boost arrives. Set it to 0 to wait
+  for boost.
+- **More when the intake is hot.** With *Hot air adds run time from* set, air before
+  the nozzle hotter than that makes the pump run longer, reaching the full run time
+  at the second temperature. Whichever asks for more, boost or temperature, wins. It
+  only adds to injection that is already running; heat-soaked air at idle or cruise
+  sprays nothing. It needs the before-nozzle sensor and is off until you set it.
+
+Without load there is little knock to prevent, and the dose limit keeps the early
+amount small: at 3500 RPM with no boost, 10% of fuel is about 26 ml/min.
+
+The live card says when either is acting: *Injecting: early start, before boost* or
+*extra for hot intake air*.
 
 ## Settings
 
@@ -139,11 +165,14 @@ ignition timing that depends on it.
 | Start boost | 1–30 psi | 5 psi | Injection begins here. |
 | Full boost | 2–35 psi | 10 psi | Run time rises in a straight line from start to here. |
 | Minimum engine RPM | 0–8000 | 2500 | No injection below this. |
+| Start above this RPM before boost | 0–8000 | 3500 | Early start with the throttle open. 0 turns it off. |
 | Longest continuous spray | 1–120 s | 12 s | Then the controller rests. |
 | Rest after that | 0–60 s | 6 s | 0 turns the time limit off. |
 | Run-time growth per cycle | 0–5 s | 0.5 s | Each new spray starts at the minimum run time and grows by this much per cycle. 0 jumps straight to the target. |
 | Most fluid, as % of fuel | 0–40% | 10% | The dose limit. 0 turns it off. |
 | Nozzle size | 20–1000 ml/min | 60 | Used by the dose limit and the flow readout. |
+| Hot air adds run time from | off, or a temperature | off | Air before the nozzle hotter than this lengthens the pump run. |
+| Hot air: full run time at | 68–302 °F | 158 °F | Where the hot-air addition reaches the full-boost run time. |
 | Only spray above intake temp | off, or a temperature | off | Uses the sensor before the nozzle. If set and that sensor is not reading, injection is held. |
 | Overboost assist | off / on | off | On restores the older behaviour: 85% above 13.5 psi and 100% above 15 psi. The dose limit still applies. |
 

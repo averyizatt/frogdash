@@ -142,15 +142,22 @@
       if (!mtLive) { mtLive = {...mt().DEFAULTS}; mtSaved = {...mtLive}; }
       const boostPsi = current['engine.boost_kpa'] * .145037738, armed = readings['meth.state'] === 'ARMED';
       const mapKpa = 85 + current['engine.boost_kpa'], fuel = mt().fuelGPerMin(current['engine.rpm'], mapKpa);
-      let hold = !armed ? 'DISARMED' : boostPsi < mtLive.start_psi_x10 / 10 ? 'BELOW_BOOST' : current['engine.rpm'] < mtLive.min_rpm ? 'RPM_LOW' : 'NONE';
+      const belowBoost = boostPsi < mtLive.start_psi_x10 / 10;
+      const early = armed && belowBoost && mtLive.early_rpm > 0 && current['engine.rpm'] >= mtLive.early_rpm && boostPsi >= -1.5;
+      let hold = !armed ? 'DISARMED' : belowBoost && !early ? 'BELOW_BOOST' : current['engine.rpm'] < mtLive.min_rpm ? 'RPM_LOW' : 'NONE';
       const ramp = Math.min(1, Math.max(0, (boostPsi * 10 - mtLive.start_psi_x10) / (mtLive.full_psi_x10 - mtLive.start_psi_x10)));
       let wanted = Math.round(mtLive.min_on_ms + (mtLive.max_on_ms - mtLive.min_on_ms) * ramp);
+      const airC = 38 + Math.max(0, boostPsi) * 5;
+      const heat = mtLive.hot_start_c > 0 && airC > mtLive.hot_start_c ?
+        Math.round(mtLive.min_on_ms + (mtLive.max_on_ms - mtLive.min_on_ms) * Math.min(1, (airC - mtLive.hot_start_c) / (mtLive.hot_full_c - mtLive.hot_start_c))) : 0;
+      const hotAir = heat > wanted;
+      if (hotAir) wanted = heat;
       if (mtLive.max_dose_pct) wanted = Math.min(wanted, Math.floor(mtLive.period_ms * Math.min(1, fuel * mtLive.max_dose_pct / 100 / mtLive.nozzle_ml_min)));
       const onMs = hold === 'NONE' ? mt().relayOn(wanted, mtLive.period_ms) : 0;
       if (hold === 'NONE' && !onMs) hold = 'DOSE_LIMIT';
       if (onMs) { current['meth.state'] = 'SPRAYING'; current['meth.duty_pct'] = Math.round(onMs * 100 / mtLive.period_ms); }
       const flow = mtLive.nozzle_ml_min * onMs / mtLive.period_ms;
-      const preC = 38 + Math.max(0, boostPsi) * 5, dropC = flow / 60 * 22;
+      const preC = airC, dropC = flow / 60 * 22;
       Object.assign(current, {'meth.pre_temp_c': Math.round(preC * 10) / 10, 'meth.post_temp_c': Math.round((preC - dropC) * 10) / 10,
         'meth.temp_drop_c': Math.round(dropC * 10) / 10, 'meth.hold': hold, 'meth.on_ms': onMs, 'meth.period_ms': mtLive.period_ms,
         'meth.flow_ml_min': Math.round(flow * 10) / 10, 'meth.dose_pct': fuel > 0 ? Math.round(flow / fuel * 1000) / 10 : null});
@@ -172,6 +179,7 @@
         transport: {connected: scenario !== 'offline', status: 'Design preview — simulated data', received: tick, malformed: 0},
         meth_tune: {supported: scenario !== 'offline', complete: true, revision: mtRevision, unsaved: JSON.stringify(mtLive) !== JSON.stringify(mtSaved),
           rpm_ok: current['engine.rpm'] >= mtLive.min_rpm, pre_valid: true, post_valid: true, pump_on: onMs > 0 && (tick * 100) % mtLive.period_ms < onMs,
+          early_start: early && onMs > 0, hot_air: hotAir && onMs > 0,
           hold, on_ms: onMs, period_ms: mtLive.period_ms, settings: mtLive, last_ack: mtAck},
         taillight: {supported: scenario !== 'offline', complete: true, revision: tlRevision, unsaved: JSON.stringify(tlLive) !== JSON.stringify(tlSaved),
           show: false, demo: false, custom: false, override: false, show_anim: tlLive.settings.show_anim, phase_ms: 0,

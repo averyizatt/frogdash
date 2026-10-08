@@ -117,6 +117,7 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
         mirror = state.meth_tune.snapshot()
         self.assertEqual((mirror['supported'], mirror['revision'], mirror['hold']), (True, 7, 'DOSE_LIMIT'))
         self.assertEqual((mirror['unsaved'], mirror['pump_on'], mirror['rpm_ok'], mirror['pre_valid']), (True, True, True, False))
+        self.assertEqual((mirror['early_start'], mirror['hot_air']), (True, False))
         self.assertEqual((mirror['on_ms'], mirror['period_ms'], mirror['settings']), (1500, 4000, {'min_rpm': 2500}))
         self.assertEqual(mirror['last_ack'], {'command': 0x10, 'status': 3, 'subject': 3, 'value': 2000, 'revision': 7})
         values = state.snapshot()['values']

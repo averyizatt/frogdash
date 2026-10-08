@@ -20,7 +20,7 @@ COMMANDS = {
     "meth.clear_faults": (0x301, 0x06, None, None, True),
     # Pulse tuning (can_protocol.h extension 4), acknowledged on 0x30F. setting = key << 16 | value;
     # tune_action = 0 save, 1 revert, 2 defaults, 3 report.
-    "meth.setting": (0x301, 0x10, 1 << 16, (14 << 16) | 0xFFFF, True),
+    "meth.setting": (0x301, 0x10, 1 << 16, (17 << 16) | 0xFFFF, True),
     "meth.tune_action": (0x301, 0x11, 0, 3, True),
     "knock.enable": (0x301, 0x40, 0, 1, True),
     "knock.threshold": (0x301, 0x41, 0, 200, True),

@@ -74,6 +74,19 @@ async def preview(browser):
         await page.locator('#mt-start_psi_x10').blur()
         await page.wait_for_function('document.getElementById("mt-summary").textContent.startsWith("At 6.5 psi the pump runs 1 s in every 4 s (15 ml/min), rising to 2 s in every 4 s (30 ml/min) at 10 psi.")')
         assert "Never more than 10% of the engine's fuel flow" in await page.locator('#mt-summary').inner_text()
+        # Extra triggers: early start is on at 3500 RPM by default; hot air is off until set.
+        assert await page.locator('#mt-early_rpm').input_value() == '3500'
+        assert 'It also starts above 3500 RPM with the throttle open, before boost.' in await page.locator('#mt-summary').inner_text()
+        assert await page.locator('#mt-hot_start_c').input_value() == '0'
+        await page.locator('#mt-hot_start_c').fill('50')     # Metric was chosen above: degrees C.
+        await page.locator('#mt-hot_start_c').blur()
+        await page.wait_for_function('document.getElementById("mt-summary").textContent.includes("Intake air hotter than 50 °C adds run time, reaching the full run at 70 °C.")')
+        await page.locator('#mt-hot_full_c').fill('40')      # Below the start: kept 5 degrees above it.
+        await page.locator('#mt-hot_full_c').blur()
+        await page.wait_for_function('document.getElementById("mt-hot_full_c").value === "55"')
+        await page.locator('#mt-early_rpm').fill('0')
+        await page.locator('#mt-early_rpm').blur()
+        await page.wait_for_function('!document.getElementById("mt-summary").textContent.includes("It also starts above")')
         await page.wait_for_function('document.getElementById("mt-sync").textContent.includes("Unsaved changes")')
         await page.locator('#mt-min_on_ms').fill('3.5')   # Above the maximum: limited, never raising it.
         await page.locator('#mt-min_on_ms').blur()

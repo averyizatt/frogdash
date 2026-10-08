@@ -1142,7 +1142,10 @@ constexpr uint8_t OVERBOOST_ASSIST = 11; // 0..1 force high duty above the overb
 constexpr uint8_t METH_PERCENT = 12;     // 0..100 methanol in the tank by volume; 0 = water only
 constexpr uint8_t NOZZLE_ML_MIN = 13;    // 20..1000 nozzle flow with the pump running
 constexpr uint8_t MAX_DOSE_PCT = 14;     // 0..40 most fluid allowed as % of estimated fuel flow; 0 = off
-constexpr uint8_t COUNT = 14;
+constexpr uint8_t EARLY_RPM = 15;        // 0..8000; 0 = off. Inject from this RPM with the throttle open, before boost
+constexpr uint8_t HOT_START_C = 16;      // 0..145; 0 = off. Air before the nozzle hotter than this adds on-time
+constexpr uint8_t HOT_FULL_C = 17;       // 20..150 air temperature where on-time reaches MAX_ON_MS
+constexpr uint8_t COUNT = 17;
 }  // namespace meth_tune_setting
 namespace meth_tune_action {
 constexpr uint8_t SAVE = 0;      // Persist current settings on the controller
@@ -1162,6 +1165,8 @@ constexpr uint8_t RPM_OK = 1 << 1;
 constexpr uint8_t PRE_VALID = 1 << 2;
 constexpr uint8_t POST_VALID = 1 << 3;
 constexpr uint8_t PUMP_ON = 1 << 4;
+constexpr uint8_t EARLY_START = 1 << 5;  // Injecting on the high-RPM start, below start boost
+constexpr uint8_t HOT_AIR = 1 << 6;      // On-time raised by hot intake air
 }  // namespace meth_tune_flag
 // Why the pump is not pulsing right now.
 namespace meth_hold {

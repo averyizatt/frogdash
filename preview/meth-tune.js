@@ -16,21 +16,26 @@
     ['start_psi_x10', 4, 'Start boost', 'psi', 10, 1, 30, .5],
     ['full_psi_x10', 5, 'Full boost', 'psi', 10, 2, 35, .5],
     ['min_rpm', 6, 'Minimum engine RPM', '', 1, 0, 8000, 100],
+    ['early_rpm', 15, 'Start above this RPM before boost (0 = off)', '', 1, 0, 8000, 100],
     ['max_spray_s', 7, 'Longest continuous spray', 's', 1, 1, 120, 1],
     ['rest_s', 8, 'Rest after that (0 = no time limit)', 's', 1, 0, 60, 1],
     ['ramp_ms', 9, 'Run-time growth per cycle (0 = none)', 's', 1000, 0, 5, .1],
     ['max_dose_pct', 14, 'Most fluid, as % of fuel (0 = off)', '%', 1, 0, 40, 1],
     ['nozzle_ml_min', 13, 'Nozzle size', 'ml/min', 1, 20, 1000, 5],
+    ['hot_start_c', 16, 'Hot air adds run time from (0 = off)', 'temp', 1, 0, 145, 1],
+    ['hot_full_c', 17, 'Hot air: full run time at', 'temp', 1, 20, 150, 1],
     ['min_pre_temp_c', 10, 'Only spray above intake temp (0 = off)', 'temp', 1, 0, 120, 1],
   ];
   // Raw limits and conservative defaults; the controller's are the authority (meth_tune.h).
   const RULES = {period_ms: [1000, 10000, 4000], min_on_ms: [500, 10000, 1000], max_on_ms: [500, 10000, 2000], start_psi_x10: [10, 300, 50],
     full_psi_x10: [20, 350, 100], min_rpm: [0, 8000, 2500], max_spray_s: [1, 120, 12], rest_s: [0, 60, 6], ramp_ms: [0, 5000, 500],
-    min_pre_temp_c: [0, 120, 0], overboost_assist: [0, 1, 0], meth_pct: [0, 100, 0], nozzle_ml_min: [20, 1000, 60], max_dose_pct: [0, 40, 10]};
+    min_pre_temp_c: [0, 120, 0], overboost_assist: [0, 1, 0], meth_pct: [0, 100, 0], nozzle_ml_min: [20, 1000, 60], max_dose_pct: [0, 40, 10],
+    early_rpm: [0, 8000, 3500], hot_start_c: [0, 145, 0], hot_full_c: [20, 150, 70]};
   const NAMES = Object.keys(RULES);
   const DEFAULTS = Object.fromEntries(NAMES.map(name => [name, RULES[name][2]]));
-  // Flow presets cover pulse timing and limits; the tank mix and nozzle are separate.
-  const TIMING = NAMES.filter(name => !['meth_pct', 'nozzle_ml_min', 'max_dose_pct'].includes(name));
+  // Flow presets cover pulse timing and limits; the tank mix, nozzle and the extra
+  // triggers (early start at high RPM, more for hot intake air) are separate.
+  const TIMING = NAMES.filter(name => !['meth_pct', 'nozzle_ml_min', 'max_dose_pct', 'early_rpm', 'hot_start_c', 'hot_full_c'].includes(name));
   const timing = values => Object.fromEntries(TIMING.map(name => [name, values[name]]));
   const BUILT_IN = [
     {name: 'Conservative', builtin: true, values: timing(DEFAULTS)},
@@ -56,6 +61,8 @@
     else if (name === 'max_on_ms') value = Math.max(Math.min(value, values.period_ms), values.min_on_ms);
     else if (name === 'start_psi_x10') value = Math.min(value, values.full_psi_x10 - 10);
     else if (name === 'full_psi_x10') value = Math.max(value, values.start_psi_x10 + 10);
+    else if (name === 'hot_start_c' && value > 0) value = Math.min(value, values.hot_full_c - 5);
+    else if (name === 'hot_full_c' && values.hot_start_c > 0) value = Math.max(value, values.hot_start_c + 5);
     values[name] = value;
     if (name === 'period_ms') { values.max_on_ms = Math.min(values.max_on_ms, value); values.min_on_ms = Math.min(values.min_on_ms, values.max_on_ms); }
     return value;
@@ -80,6 +87,7 @@
   const shown = ([, , , unit, divisor], raw) => unit === 'temp' ? (raw === 0 || u.metric ? raw : Math.round(raw * 1.8 + 32)) : raw / divisor;
   const rawFrom = ([, , , unit, divisor], value) => unit === 'temp' ? (value <= 0 ? 0 : Math.max(1, Math.round(u.metric ? value : (value - 32) / 1.8))) : Math.round(value * divisor);
   const seconds = ms => `${tidy(ms / 1000)} s`;
+  const degrees = celsius => `${u.metric ? celsius : Math.round(celsius * 1.8 + 32)} ${tempUnit()}`;
 
   // ---- Tuning tab ----
   const panel = $('panel-tune');
@@ -163,7 +171,7 @@
       input.disabled = !ready || busy;
       const editing = document.activeElement === input || input.classList.contains('wheel-editing');
       if (ready && !editing && s[name] !== undefined) { const value = tidy(shown(field, s[name])); if (input.value !== value) input.value = value; }
-      if (unit === 'temp') { input.min = 0; input.max = u.metric ? 120 : 248; input.step = u.metric ? 1 : 5; } else { input.min = field[5]; input.max = field[6]; }
+      if (unit === 'temp') { input.min = 0; input.max = u.metric ? field[6] : Math.round(field[6] * 1.8 + 32); input.step = u.metric ? 1 : 5; } else { input.min = field[5]; input.max = field[6]; }
     }
     assist.disabled = !ready || busy;
     if (ready && document.activeElement !== assist) assist.value = String(s.overboost_assist ?? 0);
@@ -183,6 +191,8 @@
     const flow = ms => { const on = relayOn(ms, s.period_ms); return `${seconds(on)} in every ${seconds(s.period_ms)} (${Math.round(s.nozzle_ml_min * on / s.period_ms)} ml/min)`; };
     const top = relayOn(s.max_on_ms, s.period_ms);
     return `At ${tidy(s.start_psi_x10 / 10)} psi the pump runs ${flow(s.min_on_ms)}, rising to ${top >= s.period_ms ? `on continuously (${s.nozzle_ml_min} ml/min)` : flow(s.max_on_ms)} at ${tidy(s.full_psi_x10 / 10)} psi. ` +
+      `${s.early_rpm ? `It also starts above ${s.early_rpm} RPM with the throttle open, before boost. ` : ''}` +
+      `${s.hot_start_c ? `Intake air hotter than ${degrees(s.hot_start_c)} adds run time, reaching the full run at ${degrees(s.hot_full_c)}. ` : ''}` +
       `${s.max_dose_pct ? `Never more than ${s.max_dose_pct}% of the engine's fuel flow. ` : 'No dose limit. '}` +
       `The relay switches at most once every ${seconds(s.period_ms)}. Needs ${s.min_rpm} RPM from the dash` +
       `${s.rest_s ? `; rests ${s.rest_s} s after ${s.max_spray_s} s of spraying` : '; no spray time limit'}.`;
@@ -194,7 +204,8 @@
     const temp = (key, delta) => { const v = value(key); return v === null ? 'No sensor reading' : `${(u.metric ? v : delta ? v * 1.8 : v * 1.8 + 32).toFixed(1)} ${tempUnit()}`; };
     const flow = value('meth.flow_ml_min'), dose = value('meth.dose_pct');
     const text = {
-      'meth-live-hold': !m.supported ? 'Needs the current controller firmware' : HOLD[m.hold] || 'Waiting for the controller',
+      'meth-live-hold': !m.supported ? 'Needs the current controller firmware' : m.hold === 'NONE' ?
+        `Injecting${m.early_start ? ': early start, before boost' : ''}${m.hot_air ? `${m.early_start ? ',' : ':'} extra for hot intake air` : ''}` : HOLD[m.hold] || 'Waiting for the controller',
       'meth-live-pulse': !m.supported ? '—' : !m.on_ms ? 'Pump off' : m.on_ms >= m.period_ms ? 'Pump on continuously' : `Pump runs ${seconds(m.on_ms)} in every ${seconds(m.period_ms)}`,
       'meth-live-flow': !m.supported || flow === null ? '—' : !flow ? 'None' : `About ${Math.round(flow)} ml/min${dose === null ? '' : ` · ${dose.toFixed(1)}% of fuel`}`,
       'meth-live-rpm': !m.supported ? '—' : m.rpm_ok ? 'OK: above the minimum' : 'Not met',

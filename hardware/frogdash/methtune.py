@@ -19,19 +19,22 @@ SETTINGS = {
     4: ('start_psi_x10', 10, 300, 50), 5: ('full_psi_x10', 20, 350, 100), 6: ('min_rpm', 0, 8000, 2500),
     7: ('max_spray_s', 1, 120, 12), 8: ('rest_s', 0, 60, 6), 9: ('ramp_ms', 0, 5000, 500),
     10: ('min_pre_temp_c', 0, 120, 0), 11: ('overboost_assist', 0, 1, 0),
-    12: ('meth_pct', 0, 100, 0), 13: ('nozzle_ml_min', 20, 1000, 60), 14: ('max_dose_pct', 0, 40, 10)}
+    12: ('meth_pct', 0, 100, 0), 13: ('nozzle_ml_min', 20, 1000, 60), 14: ('max_dose_pct', 0, 40, 10),
+    15: ('early_rpm', 0, 8000, 3500), 16: ('hot_start_c', 0, 145, 0), 17: ('hot_full_c', 20, 150, 70)}
 KEYS = {name: key for key, (name, _, _, _) in SETTINGS.items()}
 NAMES = [SETTINGS[key][0] for key in sorted(SETTINGS)]
 DEFAULTS = {name: default for name, _, _, default in SETTINGS.values()}
 HOLDS = 'NONE DISARMED BELOW_BOOST RPM_LOW RPM_MISSING AIR_COLD TEMP_SENSOR RESTING TANK_LOW FAULT DOSE_LIMIT'.split()
-FLAGS = {'unsaved': 1, 'rpm_ok': 2, 'pre_valid': 4, 'post_valid': 8, 'pump_on': 16}
+FLAGS = {'unsaved': 1, 'rpm_ok': 2, 'pre_valid': 4, 'post_valid': 8, 'pump_on': 16, 'early_start': 32, 'hot_air': 64}
 ACTIONS = {'save': 0, 'revert': 1, 'defaults': 2, 'report': 3}
 STATUS_TIMEOUT = 1.5
 REPORT_RETRY = 2.0
 USER_SLOTS = ('Custom 1', 'Custom 2', 'Custom 3')
-# What is in the tank and the nozzle fitted are separate from the flow presets.
+# What is in the tank, the nozzle fitted and the extra triggers (early start at high
+# RPM, more for hot intake air) are separate from the flow presets.
 FLUID_NAMES = ('meth_pct', 'max_dose_pct')
-TIMING_NAMES = [name for name in NAMES if name not in (*FLUID_NAMES, 'nozzle_ml_min')]
+TRIGGER_NAMES = ('early_rpm', 'hot_start_c', 'hot_full_c')
+TIMING_NAMES = [name for name in NAMES if name not in (*FLUID_NAMES, *TRIGGER_NAMES, 'nozzle_ml_min')]
 TIMING_DEFAULTS = {name: DEFAULTS[name] for name in TIMING_NAMES}
 # Flow presets, all on a 4 s cycle so the relay switches at most once every 4 s.
 # Standard reaches the pump on continuously at full boost (no switching at all there).
@@ -68,6 +71,10 @@ def apply_setting(values, name, requested):
         value = min(value, values['full_psi_x10'] - 10)
     elif name == 'full_psi_x10':
         value = max(value, values['start_psi_x10'] + 10)
+    elif name == 'hot_start_c' and value > 0:
+        value = min(value, values['hot_full_c'] - 5)
+    elif name == 'hot_full_c' and values['hot_start_c'] > 0:
+        value = max(value, values['hot_start_c'] + 5)
     values[name] = value
     if name == 'period_ms':
         values['max_on_ms'] = min(values['max_on_ms'], value)
@@ -81,7 +88,8 @@ def valid(values):
     if any(type(values[name]) is not int or not low <= values[name] <= high for name, low, high, _ in SETTINGS.values()):
         return False
     return (values['min_on_ms'] <= values['max_on_ms'] <= values['period_ms']
-            and values['full_psi_x10'] >= values['start_psi_x10'] + 10)
+            and values['full_psi_x10'] >= values['start_psi_x10'] + 10
+            and (values['hot_start_c'] == 0 or values['hot_full_c'] >= values['hot_start_c'] + 5))
 
 
 def plan(current, changes):
@@ -97,6 +105,8 @@ def plan(current, changes):
     order += ['max_on_ms', 'min_on_ms'] if target['max_on_ms'] >= after_period['min_on_ms'] else ['min_on_ms', 'max_on_ms']
     order += (['full_psi_x10', 'start_psi_x10'] if target['full_psi_x10'] >= values['start_psi_x10'] + 10
               else ['start_psi_x10', 'full_psi_x10'])
+    order += (['hot_full_c', 'hot_start_c'] if values['hot_start_c'] == 0 or target['hot_full_c'] >= values['hot_start_c'] + 5
+              else ['hot_start_c', 'hot_full_c'])
     order += [name for name in NAMES if name not in order]
     for name in order:
         if values[name] != target[name]:
