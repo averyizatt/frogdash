@@ -83,6 +83,10 @@ These matter more than any setting:
 
 ## Where it is on the dash
 
+- **The water/meth tile on the main dashboard turns solid green and reads PUMP ON**
+  while the pump relay is closed. Between pulses it keeps a thin green outline and
+  reads *INJECTING · PUMP RESTING*. The controller reports the relay the moment it
+  switches.
 - **Controls → Water / meth**: arm, disarm, pump test, and a live card: what the
   controller is doing and why, the pump run time, the estimated flow in ml/min and as
   a share of fuel, and the intake temperature before and after the nozzle.
@@ -191,10 +195,35 @@ runs 1 s in every 4 s (15 ml/min), rising to 2 s in every 4 s (30 ml/min) at 10 
    boost, RPM below the minimum, resting, dose limit.
 4. Change one thing at a time and compare logs.
 
-## Intake temperature sensors
+## Intake temperature
 
-Two thermistors on the Nano show the air temperature before and after the nozzle, so
-you can see how much each setting actually cools the charge.
+### Now: the MicroSquirt's sensor
+
+Until the controller has its own sensors, the dash forwards the MicroSquirt's intake
+air temperature to the controller about four times a second, and everything that
+needs a temperature uses it: *Hot air adds run time* and *Only spray above intake
+temp*. The tuning page says so when it is the source.
+
+That sensor sits after the throttle, so it is **after the nozzle** and reads the
+air once it has been sprayed. Two things follow:
+
+- *Hot air adds run time* works as a loop: hot air lengthens the pump run, the air
+  cools, the run shortens again. That is fine for cooling, but expect it to settle
+  around the temperature you set, not far below it.
+- A sensor in wet air can read lower than the air really is.
+
+**Before and after from that one sensor.** The dash keeps the last reading before
+each spray starts, follows the change while it sprays, and keeps the finished result:
+*Last spray: 131 °F to 112 °F, 19 °F cooler in 6 s at 30 ml/min*. It is on the live
+card and in the logs (*MAT change while injecting*). Boost heats the air during the
+same seconds, so this understates the cooling; compare a pull with injection armed
+against the same pull disarmed to see the real difference.
+
+### Later: two sensors on the controller
+
+Two thermistors on the Nano show the air temperature before and after the nozzle at
+the same moment, which measures the cooling directly. Once the one before the nozzle
+is fitted, the controller uses it instead of the MicroSquirt's.
 
 - **Sensor:** GM-style open-element intake air temperature sensor (2-wire thermistor,
   about 3.5 kΩ at 68 °F). Open-element types react in well under a second.
@@ -218,4 +247,5 @@ Additive: no existing message changed.
 |---|---|---|
 | `0x301` cmd `0x10` | Dash | Set one setting: key, value (u16) |
 | `0x301` cmd `0x11` | Dash | Save, revert, defaults, or report all settings |
+| `0x301` cmd `0x12` | Dash | The MicroSquirt's intake temperature, about four times a second, not acknowledged |
 | `0x30F` | Controller | Acknowledgements, settings, status every 0.5 s (why it is holding, run time, cycle), temperatures every 0.2 s |

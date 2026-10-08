@@ -25,7 +25,7 @@ KEYS = {name: key for key, (name, _, _, _) in SETTINGS.items()}
 NAMES = [SETTINGS[key][0] for key in sorted(SETTINGS)]
 DEFAULTS = {name: default for name, _, _, default in SETTINGS.values()}
 HOLDS = 'NONE DISARMED BELOW_BOOST RPM_LOW RPM_MISSING AIR_COLD TEMP_SENSOR RESTING TANK_LOW FAULT DOSE_LIMIT'.split()
-FLAGS = {'unsaved': 1, 'rpm_ok': 2, 'pre_valid': 4, 'post_valid': 8, 'pump_on': 16, 'early_start': 32, 'hot_air': 64}
+FLAGS = {'unsaved': 1, 'rpm_ok': 2, 'pre_valid': 4, 'post_valid': 8, 'pump_on': 16, 'early_start': 32, 'hot_air': 64, 'ecu_temp': 128}
 ACTIONS = {'save': 0, 'revert': 1, 'defaults': 2, 'report': 3}
 STATUS_TIMEOUT = 1.5
 REPORT_RETRY = 2.0
@@ -129,11 +129,55 @@ def fuel_g_min(rpm, map_kpa):
     return rpm * map_kpa * FUEL_G_PER_MIN_PER_RPM_KPA
 
 
+class Cooling:
+    """Before and after from one sensor: the ECU's intake temperature around each spray.
+
+    The last reading before injection starts is the "before"; the change is followed
+    while injecting and the finished spray is kept for comparison. Boost heats the air
+    at the same time, so this understates the cooling; two sensors, one each side of
+    the nozzle, measure it properly.
+    """
+    def __init__(self, clock):
+        self.clock = clock
+        self.before = None      # Latest intake temperature while not injecting.
+        self.active = None      # The spray in progress.
+        self.last = None        # The most recent finished spray.
+        self.seen = None
+
+    def step(self, injecting, intake_c, flow_ml_min):
+        now = self.clock()
+        elapsed = 0 if self.seen is None else min(max(now - self.seen, 0), 1)
+        self.seen = now
+        if not injecting:
+            if self.active:
+                spray, self.active = self.active, None
+                if spray['seconds'] >= 1:  # Anything shorter is not a measurement.
+                    self.last = {'from_c': spray['from_c'], 'lowest_c': spray['lowest_c'], 'end_c': spray['now_c'],
+                                 'change_c': round(spray['lowest_c'] - spray['from_c'], 1), 'seconds': round(spray['seconds'], 1),
+                                 'flow_ml_min': round(spray['ml'] / spray['seconds'] * 60, 1)}
+            if intake_c is not None:
+                self.before = intake_c
+            return None
+        if self.active is None:
+            if self.before is None or intake_c is None:
+                return None  # No "before" reading: nothing to compare against.
+            self.active = {'from_c': self.before, 'lowest_c': intake_c, 'now_c': intake_c, 'seconds': 0.0, 'ml': 0.0}
+        spray = self.active
+        spray['seconds'] += elapsed
+        spray['ml'] += (flow_ml_min or 0) * elapsed / 60
+        if intake_c is None:
+            return None
+        spray['now_c'] = intake_c
+        spray['lowest_c'] = min(spray['lowest_c'], intake_c)
+        return round(intake_c - spray['from_c'], 1)
+
+
 class MethTune:
     def __init__(self, clock):
         self.clock = clock
         self.user = {}  # The owner's flow presets by slot name.
         self.path = None
+        self.cooling = Cooling(clock)
         self.reset()
 
     def reset(self):
@@ -230,7 +274,9 @@ class MethTune:
             rpm, map_kpa = live('engine.rpm'), live('ecu.map_kpa')
             if rpm and map_kpa:
                 dose = round(flow / fuel_g_min(rpm, map_kpa) * 100, 1)
-        return {'meth.flow_ml_min': signal(flow), 'meth.dose_pct': signal(dose)}
+        # Intake temperature change since this spray began, from the ECU's own sensor.
+        change = self.cooling.step(live('meth.state') == 'SPRAYING', live('ecu.iat_c'), flow)
+        return {'meth.flow_ml_min': signal(flow), 'meth.dose_pct': signal(dose), 'meth.iat_change_c': signal(change)}
 
     def snapshot(self):
         flags = self.flags or 0
@@ -239,7 +285,7 @@ class MethTune:
                 'hold': HOLDS[self.hold] if self.hold is not None and self.hold < len(HOLDS) else None,
                 'on_ms': self.on_ms, 'period_ms': self.period_ms,
                 'settings': dict(self.values), 'preset': self.matching(self.presets()), 'fluid': self.matching(FLUIDS),
-                'last_ack': self.last_ack}
+                'last_spray': dict(self.cooling.last) if self.cooling.last else None, 'last_ack': self.last_ack}
 
     def preset_list(self):
         """For the tuning page: every flow preset, the tank mixes and the Custom slots (served on request)."""

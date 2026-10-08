@@ -1124,6 +1124,10 @@ constexpr uint32_t METH_TUNE_TEMPS_TX_MS = 200;
 namespace meth_tune_command {
 constexpr uint8_t SET_SETTING = 0x10;      // DLC 4: key, value u16 BE (clamped to the key's range)
 constexpr uint8_t SETTINGS_ACTION = 0x11;  // DLC 2: meth_tune_action
+// DLC 3: the ECU's intake air temperature, i16 BE in 0.1 C, about four times a second.
+// The controller uses it for the temperature features while its own sensor before
+// the nozzle is not fitted. Not acknowledged; stale after 1.5 s.
+constexpr uint8_t LIVE_INTAKE_TEMP = 0x12;
 }  // namespace meth_tune_command
 // The pump relay is mechanical: it runs at least 500 ms, rests at least 500 ms (or not
 // at all: continuous), and starts at most once per cycle.
@@ -1167,6 +1171,7 @@ constexpr uint8_t POST_VALID = 1 << 3;
 constexpr uint8_t PUMP_ON = 1 << 4;
 constexpr uint8_t EARLY_START = 1 << 5;  // Injecting on the high-RPM start, below start boost
 constexpr uint8_t HOT_AIR = 1 << 6;      // On-time raised by hot intake air
+constexpr uint8_t ECU_TEMP = 1 << 7;     // Temperature features are using the ECU's intake temperature
 }  // namespace meth_tune_flag
 // Why the pump is not pulsing right now.
 namespace meth_hold {
@@ -1189,6 +1194,14 @@ inline CanFrame packMethTuneSetting(uint8_t key, uint16_t value) {
   frame.data[0] = meth_tune_command::SET_SETTING;
   frame.data[1] = key;
   encodeU16BE(value, frame.data[2], frame.data[3]);
+  return frame;
+}
+inline CanFrame packMethLiveIntakeTemp(int16_t tempC10) {
+  CanFrame frame{};
+  frame.id = ID_ENGINE_METH_COMMAND;
+  frame.dlc = 3;
+  frame.data[0] = meth_tune_command::LIVE_INTAKE_TEMP;
+  encodeU16BE(static_cast<uint16_t>(tempC10), frame.data[1], frame.data[2]);
   return frame;
 }
 inline CanFrame packMethTuneAction(uint8_t action) {

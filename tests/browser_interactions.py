@@ -125,6 +125,18 @@ async def preview(browser):
         await page.locator('#tab-meth').click()
         assert await page.locator('#meth-live-hold').inner_text() in ('Disarmed', 'Armed: waiting for boost', 'Injecting', 'Held: engine RPM is below the minimum')
         assert await page.locator('#meth-live-flow').inner_text() != '—'
+        # The dashboard tile turns green exactly while the simulated pump relay is closed.
+        await page.locator('[data-action="meth.arm"][data-value="1"]').click()
+        await page.locator('#controls-close').click()
+        await page.wait_for_function('document.getElementById("meth-cell").dataset.pump === "on"', timeout=60000)
+        assert await page.locator('#meth-state-pill').inner_text() == 'PUMP ON'
+        assert await page.locator('#meth-cell').evaluate('el => getComputedStyle(el).boxShadow') != 'none'
+        await page.wait_for_function('document.getElementById("meth-cell").dataset.pump !== "on"', timeout=60000)
+        assert await page.locator('#meth-cell').evaluate('el => getComputedStyle(el).boxShadow') == 'none'
+        await page.locator('#controls-launch').click()
+        await page.locator('[data-action="meth.arm"][data-value="0"]').click()
+        await page.wait_for_function('document.getElementById("meth-live-summary").textContent.startsWith("OFF")')
+        assert await page.locator('#meth-cell').get_attribute('data-pump') == 'off'
         assert '°C' in await page.locator('#meth-live-pre').inner_text()   # Metric was chosen above.
         await page.locator('[data-action="meth.test"]').click()
         await page.wait_for_function('document.getElementById("meth-live-summary").textContent.startsWith("TEST")')

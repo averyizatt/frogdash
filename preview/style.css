@@ -109,6 +109,10 @@ body[data-speed-live="true"] .speed-source .status-dot { background:var(--accent
 .meth-state-pill { display:block; color:var(--muted); margin-top:5px; font-size:12px; font-weight:750; letter-spacing:.8px; }
 .meth-state-pill[data-state="ARMED"],.meth-state-pill[data-state="SPRAYING"] { color:var(--accent); }
 .meth-state-pill[data-state="TEST"] { color:var(--warn); }
+/* Pump relay closed: the whole tile turns green. Between pulses only the outline stays. */
+.meth-summary[data-pump="on"] { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 26%,var(--surface)); box-shadow:inset 0 0 0 2px var(--accent); }
+.meth-summary[data-pump="on"] :is(.meth-state-pill,.meth-reading b) { color:var(--accent); }
+.meth-summary[data-pump="paused"] { border-color:var(--accent); }
 .meth-state-pill[data-state="FAULT"] { color:var(--danger); }
 .meth-reading { display:flex; align-items:center; gap:6px; }
 .meth-reading b { font-size:32px; font-weight:800; }

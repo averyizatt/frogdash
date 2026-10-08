@@ -3,6 +3,7 @@ import asyncio
 import json
 from .driving import atomic_write
 from .parking import moving, parked
+from .protocol import ECU_TIMEOUT
 from .taillight import COLORS, PROFILE_COUNT, SETTINGS
 from . import methtune
 
@@ -384,6 +385,7 @@ class Controls:
             await self.check_lighting()
             await self.sync_taillight()
             await self.sync_meth_tune()
+            await self.send_intake_temp()
             await self.refresh_interior()
 
     async def refresh_interior(self):
@@ -421,6 +423,29 @@ class Controls:
         mirror.requested()
         try:
             await self.sender(0x301, bytes([0x11, 3]))
+        except (OSError, TimeoutError):
+            pass
+
+    def ecu_intake_c(self):
+        """The ECU's own intake air temperature while its broadcast is fresh."""
+        now = self.state.clock()
+        fresh = [sample for (name, _), sample in self.state.samples.items()
+                 if name == 'ecu.iat_c' and sample['quality'] == 'live' and 0 <= now - sample['seen'] <= ECU_TIMEOUT]
+        return max(fresh, key=lambda sample: sample['seen'])['value'] if fresh else None
+
+    async def send_intake_temp(self):
+        """Forward the ECU's intake temperature to the water/meth controller (0x301 command 0x12).
+
+        The controller uses it for its temperature features until its own sensor before
+        the nozzle is fitted. Live data: sent about four times a second, never acknowledged.
+        """
+        intake = self.ecu_intake_c()
+        if (self.state.mode != 'socketcan' or not self.sender or not self.state.connected
+                or not self.state.meth_tune.supported or intake is None):
+            return
+        tenths = max(-32768, min(32767, round(intake * 10)))
+        try:
+            await self.sender(0x301, bytes([0x12]) + tenths.to_bytes(2, 'big', signed=True))
         except (OSError, TimeoutError):
             pass
 

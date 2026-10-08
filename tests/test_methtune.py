@@ -6,7 +6,7 @@ from pathlib import Path
 
 from aiohttp.test_utils import TestClient, TestServer
 from hardware.frogdash import methtune
-from hardware.frogdash.methtune import (DEFAULTS, FLUIDS, KEYS, PRESETS, SETTINGS, TIMING_NAMES, apply_setting, fuel_g_min,
+from hardware.frogdash.methtune import (DEFAULTS, FLUIDS, KEYS, PRESETS, SETTINGS, TIMING_NAMES, Cooling, apply_setting, fuel_g_min,
                                         plan, relay_on_ms, valid)
 from hardware.frogdash.server import create_app
 from hardware.frogdash.state import State
@@ -129,6 +129,41 @@ class RulesTests(unittest.TestCase):
         self.assertAlmostEqual(60 / fuel_g_min(2500, 119.5) * 100, 22.8, delta=.2)  # Low airflow: far more.
         self.assertEqual([relay_on_ms(on, 4000) for on in (300, 500, 2000, 3800, 4000, 9000)], [0, 500, 2000, 3500, 4000, 4000])
         self.assertEqual(relay_on_ms(900, 1000), 500)
+
+
+class CoolingTests(unittest.TestCase):
+    def test_before_and_after_from_one_sensor(self):
+        now = [0.0]
+        cooling = Cooling(lambda: now[0])
+        def step(injecting, intake, flow=30, seconds=.5):
+            now[0] += seconds
+            return cooling.step(injecting, intake, flow)
+        self.assertIsNone(step(False, 52.0))
+        self.assertIsNone(step(False, 55.0))            # The latest idle reading is the "before".
+        self.assertEqual(step(True, 55.0), 0.0)
+        self.assertEqual(step(True, 51.5), -3.5)
+        self.assertEqual(step(True, 47.0), -8.0)
+        self.assertEqual(step(True, 48.2), -6.8)        # Warming again under boost.
+        self.assertIsNone(cooling.last)
+        self.assertIsNone(step(False, 50.0))
+        self.assertEqual(cooling.last, {'from_c': 55.0, 'lowest_c': 47.0, 'end_c': 48.2, 'change_c': -8.0, 'seconds': 2.0, 'flow_ml_min': 30.0})
+        # The next spray starts from the reading just before it, not the old one.
+        step(False, 61.0)
+        self.assertEqual(step(True, 60.0), -1.0)
+        # A lost sensor mid-spray gives no number but does not end the spray.
+        self.assertIsNone(step(True, None))
+        self.assertEqual(step(True, 57.0), -4.0)
+        step(False, 58.0)
+        self.assertEqual((cooling.last['from_c'], cooling.last['change_c'], cooling.last['seconds']), (61.0, -4.0, 1.5))
+        # A blip under a second is not a measurement; neither is a spray with no "before".
+        step(True, 57.0, seconds=.3)
+        step(False, 57.0)
+        self.assertEqual(cooling.last['from_c'], 61.0)
+        blind = Cooling(lambda: now[0])
+        self.assertIsNone(blind.step(True, 60.0, 30))
+        now[0] += 3
+        self.assertIsNone(blind.step(False, 55.0, 0))
+        self.assertIsNone(blind.last)
 
 
 class TuningTests(unittest.IsolatedAsyncioTestCase):
@@ -279,6 +314,53 @@ class TuningTests(unittest.IsolatedAsyncioTestCase):
             # The same pulse at low airflow is a much bigger share: this is what the dose limit watches.
             state.samples['ecu.rpm', 0x5E8]['value'], state.samples['ecu.map_kpa', 0x5E8]['value'] = 2500, 119.5
             self.assertAlmostEqual(state.snapshot()['values']['meth.dose_pct']['value'], 11.4, delta=.2)
+        finally:
+            await state.controls.close()
+
+    async def test_ecu_intake_temperature_is_forwarded_and_tracked_around_a_spray(self):
+        from tests.test_can_contract import COMPILER, vectors
+        state, controller = self.make()
+        try:
+            def ecu(iat_c):
+                state.samples['ecu.iat_c', 0x5F2] = dict(value=iat_c, quality='live', seen=self.now[0], source_id=0x5F2, timestamp_ms=0)
+            ecu(48.7)
+            await state.controls.send_intake_temp()
+            self.assertEqual(controller.commands, [])          # Older firmware: nothing is sent.
+            await self.sync(state, controller)
+            ecu(48.7)
+            controller.commands.clear()
+            await state.controls.send_intake_temp()
+            self.assertEqual(controller.commands, [(0x301, bytes([0x12, 0x01, 0xE7]))])
+            if COMPILER:
+                self.assertEqual(controller.commands[0], vectors()['meth_intake_temp'])
+            ecu(-12.3)
+            await state.controls.send_intake_temp()
+            self.assertEqual(controller.commands[-1][1], bytes([0x12, 0xFF, 0x85]))
+            if COMPILER:
+                self.assertEqual(controller.commands[-1], vectors()['meth_intake_temp_cold'])
+            # A stale ECU reading is not forwarded: the controller then stops using it by itself.
+            controller.commands.clear()
+            self.tick(state, controller, 1.2)
+            await state.controls.send_intake_temp()
+            self.assertEqual(controller.commands, [])
+            # Before and after around a spray, from that one sensor.
+            ecu(55.0)
+            self.assertEqual(state.snapshot()['values']['meth.iat_change_c']['quality'], 'unavailable')
+            controller.on_ms = 2000
+            for intake in (55.0, 50.0, 46.5):
+                self.tick(state, controller, .5)
+                state.ingest(0x300, bytes.fromhex('0232640000282800'))   # SPRAYING
+                ecu(intake)
+                change = state.snapshot()['values']['meth.iat_change_c']
+            self.assertEqual((change['value'], change['quality']), (-8.5, 'live'))
+            self.assertIsNone(state.snapshot()['meth_tune']['last_spray'])
+            controller.on_ms = 0
+            self.tick(state, controller, .5)
+            ecu(49.0)
+            mirror = state.snapshot()
+            self.assertEqual(mirror['values']['meth.iat_change_c']['quality'], 'unavailable')
+            last = mirror['meth_tune']['last_spray']
+            self.assertEqual((last['from_c'], last['lowest_c'], last['change_c'], last['flow_ml_min']), (55.0, 46.5, -8.5, 30.0))
         finally:
             await state.controls.close()
 

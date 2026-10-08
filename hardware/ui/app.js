@@ -107,6 +107,14 @@
     if (target !== null) $('afr-target-marker').style.left = `${clamp((target - 10) / 8 * 100, 0, 100)}%`;
     display('meth-state-pill', 'meth.state');
     $('meth-state-pill').dataset.state = live('meth.state') || 'UNKNOWN';
+    // The tile lights up while the pump relay is closed. Current controller firmware
+    // reports the relay itself; older firmware only says it is spraying or testing.
+    const tune = snapshot.meth_tune, methState = live('meth.state');
+    const pumpOn = connected && (tune?.supported ? !!tune.pump_on : methState === 'SPRAYING' || (methState === 'TEST' && live('meth.duty_pct') > 0));
+    const pump = pumpOn ? 'on' : connected && methState === 'SPRAYING' ? 'paused' : 'off';
+    if ($('meth-cell').dataset.pump !== pump) $('meth-cell').dataset.pump = pump;
+    if (pumpOn) $('meth-state-pill').textContent = methState === 'TEST' ? 'TEST · PUMP ON' : 'PUMP ON';
+    else if (pump === 'paused') $('meth-state-pill').textContent = 'INJECTING · PUMP RESTING';
     display('meth-duty-val', 'meth.duty_pct');
     display('meth-tank-val', 'meth.tank_pct');
     display('meth-flow-pill', 'meth.flow');

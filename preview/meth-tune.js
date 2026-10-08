@@ -183,16 +183,17 @@
     $('mt-save').disabled = !ready || busy || !m.unsaved;
     $('mt-revert').disabled = !ready || busy || !m.unsaved;
     $('mt-defaults').disabled = !ready || busy || matches(DEFAULTS, s);
-    $('mt-summary').textContent = ready ? summary(s) : '';
+    $('mt-summary').textContent = ready ? summary(s, m) : '';
     renderLive(m);
   }
   // What the settings mean in fluid, in words: the reason for the numbers above.
-  function summary(s) {
+  function summary(s, m) {
     const flow = ms => { const on = relayOn(ms, s.period_ms); return `${seconds(on)} in every ${seconds(s.period_ms)} (${Math.round(s.nozzle_ml_min * on / s.period_ms)} ml/min)`; };
     const top = relayOn(s.max_on_ms, s.period_ms);
     return `At ${tidy(s.start_psi_x10 / 10)} psi the pump runs ${flow(s.min_on_ms)}, rising to ${top >= s.period_ms ? `on continuously (${s.nozzle_ml_min} ml/min)` : flow(s.max_on_ms)} at ${tidy(s.full_psi_x10 / 10)} psi. ` +
       `${s.early_rpm ? `It also starts above ${s.early_rpm} RPM with the throttle open, before boost. ` : ''}` +
       `${s.hot_start_c ? `Intake air hotter than ${degrees(s.hot_start_c)} adds run time, reaching the full run at ${degrees(s.hot_full_c)}. ` : ''}` +
+      `${(s.hot_start_c || s.min_pre_temp_c) && m.ecu_temp ? 'Temperature comes from the MicroSquirt IAT until the sensor before the nozzle is fitted. ' : ''}` +
       `${s.max_dose_pct ? `Never more than ${s.max_dose_pct}% of the engine's fuel flow. ` : 'No dose limit. '}` +
       `The relay switches at most once every ${seconds(s.period_ms)}. Needs ${s.min_rpm} RPM from the dash` +
       `${s.rest_s ? `; rests ${s.rest_s} s after ${s.max_spray_s} s of spraying` : '; no spray time limit'}.`;
@@ -203,14 +204,24 @@
     const value = key => { const v = latest.values?.[key]; return v && v.quality === 'live' && v.value !== null ? v.value : null; };
     const temp = (key, delta) => { const v = value(key); return v === null ? 'No sensor reading' : `${(u.metric ? v : delta ? v * 1.8 : v * 1.8 + 32).toFixed(1)} ${tempUnit()}`; };
     const flow = value('meth.flow_ml_min'), dose = value('meth.dose_pct');
+    // Until the controller's own sensors are fitted, the MicroSquirt's intake sensor
+    // (after the nozzle) stands in: its reading, and its change around each spray.
+    const shownTemp = c => `${(u.metric ? c : c * 1.8 + 32).toFixed(1)} ${tempUnit()}`;
+    const shownChange = c => { const d = Math.abs(u.metric ? c : c * 1.8).toFixed(1); return c < 0 ? `${d} ${tempUnit()} cooler` : c > 0 ? `${d} ${tempUnit()} warmer` : 'no change'; };
+    const ecuIat = value('ecu.iat_c'), change = value('meth.iat_change_c'), last = m.last_spray;
+    const cooling = value('meth.temp_drop_c') !== null ? temp('meth.temp_drop_c', true)
+      : change !== null ? `${shownChange(change)} since injection began (MicroSquirt IAT)`
+      : last ? `Last spray: ${shownTemp(last.from_c)} to ${shownTemp(last.lowest_c)}, ${shownChange(last.change_c)} in ${tidy(last.seconds)} s at ${Math.round(last.flow_ml_min)} ml/min`
+      : 'Shown after the first spray';
     const text = {
       'meth-live-hold': !m.supported ? 'Needs the current controller firmware' : m.hold === 'NONE' ?
         `Injecting${m.early_start ? ': early start, before boost' : ''}${m.hot_air ? `${m.early_start ? ',' : ':'} extra for hot intake air` : ''}` : HOLD[m.hold] || 'Waiting for the controller',
       'meth-live-pulse': !m.supported ? '—' : !m.on_ms ? 'Pump off' : m.on_ms >= m.period_ms ? 'Pump on continuously' : `Pump runs ${seconds(m.on_ms)} in every ${seconds(m.period_ms)}`,
       'meth-live-flow': !m.supported || flow === null ? '—' : !flow ? 'None' : `About ${Math.round(flow)} ml/min${dose === null ? '' : ` · ${dose.toFixed(1)}% of fuel`}`,
       'meth-live-rpm': !m.supported ? '—' : m.rpm_ok ? 'OK: above the minimum' : 'Not met',
-      'meth-live-pre': temp('meth.pre_temp_c'), 'meth-live-post': temp('meth.post_temp_c'),
-      'meth-live-drop': value('meth.temp_drop_c') === null ? 'Needs both sensors' : temp('meth.temp_drop_c', true),
+      'meth-live-pre': value('meth.pre_temp_c') === null ? 'No sensor fitted yet' : temp('meth.pre_temp_c'),
+      'meth-live-post': value('meth.post_temp_c') !== null ? temp('meth.post_temp_c') : ecuIat !== null ? `${shownTemp(ecuIat)} (MicroSquirt IAT)` : 'No sensor reading',
+      'meth-live-drop': cooling,
     };
     for (const [id, content] of Object.entries(text)) if ($(id).textContent !== content) $(id).textContent = content;
     $('meth-live-hold').dataset.state = m.hold === 'NONE' ? 'on' : !m.hold || ['DISARMED', 'BELOW_BOOST'].includes(m.hold) ? 'idle' : 'held';

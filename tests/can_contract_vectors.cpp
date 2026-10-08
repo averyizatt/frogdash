@@ -76,6 +76,8 @@ int main() {
   emit("lighting.action", packTaillightAction(taillight_action::PROFILE_SAVE, 2));
   emit("meth.setting", packMethTuneSetting(meth_tune_setting::MAX_ON_MS, 1500));
   emit("meth.tune_action", packMethTuneAction(meth_tune_action::SAVE));
+  emit("meth_intake_temp", packMethLiveIntakeTemp(487));
+  emit("meth_intake_temp_cold", packMethLiveIntakeTemp(-123));
   emit("meth_tune_ack", packMethTuneAck(meth_tune_command::SET_SETTING, config_ack_status::VALUE_CLAMPED, meth_tune_setting::MAX_ON_MS, 2000, 7));
   emit("meth_tune_setting", packMethTuneSettingReport(meth_tune_setting::MIN_RPM, 2500, 7, meth_tune_flag::UNSAVED));
   emit("meth_tune_status", packMethTuneStatus(7, meth_tune_flag::UNSAVED | meth_tune_flag::PUMP_ON | meth_tune_flag::RPM_OK | meth_tune_flag::EARLY_START, meth_hold::DOSE_LIMIT, 1500, 4000));
