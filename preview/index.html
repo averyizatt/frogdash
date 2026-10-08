@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#090f13">
   <link rel="icon" href="data:,">
   <title>Fox Body · Driver display</title>
-  <link rel="stylesheet" href="style.css?v=b260cf93063f">
+  <link rel="stylesheet" href="style.css?v=c5e23f0c782a">
   <link rel="stylesheet" href="review.css?v=4131615d94e6">
   <link rel="stylesheet" href="responsive.css?v=2eaa09f6d5dc">
 <link rel="stylesheet" href="instruments.css?v=c974b6f0161d">
@@ -120,11 +120,11 @@
   <div class="control-workspace">
     <div class="control-tabs" role="tablist" aria-label="Control category" aria-orientation="vertical">
       <button id="tab-meth" role="tab" aria-selected="true" aria-controls="panel-meth" tabindex="0" data-tab="meth"><span>01</span>Water / meth</button>
-      <button id="tab-knock" role="tab" aria-selected="false" aria-controls="panel-knock" tabindex="-1" data-tab="knock"><span>02</span>Knock monitor</button>
-      <button id="tab-lighting" role="tab" aria-selected="false" aria-controls="panel-lighting" tabindex="-1" data-tab="lighting"><span>03</span>Lighting</button>
-      <button id="tab-interior" role="tab" aria-selected="false" aria-controls="panel-interior" tabindex="-1" data-tab="interior"><span>04</span>Interior</button>
-      <button id="tab-wifi" role="tab" aria-selected="false" aria-controls="panel-wifi" tabindex="-1" data-tab="wifi"><span>05</span>Wi-Fi</button>
-      <p>Live readings come from the vehicle. Changes are confirmed where supported.</p>
+      <button id="tab-tune" role="tab" aria-selected="false" aria-controls="panel-tune" tabindex="-1" data-tab="tune"><span>02</span>Meth tuning</button>
+      <button id="tab-knock" role="tab" aria-selected="false" aria-controls="panel-knock" tabindex="-1" data-tab="knock"><span>03</span>Knock monitor</button>
+      <button id="tab-lighting" role="tab" aria-selected="false" aria-controls="panel-lighting" tabindex="-1" data-tab="lighting"><span>04</span>Lighting</button>
+      <button id="tab-interior" role="tab" aria-selected="false" aria-controls="panel-interior" tabindex="-1" data-tab="interior"><span>05</span>Interior</button>
+      <button id="tab-wifi" role="tab" aria-selected="false" aria-controls="panel-wifi" tabindex="-1" data-tab="wifi"><span>06</span>Wi-Fi</button>
     </div>
     <div class="control-panels">
       <section class="control-section" id="panel-meth" role="tabpanel" aria-labelledby="tab-meth">
@@ -135,11 +135,17 @@
           <button type="button" class="stop-control" data-action="meth.arm" data-value="0">DISARM</button>
           <button type="button" data-action="meth.clear_faults">CLEAR FAULTS</button>
         </div>
-        <div class="settings-grid"><div class="setting-card"><h3>Injection threshold</h3><label>Boost start (gauge kPa)
-          <input id="meth-boost-input" type="number" min="0" max="250" step="1" value="25">
-        </label>
-        <button type="button" data-action="meth.boost" data-input="meth-boost-input">APPLY BOOST START</button>
-        <p class="control-note">Adjust while disarmed. 25 kPa ≈ 3.6 psi. The field is a requested value, not a readback.</p>
+        <div class="settings-grid"><div class="setting-card"><h3>Injection now</h3>
+          <dl class="meth-live">
+            <dt>Status</dt><dd id="meth-live-hold">—</dd>
+            <dt>Pump</dt><dd id="meth-live-pulse">—</dd>
+            <dt>Flow now</dt><dd id="meth-live-flow">—</dd>
+            <dt>Engine RPM check</dt><dd id="meth-live-rpm">—</dd>
+            <dt>Air before the nozzle</dt><dd id="meth-live-pre">—</dd>
+            <dt>Air after the nozzle</dt><dd id="meth-live-post">—</dd>
+            <dt>Cooling from injection</dt><dd id="meth-live-drop">—</dd>
+          </dl>
+          <p class="control-note">Run times, boost range, tank mix and limits are in Meth tuning.</p>
         </div><div class="setting-card">
         <h4>Pump test</h4>
         <label>Test duty (%) <input id="meth-test-duty" type="number" min="1" max="100" step="1" value="10"></label>
@@ -149,6 +155,7 @@
         </div>
         <p id="test-control-reason" class="control-note">Requires disarmed, fresh telemetry, no faults, and sufficient tank level.</p>
       </div></div></section>
+      <section class="control-section" id="panel-tune" role="tabpanel" aria-labelledby="tab-tune" hidden></section>
       <section class="control-section" id="panel-knock" role="tabpanel" aria-labelledby="tab-knock" hidden>
         <p id="knock-live-summary"></p>
         <div class="control-row">
@@ -454,15 +461,16 @@
 <script src="instruments.js?v=d62830c49b98"></script>
 <script src="personalize.js?v=b0cfd4bc02b1"></script>
 <script src="trip.js?v=d38d5ba947a7"></script>
-<script src="driving.js?v=438cf127987a"></script>
+<script src="driving.js?v=bf30ac2a1587"></script>
 <script src="operations.js?v=dbcb873caae4"></script>
-<script src="navigation.js?v=56e59d2acc52"></script>
+<script src="navigation.js?v=40ad001c7bbb"></script>
 <script src="camera.js?v=c4823f92b6b9"></script>
 <script src="dashcam.js?v=766a977573e0"></script>
 <script src="map.js?v=c563c41f37d5"></script>
 <script src="taillights.js?v=04906b265706"></script>
 <script src="taillight-settings.js?v=179b3ed31292"></script>
-<script src="demo.js?v=95ef1d00e8e1"></script>
-<script src="app.js?v=f245f5aa00b8"></script>
+<script src="meth-tune.js?v=59a0e1709561"></script>
+<script src="demo.js?v=c2fd221a300f"></script>
+<script src="app.js?v=6f1aecfd8df7"></script>
 </body>
 </html>

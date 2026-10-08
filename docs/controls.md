@@ -9,9 +9,11 @@ The original browser preview remains simulated. Replay never transmits commands.
   and pump duty continue to show received telemetry, not an optimistic prediction.
 - **CLEAR FAULTS**: ask the controller to clear its latches. Persistent underlying
   faults may remain or return; the dashboard does not erase them locally.
-- **APPLY BOOST START**: set the start threshold in **gauge kPa**, 0–250, while
-  disarmed. The Nano's `0x301/0x04` command uses gauge pressure even though its
-  separate `0x304` configuration frame uses a pressure reference differently.
+- **Injection now**: what the controller is doing and why (waiting for boost, RPM
+  below the minimum, resting), the pump pulse, and the intake air temperature before
+  and after the nozzle.
+- **Meth tuning** (its own section): pulse length, boost range, limits and presets,
+  read back from the controller. See [water-meth.md](water-meth.md).
 - **RUN 3-SECOND TEST**: run the selected 1–100% duty while disarmed, with fresh
   module telemetry, no meth faults, and tank above 10%. STOP TEST stays available
   even while another command is pending. There is a three-second cooldown.

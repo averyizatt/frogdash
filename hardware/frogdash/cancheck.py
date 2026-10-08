@@ -16,6 +16,7 @@ EXPECTED = [
     ('Water/meth', 0x300, 'Pump state, tank, flow and faults', False),
     ('Water/meth', 0x303, 'Pressure and temperature sensors', False),
     ('Water/meth', 0x307, 'Knock monitor', False),
+    ('Water/meth', 0x30F, 'Pulse tuning status and intake air temperatures', False),
     ('MicroSquirt', 0x5E8, 'Dash broadcast (MAP, RPM, coolant, TPS)', False),
     ('MicroSquirt', 0x5F0, 'Realtime broadcast group 0', False),
     ('MicroSquirt', 0x5F2, 'Realtime group 2 (baro, MAP, temperatures)', False),

@@ -860,7 +860,7 @@ inline CanFrame packMethConfigAck(uint8_t acceptedVersion, uint8_t status, uint8
 
 // BEGIN FROGDASH ADDITIVE EXTENSION
 // Existing schema-2 IDs, layouts and ACK schema remain unchanged.
-constexpr uint8_t FROGDASH_EXTENSION_VERSION = 3;
+constexpr uint8_t FROGDASH_EXTENSION_VERSION = 4;
 constexpr uint16_t ID_FUEL_LEVEL_STATE = 0x204;
 constexpr uint8_t FUEL_LEVEL_DLC = 3;
 constexpr uint32_t FUEL_LEVEL_TX_MS = 500;
@@ -1111,6 +1111,133 @@ inline CanFrame packTaillightStatus(uint8_t revision, uint8_t flags, uint8_t sho
   frame.data[3] = showAnim;
   frame.data[4] = profileSlots;
   encodeU16BE(phaseX16, frame.data[5], frame.data[6]);
+  return frame;
+}
+// Water/meth tuning over CAN (extension 4). Existing 0x300..0x30D frames and
+// meth commands 0x01..0x06 / 0x40..0x4A are unchanged; these commands are new on 0x301
+// and the controller reports on the new ID 0x30F. Firmware that predates them answers
+// UNSUPPORTED_COMMAND on 0x30A and never sends 0x30F.
+#define CAN_PROTOCOL_HAS_METH_TUNE 1
+constexpr uint16_t ID_METH_TUNE = 0x30F;  // TX by water/meth controller, DLC 8
+constexpr uint32_t METH_TUNE_STATUS_TX_MS = 500;
+constexpr uint32_t METH_TUNE_TEMPS_TX_MS = 200;
+namespace meth_tune_command {
+constexpr uint8_t SET_SETTING = 0x10;      // DLC 4: key, value u16 BE (clamped to the key's range)
+constexpr uint8_t SETTINGS_ACTION = 0x11;  // DLC 2: meth_tune_action
+}  // namespace meth_tune_command
+// The pump relay is mechanical: it runs at least 500 ms, rests at least 500 ms (or not
+// at all: continuous), and starts at most once per cycle.
+namespace meth_tune_setting {
+constexpr uint8_t PERIOD_MS = 1;         // 1000..10000 relay cycle; never faster than 1 Hz
+constexpr uint8_t MIN_ON_MS = 2;         // 500..10000 pump on-time per cycle at start boost
+constexpr uint8_t MAX_ON_MS = 3;         // 500..10000 on-time per cycle at full boost (= period: continuous)
+constexpr uint8_t START_PSI_X10 = 4;     // 10..300 boost where injection starts
+constexpr uint8_t FULL_PSI_X10 = 5;      // 20..350 boost where on-time reaches MAX_ON_MS
+constexpr uint8_t MIN_RPM = 6;           // 0..8000; engine RPM (0x309) must be fresh and at least this
+constexpr uint8_t MAX_SPRAY_S = 7;       // 1..120 longest continuous injection
+constexpr uint8_t REST_S = 8;            // 0..60 pause after MAX_SPRAY_S of injection
+constexpr uint8_t RAMP_MS = 9;           // 0..5000 on-time growth allowed per cycle; 0 = no ramp
+constexpr uint8_t MIN_PRE_TEMP_C = 10;   // 0..120; 0 = off. No injection while the air before the nozzle is colder
+constexpr uint8_t OVERBOOST_ASSIST = 11; // 0..1 force high duty above the overboost thresholds
+constexpr uint8_t METH_PERCENT = 12;     // 0..100 methanol in the tank by volume; 0 = water only
+constexpr uint8_t NOZZLE_ML_MIN = 13;    // 20..1000 nozzle flow with the pump running
+constexpr uint8_t MAX_DOSE_PCT = 14;     // 0..40 most fluid allowed as % of estimated fuel flow; 0 = off
+constexpr uint8_t COUNT = 14;
+}  // namespace meth_tune_setting
+namespace meth_tune_action {
+constexpr uint8_t SAVE = 0;      // Persist current settings on the controller
+constexpr uint8_t REVERT = 1;    // Reload the saved settings
+constexpr uint8_t DEFAULTS = 2;  // Apply the conservative defaults (not saved until SAVE)
+constexpr uint8_t REPORT = 3;    // Send every setting
+}  // namespace meth_tune_action
+namespace meth_tune_report {
+constexpr uint8_t ACK = 1;      // command, config_ack_status, key/action, value u16 BE, revision
+constexpr uint8_t SETTING = 2;  // key, value u16 BE, revision, flags
+constexpr uint8_t STATUS = 3;   // revision, flags, meth_hold, on-time u16 BE ms, period u16 BE ms
+constexpr uint8_t TEMPS = 4;    // pre i16 BE 0.1 C, post i16 BE 0.1 C, valid bits (1 pre, 2 post)
+}  // namespace meth_tune_report
+namespace meth_tune_flag {
+constexpr uint8_t UNSAVED = 1 << 0;
+constexpr uint8_t RPM_OK = 1 << 1;
+constexpr uint8_t PRE_VALID = 1 << 2;
+constexpr uint8_t POST_VALID = 1 << 3;
+constexpr uint8_t PUMP_ON = 1 << 4;
+}  // namespace meth_tune_flag
+// Why the pump is not pulsing right now.
+namespace meth_hold {
+constexpr uint8_t NONE = 0;         // Injecting
+constexpr uint8_t DISARMED = 1;
+constexpr uint8_t BELOW_BOOST = 2;
+constexpr uint8_t RPM_LOW = 3;
+constexpr uint8_t RPM_MISSING = 4;  // No fresh 0x309
+constexpr uint8_t AIR_COLD = 5;     // Below MIN_PRE_TEMP_C
+constexpr uint8_t TEMP_SENSOR = 6;  // MIN_PRE_TEMP_C set but the sensor is invalid
+constexpr uint8_t RESTING = 7;      // MAX_SPRAY_S reached
+constexpr uint8_t TANK_LOW = 8;
+constexpr uint8_t FAULT = 9;
+constexpr uint8_t DOSE_LIMIT = 10;   // MAX_DOSE_PCT allows less than the shortest pulse here
+}  // namespace meth_hold
+inline CanFrame packMethTuneSetting(uint8_t key, uint16_t value) {
+  CanFrame frame{};
+  frame.id = ID_ENGINE_METH_COMMAND;
+  frame.dlc = 4;
+  frame.data[0] = meth_tune_command::SET_SETTING;
+  frame.data[1] = key;
+  encodeU16BE(value, frame.data[2], frame.data[3]);
+  return frame;
+}
+inline CanFrame packMethTuneAction(uint8_t action) {
+  CanFrame frame{};
+  frame.id = ID_ENGINE_METH_COMMAND;
+  frame.dlc = 2;
+  frame.data[0] = meth_tune_command::SETTINGS_ACTION;
+  frame.data[1] = action;
+  return frame;
+}
+inline CanFrame packMethTuneAck(uint8_t command, uint8_t status, uint8_t subject, uint16_t value, uint8_t revision) {
+  CanFrame frame{};
+  frame.id = ID_METH_TUNE;
+  frame.dlc = 8;
+  frame.data[0] = meth_tune_report::ACK;
+  frame.data[1] = command;
+  frame.data[2] = status;
+  frame.data[3] = subject;
+  encodeU16BE(value, frame.data[4], frame.data[5]);
+  frame.data[6] = revision;
+  return frame;
+}
+inline CanFrame packMethTuneSettingReport(uint8_t key, uint16_t value, uint8_t revision, uint8_t flags) {
+  CanFrame frame{};
+  frame.id = ID_METH_TUNE;
+  frame.dlc = 8;
+  frame.data[0] = meth_tune_report::SETTING;
+  frame.data[1] = key;
+  encodeU16BE(value, frame.data[2], frame.data[3]);
+  frame.data[4] = revision;
+  frame.data[5] = flags;
+  return frame;
+}
+inline CanFrame packMethTuneStatus(uint8_t revision, uint8_t flags, uint8_t hold, uint16_t onMs, uint16_t periodMs) {
+  CanFrame frame{};
+  frame.id = ID_METH_TUNE;
+  frame.dlc = 8;
+  frame.data[0] = meth_tune_report::STATUS;
+  frame.data[1] = revision;
+  frame.data[2] = flags;
+  frame.data[3] = hold;
+  encodeU16BE(onMs, frame.data[4], frame.data[5]);
+  encodeU16BE(periodMs, frame.data[6], frame.data[7]);
+  return frame;
+}
+// Temperatures in 0.1 C, two's complement. validBits: 1 = pre-injection, 2 = post-injection.
+inline CanFrame packMethTuneTemps(int16_t preC10, int16_t postC10, uint8_t validBits) {
+  CanFrame frame{};
+  frame.id = ID_METH_TUNE;
+  frame.dlc = 8;
+  frame.data[0] = meth_tune_report::TEMPS;
+  encodeU16BE(static_cast<uint16_t>(preC10), frame.data[1], frame.data[2]);
+  encodeU16BE(static_cast<uint16_t>(postC10), frame.data[3], frame.data[4]);
+  frame.data[5] = validBits;
   return frame;
 }
 // END FROGDASH ADDITIVE EXTENSION

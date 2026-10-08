@@ -25,12 +25,16 @@ from .supervision import watchdog
 from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
 from .paint import Paint, validate as validate_paint
 from .imports import Imports
-from . import cancheck, selftest
+from . import cancheck, methtune, selftest
 
 WIFI_SSID, WIFI_PASSWORD = re.compile(r"[\x20-\x7E]{1,32}"), re.compile(r"[\x20-\x7E]{8,63}")
 IMAGE_DATA = re.compile(r"data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+")
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
+
+
+async def preset_pause():
+    await asyncio.sleep(.3)  # Controls space commands at least 0.25 s apart.
 
 
 def create_app(state, adapter=None, connectivity=None):
@@ -218,6 +222,54 @@ def create_app(state, adapter=None, connectivity=None):
             except (ValueError, AttributeError) as error:
                 raise web.HTTPConflict(text=str(error) or 'Invalid TunerStudio request')
         return web.json_response(state.tune.snapshot(), headers={'Cache-Control': 'no-store'})
+
+    preset_lock = asyncio.Lock()
+
+    async def meth_presets(request):
+        # Water/meth pulse presets: list, apply (one setting at a time, each acknowledged
+        # by the controller), and the owner's three Custom slots.
+        require_local(request)
+        mirror = state.meth_tune
+        if request.method == 'GET':
+            return web.json_response(mirror.preset_list(), headers={'Cache-Control': 'no-store'})
+        try:
+            body = await request.json()
+            action, name = body.get('action'), body.get('name')
+            if action == 'save':
+                mirror.store(name)
+                await asyncio.to_thread(mirror.persist)
+                message = f'Current settings saved as {name}'
+            elif action == 'delete':
+                mirror.remove(name)
+                await asyncio.to_thread(mirror.persist)
+                message = f'{name} cleared'
+            elif action in ('apply', 'fluid'):
+                # A flow preset (pulse timing and limits) or a tank mix (blend and dose limit).
+                choices = mirror.presets() if action == 'apply' else methtune.FLUIDS
+                target = choices.get(name) if isinstance(name, str) else None
+                if target is None:
+                    raise ValueError('Unknown preset' if action == 'apply' else 'Unknown tank mix')
+                if not mirror.complete():
+                    raise ValueError('The water/meth controller has not reported its settings yet')
+                if preset_lock.locked():
+                    raise ValueError('A preset is already being applied')
+                steps = methtune.plan(mirror.values, target)
+                if steps is None:
+                    raise ValueError('That preset cannot be reached from the current settings')
+                async with preset_lock:
+                    for index, (key, value) in enumerate(steps):
+                        if index:
+                            await preset_pause()
+                        result = await state.controls.execute('meth.setting', key << 16 | value)
+                        if result['status'] not in ('acknowledged', 'adjusted'):
+                            raise ValueError(f"Stopped after {index} of {len(steps)} changes: {result['message']}")
+                message = (f'{name} applied ({len(steps)} changes). Save to controller to keep it after power-off'
+                           if steps else f'{name} is already set')
+            else:
+                raise ValueError('Unknown preset action')
+        except (ValueError, AttributeError, TypeError) as error:
+            raise web.HTTPConflict(text=str(error) or 'Invalid preset request')
+        return web.json_response({'message': message, **mirror.preset_list()}, headers={'Cache-Control': 'no-store'})
 
     async def tune_kiosk(request):
         # The kiosk launcher's 2 s report; the reply is what it should do now.
@@ -464,7 +516,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js"}:
+        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js"}:
             raise web.HTTPNotFound()
         if name == 'index.html' and state.paint and state.paint.value:
             page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')
@@ -624,7 +676,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),
@@ -697,6 +749,7 @@ def main():
     state.backlight = Backlight(args.backlight_name)
     state.health = Health(state, args.interface, args.log_dir or args.data_dir)
     state.controls.load_interior((args.data_dir / 'replay' if args.replay else args.data_dir) / 'interior.json')
+    state.meth_tune.load((args.data_dir / 'replay' if args.replay else args.data_dir) / 'meth-presets.json')
     state.imports = Imports((args.data_dir / 'replay' if args.replay else args.data_dir) / 'import', Path(__file__).resolve().parents[1] / 'art')
     state.paint = Paint((args.data_dir / 'replay' if args.replay else args.data_dir) / 'appearance-paint.json')
     state.shutdown_history = ShutdownHistory((args.data_dir / 'replay' if args.replay else args.data_dir) / 'shutdown.json')

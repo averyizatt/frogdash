@@ -289,7 +289,7 @@
     }
     const text = key => live(key) ?? '—';
     $('meth-live-summary').textContent = `${text('meth.state')} · Pump ${text('meth.duty_pct')}% · Tank ${text('meth.tank_pct')}% · Flow ${text('meth.flow')}`;
-    $('meth-control-reason').textContent = controls.reasons['meth.arm'] || controls.reasons['meth.boost'] || 'Ready for commands. Live state updates from the module.';
+    $('meth-control-reason').textContent = controls.reasons['meth.arm'] || 'Ready for commands. Live state updates from the module.';
     $('test-control-reason').textContent = controls.test_active ? 'Pump test active — stops automatically after 3 seconds.' :
       controls.reasons['meth.test'] || 'Test ready. Closing this panel or losing the connection stops the test.';
     const knockEnabled = live('knock.enabled');

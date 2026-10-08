@@ -87,6 +87,8 @@ async def check_preview(browser, errors):
     await page.locator('#controls-launch').click()
     await page.locator('#tab-meth').focus()
     await page.keyboard.press('ArrowDown')
+    assert await page.locator('#panel-tune').is_visible()
+    await page.keyboard.press('ArrowDown')
     assert await page.locator('#panel-knock').is_visible()
     await page.screenshot(path='.tmp/dashboard-knock-settings.png')
     await page.keyboard.press('ArrowDown')

@@ -38,6 +38,7 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
         for name, (identifier, code, low, high, ack) in COMMANDS.items():
             if name == 'meth.test': continue
             if name in ('lighting.setting', 'lighting.color', 'lighting.text', 'lighting.action', 'interior.light'): continue  # test_gateway_taillight
+            if name in ('meth.setting', 'meth.tune_action'): continue  # test_methtune
             self.now += 2
             self.refresh()
             value = low if low is not None else None

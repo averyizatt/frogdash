@@ -4,6 +4,7 @@ import json
 from .driving import atomic_write
 from .parking import moving, parked
 from .taillight import COLORS, PROFILE_COUNT, SETTINGS
+from . import methtune
 
 
 # CustomTaillights (dd4d971): 33 show animations, override states 0..6, custom one-shots 1..3.
@@ -17,6 +18,10 @@ COMMANDS = {
     "meth.stop": (0x301, 0x03, None, None, True),
     "meth.boost": (0x301, 0x04, 0, 250, True),
     "meth.clear_faults": (0x301, 0x06, None, None, True),
+    # Pulse tuning (can_protocol.h extension 4), acknowledged on 0x30F. setting = key << 16 | value;
+    # tune_action = 0 save, 1 revert, 2 defaults, 3 report.
+    "meth.setting": (0x301, 0x10, 1 << 16, (14 << 16) | 0xFFFF, True),
+    "meth.tune_action": (0x301, 0x11, 0, 3, True),
     "knock.enable": (0x301, 0x40, 0, 1, True),
     "knock.threshold": (0x301, 0x41, 0, 200, True),
     "knock.multiplier": (0x301, 0x42, 12, 38, True),
@@ -42,10 +47,12 @@ COMMANDS = {
 }
 INTERIOR_REFRESH = .5  # The gateway turns a channel off 5 s after its last command.
 SHOW_MODE_KEY = 21
+METH_TUNE = ('meth.setting', 'meth.tune_action')
 PARKED_LIGHTING = ('lighting.show', 'lighting.demo', 'lighting.override', 'lighting.custom')
 LABELS = {
     'meth.arm': 'water/meth mode', 'meth.test': 'pump test', 'meth.stop': 'pump test stop',
     'meth.boost': 'boost start', 'meth.clear_faults': 'fault clear request',
+    'meth.setting': 'water/meth setting', 'meth.tune_action': 'water/meth settings action',
     'knock.enable': 'knock monitor mode', 'knock.threshold': 'knock threshold offset',
     'knock.multiplier': 'knock multiplier', 'knock.clear_events': 'knock event reset',
 }
@@ -144,6 +151,8 @@ class Controls:
                 tank = self.live('meth.tank_pct', 0x300)
                 if tank is None or tank <= 10:
                     return 'Injection disabled: the tank level sensor reads LOW. Fill the tank or check the float switch'
+            if action in METH_TUNE and not self.state.meth_tune.supported:
+                return 'Water/meth firmware without pulse tuning: flash the current firmware'
             if action in ('meth.test', 'meth.boost') and mode != 'OFF':
                 return 'Disarm water/meth first'
             if action == 'meth.test':
@@ -192,6 +201,17 @@ class Controls:
                 pending['future'].set_result(('rejected', 'That profile slot is empty'))
             else:
                 pending['future'].set_result(('rejected', 'Taillights rejected the command: ' + ('unsupported' if status == 1 else 'invalid')))
+        elif can_id == 0x30F and len(data) == 8 and data[0] == 1 and pending['action'] in METH_TUNE and data[1] == pending['code']:
+            # Unlike 0x30A these name the setting, so they cannot be confused with a late reply.
+            status, applied = data[2], int.from_bytes(data[4:6], 'big')
+            if pending['action'] == 'meth.setting' and data[3] != pending['value'] >> 16:
+                return
+            if status == 0:
+                pending['future'].set_result(('acknowledged', 'Water/meth controller applied the change'))
+            elif status == 3:
+                pending['future'].set_result(('adjusted', f'Water/meth controller limited the value to {applied}'))
+            else:
+                pending['future'].set_result(('rejected', 'Water/meth controller rejected the command: ' + ('unsupported' if status == 1 else 'invalid')))
         elif can_id == 0x304 and pending['action'].startswith('meth.'):
             pending['future'].set_result(('unknown', 'CCM meth settings may override this command'))
         elif can_id == 0x30A and len(data) == 4 and data[3] == 2 and data[0] == pending['code']:
@@ -221,6 +241,13 @@ class Controls:
                 raise ValueError('Show text must be up to 63 plain characters')
         elif action in ('lighting.setting', 'lighting.color', 'lighting.action'):
             self.validate_setting(action, value)
+        elif action == 'meth.setting':
+            key, number = value >> 16, value & 0xFFFF
+            if key not in methtune.SETTINGS:
+                raise ValueError('Unknown water/meth setting')
+            name, low, high, _ = methtune.SETTINGS[key]
+            if not low <= number <= high:
+                raise ValueError(f'{name} must be {low} to {high}')
         if action == 'lighting.override' and (value >> 4 > 6 or value & 15 > 6):
             raise ValueError('Override sides must each be a light state from 0 to 6')
         if action == 'lighting.custom' and not self.valid_custom(value):
@@ -264,10 +291,10 @@ class Controls:
                     status, message = await asyncio.wait_for(future, 1.5)
                 except TimeoutError:
                     status, message = 'unknown', 'No controller acknowledgement; check live telemetry'
-                if identifier == 0x301:
-                    # Late 0x30A replies are only matched by command byte. Taillight
-                    # acknowledgements name their command on their own ID, so settings
-                    # can change quickly (for example while dragging a slider).
+                if identifier == 0x301 and action not in METH_TUNE:
+                    # Late 0x30A replies are only matched by command byte. Taillight and
+                    # water/meth tuning acknowledgements name their setting on their own
+                    # ID, so settings can change quickly (for example while dragging a slider).
                     self.quiet_until[code] = self.state.clock() + 1.5
             else:
                 status, message = 'sent', 'Sent; this controller has no command acknowledgement. Check live telemetry.'
@@ -330,7 +357,7 @@ class Controls:
         if action == 'lighting.demo': return bytes([code, 3, 0])
         if action == 'lighting.override': return bytes([code, value >> 4, value & 15])
         if action == 'interior.light': return bytes([value >> 32, (value >> 24) & 0xFF, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF, 1])
-        if action == 'lighting.setting': return bytes([code, value >> 16, (value >> 8) & 0xFF, value & 0xFF])
+        if action in ('lighting.setting', 'meth.setting'): return bytes([code, value >> 16, (value >> 8) & 0xFF, value & 0xFF])
         if action == 'lighting.color': return bytes([code, value >> 24, (value >> 16) & 0xFF, (value >> 8) & 0xFF, value & 0xFF])
         if action == 'lighting.action': return bytes([code, value >> 8, value & 0xFF])
         if action == 'lighting.text': return b''
@@ -356,6 +383,7 @@ class Controls:
             await asyncio.sleep(.25)
             await self.check_lighting()
             await self.sync_taillight()
+            await self.sync_meth_tune()
             await self.refresh_interior()
 
     async def refresh_interior(self):
@@ -381,6 +409,18 @@ class Controls:
         mirror.requested()
         try:
             await self.sender(0x101, bytes([0x09, 3, 0]))
+        except (OSError, TimeoutError):
+            pass
+
+    async def sync_meth_tune(self):
+        """Ask the water/meth controller for its settings whenever its revision moved."""
+        mirror = self.state.meth_tune
+        if (self.state.mode != 'socketcan' or not self.sender or not self.state.connected
+                or self.pending or not mirror.needs_report()):
+            return
+        mirror.requested()
+        try:
+            await self.sender(0x301, bytes([0x11, 3]))
         except (OSError, TimeoutError):
             pass
 

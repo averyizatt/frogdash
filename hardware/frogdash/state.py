@@ -5,6 +5,7 @@ import time
 from .protocol import ANALOG_BITS, ECU_TIMEOUT, EVENT_IDS, TIMEOUTS, decode
 from .controls import Controls
 from .taillight import TaillightSettings
+from .methtune import MethTune
 from .race import Race
 from .driving import Driving
 from .trip import Trip
@@ -54,6 +55,7 @@ class State:
         self.shutdown_history = None
         self.can_errors = {'frames': 0, 'bus_off': 0, 'restarts': 0}
         self.taillight = TaillightSettings(clock)
+        self.meth_tune = MethTune(clock)
         self.runtime = EngineRuntime(self, enabled=mode == 'socketcan')
         self.tune = Tune(self)
         self.nav = Navigator(clock, wall)
@@ -104,6 +106,8 @@ class State:
             self.wheel.observe_gateway(data)
         if can_id == 0x103:
             self.taillight.observe(data)
+        elif can_id == 0x30F:
+            self.meth_tune.observe(data)
         self.controls.observe(can_id, data)
         if can_id in EVENT_IDS:
             self.events.append({"id": can_id, "timestamp_ms": stamp, "data": data.hex().upper(),
@@ -163,6 +167,8 @@ class State:
             values.update(self.gps.values())
         # GPS when it has a fix; otherwise wheel speed and dead reckoning (nav.py).
         values.update(self.nav.step(self, values))
+        # Water/meth flow now and its share of estimated fuel flow (methtune.py).
+        values.update(self.meth_tune.derived(values, int(self.wall() * 1000)))
         race = self.race.snapshot()
         values.update(self.trip.values())
         values['dash.bookmark_id'] = {'value': self.driving.marker_seq, 'quality': 'live', 'source_id': None,
@@ -186,7 +192,7 @@ class State:
                 "runtime": self.runtime.snapshot(), "nav": self.nav.snapshot(), "tune": self.tune.snapshot(),
                 "gps": {"status": self.gps.status, "tx_status": self.gps.tx_status,
                         "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
-                "controls": self.controls.status(), "taillight": self.taillight.snapshot(), "events": list(self.events), "race": race,
+                "controls": self.controls.status(), "taillight": self.taillight.snapshot(), "meth_tune": self.meth_tune.snapshot(), "events": list(self.events), "race": race,
                 "drive": self.driving.snapshot(), "trip": self.trip.snapshot(),
                 "operations": self.operations.status(), "system": dict(self.health.status) if self.health else None,
                 "can_errors": dict(self.can_errors),

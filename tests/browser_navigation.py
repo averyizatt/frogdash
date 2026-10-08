@@ -44,12 +44,12 @@ async def check(browser, url, state):
             await press(2)                 # Map -> Interior lights -> Taillights -> Water / meth
         await press(16)
         await page.wait_for_function('document.getElementById("controls-dialog").open && !document.getElementById("wheel-menu").open')
-        await focused('meth-boost-input')  # Landed inside the section.
+        await focused('meth-test-duty')  # Landed inside the section.
         await press(16, .9)                # Back steps out to the section list first.
         await focused('tab-meth')
         await press(2)
-        await focused('tab-knock')
-        assert await page.locator('#panel-knock').is_visible()
+        await focused('tab-tune')
+        assert await page.locator('#panel-tune').is_visible()
         await press(1); await press(1)     # Up wraps within the section list, never into the panel.
         assert await page.evaluate('document.activeElement.getAttribute("role")') == 'tab'
         await press(16, .9)                # Back at the section list closes the menu.
@@ -62,12 +62,12 @@ async def check(browser, url, state):
         await page.locator('#controls-launch').click()
         await page.keyboard.press('Enter')   # First press after touch only shows the highlight.
         await focused('tab-meth')
-        await page.locator('#meth-boost-input').focus()
+        await page.locator('#meth-test-duty').focus()
         await page.keyboard.press('Enter')
-        assert await page.locator('#meth-boost-input').evaluate('(el) => el.classList.contains("wheel-editing")')
-        before = int(await page.locator('#meth-boost-input').input_value())
+        assert await page.locator('#meth-test-duty').evaluate('(el) => el.classList.contains("wheel-editing")')
+        before = int(await page.locator('#meth-test-duty').input_value())
         await page.keyboard.press('ArrowRight')
-        assert int(await page.locator('#meth-boost-input').input_value()) == before + 1
+        assert int(await page.locator('#meth-test-duty').input_value()) == before + 1
         await page.keyboard.press('Enter')
         await page.keyboard.press('Escape')  # Section -> section list.
         await focused('tab-meth')
@@ -77,7 +77,7 @@ async def check(browser, url, state):
         await page.locator('#controls-launch').click()
         await press(16)
         await press(8)  # Into meth panel: first enabled input, skipping commands.
-        await focused('meth-boost-input')
+        await focused('meth-test-duty')
         assert await page.locator('[data-action="meth.test"]').is_disabled()
         # Lost CAN stops repeats; button state must return to neutral before resuming.
         mask = 2
@@ -110,7 +110,7 @@ async def preview(browser):
         await page.locator('#controls-launch').click()
         await page.keyboard.press('Enter')
         await page.keyboard.press('ArrowDown')
-        assert await page.locator('#panel-knock').is_visible()
+        assert await page.locator('#panel-tune').is_visible()
         await page.keyboard.down('Enter')
         await page.wait_for_timeout(900)
         await page.keyboard.up('Enter')

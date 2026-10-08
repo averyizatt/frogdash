@@ -120,11 +120,11 @@
   <div class="control-workspace">
     <div class="control-tabs" role="tablist" aria-label="Control category" aria-orientation="vertical">
       <button id="tab-meth" role="tab" aria-selected="true" aria-controls="panel-meth" tabindex="0" data-tab="meth"><span>01</span>Water / meth</button>
-      <button id="tab-knock" role="tab" aria-selected="false" aria-controls="panel-knock" tabindex="-1" data-tab="knock"><span>02</span>Knock monitor</button>
-      <button id="tab-lighting" role="tab" aria-selected="false" aria-controls="panel-lighting" tabindex="-1" data-tab="lighting"><span>03</span>Lighting</button>
-      <button id="tab-interior" role="tab" aria-selected="false" aria-controls="panel-interior" tabindex="-1" data-tab="interior"><span>04</span>Interior</button>
-      <button id="tab-wifi" role="tab" aria-selected="false" aria-controls="panel-wifi" tabindex="-1" data-tab="wifi"><span>05</span>Wi-Fi</button>
-      <p>Live readings come from the vehicle. Changes are confirmed where supported.</p>
+      <button id="tab-tune" role="tab" aria-selected="false" aria-controls="panel-tune" tabindex="-1" data-tab="tune"><span>02</span>Meth tuning</button>
+      <button id="tab-knock" role="tab" aria-selected="false" aria-controls="panel-knock" tabindex="-1" data-tab="knock"><span>03</span>Knock monitor</button>
+      <button id="tab-lighting" role="tab" aria-selected="false" aria-controls="panel-lighting" tabindex="-1" data-tab="lighting"><span>04</span>Lighting</button>
+      <button id="tab-interior" role="tab" aria-selected="false" aria-controls="panel-interior" tabindex="-1" data-tab="interior"><span>05</span>Interior</button>
+      <button id="tab-wifi" role="tab" aria-selected="false" aria-controls="panel-wifi" tabindex="-1" data-tab="wifi"><span>06</span>Wi-Fi</button>
     </div>
     <div class="control-panels">
       <section class="control-section" id="panel-meth" role="tabpanel" aria-labelledby="tab-meth">
@@ -135,11 +135,17 @@
           <button type="button" class="stop-control" data-action="meth.arm" data-value="0">DISARM</button>
           <button type="button" data-action="meth.clear_faults">CLEAR FAULTS</button>
         </div>
-        <div class="settings-grid"><div class="setting-card"><h3>Injection threshold</h3><label>Boost start (gauge kPa)
-          <input id="meth-boost-input" type="number" min="0" max="250" step="1" value="25">
-        </label>
-        <button type="button" data-action="meth.boost" data-input="meth-boost-input">APPLY BOOST START</button>
-        <p class="control-note">Adjust while disarmed. 25 kPa ≈ 3.6 psi. The field is a requested value, not a readback.</p>
+        <div class="settings-grid"><div class="setting-card"><h3>Injection now</h3>
+          <dl class="meth-live">
+            <dt>Status</dt><dd id="meth-live-hold">—</dd>
+            <dt>Pump</dt><dd id="meth-live-pulse">—</dd>
+            <dt>Flow now</dt><dd id="meth-live-flow">—</dd>
+            <dt>Engine RPM check</dt><dd id="meth-live-rpm">—</dd>
+            <dt>Air before the nozzle</dt><dd id="meth-live-pre">—</dd>
+            <dt>Air after the nozzle</dt><dd id="meth-live-post">—</dd>
+            <dt>Cooling from injection</dt><dd id="meth-live-drop">—</dd>
+          </dl>
+          <p class="control-note">Run times, boost range, tank mix and limits are in Meth tuning.</p>
         </div><div class="setting-card">
         <h4>Pump test</h4>
         <label>Test duty (%) <input id="meth-test-duty" type="number" min="1" max="100" step="1" value="10"></label>
@@ -149,6 +155,7 @@
         </div>
         <p id="test-control-reason" class="control-note">Requires disarmed, fresh telemetry, no faults, and sufficient tank level.</p>
       </div></div></section>
+      <section class="control-section" id="panel-tune" role="tabpanel" aria-labelledby="tab-tune" hidden></section>
       <section class="control-section" id="panel-knock" role="tabpanel" aria-labelledby="tab-knock" hidden>
         <p id="knock-live-summary"></p>
         <div class="control-row">
@@ -462,6 +469,7 @@
 <script src="map.js"></script>
 <script src="taillights.js"></script>
 <script src="taillight-settings.js"></script>
+<script src="meth-tune.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

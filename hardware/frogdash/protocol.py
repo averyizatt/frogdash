@@ -18,11 +18,11 @@ LENGTHS = {0x100: 7, 0x102: 4, 0x103: 8, 0x200: 8, 0x202: 8, 0x203: 8, 0x204: 3,
            0x500: 8, 0x501: 4, 0x503: 7,
            0x300: 8, 0x302: 4, 0x303: 8, 0x304: 8, 0x305: 1,
            0x306: 4, 0x307: 8, 0x308: 4, 0x309: 4, 0x30A: 4,
-           0x30B: 8, 0x30C: 8, 0x30D: 8}
+           0x30B: 8, 0x30C: 8, 0x30D: 8, 0x30F: 8}
 TIMEOUTS = {0x100: .5, 0x103: 1.5, 0x200: 1.5, 0x202: .5, 0x203: 2, 0x204: 2, 0x205: .35,
             0x500: .5, 0x501: .5, 0x503: .5,
             0x300: .5, 0x303: 1.5, 0x304: 3, 0x307: .5,
-            0x309: .5, 0x30B: 1, 0x30C: 5, 0x30D: 5}
+            0x309: .5, 0x30B: 1, 0x30C: 5, 0x30D: 5, 0x30F: 1.5}
 # MicroSquirt broadcast groups can run at a few Hz; allow 1 s before calling them stale.
 ECU_TIMEOUT = 1.0
 EVENT_IDS = {0x102, 0x302, 0x308, 0x305, 0x306, 0x30A}
@@ -168,6 +168,22 @@ def decode(can_id, data):
     elif can_id == 0x30B:
         fields("knock.hook", "flags rms threshold baseline event_count bias_adc raw_adc envelope",
                [*d[:5], d[5] * 16, d[6] * 16, d[7]])
+    elif can_id == 0x30F:
+        # Water/meth pulse tuning (extension 4): acknowledgements, settings, status and
+        # the two intake air temperatures share one ID. Settings are mirrored in methtune.py.
+        kind = d[0]
+        if kind not in (1, 2, 3, 4):
+            raise ValueError("0x30F unknown water/meth tuning report kind")
+        if kind == 3:
+            enum("meth.hold", d[3], "NONE DISARMED BELOW_BOOST RPM_LOW RPM_MISSING AIR_COLD TEMP_SENSOR RESTING TANK_LOW FAULT DOSE_LIMIT")
+            fields("meth", "on_ms period_ms", [u(4), u(6)])
+            put("meth.pump_on", bool(d[2] & 16))
+        elif kind == 4:
+            pre, post = s(1) / 10, s(3) / 10
+            put("meth.pre_temp_c", pre if d[5] & 1 else None, "live" if d[5] & 1 else "unavailable")
+            put("meth.post_temp_c", post if d[5] & 2 else None, "live" if d[5] & 2 else "unavailable")
+            both = d[5] & 3 == 3
+            put("meth.temp_drop_c", round(pre - post, 1) if both else None, "live" if both else "unavailable")
     elif can_id == 0x30C:
         fields("knock.config", "flags threshold_offset multiplier min_rpm min_map_kpa debounce_ms gain center_hz",
                [d[0], d[1], d[2] / 10, d[3] * 100, d[4], d[5] * 10, d[6] / 10, d[7] * 100])

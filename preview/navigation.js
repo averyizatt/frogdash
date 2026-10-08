@@ -291,7 +291,7 @@
       ['Reverse camera', 'Rear camera view', launch('camera-launch'), shown('camera-launch'), 'M4 8h3l2-2h6l2 2h3v10H4zM12 10.5a2.8 2.8 0 1 0 .01 0', '#5a6b7a'],
       ['Interior lights', 'Colour, brightness, on and off', launch('controls-launch', 'tab-interior'), true, 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5V15h8v-1.5A6 6 0 0 0 12 3z', '#d99a1c'],
       ['Taillights', 'Shows, styles, colours and profiles', () => window.FrogdashTaillights?.open(), !!window.FrogdashTaillights, 'M3 8h18v8H3zM9 8v8M15 8v8', '#c8342f'],
-      ['Water / meth', 'Arm, test and boost start', launch('controls-launch', 'tab-meth'), true, 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z', '#1f9bc4'],
+      ['Water / meth', 'Arm, test and live injection status', launch('controls-launch', 'tab-meth'), true, 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z', '#1f9bc4'],
       ['Knock monitor', 'Live knock energy and events', launch('knock-launch'), true, 'M2 13h5l3-8 4 15 3-7h5', '#c2572b'],
       ['Drive & alerts', 'Display modes, trips, fuel and alerts', launch('drive-launch'), true, 'M3 15a9 9 0 0 1 18 0M12 15l4-5M3 19h18', '#22a37a'],
       ['Race timer', 'Acceleration and lap timing', launch('race-launch'), true, 'M5 21V4M5 4h13l-3 4 3 4H5', '#8a4fd1'],

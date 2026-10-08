@@ -18,6 +18,8 @@ class ProtocolTests(unittest.TestCase):
                 data[2] = 1
             if identifier == 0x103:
                 data[0] = 5  # Taillight status report.
+            if identifier == 0x30F:
+                data[0] = 3  # Water/meth tuning status report.
             if identifier == 0x501:
                 data[3] = 1
             if identifier == 0x503:

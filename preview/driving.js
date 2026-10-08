@@ -11,6 +11,10 @@
     afr: ['Air / fuel', 'engine.afr', 'AFR', 10, 18, 1], target: ['AFR target', 'ecu.afr_target', 'AFR', 10, 18, 1],
     boost: ['Boost', 'engine.boost_kpa', 'psi', -15, 30, 1, n => n * .145037738],
     meth: ['Injection', 'meth.duty_pct', '%', 0, 100, 0], tank: ['Meth tank', 'meth.tank_pct', '%', 0, 100, 0],
+    // Intake air each side of the water/meth nozzle (controller thermistors) and the difference.
+    airpre: ['Air before inj', 'meth.pre_temp_c', '°F', 0, 300, 0, n => n * 1.8 + 32],
+    airpost: ['Air after inj', 'meth.post_temp_c', '°F', 0, 300, 0, n => n * 1.8 + 32],
+    aircool: ['Inj cooling', 'meth.temp_drop_c', 'Δ°F', 0, 100, 0, n => n * 1.8],
     knock: ['Knock energy', 'knock.energy', '', 0, 255, 0],
     tripa: ['Trip A', 'trip.a_km', 'mi', 0, 500, 1, n => n / 1.609344],
     tripb: ['Trip B', 'trip.b_km', 'mi', 0, 500, 1, n => n / 1.609344],

@@ -82,6 +82,7 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
                   'lighting.show':7, 'lighting.override':0x23, 'lighting.custom':2,
                   'lighting.setting':(13 << 16) | 5, 'lighting.color':(1 << 24) | 0xFF6400,
                   'lighting.text':'FOX', 'lighting.action':(5 << 8) | 2,
+                  'meth.setting':(3 << 16) | 1500, 'meth.tune_action':0,
                   'interior.light':(1 << 32) | (0xFFFFFF << 8) | 35}
         for action in COMMANDS:
             state = State(clock=lambda: 10)
@@ -89,12 +90,15 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
             state.samples['ecu.rpm', 1520] = dict(value=0,quality='live',seen=10,source_id=1520,timestamp_ms=0)
             for identifier, data in [(0x300, '0000640000282800'), (0x307, '13140fb400000000'), (0x100, '01010202ff3c00'),
                                      (0x103, '0501000000000000'),  # Taillight firmware with the settings extension.
+                                     (0x30F, '03000001000003e8'),  # Water/meth firmware with pulse tuning.
                                      (0x503, '01000000000100')]:  # Sensor gateway interior lights online.
                 state.ingest(identifier, bytes.fromhex(data))
             sent = []
             async def send(identifier, data):
                 sent.append((identifier,data))
-                if identifier == 0x301:
+                if identifier == 0x301 and data[0] in (0x10, 0x11):
+                    state.ingest(0x30F,bytes([1,data[0],0,data[1],*(data[2:4] if len(data) == 4 else b'\x00\x00'),1,0]))
+                elif identifier == 0x301:
                     state.ingest(0x30A,bytes([data[0],0,data[1] if len(data)>1 else 0,2]))
                 if identifier == 0x101:
                     state.ingest(0x103,bytes([1,data[0],0,0,0,0,1,2]))
@@ -104,6 +108,24 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(sent[0],vectors()[action],action)
             finally:
                 await state.controls.close()
+
+    async def test_water_meth_tuning_reports_decode_and_fill_the_mirror(self):
+        state = State(clock=lambda: 10)
+        state.connected = True
+        for name in ('meth_tune_ack', 'meth_tune_setting', 'meth_tune_status', 'meth_tune_temps'):
+            state.ingest(*vectors()[name])
+        mirror = state.meth_tune.snapshot()
+        self.assertEqual((mirror['supported'], mirror['revision'], mirror['hold']), (True, 7, 'DOSE_LIMIT'))
+        self.assertEqual((mirror['unsaved'], mirror['pump_on'], mirror['rpm_ok'], mirror['pre_valid']), (True, True, True, False))
+        self.assertEqual((mirror['on_ms'], mirror['period_ms'], mirror['settings']), (1500, 4000, {'min_rpm': 2500}))
+        self.assertEqual(mirror['last_ack'], {'command': 0x10, 'status': 3, 'subject': 3, 'value': 2000, 'revision': 7})
+        values = state.snapshot()['values']
+        self.assertEqual([values[key]['value'] for key in ('meth.pre_temp_c', 'meth.post_temp_c', 'meth.temp_drop_c', 'meth.hold', 'meth.on_ms')],
+                         [61.2, -3.5, 64.7, 'DOSE_LIMIT', 1500])
+        signals = decode(*vectors()['meth_tune_temps_pre_only'])
+        self.assertEqual((signals['meth.pre_temp_c'].value, signals['meth.post_temp_c'].quality, signals['meth.temp_drop_c'].value), (61.2, 'unavailable', None))
+        with self.assertRaises(ValueError):
+            decode(0x30F, bytes([9, 0, 0, 0, 0, 0, 0, 0]))
 
     async def test_usb_gps_transmitter_matches_shared_gps_builder(self):
         gps=GPS(clock=lambda: 0,wall=lambda: 0); gps.connected=True

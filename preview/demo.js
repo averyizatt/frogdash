@@ -21,7 +21,10 @@
     'interior.lower.color': '#ffb46b', 'interior.lower.brightness': 0
   };
   let scenario = 'drive', paused = false, elapsed = 3, previous = performance.now();
-  let tick = 0, testTimer, boostStart = 25, lightingMode = 0;
+  let tick = 0, testTimer, lightingMode = 0;
+  // Simulated water/meth pulse tuning (can_protocol.h extension 4); rules come from meth-tune.js.
+  const mt = () => window.FrogdashMethTune;
+  let mtLive = null, mtSaved = null, mtRevision = 1, mtAck = null;
   // Simulated taillight extras: show/demo/override/custom, parked-only and cleared when moving.
   const TL_STATES = ['OFF', 'RUNNING', 'BRAKE', 'TURN', 'REVERSE', 'BRAKE_TURN', 'HAZARD'];
   const TL_PARKED = ['lighting.show', 'lighting.demo', 'lighting.override', 'lighting.custom'];
@@ -94,7 +97,7 @@
   playbackLabels();
   // Static scenarios remain available for repeatable design checks.
   // This entire transport is loaded only by the standalone preview.
-  window.frogdashDemo = {scenario: setScenario};
+  window.frogdashDemo = {scenario: setScenario, methPreset(values) { mtLive = {...mtLive, ...values}; mtRevision++; }};
   class FrogdashDemoSocket {
     static OPEN = 1;
     readyState = 1;
@@ -135,10 +138,22 @@
         else if (tl.show !== null) current['lighting.left_state'] = current['lighting.right_state'] = 'SHOW';
         else if (tl.override) [current['lighting.left_state'], current['lighting.right_state']] = tl.override.map(n => TL_STATES[n]);
       }
-      if (scenario === 'drive' && readings['meth.state'] === 'ARMED' && current['engine.boost_kpa'] > boostStart) {
-        current['meth.state'] = 'SPRAYING';
-        current['meth.duty_pct'] = Math.round(Math.min(85, 20 + current['engine.boost_kpa'] * .6));
-      }
+      // Stand-in controller: run time from boost, the dose limit, and the minimum RPM.
+      if (!mtLive) { mtLive = {...mt().DEFAULTS}; mtSaved = {...mtLive}; }
+      const boostPsi = current['engine.boost_kpa'] * .145037738, armed = readings['meth.state'] === 'ARMED';
+      const mapKpa = 85 + current['engine.boost_kpa'], fuel = mt().fuelGPerMin(current['engine.rpm'], mapKpa);
+      let hold = !armed ? 'DISARMED' : boostPsi < mtLive.start_psi_x10 / 10 ? 'BELOW_BOOST' : current['engine.rpm'] < mtLive.min_rpm ? 'RPM_LOW' : 'NONE';
+      const ramp = Math.min(1, Math.max(0, (boostPsi * 10 - mtLive.start_psi_x10) / (mtLive.full_psi_x10 - mtLive.start_psi_x10)));
+      let wanted = Math.round(mtLive.min_on_ms + (mtLive.max_on_ms - mtLive.min_on_ms) * ramp);
+      if (mtLive.max_dose_pct) wanted = Math.min(wanted, Math.floor(mtLive.period_ms * Math.min(1, fuel * mtLive.max_dose_pct / 100 / mtLive.nozzle_ml_min)));
+      const onMs = hold === 'NONE' ? mt().relayOn(wanted, mtLive.period_ms) : 0;
+      if (hold === 'NONE' && !onMs) hold = 'DOSE_LIMIT';
+      if (onMs) { current['meth.state'] = 'SPRAYING'; current['meth.duty_pct'] = Math.round(onMs * 100 / mtLive.period_ms); }
+      const flow = mtLive.nozzle_ml_min * onMs / mtLive.period_ms;
+      const preC = 38 + Math.max(0, boostPsi) * 5, dropC = flow / 60 * 22;
+      Object.assign(current, {'meth.pre_temp_c': Math.round(preC * 10) / 10, 'meth.post_temp_c': Math.round((preC - dropC) * 10) / 10,
+        'meth.temp_drop_c': Math.round(dropC * 10) / 10, 'meth.hold': hold, 'meth.on_ms': onMs, 'meth.period_ms': mtLive.period_ms,
+        'meth.flow_ml_min': Math.round(flow * 10) / 10, 'meth.dose_pct': fuel > 0 ? Math.round(flow / fuel * 1000) / 10 : null});
       const values = Object.fromEntries(Object.entries(current).map(([key, value]) => [key,
         {value, quality: value === null ? 'unavailable' : scenario === 'offline' ? 'stale' : 'live', source: 'SIMULATED'}]));
       const test = readings['meth.state'] === 'TEST';
@@ -155,6 +170,9 @@
       this.emit({type: 'state', mode: 'demo', values, events: [],
         modules: Object.fromEntries(['taillights', 'comfort', 'watermeth', 'knock'].map(name => [name, scenario === 'offline' ? 'stale' : 'live'])),
         transport: {connected: scenario !== 'offline', status: 'Design preview — simulated data', received: tick, malformed: 0},
+        meth_tune: {supported: scenario !== 'offline', complete: true, revision: mtRevision, unsaved: JSON.stringify(mtLive) !== JSON.stringify(mtSaved),
+          rpm_ok: current['engine.rpm'] >= mtLive.min_rpm, pre_valid: true, post_valid: true, pump_on: onMs > 0 && (tick * 100) % mtLive.period_ms < onMs,
+          hold, on_ms: onMs, period_ms: mtLive.period_ms, settings: mtLive, last_ack: mtAck},
         taillight: {supported: scenario !== 'offline', complete: true, revision: tlRevision, unsaved: JSON.stringify(tlLive) !== JSON.stringify(tlSaved),
           show: false, demo: false, custom: false, override: false, show_anim: tlLive.settings.show_anim, phase_ms: 0,
           profiles: tlProfiles.map(Boolean), settings: tlLive.settings, colors: tlLive.colors, text: tlLive.text, last_ack: tlAck},
@@ -177,7 +195,19 @@
           break;
         case 'meth.stop':
           clearTimeout(testTimer); readings['meth.state'] = 'OFF'; readings['meth.duty_pct'] = 0; break;
-        case 'meth.boost': boostStart = value; detail = `Simulated boost start set to ${value} kPa.`; break;
+        case 'meth.boost': mt().applySetting(mtLive, 'start_psi_x10', Math.round(value * 1.45037738)); mtRevision++; detail = `Simulated boost start set to ${value} kPa.`; break;
+        case 'meth.setting': {
+          const name = mt().keyName(Math.floor(value / 65536)), requested = value % 65536;
+          const applied = mt().applySetting(mtLive, name, requested);
+          mtAck = {command: 16, status: applied === requested ? 0 : 3, subject: Math.floor(value / 65536), value: applied, revision: ++mtRevision};
+          detail = applied === requested ? 'Simulated water/meth setting applied.' : `Simulated controller limited the value to ${applied}.`; break;
+        }
+        case 'meth.tune_action':
+          if (value === 0) mtSaved = {...mtLive};
+          else if (value === 1) mtLive = {...mtSaved};
+          else if (value === 2) mtLive = {...mt().DEFAULTS};
+          mtAck = {command: 17, status: 0, subject: value, value: 0, revision: ++mtRevision};
+          detail = ['Simulated settings saved.', 'Simulated settings reverted.', 'Simulated conservative defaults applied.'][value] || 'Simulated settings reported.'; break;
         case 'meth.clear_faults': readings['meth.fault_flags'] = 0; break;
         case 'knock.enable': readings['knock.enabled'] = !!value; break;
         case 'knock.threshold': readings['knock.config.threshold_offset'] = value; break;

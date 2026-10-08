@@ -65,9 +65,54 @@ async def preview(browser):
         await page.locator('#operations-close').click()
         await page.locator('#drive-close').click()
         await page.locator('#controls-launch').click()
-        await page.locator('#meth-boost-input').fill('45')
-        await page.locator('[data-action="meth.boost"]').click()
-        await page.wait_for_function('document.getElementById("command-result").textContent.includes("45 kPa")')
+        # Pulse tuning in the preview: a setting, a limit the stand-in controller enforces, a preset.
+        await page.locator('#tab-tune').click()
+        await page.wait_for_function('document.getElementById("mt-sync").textContent.includes("Matches preset: Conservative")')
+        assert await page.locator('#mt-period_ms').input_value() == '4'
+        assert await page.locator('#mt-fluid').input_value() == 'Water'
+        await page.locator('#mt-start_psi_x10').fill('6.5')
+        await page.locator('#mt-start_psi_x10').blur()
+        await page.wait_for_function('document.getElementById("mt-summary").textContent.startsWith("At 6.5 psi the pump runs 1 s in every 4 s (15 ml/min), rising to 2 s in every 4 s (30 ml/min) at 10 psi.")')
+        assert "Never more than 10% of the engine's fuel flow" in await page.locator('#mt-summary').inner_text()
+        await page.wait_for_function('document.getElementById("mt-sync").textContent.includes("Unsaved changes")')
+        await page.locator('#mt-min_on_ms').fill('3.5')   # Above the maximum: limited, never raising it.
+        await page.locator('#mt-min_on_ms').blur()
+        await page.wait_for_function('document.getElementById("mt-min_on_ms").value === "2"')
+        assert await page.locator('#mt-max_on_ms').input_value() == '2'
+        await page.locator('#mt-min_on_ms').fill('0.1')   # Shorter than the relay allows.
+        await page.locator('#mt-min_on_ms').blur()
+        await page.wait_for_function('document.getElementById("mt-min_on_ms").value === "0.5"')
+        await page.locator('#mt-preset').select_option('Mild')
+        await page.locator('#mt-apply').click()
+        await page.wait_for_function('document.getElementById("mt-sync").textContent.includes("Matches preset: Mild")')
+        assert await page.locator('#mt-max_on_ms').input_value() == '3'
+        # Tank mix: the blend and its dose limit change, the flow preset stays.
+        await page.locator('#mt-fluid').select_option('53% meth')
+        await page.wait_for_function('document.getElementById("mt-max_dose_pct").value === "18"')
+        assert 'Matches preset: Mild' in await page.locator('#mt-sync').inner_text()
+        await page.locator('#mt-preset').select_option('Standard')
+        await page.locator('#mt-apply').click()
+        await page.wait_for_function('document.getElementById("mt-summary").textContent.includes("rising to on continuously (60 ml/min) at 8 psi")')
+        assert await page.locator('#mt-fluid').input_value() == '53% meth'
+        await page.locator('#mt-preset').select_option('Mild')
+        await page.locator('#mt-apply').click()
+        await page.wait_for_function('document.getElementById("mt-sync").textContent.includes("Matches preset: Mild")')
+        await page.locator('#mt-preset').select_option('Custom 1')
+        assert await page.locator('#mt-apply').is_disabled()   # Empty slot.
+        await page.locator('#mt-store').click()
+        await page.wait_for_function('document.getElementById("mt-sync").textContent.includes("Matches preset: Mild")')
+        await page.locator('#mt-save').click()
+        await page.wait_for_function('document.getElementById("mt-sync").textContent.startsWith("Saved on the controller")')
+        await page.locator('#mt-defaults').click()
+        await page.wait_for_function('document.getElementById("mt-sync").textContent.includes("Matches preset: Conservative")')
+        assert await page.locator('#mt-fluid').input_value() == 'Water'   # Defaults are water only.
+        await page.locator('#mt-revert').click()
+        await page.wait_for_function('document.getElementById("mt-max_on_ms").value === "3"')
+        assert await page.locator('#mt-fluid').input_value() == '53% meth'
+        await page.locator('#tab-meth').click()
+        assert await page.locator('#meth-live-hold').inner_text() in ('Disarmed', 'Armed: waiting for boost', 'Injecting', 'Held: engine RPM is below the minimum')
+        assert await page.locator('#meth-live-flow').inner_text() != '—'
+        assert '°C' in await page.locator('#meth-live-pre').inner_text()   # Metric was chosen above.
         await page.locator('[data-action="meth.test"]').click()
         await page.wait_for_function('document.getElementById("meth-live-summary").textContent.startsWith("TEST")')
         await page.locator('[data-action="meth.stop"]').click()

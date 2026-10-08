@@ -16,6 +16,7 @@ ENUMS = {
     'comfort.state': 'BOOT RUN WARN FAULT CONFIG'.split(),
     'lighting.left_state': 'OFF RUNNING BRAKE TURN REVERSE BRAKE_TURN HAZARD CUSTOM SHOW'.split(),
     'lighting.right_state': 'OFF RUNNING BRAKE TURN REVERSE BRAKE_TURN HAZARD CUSTOM SHOW'.split(),
+    'meth.hold': 'NONE DISARMED BELOW_BOOST RPM_LOW RPM_MISSING AIR_COLD TEMP_SENSOR RESTING TANK_LOW FAULT DOSE_LIMIT'.split(),
     'nav.source': ['none', 'gps', 'estimated', 'last-known'],
     'nav.speed_source': ['none', 'gps', 'wheel', 'held'],
 }
@@ -77,6 +78,15 @@ def channels():
         Channel('ecu.fuel_load', 'Load'), Channel('ecu.ignition_load', 'Ign load'),
         Channel('engine.oil_pressure_psi', 'OilPressure', 'psi'),
         Channel('engine.fuel_pressure_psi', 'FuelPressure', 'psi'),
+        # Water/meth tuning: intake air each side of the nozzle and what the pump is doing.
+        Channel('meth.pre_temp_c', 'Intake before inj', 'F', 1.8, 32),
+        Channel('meth.post_temp_c', 'Intake after inj', 'F', 1.8, 32),
+        Channel('meth.temp_drop_c', 'Injection temp drop', 'F', 1.8),
+        Channel('meth.on_ms', 'Meth on-time', 'ms', digits=0),
+        Channel('meth.period_ms', 'Meth cycle', 'ms', digits=0),
+        Channel('meth.hold', 'Meth hold reason', digits=0),
+        Channel('meth.flow_ml_min', 'Meth flow', 'ml/min'),
+        Channel('meth.dose_pct', 'Meth % of fuel', '%'),
         Channel('vehicle.speed_kph', 'Vehicle Speed', 'MPH', 1 / 1.609344),
         Channel('gps.altitude_m', 'Altitude', 'm'),
         Channel('gps.latitude', 'Latitude', 'deg', digits=6),
@@ -117,6 +127,9 @@ def channels():
         elif can_id == 0x103:
             keys.update(decode(can_id, bytes([1, 0, 0, 0, 0, 0, 0, 2])))  # Acknowledgement.
             frame = bytes([5, 0, 0, 0, 0, 0, 0, 0])  # Status.
+        elif can_id == 0x30F:
+            keys.update(decode(can_id, bytes([4, 0, 0, 0, 0, 3, 0, 0])))  # Temperatures.
+            frame = bytes([3, 0, 0, 0, 0, 0, 0, 0])  # Status.
         elif can_id == 0x503:
             keys.update(decode(can_id, bytes([2, 0, 0, 0, 0, 1, 0])))  # Lower channel too.
             frame = bytes([1, 0, 0, 0, 0, 1, 0])
@@ -147,7 +160,7 @@ def row_values(snapshot, elapsed, dropped=0):
 
 def info(mode, rate):
     return '\n'.join([
-        f'Frogdash schema 10; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
+        f'Frogdash schema 11; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
         'trip.* = tracked GPS counters; fuel.level_status = MCU status; other fuel.* = calibrated estimates, MPG uses US gallons.',
         'Time = monotonic seconds since this file started. Q fields: 0=unavailable,1=live,2=stale,3=fault.',
         'Non-live values are IEEE NaN. Drop count is cumulative for this recorder process.',
