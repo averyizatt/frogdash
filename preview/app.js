@@ -76,7 +76,9 @@
     document.querySelector('.tach').dataset.tone = rpm !== null && rpm >= 6000 ? 'danger' : 'normal';
     display('speed-digits', 'vehicle.speed_kph', 0, window.FrogdashUnits.distance);
     document.body.dataset.speedLive = live('vehicle.speed_kph') !== null;
-    $('gps-sats').textContent = live('vehicle.speed_kph') === null ? 'GPS · NO LIVE FIX' :
+    const gpsState = snapshot.gps?.diagnosis?.state;
+    $('gps-sats').textContent = live('vehicle.speed_kph') === null ? ({'no-gpsd': 'GPS · SERVICE NOT RUNNING', silent: 'GPS · RECEIVER NOT FOUND',
+        deaf: 'GPS · NO SATELLITES HEARD', weak: 'GPS · SIGNAL TOO WEAK', searching: 'GPS · FINDING POSITION'})[gpsState] || 'GPS · NO LIVE FIX' :
       live('nav.speed_source') === 'wheel' && snapshot.gps ? 'WHEEL SPEED · GPS LOST' :
       live('nav.speed_source') === 'held' ? 'GPS SPEED · HOLDING' :
       `GPS SPEED${live('gps.satellites') === null ? '' : ' · ' + live('gps.satellites') + ' SAT'}`;

@@ -21,6 +21,11 @@ sudo usermod -aG dialout "$USER"
 - `default-jre` is Java. It must be the full package, not `default-jre-headless`.
 - `dialout` gives your user the serial port.
 
+The Pi's GPS service must not take the MicroSquirt cable. In `/etc/default/gpsd` set
+`DEVICES` to the GPS receiver's own `/dev/serial/by-id/...` path and `USBAUTO="false"`,
+then `sudo systemctl restart gpsd.socket gpsd`. Otherwise gpsd opens the tuning cable
+as if it were a GPS: TunerStudio cannot connect, and the GPS may stop working.
+
 Download the **Linux** version of TunerStudio MS from
 <https://www.tunerstudio.com/index.php/downloads> and unpack it into your home folder,
 so the start script is `~/TunerStudioMS/TunerStudio.sh`:

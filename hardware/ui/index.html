@@ -148,12 +148,13 @@
           <p class="control-note">Run times, boost range, tank mix and limits are in Meth tuning.</p>
         </div><div class="setting-card">
         <h4>Pump test</h4>
-        <label>Test duty (%) <input id="meth-test-duty" type="number" min="1" max="100" step="1" value="10"></label>
+        <label>Test duty (%) <input id="meth-test-duty" type="number" min="1" max="100" step="1" value="100"></label>
         <div class="control-row">
           <button type="button" data-action="meth.test" data-input="meth-test-duty">RUN 3-SECOND TEST</button>
           <button type="button" class="stop-control" data-action="meth.stop">STOP TEST</button>
         </div>
         <p id="test-control-reason" class="control-note">Requires disarmed, fresh telemetry, no faults, and sufficient tank level.</p>
+        <p class="control-note">100% runs the pump for the whole 3 seconds. Lower values run it for that share of each cycle, never less than half a second.</p>
       </div></div></section>
       <section class="control-section" id="panel-tune" role="tabpanel" aria-labelledby="tab-tune" hidden></section>
       <section class="control-section" id="panel-knock" role="tabpanel" aria-labelledby="tab-knock" hidden>

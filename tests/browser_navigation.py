@@ -66,8 +66,8 @@ async def check(browser, url, state):
         await page.keyboard.press('Enter')
         assert await page.locator('#meth-test-duty').evaluate('(el) => el.classList.contains("wheel-editing")')
         before = int(await page.locator('#meth-test-duty').input_value())
-        await page.keyboard.press('ArrowRight')
-        assert int(await page.locator('#meth-test-duty').input_value()) == before + 1
+        await page.keyboard.press('ArrowLeft')   # The test duty starts at its maximum, so step down.
+        assert int(await page.locator('#meth-test-duty').input_value()) == before - 1
         await page.keyboard.press('Enter')
         await page.keyboard.press('Escape')  # Section -> section list.
         await focused('tab-meth')

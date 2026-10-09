@@ -45,8 +45,9 @@ not a similarly named pip package. `--system-site-packages` makes those bindings
 visible in the virtual environment. gpsd handles USB/serial device protocols.
 
 1. Plug in the receiver and find its stable path with `ls -l /dev/serial/by-id/`.
-2. If gpsd does not auto-detect it, set `DEVICES="/dev/serial/by-id/YOUR_RECEIVER"`
-   and `GPSD_OPTIONS="-n"` in `/etc/default/gpsd`, then restart `gpsd`.
+2. Set `DEVICES="/dev/serial/by-id/YOUR_RECEIVER"`, `GPSD_OPTIONS="-n"` and
+   `USBAUTO="false"` in `/etc/default/gpsd`, then restart `gpsd`. With auto-detect on,
+   gpsd also grabs other USB serial adapters, such as the ECU's tuning cable.
 3. Verify a real fix with `cgps -s` or `gpspipe -w` before starting Frogdash.
 4. Start with `--gpsd`. Optionally pass `--gps-device /dev/ttyACM0` using the
    exact device name reported by gpsd; otherwise the first receiver is selected

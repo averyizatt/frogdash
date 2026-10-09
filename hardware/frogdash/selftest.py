@@ -90,9 +90,9 @@ def report(state, folder=None, wall=time.time):
 
     # --- GPS and clock ---
     if state.gps:
-        fix = state.gps.mode in (2, 3)
-        out.append(line('GPS and time', 'USB GPS', OK if fix else WARN, state.gps.status,
-                        'Needs sky view; check gpsd and the USB receiver if it never gets a fix'))
+        found = state.gps.diagnosis()
+        out.append(line('GPS and time', 'USB GPS', OK if found['state'] == 'fix' else FAIL if found['state'] in ('no-gpsd', 'silent') else WARN,
+                        found['text'], found['fix']))
         out.append(line('GPS and time', 'GPS broadcast to the bus (0x203)', FAIL if state.gps.conflict else OK, state.gps.tx_status,
                         'Another node also sends 0x203; disable its GPS transmit'))
     else:

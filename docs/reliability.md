@@ -178,6 +178,35 @@ device path in `/etc/default/gpsd`:
 
 ```sh
 ls -l /dev/serial/by-id/        # copy the name of your GPS
-sudo nano /etc/default/gpsd     # DEVICES="/dev/serial/by-id/<that name>"  GPSD_OPTIONS="-n"  USBAUTO="true"
+sudo nano /etc/default/gpsd     # DEVICES="/dev/serial/by-id/<that name>"  GPSD_OPTIONS="-n"  USBAUTO="false"
 sudo systemctl restart gpsd.socket gpsd
+```
+
+`USBAUTO="false"` matters once any other USB serial device is plugged into the Pi, such
+as the MicroSquirt cable for TunerStudio: with it on, gpsd opens every USB serial
+adapter and probes it as a GPS, which can leave it watching the wrong port and sends
+stray bytes to the ECU.
+
+### No speed: what the dash tells you
+
+The line under the speed and **Sensors → System check → USB GPS** name the reason:
+
+| Message | Meaning | What to do |
+|---|---|---|
+| Service not running | gpsd is not reachable | `sudo systemctl status gpsd` |
+| Receiver not found | gpsd runs but nothing reports | Unplugged, or gpsd is watching the wrong port: check `DEVICES` above |
+| No satellites heard | The receiver talks but hears nothing | No sky view, or strong radio noise |
+| Signal too weak | Satellites heard, none strong enough | Radio noise: see below |
+| Finding position | Good signals, no position yet | Wait; a first fix after a long break can take minutes |
+
+**Radio noise is the usual cause in a car.** A Pi 4's blue USB 3 ports, the dash cam and
+a Wi-Fi adapter all radiate right at GPS frequencies. A receiver plugged straight into
+the Pi can hear nothing even under an open sky. Put it on a USB extension cable of a
+metre or two, in a black USB 2 port, away from the Pi, the dash cam and the Wi-Fi
+adapter. System check shows the strongest signal; a fix needs about 30 dB.
+
+To look at it directly (the Terminal tab in Dash management works for this):
+
+```sh
+gpspipe -w -n 12 | grep -E '"class":"(TPV|SKY)"' | cut -c1-300
 ```

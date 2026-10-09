@@ -88,6 +88,7 @@ def channels():
         Channel('meth.flow_ml_min', 'Meth flow', 'ml/min'),
         Channel('meth.dose_pct', 'Meth % of fuel', '%'),
         Channel('meth.iat_change_c', 'MAT change while injecting', 'F', 1.8),
+        Channel('fuel.sender_pct', 'Fuel sender undamped', '%'),
         Channel('vehicle.speed_kph', 'Vehicle Speed', 'MPH', 1 / 1.609344),
         Channel('gps.altitude_m', 'Altitude', 'm'),
         Channel('gps.latitude', 'Latitude', 'deg', digits=6),
@@ -161,7 +162,7 @@ def row_values(snapshot, elapsed, dropped=0):
 
 def info(mode, rate):
     return '\n'.join([
-        f'Frogdash schema 13; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
+        f'Frogdash schema 14; source={mode}; sample rate={rate:g} Hz. Not a serial TunerStudio capture.',
         'trip.* = tracked GPS counters; fuel.level_status = MCU status; other fuel.* = calibrated estimates, MPG uses US gallons.',
         'Time = monotonic seconds since this file started. Q fields: 0=unavailable,1=live,2=stale,3=fault.',
         'Non-live values are IEEE NaN. Drop count is cumulative for this recorder process.',

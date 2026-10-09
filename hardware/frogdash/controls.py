@@ -2,7 +2,7 @@
 import asyncio
 import json
 from .driving import atomic_write
-from .parking import moving, parked
+from .parking import moving, parked, rolling
 from .protocol import ECU_TIMEOUT
 from .taillight import COLORS, PROFILE_COUNT, SETTINGS
 from . import methtune
@@ -49,6 +49,9 @@ COMMANDS = {
 INTERIOR_REFRESH = .5  # The gateway turns a channel off 5 s after its last command.
 SHOW_MODE_KEY = 21
 METH_TUNE = ('meth.setting', 'meth.tune_action')
+# Water/meth status bits that are information, not faults: overboost assist active (4)
+# and "no command master seen for 3 s" (32), which clears with the next frame from the dash.
+METH_INFO_FLAGS = 4 | 32
 PARKED_LIGHTING = ('lighting.show', 'lighting.demo', 'lighting.override', 'lighting.custom')
 LABELS = {
     'meth.arm': 'water/meth mode', 'meth.test': 'pump test', 'meth.stop': 'pump test stop',
@@ -134,8 +137,8 @@ class Controls:
         stop = action == 'meth.stop' or (action == 'meth.arm' and value == 0)
         if stop: return None  # Always allow an explicit stop/disarm on an open bus.
         if self.state.operations.restoring: return 'Configuration restore recovery pending'
-        if action in ('meth.boost', 'knock.threshold', 'knock.multiplier') and not parked(self.state):
-            return 'Park first to change controller calibration'
+        if action in ('meth.boost', 'knock.threshold', 'knock.multiplier') and rolling(self.state):
+            return 'Stop the car first to change controller calibration'
         if self.closing: return 'Dashboard is shutting down'
         if self.state.clock() < self.ready_at: return 'Checking CAN control ownership'
         if self.pending: return 'Waiting for controller acknowledgement'
@@ -146,7 +149,7 @@ class Controls:
             if action == 'meth.arm' and (mode == 'TEST' or self.test_owner is not None):
                 return 'Stop the pump test before arming'
             if action in ('meth.arm', 'meth.test'):
-                flags = self.live('meth.fault_flags', 0x300)
+                flags = (self.live('meth.fault_flags', 0x300) or 0) & ~METH_INFO_FLAGS
                 if flags or mode == 'FAULT':
                     return meth_fault_reason(flags)
                 tank = self.live('meth.tank_pct', 0x300)
@@ -157,7 +160,9 @@ class Controls:
             if action in ('meth.test', 'meth.boost') and mode != 'OFF':
                 return 'Disarm water/meth first'
             if action == 'meth.test':
-                if not parked(self.state): return 'Park first: pump tests require fresh stationary or engine-off telemetry'
+                # Refused only when a speed reading says the car is moving: a missing GPS fix
+                # must not block a test in the garage with the engine running.
+                if rolling(self.state): return 'Stop the car first: the pump test is for a stationary car'
                 if self.test_owner is not None: return 'A pump test is already active'
                 if self.state.clock() - self.last_stop < 3: return 'Pump test cooldown (3 seconds)'
         elif action.startswith('knock.'):
@@ -485,7 +490,7 @@ class Controls:
         while self.test_owner is not None:
             if (self.state.clock() >= self.test_deadline or not self.state.connected or
                     self.live('meth.state', 0x300) is None or
-                    self.live('meth.fault_flags', 0x300) != 0 or self.conflict() or not parked(self.state)):
+                    (self.live('meth.fault_flags', 0x300) or 0) & ~METH_INFO_FLAGS or self.conflict() or rolling(self.state)):
                 await self.stop_test('Pump test ended')
                 return
             await asyncio.sleep(.1)

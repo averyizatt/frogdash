@@ -6,6 +6,8 @@ from .protocol import ANALOG_BITS, ECU_TIMEOUT, EVENT_IDS, TIMEOUTS, decode
 from .controls import Controls
 from .taillight import TaillightSettings
 from .methtune import MethTune
+from .fuel import FuelGauge
+from .parking import parked
 from .race import Race
 from .driving import Driving
 from .trip import Trip
@@ -56,6 +58,7 @@ class State:
         self.can_errors = {'frames': 0, 'bus_off': 0, 'restarts': 0}
         self.taillight = TaillightSettings(clock)
         self.meth_tune = MethTune(clock)
+        self.fuel_gauge = FuelGauge(clock)  # Display damping only: no sender, calibration or settings.
         self.runtime = EngineRuntime(self, enabled=mode == 'socketcan')
         self.tune = Tune(self)
         self.nav = Navigator(clock, wall)
@@ -148,6 +151,11 @@ class State:
         for name in UNAVAILABLE:
             if name != 'vehicle.fuel_pct' or name not in values:
                 values[name] = dict(missing)
+        # The gateway's fuel sender sits in a tank with no baffles: damp the slosh and ride
+        # through brief dropouts (fuel.py). A separate fuel controller (0x204) filters its own.
+        fuel = values.get('vehicle.fuel_pct')
+        if fuel and fuel.get('source_id') == 0x500:
+            values.update(self.fuel_gauge.step(fuel, parked(self)))
         boost = values.get("engine.boost_kpa")
         map_value, baro = values.get("ecu.map_kpa", missing), values.get("ecu.baro_kpa", missing)
         # Barometric pressure barely changes: keep the last reading so boost follows MAP alone.
@@ -190,7 +198,7 @@ class State:
                 "transport": {"connected": self.connected, "status": self.status,
                               "received": self.received, "malformed": self.malformed, "ignored": self.ignored},
                 "runtime": self.runtime.snapshot(), "nav": self.nav.snapshot(), "tune": self.tune.snapshot(),
-                "gps": {"status": self.gps.status, "tx_status": self.gps.tx_status,
+                "gps": {"status": self.gps.status, "diagnosis": self.gps.diagnosis(), "tx_status": self.gps.tx_status,
                         "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
                 "controls": self.controls.status(), "taillight": self.taillight.snapshot(), "meth_tune": self.meth_tune.snapshot(), "events": list(self.events), "race": race,
                 "drive": self.driving.snapshot(), "trip": self.trip.snapshot(),

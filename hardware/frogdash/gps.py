@@ -22,6 +22,10 @@ class GPS:
         self.tx_count = 0
         self.tx_status = "waiting for CAN" if transmit else "disabled"
         self.on_report = None
+        self.sky = None  # Latest satellite report: seen, used, strongest signal.
+        self.sky_seen = float('-inf')
+        self.other_device = None  # A receiver gpsd hears that this dash is not using.
+        self.other_seen = float('-inf')
 
     def update(self, report):
         kind = report.get("class")
@@ -33,6 +37,8 @@ class GPS:
             # A receiver that re-plugs can come back under another name (ttyACM0 -> ttyACM1).
             # Follow it once the old name has been silent for 10 s, unless the user named one.
             if self.device_fixed or not device or self.clock() - self.device_seen <= 10:
+                if device:
+                    self.other_device, self.other_seen = device, self.clock()
                 return
             self.device = device
             self.fields.clear()
@@ -71,6 +77,35 @@ class GPS:
             satellites = report.get("satellites", [])
             put("gps.satellites", sum(bool(s.get("used")) for s in satellites))
             put("gps.satellites_in_view", len(satellites))
+            strengths = [s.get("ss") for s in satellites if isinstance(s.get("ss"), (int, float)) and s.get("ss") > 0]
+            self.sky = {'in_view': len(satellites), 'used': sum(bool(s.get("used")) for s in satellites),
+                        'heard': len(strengths), 'best_db': round(max(strengths)) if strengths else None}
+            self.sky_seen = now
+
+    def diagnosis(self):
+        """Why there is or is not a position, in words, with what to do about it."""
+        now = self.clock()
+        device = self.device or 'no receiver'
+        if not self.connected:
+            return {'state': 'no-gpsd', 'text': self.status, 'fix': 'sudo systemctl status gpsd; check python3-gps is installed'}
+        if self.device_fixed and now - self.other_seen <= 15 and now - self.device_seen > 15:
+            return {'state': 'silent', 'text': f'gpsd hears a receiver at {self.other_device}, but the dash is set to use only {self.device}',
+                    'fix': 'Remove --gps-device from FROGDASH_ARGS in /etc/default/frogdash (the dash then follows the receiver), and restart frogdash'}
+        if now - self.report_seen > 15:
+            return {'state': 'silent', 'text': f'gpsd is running but no receiver is reporting ({device})',
+                    'fix': 'Receiver unplugged, or gpsd is watching the wrong port: ls -l /dev/serial/by-id/ and set DEVICES in /etc/default/gpsd to the GPS'}
+        sky = self.sky if now - self.sky_seen <= 15 else None
+        if self.mode in (2, 3):
+            return {'state': 'fix', 'text': f"Fix with {sky['used'] if sky else '?'} satellites ({device})", 'fix': ''}
+        if not sky or not sky['heard']:
+            return {'state': 'deaf', 'text': f'Receiver is talking but hears no satellites ({device})',
+                    'fix': 'Antenna has no sky view, or radio noise is drowning it: move it away from the Pi blue USB 3 ports, the dash cam and the Wi-Fi adapter with a USB extension cable'}
+        strength = f"strongest signal {sky['best_db']} dB" if sky['best_db'] is not None else 'signal strength unknown'
+        if sky['best_db'] is not None and sky['best_db'] < 25:
+            return {'state': 'weak', 'text': f"Hears {sky['heard']} satellites but all weak ({strength}; a fix needs about 30)",
+                    'fix': 'Weak signals with a clear sky mean radio noise: move the receiver away from the Pi blue USB 3 ports, the dash cam and the Wi-Fi adapter with a USB extension cable'}
+        return {'state': 'searching', 'text': f"Hears {sky['heard']} satellites, {strength}; working out a position",
+                'fix': 'A first fix after a long break can take a few minutes with a clear view of the sky'}
 
     def values(self):
         now = self.clock()
