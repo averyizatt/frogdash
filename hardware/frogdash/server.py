@@ -13,6 +13,7 @@ from .state import State
 from .gps import GPS, gpsd
 from .gpswatch import GpsRecovery
 from .helpers import Helpers
+from .fwupdate import ModuleFirmware
 from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
 from .connectivity import Connectivity, DEFAULT_SOCKET, require_local
 from .race import Race
@@ -74,6 +75,8 @@ def create_app(state, adapter=None, connectivity=None):
             tasks.append(asyncio.create_task(state.helpers.run()))
         if state.dashcam:
             tasks.append(asyncio.create_task(state.dashcam.run()))
+        if state.firmware:
+            tasks.append(asyncio.create_task(state.firmware.run()))
         if state.recorder:
             state.recorder.start()
         if connectivity:
@@ -218,6 +221,24 @@ def create_app(state, adapter=None, connectivity=None):
             status = {'state': 'idle', 'message': 'No update has been run yet'}
         status['pending'] = (folder / 'update-request').exists()
         return web.json_response(status, headers={'Cache-Control': 'no-store'})
+
+    async def firmware(request):
+        # A module's firmware over the CAN bus (fwupdate.py): what it runs, what is ready, install.
+        require_local(request)
+        if not state.firmware:
+            raise web.HTTPNotFound(text='Firmware updates are not available here')
+        if request.method == 'POST':
+            try:
+                body = await request.json()
+                valid = isinstance(body, dict) and body.get('module') == state.firmware.name and body.get('action') == 'install'
+            except (ValueError, TypeError):
+                valid = False
+            if not valid:
+                raise web.HTTPBadRequest(text='Expected module: gateway, action: install')
+            error = state.firmware.start()
+            if error:
+                raise web.HTTPConflict(text=error)
+        return web.json_response({state.firmware.name: state.firmware.snapshot()}, headers={'Cache-Control': 'no-store'})
 
     async def tune(request):
         # TunerStudio over the dash: a request for the kiosk launcher to collect (tune.py).
@@ -698,7 +719,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),
@@ -800,6 +821,7 @@ def main():
             parser.error(f'Invalid camera option: {exc}')
     if not args.replay:
         state.helpers = Helpers(args.data_dir)
+        state.firmware = ModuleFirmware(state, args.data_dir / 'firmware')
     if args.gpsd:
         state.gps = GPS(device=args.gps_device, transmit=not args.gps_no_transmit)
         # Watches for a missing position and works through the recovery steps (gpswatch.py).

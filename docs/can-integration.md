@@ -118,6 +118,7 @@ The decoder was checked against these exact source revisions:
 | 307 / 308 / 309 | knock energy/baseline/threshold/status/events, knock faults, engine runtime |
 | 30A / 30B / 30C / 30D | schema-checked command ACK, knock live diagnostics, configuration pages |
 | 30F | water/meth pulse tuning: acknowledgements, settings, hold reason and on-time, intake air before/after the nozzle ([water-meth.md](water-meth.md)) |
+| 681 | a module's firmware build and its answers during a firmware update over CAN; the dash sends 680 ([firmware-updates.md](firmware-updates.md)) |
 | 5E8–5EC | MicroSquirt simplified dash broadcast |
 | 5F0–62F and 700–73F | Supported MS2/Extra realtime fields; other groups remain raw |
 

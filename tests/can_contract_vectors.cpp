@@ -4,6 +4,7 @@
 #include <iostream>
 #include "can_contract/can_protocol.h"
 #include "can_contract/gateway_protocol.h"
+#include "can_contract/firmware_update.h"
 using namespace can_protocol;
 void emit(const char* name, const CanFrame& f) {
   std::cout << name << " " << std::hex << f.id << " ";
@@ -95,6 +96,18 @@ int main() {
   frame.data[2]=1; frame.data[0]=0xff; assert(!unpackFuelLevelState(frame,received));
   frame.dlc=2; assert(!unpackFuelLevelState(frame,received));
   fuel.status=FuelLevelStatus::UNAVAILABLE; emit("fuel_unavailable",packFuelLevelState(fuel));
+  // Firmware update over CAN (firmware_update.h): the dash's sender is checked against these.
+  const uint8_t part[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  emit("fw_query", firmware::packQuery(firmware::TARGET_GATEWAY));
+  emit("fw_begin", firmware::packBegin(firmware::TARGET_GATEWAY, 0x05A1B2));
+  emit("fw_data_full", firmware::packData(0, part, 7));
+  emit("fw_data_last", firmware::packData(1, part + 7, 3));
+  emit("fw_block_end", firmware::packBlockEnd(firmware::TARGET_GATEWAY, 0x0123, firmware::crc16(part, 10), 2));
+  emit("fw_end", firmware::packEnd(firmware::TARGET_GATEWAY, firmware::crc32(part, 10)));
+  emit("fw_abort", firmware::packAbort(firmware::TARGET_GATEWAY));
+  emit("fw_confirm", firmware::packConfirm(firmware::TARGET_GATEWAY, 0x1A2B3C4D));
+  emit("fw_info", firmware::packInfo(firmware::TARGET_GATEWAY, 0x1A2B3C4D, firmware::FLAG_ON_TRIAL));
+  emit("fw_ack", firmware::packAck(firmware::TARGET_GATEWAY, firmware::BLOCK_END, firmware::STATUS_RESEND, 0x0123));
   GpsState gps{}; gps.speed_kph_x10=756; gps.altitude_m=-10; gps.satellites=1;
   gps.fix_type=3; gps.status_flags=0x1b; gps.satellites_in_view=2; emit("gps",packGpsState(gps));
 }

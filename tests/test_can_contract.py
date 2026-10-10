@@ -128,6 +128,33 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError):
             decode(0x30F, bytes([9, 0, 0, 0, 0, 0, 0, 0]))
 
+    async def test_firmware_update_frames_match_the_module_side(self):
+        import zlib
+        from hardware.frogdash import fwupdate as fw
+        part = bytes(range(1, 11))
+        frames = fw.data_frames(part)
+        built = {
+            'fw_query': fw.command(fw.QUERY, 1),
+            'fw_begin': fw.command(fw.BEGIN, 1, (0x05A1B2).to_bytes(3, 'big') + b'FW'),
+            'fw_data_full': frames[0], 'fw_data_last': frames[1],
+            'fw_block_end': fw.command(fw.BLOCK_END, 1, (0x0123).to_bytes(2, 'big') + fw.crc16(part).to_bytes(2, 'big') + bytes([2])),
+            'fw_end': fw.command(fw.END, 1, zlib.crc32(part).to_bytes(4, 'big')),
+            'fw_abort': fw.command(fw.ABORT, 1),
+            'fw_confirm': fw.command(fw.CONFIRM, 1, bytes.fromhex('1a2b3c4d')),
+        }
+        for name, payload in built.items():
+            self.assertEqual((fw.ID_COMMAND, payload), vectors()[name], name)
+        # The module's answers, as the dash reads them.
+        state = State('socketcan', clock=lambda: 10)
+        state.connected = True
+        state.firmware = fw.ModuleFirmware(state, None)
+        state.ingest(*vectors()['fw_info'])
+        self.assertEqual(vectors()['fw_info'][0], fw.ID_REPLY)
+        self.assertEqual((state.firmware.installed, state.firmware.flags & fw.ON_TRIAL), ('1a2b3c4d', fw.ON_TRIAL))
+        ack = vectors()['fw_ack'][1]
+        self.assertEqual((ack[0], ack[2], ack[3], ack[4:6]), (fw.ACK, fw.BLOCK_END, fw.RESEND, bytes.fromhex('0123')))
+        self.assertEqual(state.malformed, 0)
+
     async def test_usb_gps_transmitter_matches_shared_gps_builder(self):
         gps=GPS(clock=lambda: 0,wall=lambda: 0); gps.connected=True
         gps.update({'class':'TPV','device':'gps','mode':3,'speed':21,'altMSL':-10})

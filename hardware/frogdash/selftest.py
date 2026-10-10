@@ -155,6 +155,17 @@ def report(state, folder=None, wall=time.time):
                     'The dash is on the last version that worked; the failed start is saved in update-failure.log for the next fix'
                     if undone else 'Dash management > Support > Update now, with internet connected'))
 
+    # Module firmware over the CAN bus (fwupdate.py).
+    if state.firmware:
+        module = state.firmware.snapshot()
+        job = module['job']
+        status = (FAIL if job['state'] == 'failed' else WARN if module['new'] or module['on_trial'] or job['state'] == 'running'
+                  else OK if module['installed'] else SKIP)
+        detail = (job['message'] if job['state'] in ('failed', 'running') else
+                  f"Build {module['installed']}: {module['note'].lower()}" if module['installed'] else module['note'])
+        out.append(line('Updates', f"{module['label']} firmware", status, detail,
+                        'Dash management > Support > Install gateway firmware, with the car stopped'))
+
     # What this version needs on the Pi, done by the updater as root (tools/frogdash_setup.sh).
     setup = state.helpers.snapshot() if state.helpers else None
     if setup:

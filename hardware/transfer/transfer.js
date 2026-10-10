@@ -72,6 +72,48 @@
       catch (error) { $('message').textContent = error.message; needLogin(error); }
     };
   }
+  // The gateway's firmware goes over the CAN bus from the dash; this only presses the button.
+  let installing = false;
+  function renderFirmware(firmware) {
+    const module = firmware && firmware.gateway, line = $('firmware-status'), button = $('firmware-install');
+    if (!module) { line.hidden = button.hidden = true; return; }
+    const job = module.job, running = job.state === 'running';
+    line.hidden = false;
+    line.textContent = running ? `Gateway firmware: ${job.message} (${Math.round(job.progress * 100)}%)` :
+      job.state === 'failed' ? `Gateway firmware: ${job.message}` : job.state === 'done' ? job.message :
+      `Gateway firmware: ${module.installed ? `build ${module.installed}. ` : ''}${module.note}`;
+    line.dataset.state = job.state === 'failed' ? 'fail' : module.new ? 'warn' : '';
+    button.hidden = !(module.new || running);
+    button.disabled = running || !module.can_install;
+    if (armed !== button) button.textContent = running ? 'Installing…' : 'Install gateway firmware';
+    if (running && !installing) watchFirmware();
+  }
+  async function watchFirmware() {
+    installing = true;
+    while (installing) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      try {
+        const firmware = await request('/api/firmware');
+        renderFirmware(firmware);
+        if (firmware.gateway.job.state !== 'running') installing = false;
+      } catch (error) { installing = false; needLogin(error); }
+    }
+  }
+  $('firmware-install').onclick = async () => {
+    const button = $('firmware-install');
+    if (armed !== button) {
+      armed = button; button.textContent = 'Press again to install';
+      $('firmware-status').textContent = 'Stop the car first. The gateway (speed, fuel, wheel buttons, interior lights) pauses for about a minute.';
+      clearTimeout(armTimer); armTimer = setTimeout(() => { armed = null; refresh(); }, 6000);
+      return;
+    }
+    armed = null; clearTimeout(armTimer); button.disabled = true;
+    try {
+      const response = await fetch('/api/firmware', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({module: 'gateway', action: 'install'}), signal: AbortSignal.timeout(10000)});
+      if (response.ok) renderFirmware(await response.json());
+      else { $('firmware-status').textContent = `Gateway firmware: ${(await response.text()).slice(0, 160)}`; button.disabled = false; }
+    } catch { $('firmware-status').textContent = 'Gateway firmware: the dash did not answer'; button.disabled = false; }
+  };
   twoPress($('update-run'), 'update', 'update');
   twoPress($('update-undo'), 'go back', 'rollback');
 
@@ -84,7 +126,7 @@
       $('recording').textContent = `Recording: ${status.recording.state}${status.recording.error ? ' · ' + status.recording.error : ''}`;
       const system = status.system;
       $('system-status').textContent = system ? `System: ${system.cpu_c == null ? 'temperature unavailable' : system.cpu_c.toFixed(1) + ' °C'} · ${system.disk ? (system.disk.free_bytes / 1073741824).toFixed(1) + ' GiB free' : 'storage unavailable'} · CAN ${system.can?.state || 'diagnostics unavailable'}` : 'System diagnostics unavailable';
-      renderCheck(check.report); renderUpdate(check.update);
+      renderCheck(check.report); renderUpdate(check.update); renderFirmware(check.firmware);
       $('finish-log').disabled = !listing.files.some(file => file.active);
       $('files').replaceChildren(...listing.files.map(file => {
         const row = document.createElement('li'), name = document.createElement(file.active ? 'span' : 'a'), detail = document.createElement('small');

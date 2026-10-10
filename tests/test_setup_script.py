@@ -33,8 +33,11 @@ SHIMS = {
     'id': 'if [ -f "$FAKE/dialout" ]; then echo "$2 video dialout"; else echo "$2 video"; fi\n',
     'getent': 'echo "$2:x:1000:1000::$FAKE_HOME:/bin/sh"\n',
     'chown': 'echo "$@" >> "$FAKE/chown.log"\n',
-    'curl': 'while [ $# -gt 0 ]; do case "$1" in -o) out=$2; shift;; esac; shift; done\n'
-            '[ -f "$FAKE/download" ] || exit 22\ncp "$FAKE/download" "$out"\n',
+    # A file per published name (dl-<name>); the TunerStudio archive is "download". Anything else: 404.
+    'curl': 'while [ $# -gt 0 ]; do case "$1" in -o) out=$2; shift;; *) url=$1;; esac; shift; done\n'
+            'name=${url##*/}\nif [ -f "$FAKE/dl-$name" ]; then src="$FAKE/dl-$name"\n'
+            'elif [ "$name" = ts.tar.gz ] && [ -f "$FAKE/download" ]; then src="$FAKE/download"\nelse exit 22\nfi\n'
+            'cp "$src" "$out"\n',
     'git': '[ -f "$FAKE/internet" ] || exit 2\n',
     # Wi-Fi adapters as NetworkManager reports them: wlan0 built in, wlan1 on the dash cam.
     'nmcli': 'echo "$@" >> "$FAKE/nmcli.log"\ncase "$*" in\n'
@@ -121,14 +124,43 @@ class SetupScriptTests(unittest.TestCase):
         self.assertTrue(self.log('systemctl.log').rstrip().endswith('restart frogdash.service'))   # Last: its new permission.
         self.assertIn('-aG dialout foxbody', self.log('usermod.log'))
         self.assertIn('try-restart frogdash-console@foxbody.service', self.log('systemctl.log'))
-        for name in ('Clock from GPS', 'TunerStudio: Java and display', 'TunerStudio: program'):
+        for name in ('Gateway firmware file', 'Clock from GPS', 'TunerStudio: Java and display', 'TunerStudio: program'):
             self.assertEqual(steps[name][0], 'waiting', name)
             self.assertIn('press Update now', steps[name][1])
         self.assertEqual((self.log('apt.log'), list(self.fake.glob('home/*'))), ('', []))  # Nothing was fetched.
         self.assertEqual(said, 'Set up: Dash helpers, GPS service, TunerStudio: serial port, Phone hotspot')
 
+    def publish_firmware(self, image=b'gateway firmware image', build='1a2b3c4d'):
+        (self.fake / 'dl-gateway-firmware.bin').write_bytes(image)
+        (self.fake / 'dl-gateway-firmware.json').write_text(json.dumps(
+            {'build': build, 'size': len(image), 'sha256': hashlib.sha256(image).hexdigest()}))
+
+    def test_the_newest_gateway_firmware_is_kept_on_the_pi_for_the_dash_to_install(self):
+        from hardware.frogdash.fwupdate import load_image
+        folder = self.state / 'firmware'
+        _, _, steps = self.run_setup('online')
+        self.assertEqual(steps['Gateway firmware file'], ('waiting', 'No gateway firmware has been published yet'))
+        self.assertFalse(folder.exists())
+        self.publish_firmware()
+        _, _, steps = self.run_setup('online')
+        self.assertEqual(steps['Gateway firmware file'][0], 'done')
+        self.assertIn('Downloaded build 1a2b3c4d', steps['Gateway firmware file'][1])
+        manifest, image = load_image(folder, 'gateway')        # Exactly what the dash's installer accepts.
+        self.assertEqual((manifest['build'], image), ('1a2b3c4d', b'gateway firmware image'))
+        self.assertEqual(self.run_setup('online')[2]['Gateway firmware file'], ('ok', 'Build 1a2b3c4d is the newest'))
+        self.assertIn('no internet', self.run_setup('offline')[2]['Gateway firmware file'][1])
+        # A newer build replaces it; one that does not match its checksum never does.
+        self.publish_firmware(b'second build', '2b3c4d5e')
+        self.assertEqual(self.run_setup('online')[2]['Gateway firmware file'][0], 'done')
+        self.assertEqual(load_image(folder, 'gateway')[1], b'second build')
+        self.publish_firmware(b'third build', '3c4d5e6f')
+        (self.fake / 'dl-gateway-firmware.bin').write_bytes(b'tampered with')
+        self.assertEqual(self.run_setup('online')[2]['Gateway firmware file'][0], 'failed')
+        self.assertEqual(load_image(folder, 'gateway')[1], b'second build')
+
     def test_with_internet_the_rest_is_installed_and_a_second_run_changes_nothing(self):
         (self.fake / 'download').write_bytes(self.archive)
+        self.publish_firmware()
         said, _, steps = self.run_setup('online')
         self.assertEqual(steps['TunerStudio: Java and display'], ('done', 'Installed xwayland default-jre'))
         self.assertIn('install -y -q xwayland default-jre', self.log('apt.log'))

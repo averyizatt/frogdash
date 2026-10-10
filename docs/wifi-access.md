@@ -17,7 +17,7 @@ The page gives you:
 |---|---|
 | **Faults and system check** | Everything the dash's System check found, faults first, each with what to do about it |
 | **Download diagnostics file** | One file with the system check, every current reading, helper results and the last failed start. Send it when something needs looking at |
-| **Software** | The installed version, **Update now** and **Undo last update** (two presses each, as on the dash) |
+| **Software** | The installed version, **Update now** and **Undo last update** (two presses each, as on the dash), and **Install gateway firmware** when a new build is ready ([firmware-updates.md](firmware-updates.md)) |
 | **Drive review** | The recorded drives |
 | **Saved logs** | Tap a file to save it. **Finish the current log** closes the file being recorded so it can be downloaded too; recording carries on in a new one |
 
@@ -83,8 +83,9 @@ drop-in grants the dashboard this supplementary group.
 The separate transfer server binds `10.42.0.1:8081`, requires a client address in
 the hotspot subnet and the dash code, rate-limits login attempts, and uses an
 HttpOnly SameSite cookie. It serves the page, status, the system check, the
-diagnostics file and completed managed logs, and accepts three fixed actions: finish
-the current log, update, and undo the last update (the same request the dash's own
+diagnostics file and completed managed logs, and accepts four fixed actions: finish
+the current log, update, undo the last update, and install the gateway firmware
+already on the Pi (the same request the dash's own
 buttons make; the update itself is done by the root update helper). There is no
 vehicle-command websocket, CAN transmitter, raw-frame API, arbitrary-file access,
 command line or any other system administration. Credentials are not

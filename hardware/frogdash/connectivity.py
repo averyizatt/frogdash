@@ -66,8 +66,12 @@ class TransferPortal:
         status['pending'] = bool(self.folder) and (self.folder / 'update-request').exists()
         return status
 
+    def firmware_status(self):
+        firmware = getattr(self.state, 'firmware', None)
+        return {firmware.name: firmware.snapshot()} if firmware else {}
+
     def check(self):
-        return {'report': selftest.report(self.state, self.folder), 'update': self.update_status()}
+        return {'report': selftest.report(self.state, self.folder), 'update': self.update_status(), 'firmware': self.firmware_status()}
 
     def diagnostics(self):
         """Everything needed to see what went wrong, in one file."""
@@ -144,6 +148,24 @@ class TransferPortal:
                 await asyncio.to_thread(self.request_update, action)
             return web.json_response(await asyncio.to_thread(self.update_status))
 
+        async def firmware(request):
+            # A module's firmware over the CAN bus: the same fixed action as the dash's own button.
+            module = getattr(self.state, 'firmware', None)
+            if not module:
+                raise web.HTTPNotFound(text='Firmware updates are not available here')
+            if request.method == 'POST':
+                try:
+                    body = await request.json()
+                    valid = isinstance(body, dict) and body.get('module') == module.name and body.get('action') == 'install'
+                except (ValueError, TypeError):
+                    valid = False
+                if not valid:
+                    raise web.HTTPBadRequest(text='Expected module and action: install')
+                error = module.start()
+                if error:
+                    raise web.HTTPConflict(text=error)
+            return web.json_response(self.firmware_status())
+
         async def asset(request):
             return web.FileResponse(TRANSFER_UI / request.match_info.get('name', 'index.html'))
 
@@ -203,6 +225,7 @@ class TransferPortal:
                         web.post('/session', login), web.get('/api/status', status), web.get('/api/logs', logs),
                         web.get('/api/check', check), web.get('/diagnostics.json', diagnostics),
                         web.post('/api/logs/finish', finish_log), web.get('/api/update', update), web.post('/api/update', update),
+                        web.get('/api/firmware', firmware), web.post('/api/firmware', firmware),
                         web.get('/api/drives', drives), web.get('/api/drives/{name}', review),
                         web.get('/logs/{name}', download)])
         return app

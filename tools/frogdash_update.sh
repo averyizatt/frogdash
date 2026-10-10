@@ -52,7 +52,7 @@ setup() {  # $1 = online when GitHub was just reached. Leaves what it did in $no
     note=""
     [ -f "$REPO/tools/frogdash_setup.sh" ] || return 0
     sync_units  # Also on "Already up to date": an older updater may have left the unit files behind.
-    note=$(FROGDASH_REPO=$REPO FROGDASH_STATE=$STATE FROGDASH_UNITS=$UNITS sh "$REPO/tools/frogdash_setup.sh" $1 2>/dev/null | tail -n 1)
+    note=$(FROGDASH_REPO=$REPO FROGDASH_STATE=$STATE FROGDASH_UNITS=$UNITS sh "$REPO/tools/frogdash_setup.sh" $1 2>/dev/null | grep '^Set up: ' | tail -n 1 | tr -cd 'A-Za-z0-9 .,:()/_-')
     [ -z "$note" ] || note=". $note"
     return 0
 }

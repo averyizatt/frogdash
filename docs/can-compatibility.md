@@ -18,6 +18,8 @@ and the [MCP2515 setup](mcp2515.md) provide the Pi transport. IDs below are hex.
 | CCM sensor-gateway firmware | 202, 500, 501, 503 | Tach status, speed/RPM/fuel, cruise buttons, interior light state |
 | Dash (Pi), when no other sender | 309 | RPM runtime for the Nano, from MicroSquirt, tach or gateway RPM |
 | Dash (Pi) | 502 | Interior light commands to the sensor gateway |
+| Dash (Pi) | 680 | Firmware update commands and image data for a named module ([firmware-updates.md](firmware-updates.md), additive) |
+| CCM sensor-gateway firmware | 681 | Firmware build and update acknowledgements (additive) |
 | CCM or Pi, one owner | 203 | GPS speed, altitude, satellites and validity |
 | External fuel controller | 204 | Fuel percentage and validity, new additive contract |
 | CCM wheel input task | 205 | Five debounced button levels and report sequence, new additive contract |
