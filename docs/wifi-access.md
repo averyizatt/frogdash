@@ -34,10 +34,19 @@ The Pages preview only simulates this setting and creates no wireless network.
 
 The Pi setup (see [reliability.md](reliability.md), *Pi setup*) creates the hotspot the
 next time the dash updates: **System check → Updates → Phone hotspot** shows the result.
-It picks a Wi-Fi adapter that can be an access point and that the dash cam does not
-use, generates a 20-character password on the Pi, installs the helper, and restarts the
-dash once so it may use it. With only one adapter, and the dash cam on it, the step
-waits and says so.
+It picks a Wi-Fi adapter that can be an access point, one the dash cam does not use if
+there is one, generates a 20-character password on the Pi, installs the helper, and
+restarts the dash once so it may use it.
+
+**With one adapter, the hotspot has priority over the cameras.** If the only adapter
+that can be an access point is the dash cam's, the hotspot is made on it. Switching the
+hotspot on then drops the dash cam's Wi-Fi: the Dashcam view and the reverse view say
+the cameras are off, and the dash stops trying to reach them. Switching it off (or its
+20-minute limit) hands the adapter back and the cameras reconnect within about 10
+seconds. The dash cam itself keeps recording to its own card the whole time. In this
+arrangement an update started from the phone also needs that adapter for the internet,
+so the hotspot drops while the update runs; switch it back on afterwards to see the
+result. With two adapters none of this applies.
 
 Use Raspberry Pi OS with NetworkManager and the WLAN country set. The hotspot uses
 2.4 GHz WPA2/CCMP and shared IPv4 addressing/DHCP on `10.42.0.0/24`, which must not

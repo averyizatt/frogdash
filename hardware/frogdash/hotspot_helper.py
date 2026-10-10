@@ -17,6 +17,10 @@ from aiohttp import web
 ADDRESS = '10.42.0.1'
 PORT = 8081
 LIFETIME = 20 * 60
+# While this file is fresh the Wi-Fi keeper leaves the dash cam's adapter alone
+# (tools/frogdash_netkeeper.sh). It lives in this service's own runtime directory.
+LOCK = Path('/run/frogdash-connect/hotspot.lock')
+CAMERA_PROFILE = 'dashcam'
 
 
 async def nmcli(*arguments):
@@ -34,13 +38,32 @@ async def nmcli(*arguments):
 
 
 class Hotspot:
-    def __init__(self, config, run=nmcli, clock=time.monotonic):
+    def __init__(self, config, run=nmcli, clock=time.monotonic, adapter_lock=LOCK):
         self.uuid = str(UUID(config['uuid']))
         self.ssid, self.password = config['ssid'], config['password']
-        self.run, self.clock = run, clock
+        self.run, self.clock, self.adapter_lock = run, clock, adapter_lock
         self.deadline = 0
         self.enabled = False
+        self.shared = False   # The hotspot is on the adapter the dash cam uses
         self.lock = asyncio.Lock()
+
+    async def shares_camera(self):
+        """True when the hotspot and the dash cam are set up on the same Wi-Fi adapter."""
+        try:
+            mine = await self.run('-g', 'connection.interface-name', 'connection', 'show', 'uuid', self.uuid)
+            camera = await self.run('-g', 'connection.interface-name', 'connection', 'show', 'id', CAMERA_PROFILE)
+        except OSError:
+            return False  # No dash cam profile.
+        return bool(mine) and mine == camera
+
+    def hold_adapter(self, held):
+        try:
+            if held:
+                self.adapter_lock.touch()
+            else:
+                self.adapter_lock.unlink(missing_ok=True)
+        except OSError:
+            pass
 
     async def active(self):
         output = await self.run('-t', '-f', 'UUID', 'connection', 'show', '--active')
@@ -51,6 +74,10 @@ class Hotspot:
         if await self.active():
             await self.run('connection', 'down', 'uuid', self.uuid)
         self.enabled, self.deadline = False, 0
+        if self.shared:
+            # Hand the adapter back: the Wi-Fi keeper and NetworkManager rejoin the dash cam.
+            self.hold_adapter(False)
+            self.shared = False
 
     async def set_enabled(self, enabled):
         async with self.lock:
@@ -58,6 +85,12 @@ class Hotspot:
                 # Mark the lease before activation so failed/partial activation
                 # is still shut down by the watchdog.
                 self.deadline = self.clock() + LIFETIME
+                # The hotspot has priority: with one adapter the cameras are off while it is on.
+                self.shared = await self.shares_camera()
+                if self.shared:
+                    self.hold_adapter(True)
+                    with suppress(OSError):
+                        await self.run('connection', 'down', 'id', CAMERA_PROFILE)
                 await self.run('connection', 'up', 'uuid', self.uuid)
                 self.enabled = await self.active()
                 if not self.enabled:
@@ -69,6 +102,7 @@ class Hotspot:
     def status(self):
         return {'configured': True, 'enabled': self.enabled, 'ssid': self.ssid,
                 'password': self.password if self.enabled else '', 'address': ADDRESS, 'port': PORT,
+                'shares_camera': self.enabled and self.shared,
                 'remaining_seconds': max(0, int(self.deadline - self.clock())) if self.enabled else 0}
 
     async def refresh(self):
@@ -78,6 +112,8 @@ class Hotspot:
                 await self.disable()
             else:
                 self.enabled = active
+                if active and self.shared:
+                    self.hold_adapter(True)   # Kept fresh: a stale lock is ignored after 5 minutes.
 
 
 def create_helper(hotspot):

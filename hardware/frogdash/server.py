@@ -72,6 +72,8 @@ def create_app(state, adapter=None, connectivity=None):
                 tasks.append(asyncio.create_task(state.gps_recovery.run()))
         if state.helpers:
             tasks.append(asyncio.create_task(state.helpers.run()))
+        if state.dashcam:
+            tasks.append(asyncio.create_task(state.dashcam.run()))
         if state.recorder:
             state.recorder.start()
         if connectivity:
@@ -496,6 +498,20 @@ def create_app(state, adapter=None, connectivity=None):
             raise web.HTTPServiceUnavailable(text=f'Dash cam did not switch: {exc}'[:200])
         return web.json_response(state.dashcam.status())
 
+    async def dashcam_warm(request):
+        # Keep the dash cam's picture arriving in the background so a view is instant.
+        require_local(request)
+        if not state.dashcam:
+            raise web.HTTPNotFound(text='Dash cam is not enabled (--dashcam)')
+        try:
+            body = await request.json()
+            if not isinstance(body, dict) or type(body.get('enabled')) is not bool:
+                raise ValueError()
+        except (ValueError, TypeError):
+            raise web.HTTPBadRequest(text='Expected enabled: true or false')
+        await asyncio.to_thread(state.dashcam.set_keep_warm, body['enabled'])
+        return web.json_response(state.dashcam.status())
+
     async def mjpeg(request, camera):
         try:
             await camera.acquire()
@@ -696,7 +712,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get('/ui/import', import_list), web.get('/ui/import/{name}', import_file),
                     web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),
                     web.get('/dashcam/status', dashcam_status), web.get('/dashcam/stream', dashcam_stream),
-                    web.post('/dashcam/side', dashcam_side),
+                    web.post('/dashcam/side', dashcam_side), web.post('/dashcam/warm', dashcam_warm),
                     web.get('/ui/heartbeat/{token}', heartbeat), web.post('/ui/heartbeat/{token}', heartbeat),
                     web.get("/", asset), web.get("/{name}", asset)])
     return app
@@ -771,7 +787,9 @@ def main():
     if args.dashcam:
         from .dashcam import Dashcam
         try:
-            state.dashcam = Dashcam(args.dashcam_host, width=args.dashcam_width)
+            # Buffers in the background by default; the dash cam view has the switch.
+            state.dashcam = Dashcam(args.dashcam_host, width=args.dashcam_width, keep_warm=True,
+                                    settings=args.data_dir / 'dashcam.json')
         except ValueError as exc:
             parser.error(f'Invalid dash cam option: {exc}')
     if args.camera:

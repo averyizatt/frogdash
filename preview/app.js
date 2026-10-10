@@ -472,7 +472,7 @@
     $('wifi-password').textContent = status.enabled ? status.password || '—' : '—';
     $('wifi-url').textContent = status.enabled ? status.url || '—' : '—';
     $('wifi-code').textContent = status.enabled ? status.access_code || '—' : '—';
-    $('wifi-feedback').textContent = status.error || (demo ? 'Preview only — no Wi-Fi network is created.' : status.configured ? 'Ready. Access switches off automatically after 20 minutes.' : 'The phone hotspot is not set up yet. Press Update now in Dash management: the dash sets it up itself.');
+    $('wifi-feedback').textContent = status.error || (demo ? 'Preview only — no Wi-Fi network is created.' : status.shares_camera ? 'Hotspot on. The cameras are off until it is switched off: they share one Wi-Fi adapter.' : status.configured ? 'Ready. Access switches off automatically after 20 minutes.' : 'The phone hotspot is not set up yet. Press Update now in Dash management: the dash sets it up itself.');
     $('wifi-on').disabled = wifiBusy || !status.configured || status.enabled;
     $('wifi-off').disabled = wifiBusy || !status.configured || !status.enabled;
   }

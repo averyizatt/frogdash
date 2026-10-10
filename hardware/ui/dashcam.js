@@ -9,6 +9,9 @@
   // Reverse view: the dash cam's rear camera opens in reverse when no Pi camera is fitted.
   const KEY = 'frogdash.dashcam.v1';
   let prefs = {auto: true, mirror: true}, enabled = false, csiCamera = false, reversing = false, openedForReverse = false, sideBeforeReverse = 'front';
+  // The dash keeps the rear picture arriving in the background, so reverse shows at once.
+  // The Dashcam button opens the side last chosen by hand.
+  let warm = true, manualSide = 'front';
   try { const saved = JSON.parse(localStorage.getItem(KEY)); if (saved) prefs = {auto: saved.auto !== false, mirror: saved.mirror !== false}; } catch { /* Defaults. */ }
   function savePrefs() { try { localStorage.setItem(KEY, JSON.stringify(prefs)); } catch { /* Session only. */ } renderSide(); }
 
@@ -34,7 +37,9 @@
     try {
       status = await (await fetch('/dashcam/status', {cache: 'no-store'})).json();
     } catch { status = null; }
+    if (status && typeof status.keep_warm === 'boolean') { warm = status.keep_warm; $('dashcam-warm').checked = warm; }
     if (!dialog.open) return;
+    if (status?.held) { feed.hidden = true; setLost(true, status.held); $('dashcam-status').textContent = 'Cameras off'; return; }
     const age = status?.frame_age_ms;
     // Live mode, RTSP and ffmpeg take a few seconds to deliver the first frame.
     if (!status) setLost(true, 'Dash service unreachable');
@@ -64,10 +69,14 @@
     clearInterval(pollTimer); clearTimeout(retryTimer);
     feed.removeAttribute('src'); // Ends the stream so the dash cam's live mode can stop.
     if (dialog.open) dialog.close();
-    if (openedForReverse) { openedForReverse = false; choose(sideBeforeReverse); }
+    if (openedForReverse) {
+      openedForReverse = false;
+      // While the picture is kept ready the dash stays on the rear camera for the next reverse.
+      if (warm) { side = 'rear'; renderSide(); } else choose(sideBeforeReverse);
+    }
   }
-  async function choose(next) {
-    if (busy || next === side) return;
+  async function choose(next, force = false) {
+    if (busy || (!force && next === side)) return;
     busy = true;
     const previous = side;
     side = next; renderSide();
@@ -83,11 +92,20 @@
   }
   feed.addEventListener('error', () => { if (dialog.open && !demo()) { feed.hidden = true; setLost(true, 'Stream interrupted: reconnecting'); retryTimer = setTimeout(connectFeed, 2000); } });
   feed.addEventListener('load', () => { feed.hidden = false; });
-  $('dashcam-launch').onclick = open;
+  // The dash may have returned to the rear camera since this view was last open: ask again.
+  $('dashcam-launch').onclick = () => { open(); if (!demo()) choose(manualSide, true); };
   $('dashcam-close').onclick = close;
   dialog.addEventListener('close', close);
-  $('dashcam-front').onclick = () => choose('front');
-  $('dashcam-rear').onclick = () => choose('rear');
+  $('dashcam-front').onclick = () => { if (!openedForReverse) manualSide = 'front'; choose('front'); };
+  $('dashcam-rear').onclick = () => { if (!openedForReverse) manualSide = 'rear'; choose('rear'); };
+  $('dashcam-warm').onchange = async event => {
+    warm = event.target.checked;
+    if (demo()) return;
+    try {
+      const response = await fetch('/dashcam/warm', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({enabled: warm})});
+      if (!response.ok) throw new Error();
+    } catch { warm = !warm; event.target.checked = warm; $('dashcam-status').textContent = 'Could not change the setting'; }
+  };
   async function detect() {
     if (demo()) return;
     try {
@@ -96,6 +114,7 @@
       enabled = !!s.enabled;
       try { csiCamera = !!(await (await fetch('/camera/status', {cache: 'no-store'})).json()).enabled; } catch { csiCamera = false; }
       if (s.side) { side = s.side; renderSide(); }
+      if (typeof s.keep_warm === 'boolean') { warm = s.keep_warm; $('dashcam-warm').checked = warm; }
     } catch { setTimeout(detect, 5000); }
   }
   detect();
@@ -109,7 +128,7 @@
     if (demo() || !enabled || csiCamera || !prefs.auto) return;
     if (reversing) {
       if (!dialog.open) { openedForReverse = true; sideBeforeReverse = side; }
-      choose('rear'); open(); renderSide();
+      choose('rear', true); open(); renderSide();
     } else if (openedForReverse) close();
   });
   window.FrogdashDashcam = {open, close};

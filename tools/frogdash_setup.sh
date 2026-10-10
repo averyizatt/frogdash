@@ -183,19 +183,22 @@ if ! command -v nmcli >/dev/null 2>&1; then
 else
     made=""; problem=""
     if [ ! -f "$hotspot" ]; then
+        # An adapter the dash cam does not use if there is one. Otherwise the dash cam's own:
+        # the hotspot has priority, and the cameras are off while it is switched on.
         camera=$(nmcli -g connection.interface-name con show dashcam 2>/dev/null)
-        chosen=""
+        chosen=""; shared=""
         for device in $(nmcli -t -f DEVICE,TYPE dev 2>/dev/null | awk -F: '$2=="wifi"{print $1}'); do
-            [ "$device" = "$camera" ] && continue
-            if [ "$(LC_ALL=C nmcli -g WIFI-PROPERTIES.AP device show "$device" 2>/dev/null)" = yes ]; then chosen=$device; break; fi
+            [ "$(LC_ALL=C nmcli -g WIFI-PROPERTIES.AP device show "$device" 2>/dev/null)" = yes ] || continue
+            if [ "$device" = "$camera" ]; then shared=$device; else chosen=$device; break; fi
         done
+        [ -n "$chosen" ] || chosen=$shared
         if [ -z "$chosen" ]; then problem="waiting"
         elif python3 "$REPO/tools/setup_hotspot.py" --interface "$chosen" --ssid "Foxbody Dash" >/dev/null 2>&1 && [ -f "$hotspot" ]; then made=1
         else problem="failed"
         fi
     fi
     if [ "$problem" = waiting ]; then
-        step "Phone hotspot" waiting "No free Wi-Fi adapter that can be a hotspot (the dash cam uses ${camera:-none})"
+        step "Phone hotspot" waiting "No Wi-Fi adapter that can be a hotspot was found"
     elif [ "$problem" = failed ]; then
         step "Phone hotspot" failed "Could not create the hotspot on $chosen"
     else

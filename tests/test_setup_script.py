@@ -40,7 +40,7 @@ SHIMS = {
     'nmcli': 'echo "$@" >> "$FAKE/nmcli.log"\ncase "$*" in\n'
              '*"connection.interface-name con show dashcam"*) [ -f "$FAKE/no-dashcam" ] || echo wlan1;;\n'
              '*"DEVICE,TYPE dev"*) [ -f "$FAKE/one-adapter" ] || echo wlan0:wifi; echo wlan1:wifi; echo eth0:ethernet;;\n'
-             '*"WIFI-PROPERTIES.AP device show"*) echo yes;;\nesac\n',
+             '*"WIFI-PROPERTIES.AP device show"*) [ -f "$FAKE/no-ap" ] && echo no || echo yes;;\nesac\n',
     # Stands in for tools/setup_hotspot.py, which only runs as root on the Pi.
     'python3': 'echo "$@" >> "$FAKE/python.log"\ncase "$*" in *setup_hotspot.py*) mkdir -p "$FROGDASH_ETC/frogdash" && echo "{}" > "$FROGDASH_ETC/frogdash/hotspot.json";; esac\n',
     'sleep': 'exit 0\n',
@@ -171,17 +171,17 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn('No GPS receiver recognised', steps['GPS service'][1])
         self.assertEqual(self.gpsd.read_text(), before)       # Pinning nothing would switch a working receiver off.
 
-    def test_the_hotspot_never_takes_the_dash_cams_only_adapter(self):
-        (self.fake / 'one-adapter').write_text('')            # Only wlan1, and the dash cam is on it.
+    def test_with_one_adapter_the_hotspot_shares_it_with_the_dash_cam(self):
+        (self.fake / 'no-ap').write_text('')                  # No adapter can be an access point at all.
         _, _, steps = self.run_setup('offline')
         self.assertEqual(steps['Phone hotspot'][0], 'waiting')
-        self.assertIn('dash cam uses wlan1', steps['Phone hotspot'][1])
         self.assertNotIn('setup_hotspot.py', self.log('python.log'))
         self.assertFalse((self.units / 'frogdash-hotspot.service').exists())
         self.assertNotIn('restart frogdash.service', self.log('systemctl.log'))
-        (self.fake / 'no-dashcam').write_text('')             # No dash cam profile: the one adapter is free.
+        (self.fake / 'no-ap').unlink()
+        (self.fake / 'one-adapter').write_text('')            # Only wlan1, and the dash cam is on it:
         self.assertEqual(self.run_setup('offline')[2]['Phone hotspot'][0], 'done')
-        self.assertIn('--interface wlan1', self.log('python.log'))
+        self.assertIn('--interface wlan1', self.log('python.log'))   # the hotspot takes it while it is switched on.
 
     def test_asked_by_the_dash_it_finds_out_about_the_internet_itself(self):
         self.assertEqual(self.run_setup()[2]['TunerStudio: Java and display'][0], 'waiting')

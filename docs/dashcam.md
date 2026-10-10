@@ -18,9 +18,28 @@ Captured from the Viidure phone app:
 5. Front/rear: `/app/setparamvalue?param=switchcam&value=0` (front) or `1` (rear).
 
 The dash does the same. ffmpeg converts the video to JPEG frames that use the
-reverse camera's stream and lost-feed handling. Live view starts when the Dashcam
-view opens and stops 10 seconds after it closes. The camera's web server is fragile,
+reverse camera's stream and lost-feed handling. The camera's web server is fragile,
 so only the app's own requests are sent; if it stops answering, power-cycle the camera.
+
+### The picture is kept ready
+
+Starting live view takes several seconds: the camera's web server, the video
+connection, then ffmpeg's first picture. That is far too slow for a reverse view, so
+the dash keeps the stream running in the background from the moment it starts, on the
+**rear** camera. Selecting reverse, or opening the Dashcam view, shows the picture that
+is already arriving.
+
+- After a look at the front camera, the dash returns to the rear one three seconds
+  after the view closes, ready for the next reverse.
+- A stream that ends or freezes (camera off, Wi-Fi dropped) is reconnected by itself:
+  at once, then every 4, 8, 16 and 30 seconds while the camera stays away.
+- A picture more than a second old is never shown as live. The view waits for a new one.
+- The camera keeps recording to its own card throughout.
+
+The cost is the Pi decoding video all the time: more processor load and heat (**System
+check → Pi → Temperature** shows it). **Keep the picture ready (instant reverse)** in the
+Dashcam view switches it off; live view then starts when a view opens and stops 10
+seconds after it closes, as before. The choice is remembered.
 
 The camera has no live GPS: its settings list has no GPS or speed entry, and the
 route shown by the app and DC Player is stored in the recordings. The dash keeps

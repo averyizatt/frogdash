@@ -13,7 +13,13 @@ stream, frame-age reporting and lost-feed handling. The camera's web server is
 fragile, so only the app's own requests are sent, one at a time. Front/rear uses
 /app/setparamvalue?param=switchcam. The camera reports no live GPS; its route is
 stored in the recordings only.
+
+Starting live view takes several seconds (the camera's web server, RTSP, then ffmpeg's
+first picture), far too long for a reverse view. So by default the stream is kept
+running in the background, on the rear camera, and a view shows the picture that is
+already arriving. The camera keeps recording to its own card throughout.
 """
+import asyncio
 import json
 import socket
 import subprocess
@@ -27,6 +33,10 @@ HEADERS = {'Connection': 'close', 'Accept-Encoding': '',
            'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 13; M2103K19G Build/TP1A.220624.014)'}
 KEEPALIVE_S = 4.0
 SIDES = {'front': 0, 'rear': 1}
+STALL_S = 8.0         # No new picture for this long while buffering: reconnect.
+START_GRACE_S = 20.0  # Allowed for the first picture after a start.
+PARK_S = 3.0          # After the last viewer leaves, return to the rear camera.
+RETRY_MAX_S = 30.0
 
 
 def camera_get(host, path, timeout=4.0):
@@ -132,12 +142,102 @@ def open_dashcam(camera, get=camera_get, popen=subprocess.Popen, connect=socket.
 class Dashcam(Camera):
     """The reverse camera's stream plumbing with a Wi-Fi dash cam as the source."""
 
-    def __init__(self, host='192.168.169.1', width=1280, fps=15, quality='high', idle_s=10.0, opener=open_dashcam, get=camera_get, **kwargs):
+    def __init__(self, host='192.168.169.1', width=1280, fps=15, quality='high', idle_s=10.0, opener=open_dashcam, get=camera_get,
+                 settings=None, keep_warm=False, **kwargs):
         super().__init__(width, 720, fps, 0, idle_s=idle_s, opener=opener, quality=quality, **kwargs)
         self.host, self.side, self.get = host, 'front', get
+        self.settings = settings      # Path of dashcam.json; the owner's choice survives restarts.
+        self.keep_warm = keep_warm    # Buffer in the background so a view is instant.
+        self.held = None              # Why the camera may not be used right now, or None.
+        self.started_at = None
+        self._park = None
+        if settings:
+            try:
+                saved = json.loads(settings.read_text(encoding='utf-8'))
+                if isinstance(saved, dict) and isinstance(saved.get('keep_warm'), bool):
+                    self.keep_warm = saved['keep_warm']
+            except (OSError, ValueError):
+                pass
 
     def status(self):
-        return {**super().status(), 'host': self.host, 'side': self.side}
+        return {**super().status(), 'host': self.host, 'side': self.side, 'keep_warm': self.keep_warm, 'held': self.held}
+
+    def set_keep_warm(self, enabled):
+        self.keep_warm = bool(enabled)
+        if self.settings:
+            try:
+                self.settings.write_text(json.dumps({'keep_warm': self.keep_warm}), encoding='utf-8')
+            except OSError:
+                pass
+
+    def hold(self, reason):
+        """The camera's Wi-Fi is in use for something else (the phone hotspot): stop and do not retry."""
+        self.held = reason or None
+
+    async def start(self):
+        if self.held:
+            self.error = self.held
+            raise RuntimeError(self.held)
+        if self.keep_warm and not self.viewers:
+            self.side = 'rear'  # Buffering exists for the reverse view.
+        await super().start()
+        self.started_at = self.clock()
+
+    async def release(self):
+        if not self.keep_warm:
+            await super().release()
+            return
+        self.viewers = max(0, self.viewers - 1)
+        if not self.viewers and self.side != 'rear' and not self._park:
+            self._park = asyncio.create_task(self._park_later())
+
+    async def _park_later(self):
+        try:
+            await asyncio.sleep(PARK_S)
+        except asyncio.CancelledError:
+            return
+        self._park = None
+        if not self.viewers and self.running and self.keep_warm and self.side != 'rear':
+            try:
+                await asyncio.to_thread(self.switch, 'rear')
+            except (OSError, RuntimeError, ValueError):
+                pass  # tend() restarts on the rear camera if the stream is lost.
+
+    async def tend(self, delay=2.0):
+        """One look at the background stream; returns the seconds until the next look."""
+        if self.held:
+            if self.running:
+                await self.close()
+            self.error = self.held
+            return 2.0
+        if self.running:
+            if not self.keep_warm:
+                if not self.viewers and not self._idle:   # Buffering was switched off: stop as an idle view would.
+                    self._idle = asyncio.create_task(self._stop_later())
+                return 2.0
+            # Frozen or never started: the camera's Wi-Fi dropped, or its live view stalled.
+            if self.frame_at is not None:
+                stuck = self.clock() - self.frame_at > STALL_S
+            else:
+                stuck = self.clock() - (self.started_at or self.clock()) > START_GRACE_S
+            if stuck:
+                await self.close()
+                self.error = 'Dash cam picture stopped: reconnecting'
+                return 1.0
+            return 2.0
+        if not self.keep_warm:
+            return 2.0
+        try:
+            await self.start()
+            return 2.0
+        except Exception:  # Camera off or out of range: try again, less and less often.
+            return min(max(delay, 2.0) * 2, RETRY_MAX_S)
+
+    async def run(self):
+        delay = 1.0
+        while True:
+            await asyncio.sleep(delay)
+            delay = await self.tend(delay)
 
     def ended_threadsafe(self):
         loop = self._loop
@@ -148,6 +248,8 @@ class Dashcam(Camera):
         """Front or rear; applied live when watching, otherwise on the next start."""
         if side not in SIDES:
             raise ValueError('side must be front or rear')
+        if side == self.side and self.running:
+            return  # Already showing it: the camera's web server is not bothered again.
         self.side = side
         if self.running:
             reply = self.get(self.host, f'/app/setparamvalue?param=switchcam&value={SIDES[side]}')

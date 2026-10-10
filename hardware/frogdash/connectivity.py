@@ -18,6 +18,7 @@ from .recorder import NAME
 TRANSFER_UI = Path(__file__).resolve().parents[1] / 'transfer'
 DEFAULT_SOCKET = Path('/run/frogdash-connect/control.sock')
 RESUME_S = 15 * 60   # An update started from the phone keeps the hotspot and the login this long.
+CAMERAS_OFF = 'Cameras are off while the phone hotspot is on (they share one Wi-Fi adapter)'
 # Helper results kept in the data folder, included in the diagnostics download.
 STATUS_FILES = ('update-status.json', 'setup-status.json', 'gps-status.json', 'wifi-status.json')
 
@@ -260,15 +261,22 @@ class Connectivity:
                     self.portal = None
                 self.status = {**status, 'error': None, 'url': f'http://{ADDRESS}:{PORT}',
                                'access_code': self.portal.code if self.portal else ''}
+                self.hold_cameras(status.get('enabled') and status.get('shares_camera'))
             except (OSError, aiohttp.ClientError, TimeoutError):
                 if self.portal:
                     await self.portal.close()
                     self.portal = None
+                self.hold_cameras(False)
                 self.status = {'configured': False, 'enabled': False,
                                'error': 'The phone hotspot is not set up yet. Press Update now: the dash sets it up itself '
                                         '(System check > Updates > Phone hotspot shows progress).'}
                 raise
             return dict(self.status)
+
+    def hold_cameras(self, held):
+        camera = getattr(self.state, 'dashcam', None)
+        if camera:
+            camera.hold(CAMERAS_OFF if held else None)
 
     async def close(self):
         if self.task:

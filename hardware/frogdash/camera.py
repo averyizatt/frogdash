@@ -10,6 +10,7 @@ import time
 from collections import deque
 
 BOUNDARY = 'frogdashframe'
+FRESH_S = 1.0  # A frame older than this is never sent to a viewer as the live picture.
 
 
 def open_picamera2(camera):
@@ -105,6 +106,14 @@ class Camera:
         if self._idle:
             self._idle.cancel()
             self._idle = None
+        try:
+            await self.start()
+        except Exception:
+            self.viewers -= 1
+            raise
+
+    async def start(self):
+        """Start capturing if it is not running. Used by viewers and by background buffering."""
         async with self._lock:
             if self.running:
                 return
@@ -116,7 +125,6 @@ class Camera:
                 self._stop = await asyncio.to_thread(self.opener, self)
                 self.error = None
             except Exception as exc:  # Missing camera, busy device or absent picamera2.
-                self.viewers -= 1
                 self.error = f'{type(exc).__name__}: {exc}'[:200]
                 raise
 
@@ -144,7 +152,8 @@ class Camera:
 
     async def next_frame(self, after, timeout=1.0):
         """Return (sequence, jpeg) newer than `after`, or None if none arrives in time."""
-        if self.sequence > after and self.frame:
+        # A source that buffers in the background may hold an old picture: wait for a new one.
+        if self.sequence > after and self.frame and self.clock() - self.frame_at <= FRESH_S:
             return self.sequence, self.frame
         changed = self._changed
         if changed is None:
