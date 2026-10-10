@@ -27,6 +27,9 @@ SHIMS = {
     'sleep': 'exit 0\n',
     'journalctl': 'echo "Traceback: the new version crashed"\n',
     'nmcli': 'exit 0\n',
+    # For the Pi setup that follows an update: everything it would install counts as present.
+    'dpkg': 'echo "Status: install ok installed"\n',
+    'getent': 'exit 2\n',
 }
 
 
@@ -37,14 +40,16 @@ class UpdateScriptTests(unittest.TestCase):
         base = Path(self.folder.name)
         self.origin, self.repo, self.state = base / 'origin', base / 'repo', base / 'state'
         bin_dir, units = base / 'bin', base / 'units'
-        for folder in (self.origin, self.state, bin_dir, units):
-            folder.mkdir()
+        for folder in (self.origin, self.state, bin_dir, units, base / 'etc', base / 'opt/TunerStudioMS'):
+            folder.mkdir(parents=True)
+        (base / 'opt/TunerStudioMS/TunerStudio.sh').write_text('#!/bin/sh')
         for name, body in SHIMS.items():
             (bin_dir / name).write_text('#!/bin/sh\n' + body, newline='\n')
             (bin_dir / name).chmod(0o755)
         self.env = {**os.environ, 'PATH': str(bin_dir) + os.pathsep + os.environ['PATH'],
                     'FROGDASH_REPO': self.repo.as_posix(), 'FROGDASH_STATE': self.state.as_posix(),
-                    'FROGDASH_UNITS': units.as_posix(), 'GIT_CONFIG_GLOBAL': os.devnull, 'GIT_CONFIG_SYSTEM': os.devnull,
+                    'FROGDASH_UNITS': units.as_posix(), 'FROGDASH_ETC': (base / 'etc').as_posix(), 'FROGDASH_OPT': (base / 'opt').as_posix(),
+                    'FROGDASH_TS_URL': 'https://example.invalid/none', 'GIT_CONFIG_GLOBAL': os.devnull, 'GIT_CONFIG_SYSTEM': os.devnull,
                     'GIT_AUTHOR_NAME': 't', 'GIT_AUTHOR_EMAIL': 't@t', 'GIT_COMMITTER_NAME': 't', 'GIT_COMMITTER_EMAIL': 't@t'}
         self.git(self.origin, 'init', '--quiet', '--initial-branch=main')
         self.first = self.publish('dash.txt', 'version one')
@@ -131,42 +136,52 @@ class UpdateScriptTests(unittest.TestCase):
         (folder / f'{name}.path').write_text(f'{text} path')
         (folder / f'{name}.service').write_text(f'{text} service')
 
-    def test_a_new_helper_installs_itself_without_a_laptop(self):
+    def ship_setup(self):
+        (self.origin / 'tools').mkdir(exist_ok=True)
+        (self.origin / 'tools/frogdash_setup.sh').write_bytes((ROOT / 'tools/frogdash_setup.sh').read_bytes())
+
+    def test_what_a_new_version_needs_on_the_pi_is_set_up_by_the_update_that_brings_it(self):
         units = Path(self.env['FROGDASH_UNITS'])
         log = self.state / 'systemctl.log'
+        self.ship_setup()                                  # Not in the installed version: it arrives with this update.
         self.helper('frogdash-update')
         self.helper('frogdash-gps')
         (self.origin / 'hardware/systemd/frogdash-kiosk.service').write_text('not a helper: no path unit')
         self.publish('dash.txt', 'version two')
         status = self.run_script()
         self.assertEqual(status['state'], 'updated')
-        self.assertIn('Added helpers: gps update', status['message'])
+        self.assertIn('passed its check. Set up: Dash helpers', status['message'])
         self.assertEqual(sorted(p.name for p in units.glob('frogdash-*')), ['frogdash-gps.path', 'frogdash-gps.service', 'frogdash-update.path', 'frogdash-update.service'])
         self.assertIn('enable --now frogdash-gps.path', log.read_text())
+        steps = {s['name']: s['result'] for s in json.loads((self.state / 'setup-status.json').read_text())['steps']}
+        self.assertEqual(steps['Dash helpers'], 'done')
+        self.assertNotIn('failed', steps.values())
         # Already there: nothing is copied or enabled again.
         calls = log.read_text().count('enable --now')
         self.assertEqual(self.run_script()['message'], 'Already up to date')
         self.assertEqual(log.read_text().count('enable --now'), calls)
 
-    def test_the_dash_can_ask_for_missing_helpers_alone(self):
+    def test_the_dash_can_ask_for_the_setup_alone(self):
         units = Path(self.env['FROGDASH_UNITS'])
+        self.ship_setup()
         self.helper('frogdash-gps')
         self.publish('dash.txt', 'version two')
         self.assertEqual(self.run_script()['state'], 'updated')
         before = (self.state / 'update-status.json').read_text()
-        (units / 'frogdash-gps.path').unlink()            # As on a Pi that updated with the older script.
-        (units / 'enabled-frogdash-gps.path').unlink()
-        newer = self.publish('dash.txt', 'version three')
         log = self.state / 'systemctl.log'
-        restarts = log.read_text().count('restart frogdash.service')
-        self.run_script(request='helpers')
-        self.assertTrue((units / 'frogdash-gps.path').exists())
-        self.assertTrue((units / 'enabled-frogdash-gps.path').exists())
-        self.assertFalse((self.state / 'update-request').exists())
-        # Nothing else happened: no update, no restart, and the last update's result still shows.
-        self.assertNotEqual(self.head(), newer)
-        self.assertEqual(log.read_text().count('restart frogdash.service'), restarts)
-        self.assertEqual((self.state / 'update-status.json').read_text(), before)
+        newer = self.publish('dash.txt', 'version three')
+        for word in ('setup', 'helpers'):                  # 'helpers' is what the previous version of the dash wrote.
+            (units / 'frogdash-gps.path').unlink()         # As on a Pi whose update was run by the older updater.
+            (units / 'enabled-frogdash-gps.path').unlink()
+            restarts = log.read_text().count('restart frogdash.service')
+            self.run_script(request=word)
+            self.assertTrue((units / 'frogdash-gps.path').exists(), word)
+            self.assertTrue((units / 'enabled-frogdash-gps.path').exists(), word)
+            self.assertFalse((self.state / 'update-request').exists())
+            # Nothing else happened: no update, no restart, and the last update's result still shows.
+            self.assertNotEqual(self.head(), newer)
+            self.assertEqual(log.read_text().count('restart frogdash.service'), restarts)
+            self.assertEqual((self.state / 'update-status.json').read_text(), before)
 
 
 if __name__ == '__main__':

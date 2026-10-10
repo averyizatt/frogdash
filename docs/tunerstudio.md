@@ -8,44 +8,28 @@ TunerStudio is a separate desktop program, not a page of the dash. It talks to t
 MicroSquirt over the **USB serial cable**, exactly as it does from a laptop. The dash
 keeps reading the engine over CAN at the same time, so the two do not share a connection.
 
-## One-time setup on the Pi
+## Setup on the Pi: press Update now
 
-Run these as the user the dash screen runs as (the name after `frogdash-console@`).
+Nothing is typed on the Pi. With Wi-Fi connected, press **Dash management → Support →
+Update now**. The update's Pi setup (`tools/frogdash_setup.sh`) does all of this the
+first time, which takes several minutes:
 
-```sh
-sudo apt install -y xwayland default-jre
-sudo usermod -aG dialout "$USER"
-```
+- installs `xwayland`, which lets the kiosk show an older-style desktop program;
+- installs `default-jre` (Java, the full package, not the headless one);
+- downloads TunerStudio MS for Linux from <https://www.tunerstudio.com> into the screen
+  user's home (`~/TunerStudioMS`) after checking it against a known SHA-256;
+- adds the screen user to the `dialout` group for the serial port;
+- points the Pi's GPS service at the GPS receiver only (`USBAUTO="false"`), so it never
+  opens the MicroSquirt cable as if it were a GPS;
+- restarts the screen once, after which **TunerStudio** appears in the dash menu.
 
-- `xwayland` lets the kiosk show an older-style desktop program such as TunerStudio.
-- `default-jre` is Java. It must be the full package, not `default-jre-headless`.
-- `dialout` gives your user the serial port.
+**Sensors → System check → Updates** shows each of these with its result. One that says
+it needs the internet is done by the next **Update now** with Wi-Fi connected.
 
-The Pi's GPS service must not take the MicroSquirt cable. In `/etc/default/gpsd` set
-`DEVICES` to the GPS receiver's own `/dev/serial/by-id/...` path and `USBAUTO="false"`,
-then `sudo systemctl restart gpsd.socket gpsd`. Otherwise gpsd opens the tuning cable
-as if it were a GPS: TunerStudio cannot connect, and the GPS may stop working.
-
-Download the **Linux** version of TunerStudio MS from
-<https://www.tunerstudio.com/index.php/downloads> and unpack it into your home folder,
-so the start script is `~/TunerStudioMS/TunerStudio.sh`:
-
-```sh
-tar -xzf TunerStudioMS_*.tar.gz -C ~
-ls ~/TunerStudioMS/TunerStudio.sh
-sudo reboot
-```
-
-After the reboot the **TunerStudio** icon appears in the dash menu. The dash looks in
-`~/TunerStudioMS`, `/opt/TunerStudioMS` and `/usr/local/TunerStudioMS`. For any other
-folder, set it for the screen service:
-
-```sh
-sudo systemctl edit "frogdash-console@$USER"
-# add:
-# [Service]
-# Environment=FROGDASH_TUNERSTUDIO=/path/to/TunerStudioMS
-```
+The dash looks for TunerStudio in `~/TunerStudioMS`, `/opt/TunerStudioMS` and
+`/usr/local/TunerStudioMS`. A copy you put there yourself is used as it is and nothing
+is downloaded. For any other folder, set `FROGDASH_TUNERSTUDIO` for the screen service
+(`sudo systemctl edit "frogdash-console@$USER"`, `Environment=FROGDASH_TUNERSTUDIO=/path`).
 
 ## First run
 
@@ -80,9 +64,9 @@ The status line under the button says why. The usual causes:
 
 | Message | Fix |
 |---|---|
-| TunerStudio is not installed | Unpack it into `~/TunerStudioMS` (above) |
-| The screen has no X display | `sudo apt install xwayland`, then reboot |
-| Closed right after starting | `sudo apt install default-jre`; see the log below |
+| TunerStudio is not on the Pi yet | **Update now** with Wi-Fi connected; System check → Updates → TunerStudio: program |
+| The screen has no X display | **Update now** with Wi-Fi connected; System check → Updates → TunerStudio: Java and display |
+| Closed right after starting | The same line in System check; then the log below |
 | Only on the dash screen in the car | The dash is not running in its kiosk (for example a browser on a laptop) |
 
 ```sh

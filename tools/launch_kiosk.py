@@ -147,7 +147,8 @@ class Tuner:
             return
         if not self.env.get('DISPLAY'):
             # Java draws through X11; Cage provides it only when Xwayland is installed.
-            self.failed, self.note = True, 'The screen has no X display for TunerStudio. Run: sudo apt install xwayland, then restart the Pi'
+            self.failed, self.note = True, ('The screen has no X display for TunerStudio (xwayland). Press Update now with internet: '
+                                           'the dash installs it and restarts the screen')
             return
         try:
             self.process = self.popen(['/bin/bash', str(script)], cwd=str(script.parent), stdin=subprocess.DEVNULL, start_new_session=True,
@@ -172,8 +173,8 @@ class Tuner:
             code = self.process.returncode
             quick = bool(code) and self.clock() - self.started < 20  # A clean exit is just the user closing it.
             self.process, self.failed = None, quick
-            self.note = (f'TunerStudio closed right after starting (exit code {code}). Check Java: sudo apt install default-jre. '
-                         'Details: journalctl -u "frogdash-console@*" -n 40') if quick else 'TunerStudio closed'
+            self.note = (f'TunerStudio closed right after starting (exit code {code}). Java (default-jre) may be missing: press Update now with internet '
+                         'and look at System check > Updates') if quick else 'TunerStudio closed'
             print(f'Frogdash kiosk: TunerStudio exited ({code})', flush=True)
         script = self.find()
         state = 'running' if self.running() else 'failed' if self.failed else 'idle'

@@ -45,7 +45,8 @@ the bcm2835 watchdog.
 ## Clock from GPS
 
 The Pi has no battery-backed clock and the car has no internet, so set the time
-from the USB GPS (gpsd feeds chrony):
+from the USB GPS (gpsd feeds chrony). The Pi setup does the first three lines itself on
+the next **Update now** with internet; only the time zone is yours to set:
 
 ```sh
 sudo apt install -y chrony
@@ -87,19 +88,47 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now frogdash-update.path
 ```
 
-That is the only helper that ever needs a keyboard or SSH. The dash's other root
-helpers (Wi-Fi, GPS recovery) install themselves through it: about 10 s after the dash
-starts it checks which helpers of its version are installed and enabled, and asks the
-updater to add the missing ones (the request word `helpers`: the updater copies and
-enables those unit files from `/opt/frogdash/hardware/systemd` and does nothing else).
-**Update now** does the same. So a new helper arrives with the update that brings it,
-within about a minute of the restart. **System check → Updates → Dash helpers** shows
-`All installed`, `Installing: gps`, or that the update helper itself is missing.
+That is the only thing that ever needs a keyboard or SSH. Everything else a version
+needs on the Pi is done for it, as root, by the updater.
+
+### Pi setup: nothing to type after an update
+
+`tools/frogdash_setup.sh` holds every system-side requirement as a step. The updater
+runs it after each update that passed its check, and again on **Update now** when
+already up to date. Each step looks first and acts only when something is missing, so
+running it again changes nothing. It is always the new version's script that runs, so a
+new requirement arrives with the update that needs it.
+
+| Step | What it does | Needs internet |
+|---|---|---|
+| Dash helpers | Installs and enables the Wi-Fi and GPS recovery helpers and the Wi-Fi keeper | No |
+| GPS service | Points gpsd at the GPS receiver only (`USBAUTO="false"`, `-n`, starts with the Pi) | No |
+| Clock from GPS | Installs chrony and its GPS setting | First time |
+| TunerStudio: Java and display | Installs `xwayland` and `default-jre` | First time |
+| TunerStudio: program | Downloads TunerStudio MS from tunerstudio.com (checked against a known SHA-256) into the screen user's home | First time |
+| TunerStudio: serial port | Adds the screen user to `dialout`, then restarts the screen once | No |
+
+A step that needs the internet waits and says so; **Update now** with Wi-Fi connected
+runs it. The first run downloads Java and TunerStudio (about 300 MB) and can take
+several minutes: the update status says it is finishing the Pi setup.
+
+**System check → Updates** lists every step with its result. **Pi setup** there says
+whether this version's setup has run.
+
+The dash also checks by itself: about 10 s after it starts, if the setup script is not
+the one that last ran, it asks the updater to run it (the request word `setup`: the
+updater runs the script and does nothing else). That covers an update installed by an
+older updater.
+
+Still by hand, because they are choices or need a password, not requirements of an
+update: the first install of the Pi, options in `/etc/default/frogdash` (`--terminal`,
+`--camera`, `--dashcam`), the dash cam's Wi-Fi profile, the time zone, and flashing the
+ESP32 and the Nano.
 
 The Pi needs internet on its built-in Wi-Fi. Join a network from the dash:
 **Controls → Wi-Fi → Internet (for updates)**: Scan, pick the network, type the
 password with the on-screen keyboard and Connect. The network is remembered and
-rejoined automatically. Its helper installs itself as described above; by hand:
+rejoined automatically. Its helper is installed by the Pi setup above; by hand it is:
 
 ```sh
 sudo cp hardware/systemd/frogdash-wifi.service hardware/systemd/frogdash-wifi.path /etc/systemd/system/
@@ -127,6 +156,7 @@ If the Pi's built-in Wi-Fi cannot reach your networks (for example it only recei
 - **Wi-Fi keeper** (`frogdash-netkeeper.service`) keeps the adapter on the dash cam. Every
   10 s, if the dash cam connection is down and nothing is borrowing the adapter, it
   rescans and reconnects. No commands needed after an update, a reboot or a dash cam restart.
+  The Pi setup installs the service itself; the commands below are only for doing it by hand.
 - **Update now** borrows the adapter: joins a saved network in range, updates, hands it back.
 - **Controls > Wi-Fi > Internet** borrows it too when `/etc/frogdash/wifi-internet` names
   that adapter: Scan and Connect save a network for updates, then return to the dash cam.
@@ -228,7 +258,7 @@ each one where the speed would be. A position at any point stops it.
 | | Restart the search again | Every 15 minutes |
 
 The first three steps need root, which the dash does not have. A small helper does
-them. It installs itself after the update that brings it (see **Dash helpers** above);
+them. The Pi setup installs it with the update that brings it (see **Pi setup** above);
 nothing needs typing. By hand it would be:
 
 ```sh

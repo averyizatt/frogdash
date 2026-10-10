@@ -12,9 +12,10 @@
 # does not, the previous version is put back and restarted, and that commit is not
 # installed again (a newer one is). The failed start is kept in update-failure.log.
 #
-# The dash's other root helpers (Wi-Fi, GPS recovery: a .path unit and its .service in
-# hardware/systemd) are installed and enabled from here when they are missing, so a new
-# one never needs a laptop. The dash asks for that alone with the request word 'helpers'.
+# Whatever else the version needs on the Pi (root helpers, packages, service settings)
+# is done by tools/frogdash_setup.sh, run from here as root after every update and on
+# "Already up to date", so nothing ever needs typing over SSH. It is always the new
+# version's script that runs. The dash asks for it alone with the request word 'setup'.
 REPO=${FROGDASH_REPO:-/opt/frogdash}
 STATE=${FROGDASH_STATE:-$(readlink -f /var/lib/frogdash 2>/dev/null || echo /var/lib/frogdash)}
 UNITS=${FROGDASH_UNITS:-/etc/systemd/system}
@@ -47,18 +48,12 @@ sync_units() {  # Refresh only the unit files that are already installed.
     [ $changed = 1 ] && systemctl daemon-reload
     return 0
 }
-install_helpers() {  # Add the dash's path-started helpers that are not installed and enabled yet.
-    added=""
-    for path in $REPO/hardware/systemd/frogdash-*.path; do
-        [ -f "$path" ] || continue
-        name=$(basename "$path" .path)
-        [ -f "$REPO/hardware/systemd/$name.service" ] || continue
-        [ -f "$UNITS/$name.path" ] && [ -f "$UNITS/$name.service" ] && systemctl is-enabled --quiet "$name.path" && continue
-        cp "$REPO/hardware/systemd/$name.service" "$REPO/hardware/systemd/$name.path" "$UNITS/" || continue
-        systemctl daemon-reload
-        systemctl enable --now "$name.path" >/dev/null 2>&1 && added="$added ${name#frogdash-}"
-    done
-    [ -z "$added" ] || added=". Added helpers:$added"
+setup() {  # $1 = online when GitHub was just reached. Leaves what it did in $note.
+    note=""
+    [ -f "$REPO/tools/frogdash_setup.sh" ] || return 0
+    sync_units  # Also on "Already up to date": an older updater may have left the unit files behind.
+    note=$(FROGDASH_REPO=$REPO FROGDASH_STATE=$STATE FROGDASH_UNITS=$UNITS sh "$REPO/tools/frogdash_setup.sh" $1 2>/dev/null | tail -n 1)
+    [ -z "$note" ] || note=". $note"
     return 0
 }
 restart_dash() {
@@ -84,8 +79,8 @@ healthy() {  # $1 = 1 when a screen was connected before, so it has to come back
     return 1
 }
 
-if [ "$action" = helpers ]; then  # From the dash at start-up when one is missing. Nothing else changes.
-    install_helpers
+if [ "$action" = setup ] || [ "$action" = helpers ]; then  # From the dash at start-up. Nothing else changes.
+    setup
     exit 0
 fi
 
@@ -154,8 +149,9 @@ if ! out=$(git -C $REPO merge --ff-only --quiet FETCH_HEAD 2>&1); then
 fi
 after=$(git -C $REPO rev-parse HEAD)
 if [ "$before" = "$after" ]; then
-    install_helpers
-    report current "Already up to date$added"; exit 0
+    report running "Already up to date. Checking the Pi setup (a first-time install can take several minutes)"
+    setup online
+    report current "Already up to date$note"; exit 0
 fi
 sync_units
 changes=$(git -C $REPO rev-list --count "$before..$after")
@@ -164,8 +160,9 @@ report running "Updated ($changes changes). Restarting the dash and checking it"
 restart_dash
 if healthy $had_screen; then
     rm -f "$STATE/update-bad"
-    install_helpers
-    report updated "Updated ($changes changes). The dash restarted and passed its check$added"; exit 0
+    report running "Updated ($changes changes) and checked. Finishing the Pi setup (a first-time install can take several minutes)"
+    setup online
+    report updated "Updated ($changes changes). The dash restarted and passed its check$note"; exit 0
 fi
 
 # The new version is not usable: keep the evidence, then put the old one back.

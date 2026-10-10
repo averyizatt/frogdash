@@ -102,7 +102,7 @@ def report(state, folder=None, wall=time.time):
             out.append(line('GPS and time', 'GPS recovery helper', OK if recovery['helper'] == 'ok' else WARN if recovery['helper'] == 'missing' else SKIP,
                             {'ok': recovery['last'] or 'Installed', 'missing': 'Not installed: the dash cannot restart the GPS service or reset the receiver itself',
                              'unknown': 'Not needed yet'}[recovery['helper']],
-                            'The dash installs it by itself within a minute of starting (Updates > Dash helpers). By hand: '
+                            'The dash installs it by itself within a minute of starting (Updates > Pi setup). By hand: '
                             'sudo cp hardware/systemd/frogdash-gps.* /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now frogdash-gps.path'))
         out.append(line('GPS and time', 'GPS broadcast to the bus (0x203)', FAIL if state.gps.conflict else OK, state.gps.tx_status,
                         'Another node also sends 0x203; disable its GPS transmit'))
@@ -155,16 +155,20 @@ def report(state, folder=None, wall=time.time):
                     'The dash is on the last version that worked; the failed start is saved in update-failure.log for the next fix'
                     if undone else 'Dash management > Support > Update now, with internet connected'))
 
-    helpers = state.helpers.snapshot() if state.helpers else None
-    if helpers:
-        names = ', '.join(helpers['missing'])
-        out.append(line('Updates', 'Dash helpers', {'ok': OK, 'installing': WARN, 'unknown': SKIP}.get(helpers['state'], FAIL),
-                        {'ok': 'All installed', 'installing': f'Installing: {names}', 'unknown': 'Not checked yet',
-                         'failed': f'Could not install: {names}',
-                         'no-updater': 'The update helper is not installed, so the dash cannot update or add its other helpers'}[helpers['state']],
+    # What this version needs on the Pi, done by the updater as root (tools/frogdash_setup.sh).
+    setup = state.helpers.snapshot() if state.helpers else None
+    if setup:
+        out.append(line('Updates', 'Pi setup', {'ok': OK, 'installing': WARN, 'unknown': SKIP}.get(setup['state'], FAIL),
+                        {'ok': 'Done for this version', 'installing': 'Running now', 'unknown': 'Not checked yet',
+                         'failed': 'The update helper did not answer, so this version\'s setup has not run',
+                         'no-updater': 'The update helper is not installed, so the dash cannot update or set the Pi up itself'}[setup['state']],
                         'Needs a keyboard or SSH once: cd /opt/frogdash && sudo cp hardware/systemd/frogdash-update.* /etc/systemd/system/ && '
-                        'sudo systemctl daemon-reload && sudo systemctl enable --now frogdash-update.path' if helpers['state'] == 'no-updater'
-                        else 'Dash management > Support > Update now installs them too'))
+                        'sudo systemctl daemon-reload && sudo systemctl enable --now frogdash-update.path' if setup['state'] == 'no-updater'
+                        else 'Dash management > Support > Update now runs it'))
+        for item in setup['steps']:
+            out.append(line('Updates', str(item.get('name', 'Setup step')),
+                            {'ok': OK, 'done': OK, 'waiting': WARN, 'skipped': SKIP}.get(item.get('result'), FAIL), str(item.get('detail', '')),
+                            'Dash management > Support > Update now, with internet connected, tries again'))
 
     counts = {s: sum(1 for item in out if item['status'] == s) for s in (OK, WARN, FAIL, SKIP)}
     return {'lines': out, 'counts': counts, 'time_ms': int(wall() * 1000)}
