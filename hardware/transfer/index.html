@@ -1,7 +1,12 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Frogdash files</title><link rel="icon" href="data:,"><link rel="stylesheet" href="review.css"><link rel="stylesheet" href="transfer.css"></head>
-<body><main><header><span class="brand">FROGDASH</span><h1>Logs &amp; drive review</h1><p>Connected to your dash over Wi-Fi.</p></header>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Dash on your phone</title><link rel="icon" href="data:,"><link rel="stylesheet" href="review.css"><link rel="stylesheet" href="transfer.css"></head>
+<body><main><header><span class="brand">FOX BODY DASH</span><h1>Logs, faults &amp; updates</h1><p>Connected to your dash over Wi-Fi.</p></header>
 <section id="login"><h2>Enter the dash access code</h2><p>Find the code under Controls → Wi-Fi on the dash.</p><form id="login-form"><label for="code">Access code</label><input id="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" maxlength="8" required><button>Connect</button></form></section>
 <p id="message" role="status"></p>
-<section id="content" hidden><div class="toolbar"><h2>Vehicle connection</h2><button id="refresh" type="button">Refresh</button></div><p id="status"></p><p id="recording"></p><p id="system-status"></p><h2>Drive review</h2><div id="phone-review"></div><h2>Saved logs</h2><p>The current log becomes downloadable after rotation. Tap a completed file to save it.</p><ul id="files"></ul></section>
+<section id="content" hidden><div class="toolbar"><h2>Vehicle connection</h2><button id="refresh" type="button">Refresh</button></div><p id="status"></p><p id="recording"></p><p id="system-status"></p>
+<h2>Faults and system check</h2><p id="check-summary">Checking…</p><ul id="check-lines"></ul><button id="check-all" type="button" class="quiet" hidden>Show everything that passed</button>
+<p><a id="diagnostics" class="button" href="/diagnostics.json" download>Download diagnostics file</a></p><p class="note">One file with the system check, every reading, helper results and the last failed start. Send it when something needs looking at.</p>
+<h2>Software</h2><p id="update-status">Checking…</p><div class="actions"><button id="update-run" type="button">Update now</button><button id="update-undo" type="button" class="quiet">Undo last update</button></div><p class="note">The dash needs internet for an update: a saved Wi-Fi network in range. It restarts during the update; this page reconnects by itself.</p>
+<h2>Drive review</h2><div id="phone-review"></div>
+<h2>Saved logs</h2><p>Tap a completed file to save it. The file being recorded can be finished now and a new one started.</p><p><button id="finish-log" type="button" class="quiet">Finish the current log</button></p><ul id="files"></ul></section>
 <footer>Hotspot sessions last 20 minutes. Vehicle controls stay on the dash.</footer></main><script src="review.js"></script><script src="transfer.js"></script></body></html>

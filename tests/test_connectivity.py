@@ -1,5 +1,6 @@
 import asyncio
 import io
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -7,7 +8,7 @@ from unittest.mock import AsyncMock, patch
 
 from aiohttp import CookieJar, ClientSession, UnixConnector, web
 from aiohttp.test_utils import TestClient, TestServer
-from hardware.frogdash.connectivity import Connectivity, TransferPortal
+from hardware.frogdash.connectivity import Connectivity, RESUME_S, TransferPortal, load_resume
 from hardware.frogdash.hotspot_helper import Hotspot, create_helper, LIFETIME
 from hardware.frogdash.recorder import Recorder, Config
 from hardware.frogdash.server import create_app
@@ -111,6 +112,101 @@ class ConnectivityTests(unittest.IsolatedAsyncioTestCase):
                 await portal.close()
                 self.assertEqual((await client.get('/api/logs')).status, 401)
             writer.close()
+
+    async def test_phone_sees_faults_downloads_diagnostics_and_finishes_the_current_log(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / 'update-status.json').write_text(json.dumps({'state': 'rolledback', 'message': 'Update undone', 'version': 'abc1234', 'previous': ''}))
+            (folder / 'update-failure.log').write_text('Traceback: the new version crashed\n')
+            (folder / 'setup-status.json').write_text(json.dumps({'stamp': 'x', 'running': False, 'steps': [{'name': 'Phone hotspot', 'result': 'ok', 'detail': 'Ready'}]}))
+            state = State()
+            state.recorder = Recorder(state, Config(folder / 'logs', free_bytes=0))
+            state.recorder.start()
+            portal = TransferPortal(state, folder)
+            async with TestClient(TestServer(portal.app('127.0.0.0/8')), cookie_jar=CookieJar(unsafe=True)) as client:
+                origin = str(client.make_url('/')).rstrip('/')
+                for path in ('/api/check', '/diagnostics.json', '/api/update'):
+                    self.assertEqual((await client.get(path)).status, 401, path)         # Nothing without the dash code.
+                self.assertEqual((await client.post('/api/logs/finish', headers={'Origin': origin})).status, 401)
+                self.assertEqual((await client.post('/api/update', json={'action': 'update'}, headers={'Origin': origin})).status, 401)
+                await client.post('/session', json={'code': portal.code}, headers={'Origin': origin})
+
+                check = await (await client.get('/api/check')).json()
+                lines = {line['name']: line for line in check['report']['lines']}
+                self.assertEqual(lines['Last update']['status'], 'warn')                 # The same system check the dash shows.
+                self.assertEqual(check['update']['state'], 'rolledback')
+                self.assertGreater(check['report']['counts']['fail'] + check['report']['counts']['warn'], 0)
+
+                response = await client.get('/diagnostics.json')
+                self.assertIn('attachment; filename="dash-diagnostics-', response.headers['Content-Disposition'])
+                bundle = json.loads(await response.text())
+                self.assertEqual(bundle['format'], 'dash-diagnostics')
+                self.assertIn('Traceback', bundle['update_failure_log'])
+                self.assertEqual(bundle['helpers']['setup-status.json']['steps'][0]['name'], 'Phone hotspot')
+                self.assertIsNone(bundle['helpers']['gps-status.json'])                  # Not written yet: present and empty.
+                self.assertIn('values', bundle['snapshot'])
+                self.assertEqual(len(bundle['check']['lines']), len(check['report']['lines']))
+                self.assertNotIn(portal.code, await response.text())                    # No credentials in the file.
+                self.assertNotIn(portal.session, await response.text())
+
+                # The log being recorded cannot be downloaded until it is finished from the phone.
+                for _ in range(100):
+                    files = (await (await client.get('/api/logs')).json())['files']
+                    if files and files[0]['active']:
+                        break
+                    await asyncio.sleep(.05)
+                current = files[0]['name']
+                self.assertEqual((await client.get('/logs/' + current)).status, 409)
+                self.assertEqual((await client.post('/api/logs/finish')).status, 403)    # Same-origin only.
+                self.assertEqual((await client.post('/api/logs/finish', headers={'Origin': origin})).status, 200)
+                for _ in range(100):
+                    response = await client.get('/logs/' + current)
+                    if response.status == 200:
+                        break
+                    await asyncio.sleep(.05)
+                self.assertTrue(list(Reader(io.BytesIO(await response.read())).records()))
+                for _ in range(100):                                                     # Recording carried on in a new file.
+                    files = (await (await client.get('/api/logs')).json())['files']
+                    if len(files) == 2 and files[0]['active']:
+                        break
+                    await asyncio.sleep(.05)
+                self.assertEqual((len(files), files[0]['active'], files[1]['name']), (2, True, current))
+            await state.recorder.close()
+
+    async def test_phone_can_start_an_update_and_keeps_its_login_through_the_restart(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            now = [1_000_000.0]
+            portal = TransferPortal(State(), folder, wall=lambda: now[0])
+            async with TestClient(TestServer(portal.app('127.0.0.0/8')), cookie_jar=CookieJar(unsafe=True)) as client:
+                origin = str(client.make_url('/')).rstrip('/')
+                await client.post('/session', json={'code': portal.code}, headers={'Origin': origin})
+                self.assertEqual((await (await client.get('/api/update')).json())['state'], 'idle')
+                for bad in ({'action': 'reboot'}, {'action': 'helpers'}, {'action': ['update']}, {}, 'update'):
+                    self.assertEqual((await client.post('/api/update', json=bad, headers={'Origin': origin})).status, 400, bad)
+                self.assertFalse((folder / 'update-request').exists())                   # Only the two fixed actions exist.
+                self.assertEqual((await client.post('/api/update', json={'action': 'update'})).status, 403)
+                status = await (await client.post('/api/update', json={'action': 'update'}, headers={'Origin': origin})).json()
+                self.assertTrue(status['pending'])
+                self.assertEqual((folder / 'update-request').read_text(), 'requested')
+                await client.post('/api/update', json={'action': 'rollback'}, headers={'Origin': origin})
+                self.assertEqual((folder / 'update-request').read_text(), 'rollback')
+            # The dash restarts: the new portal takes over the same code and login, so the page carries on.
+            now[0] += 120
+            again = TransferPortal(State(), folder, wall=lambda: now[0])
+            self.assertEqual((again.code, again.session), (portal.code, portal.session))
+            self.assertIsNotNone(load_resume(folder, lambda: now[0]))
+            # ...but only for a while, and never from a file that claims too much.
+            now[0] += RESUME_S
+            later = TransferPortal(State(), folder, wall=lambda: now[0])
+            self.assertNotEqual(later.session, portal.session)
+            (folder / 'hotspot-resume.json').write_text(json.dumps({'until': now[0] + 10 * RESUME_S, 'code': '1', 'session': 'x'}))
+            self.assertIsNone(load_resume(folder, lambda: now[0]))
+            (folder / 'hotspot-resume.json').write_text('not json')
+            self.assertIsNone(load_resume(folder, lambda: now[0]))
+        # Without a data folder (replay, tests) there is nothing to update.
+        async with TestClient(TestServer(TransferPortal(State()).app('127.0.0.0/8')), cookie_jar=CookieJar(unsafe=True)) as client:
+            self.assertEqual((await client.get('/api/update')).status, 401)
 
     async def test_portal_limits_guesses_and_rejects_other_networks(self):
         portal = TransferPortal(State())

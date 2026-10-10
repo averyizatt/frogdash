@@ -36,6 +36,13 @@ SHIMS = {
     'curl': 'while [ $# -gt 0 ]; do case "$1" in -o) out=$2; shift;; esac; shift; done\n'
             '[ -f "$FAKE/download" ] || exit 22\ncp "$FAKE/download" "$out"\n',
     'git': '[ -f "$FAKE/internet" ] || exit 2\n',
+    # Wi-Fi adapters as NetworkManager reports them: wlan0 built in, wlan1 on the dash cam.
+    'nmcli': 'echo "$@" >> "$FAKE/nmcli.log"\ncase "$*" in\n'
+             '*"connection.interface-name con show dashcam"*) [ -f "$FAKE/no-dashcam" ] || echo wlan1;;\n'
+             '*"DEVICE,TYPE dev"*) [ -f "$FAKE/one-adapter" ] || echo wlan0:wifi; echo wlan1:wifi; echo eth0:ethernet;;\n'
+             '*"WIFI-PROPERTIES.AP device show"*) echo yes;;\nesac\n',
+    # Stands in for tools/setup_hotspot.py, which only runs as root on the Pi.
+    'python3': 'echo "$@" >> "$FAKE/python.log"\ncase "$*" in *setup_hotspot.py*) mkdir -p "$FROGDASH_ETC/frogdash" && echo "{}" > "$FROGDASH_ETC/frogdash/hotspot.json";; esac\n',
     'sleep': 'exit 0\n',
 }
 
@@ -105,13 +112,20 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn('USBAUTO="false"', text)
         self.assertIn('GPSD_OPTIONS="-n"', text)
         self.assertEqual(steps['TunerStudio: serial port'], ('done', 'foxbody can now open the tuning cable'))
+        # The phone hotspot: made on the adapter the dash cam does not use, helper and permission installed.
+        self.assertEqual(steps['Phone hotspot'][0], 'done')
+        self.assertIn('setup_hotspot.py --interface wlan0 --ssid Foxbody Dash', self.log('python.log'))
+        self.assertTrue((self.units / 'frogdash-hotspot.service').is_file())
+        self.assertIn('enable --now frogdash-hotspot.service', self.log('systemctl.log'))
+        self.assertEqual((self.units / 'frogdash.service.d/hotspot.conf').read_bytes(), (ROOT / 'config/hotspot-service.conf').read_bytes())
+        self.assertTrue(self.log('systemctl.log').rstrip().endswith('restart frogdash.service'))   # Last: its new permission.
         self.assertIn('-aG dialout foxbody', self.log('usermod.log'))
         self.assertIn('try-restart frogdash-console@foxbody.service', self.log('systemctl.log'))
         for name in ('Clock from GPS', 'TunerStudio: Java and display', 'TunerStudio: program'):
             self.assertEqual(steps[name][0], 'waiting', name)
             self.assertIn('press Update now', steps[name][1])
         self.assertEqual((self.log('apt.log'), list(self.fake.glob('home/*'))), ('', []))  # Nothing was fetched.
-        self.assertEqual(said, 'Set up: Dash helpers, GPS service, TunerStudio: serial port')
+        self.assertEqual(said, 'Set up: Dash helpers, GPS service, TunerStudio: serial port, Phone hotspot')
 
     def test_with_internet_the_rest_is_installed_and_a_second_run_changes_nothing(self):
         (self.fake / 'download').write_bytes(self.archive)
@@ -132,6 +146,8 @@ class SetupScriptTests(unittest.TestCase):
         self.assertEqual(said, '')
         self.assertEqual({result for result, _ in steps.values()}, {'ok'})
         self.assertEqual([self.log(name) for name in ('apt.log', 'usermod.log', 'chown.log')], logs)
+        self.assertEqual(self.log('python.log').count('setup_hotspot.py'), 1)       # The profile is made once.
+        self.assertEqual(self.log('systemctl.log').count('restart frogdash.service'), 1)
         new = self.log('systemctl.log')[len(calls):]
         self.assertTrue(all(line.startswith('is-enabled') for line in new.splitlines()), new)   # It only looked.
 
@@ -154,6 +170,18 @@ class SetupScriptTests(unittest.TestCase):
         self.assertEqual(steps['GPS service'][0], 'waiting')
         self.assertIn('No GPS receiver recognised', steps['GPS service'][1])
         self.assertEqual(self.gpsd.read_text(), before)       # Pinning nothing would switch a working receiver off.
+
+    def test_the_hotspot_never_takes_the_dash_cams_only_adapter(self):
+        (self.fake / 'one-adapter').write_text('')            # Only wlan1, and the dash cam is on it.
+        _, _, steps = self.run_setup('offline')
+        self.assertEqual(steps['Phone hotspot'][0], 'waiting')
+        self.assertIn('dash cam uses wlan1', steps['Phone hotspot'][1])
+        self.assertNotIn('setup_hotspot.py', self.log('python.log'))
+        self.assertFalse((self.units / 'frogdash-hotspot.service').exists())
+        self.assertNotIn('restart frogdash.service', self.log('systemctl.log'))
+        (self.fake / 'no-dashcam').write_text('')             # No dash cam profile: the one adapter is free.
+        self.assertEqual(self.run_setup('offline')[2]['Phone hotspot'][0], 'done')
+        self.assertIn('--interface wlan1', self.log('python.log'))
 
     def test_asked_by_the_dash_it_finds_out_about_the_internet_itself(self):
         self.assertEqual(self.run_setup()[2]['TunerStudio: Java and display'][0], 'waiting')

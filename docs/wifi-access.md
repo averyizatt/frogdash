@@ -1,64 +1,67 @@
-# Wi-Fi hotspot and log transfer
+# The dash on your phone: logs, faults and updates over Wi-Fi
 
-**Controls → Wi-Fi** enables a discoverable, password-protected `Frogdash` hotspot
-for 20 minutes. It starts off after boot. Join from your phone/laptop, open
-`http://10.42.0.1:8081`, and enter the eight-digit access code displayed on the
-dash. The mobile page downloads completed MLG files and shows CAN, module, GPS
-and recording status. The current log becomes downloadable after rotation.
+The dash has its own Wi-Fi network. On the dash: **Controls → Wi-Fi → turn the hotspot
+on**. It stays on for 20 minutes and is off after every boot. The tab shows the network
+name, its password, the address to open and an eight-digit access code.
+
+On your phone or laptop:
+
+1. Join the Wi-Fi network shown (`Foxbody Dash` on a new install). The phone may say it
+   has no internet; stay on it.
+2. Open `http://10.42.0.1:8081` in the browser.
+3. Enter the access code from the dash.
+
+The page gives you:
+
+| | |
+|---|---|
+| **Faults and system check** | Everything the dash's System check found, faults first, each with what to do about it |
+| **Download diagnostics file** | One file with the system check, every current reading, helper results and the last failed start. Send it when something needs looking at |
+| **Software** | The installed version, **Update now** and **Undo last update** (two presses each, as on the dash) |
+| **Drive review** | The recorded drives |
+| **Saved logs** | Tap a file to save it. **Finish the current log** closes the file being recorded so it can be downloaded too; recording carries on in a new one |
+
+**Updating from the phone.** The dash needs internet for an update, which the hotspot
+does not provide: it joins a saved Wi-Fi network in range (your home network in the
+driveway) with its other adapter, as **Update now** on the dash does. The dash restarts
+during the update. The hotspot stays up and your login stays valid for 15 minutes, and
+the page follows the update until it reports the result. Your phone cannot be the
+internet source at the same time as it is joined to the dash's network.
+
 The Pages preview only simulates this setting and creates no wireless network.
 
-## Requirements
+## Setup: nothing to type
 
-Use Raspberry Pi OS with NetworkManager and an AP-capable Wi-Fi adapter. Pi models
-without onboard Wi-Fi need a suitable USB adapter. Set the correct WLAN country
-and enable the radio through `sudo raspi-config` before setup.
+The Pi setup (see [reliability.md](reliability.md), *Pi setup*) creates the hotspot the
+next time the dash updates: **System check → Updates → Phone hotspot** shows the result.
+It picks a Wi-Fi adapter that can be an access point and that the dash cam does not
+use, generates a 20-character password on the Pi, installs the helper, and restarts the
+dash once so it may use it. With only one adapter, and the dash cam on it, the step
+waits and says so.
 
-Activating the hotspot replaces the built-in radio's current Wi-Fi client
-connection; perform initial installation from the Pi display or Ethernet. After
-turning it off, NetworkManager may reconnect to saved networks according to its
-existing autoconnect policy. The hotspot uses 2.4 GHz WPA2/CCMP and shared IPv4
-addressing/DHCP. It needs no internet, although shared mode may forward an upstream
-internet connection if one exists. `10.42.0.0/24` must not overlap other networks.
-References: [Pi networking](https://www.raspberrypi.com/documentation/computers/configuration.html#connect-to-a-wireless-network),
-[NetworkManager settings](https://networkmanager.dev/docs/api/latest/nm-settings-nmcli.html),
-[nmcli](https://networkmanager.dev/docs/api/latest/nmcli.html).
+Use Raspberry Pi OS with NetworkManager and the WLAN country set. The hotspot uses
+2.4 GHz WPA2/CCMP and shared IPv4 addressing/DHCP on `10.42.0.0/24`, which must not
+overlap other networks. An existing hotspot profile is never overwritten.
 
-## Install on the Pi
-
-Install the checkout and virtual environment at `/opt/frogdash` first. The broker
-runs as root, so the checkout, interpreter and dependencies must be root-owned
-and not writable by unprivileged users.
+By hand, the same steps are:
 
 ```sh
-sudo apt install network-manager
 cd /opt/frogdash
-sudo chown -R root:root /opt/frogdash
-sudo python3 tools/setup_hotspot.py --interface wlan0 --ssid Frogdash
+sudo python3 tools/setup_hotspot.py --interface wlan0 --ssid "Foxbody Dash"
 sudo cp hardware/systemd/frogdash-hotspot.service /etc/systemd/system/
 sudo mkdir -p /etc/systemd/system/frogdash.service.d
 sudo cp config/hotspot-service.conf /etc/systemd/system/frogdash.service.d/hotspot.conf
-```
-
-The provisioner checks AP support and creates a non-autoconnecting profile. It
-refuses to overwrite an existing configuration. It generates a 20-character Wi-Fi
-password locally and stores it in root-readable files in `/etc/frogdash/` and
-NetworkManager's system connection directory. It does not print the password.
-
-Append the socket option to existing `/etc/default/frogdash` arguments, preserving
-your GPS and logging choices:
-
-```sh
-FROGDASH_ARGS="--interface can0 --gpsd --log-dir /var/lib/frogdash/logs --hotspot-socket /run/frogdash-connect/control.sock"
 sudo systemctl daemon-reload
 sudo systemctl enable --now frogdash-hotspot.service
 sudo systemctl restart frogdash
 ```
 
-The `FROGDASH_ARGS` line above belongs **in the environment file**, not just in
-an interactive shell. Controls → Wi-Fi then shows the network password, browser
-address and separate dash access code while enabled. The code/browser session
-change each time the transfer listener starts; the network password persists.
-Turning it off drops ongoing transfers. Automatic timeout is 20 minutes.
+The dash finds the helper at `/run/frogdash-connect/control.sock` by itself; the
+`--hotspot-socket` option is only needed for a different path. The password is stored in
+root-readable files in `/etc/frogdash/` and NetworkManager's system connection directory,
+and is shown only on the dash while the hotspot is on. The access code and browser
+session change each time the hotspot is switched on; the network password persists.
+Turning it off drops ongoing transfers.
 
 ## Service boundaries and recovery
 
@@ -70,12 +73,16 @@ drop-in grants the dashboard this supplementary group.
 
 The separate transfer server binds `10.42.0.1:8081`, requires a client address in
 the hotspot subnet and the dash code, rate-limits login attempts, and uses an
-HttpOnly SameSite cookie. It serves only transfer assets, status and completed
-managed logs. There is no vehicle-command websocket, CAN transmitter, raw-frame
-API, arbitrary-file access or remote system administration. Credentials are not
+HttpOnly SameSite cookie. It serves the page, status, the system check, the
+diagnostics file and completed managed logs, and accepts three fixed actions: finish
+the current log, update, and undo the last update (the same request the dash's own
+buttons make; the update itself is done by the root update helper). There is no
+vehicle-command websocket, CAN transmitter, raw-frame API, arbitrary-file access,
+command line or any other system administration. Credentials are not
 included in the vehicle state stream or logs. Do not port-forward this listener.
 
-Normal dashboard shutdown asks the broker to disable the hotspot. Its own timer
+Normal dashboard shutdown asks the broker to disable the hotspot, except during the
+15 minutes after an update was started from the phone. Its own timer
 also expires sessions after a dashboard crash. Broker startup disables any leftover
 active profile before serving requests. Failed timeout shutdown is retried.
 
@@ -87,6 +94,6 @@ journalctl -u frogdash-hotspot -u frogdash -n 50
 ```
 
 If a phone reports no internet, stay on the hotspot and enter its numeric address
-manually. If the dash says the helper is unavailable, check profile provisioning,
-the drop-in and socket argument. Authentication, isolation, expiry and browser
+manually. If the dash says the hotspot is not set up, press **Update now** and look at
+**System check → Updates → Phone hotspot**. Authentication, isolation, expiry and browser
 transfers are tested; actual AP broadcasting/radio switching requires Pi testing.

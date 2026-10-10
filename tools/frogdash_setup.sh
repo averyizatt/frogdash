@@ -24,7 +24,7 @@ TS_SHA=${FROGDASH_TS_SHA:-4f4781a6ff90127ef36672cc43d3edc78c4f61ef682dca38a02f9e
 STAMP=$(sha256sum "$0" 2>/dev/null | cut -c1-12)
 online=${1:-}   # 'online' from the updater, which has just reached GitHub; else found out when needed
 
-steps=""; did=""; restart_screen=""; apt_ready=""
+steps=""; did=""; restart_screen=""; restart_dash=""; apt_ready=""
 write_status() {  # running: true or false
     printf '{"stamp":"%s","running":%s,"time":%s,"steps":[%s]}\n' "$STAMP" "$1" "$(date +%s)" "$steps" > "$STATUS.tmp"
     chmod 644 "$STATUS.tmp"; mv "$STATUS.tmp" "$STATUS"
@@ -174,9 +174,50 @@ else
     step "TunerStudio: serial port" failed "Could not add $user to the dialout group"
 fi
 
+# --- Phone hotspot: the dash's own Wi-Fi network for logs, faults and updates from a phone ---
+# Off until switched on under Controls > Wi-Fi. Made on a Wi-Fi adapter the dash cam does
+# not use, with a password generated on the Pi and shown only on the dash.
+hotspot=$ETC/frogdash/hotspot.json
+if ! command -v nmcli >/dev/null 2>&1; then
+    step "Phone hotspot" skipped "NetworkManager is not installed"
+else
+    made=""; problem=""
+    if [ ! -f "$hotspot" ]; then
+        camera=$(nmcli -g connection.interface-name con show dashcam 2>/dev/null)
+        chosen=""
+        for device in $(nmcli -t -f DEVICE,TYPE dev 2>/dev/null | awk -F: '$2=="wifi"{print $1}'); do
+            [ "$device" = "$camera" ] && continue
+            if [ "$(LC_ALL=C nmcli -g WIFI-PROPERTIES.AP device show "$device" 2>/dev/null)" = yes ]; then chosen=$device; break; fi
+        done
+        if [ -z "$chosen" ]; then problem="waiting"
+        elif python3 "$REPO/tools/setup_hotspot.py" --interface "$chosen" --ssid "Foxbody Dash" >/dev/null 2>&1 && [ -f "$hotspot" ]; then made=1
+        else problem="failed"
+        fi
+    fi
+    if [ "$problem" = waiting ]; then
+        step "Phone hotspot" waiting "No free Wi-Fi adapter that can be a hotspot (the dash cam uses ${camera:-none})"
+    elif [ "$problem" = failed ]; then
+        step "Phone hotspot" failed "Could not create the hotspot on $chosen"
+    else
+        if ! { [ -f "$UNITS/frogdash-hotspot.service" ] && systemctl is-enabled --quiet frogdash-hotspot.service; }; then
+            install_unit frogdash-hotspot frogdash-hotspot.service && made=1
+        fi
+        # Lets the dash service talk to the hotspot helper; it takes effect when the dash restarts.
+        if ! cmp -s "$REPO/config/hotspot-service.conf" "$UNITS/frogdash.service.d/hotspot.conf"; then
+            mkdir -p "$UNITS/frogdash.service.d" && cp "$REPO/config/hotspot-service.conf" "$UNITS/frogdash.service.d/hotspot.conf" &&
+                systemctl daemon-reload && made=1 && restart_dash=1
+        fi
+        if [ -n "$made" ]; then step "Phone hotspot" done "Ready: switch it on under Controls, Wi-Fi"
+        else step "Phone hotspot" ok "Ready: switch it on under Controls, Wi-Fi"
+        fi
+    fi
+fi
+
 # A new display package or group reaches the screen only when its session starts again.
 [ -n "$restart_screen" ] && [ -n "$user" ] && systemctl try-restart "frogdash-console@$user.service" >/dev/null 2>&1
 
 write_status false
+# The dash picks up its new permission on a restart. Last, so the status above is what it reads.
+[ -n "$restart_dash" ] && systemctl restart frogdash.service >/dev/null 2>&1
 [ -n "$did" ] && echo "Set up: $did"
 exit 0

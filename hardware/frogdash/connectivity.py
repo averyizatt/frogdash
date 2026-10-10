@@ -1,8 +1,9 @@
-"""Local hotspot control and a separate, authenticated log/status transfer site."""
+"""Local hotspot control and a separate, authenticated phone site: logs, faults, updates."""
 import asyncio
 from collections import deque
 from contextlib import suppress
 import ipaddress
+import json
 from pathlib import Path
 import secrets
 import time
@@ -10,10 +11,31 @@ import time
 import aiohttp
 from aiohttp import web
 
+from . import selftest
 from .hotspot_helper import ADDRESS, PORT
 from .recorder import NAME
 
 TRANSFER_UI = Path(__file__).resolve().parents[1] / 'transfer'
+DEFAULT_SOCKET = Path('/run/frogdash-connect/control.sock')
+RESUME_S = 15 * 60   # An update started from the phone keeps the hotspot and the login this long.
+# Helper results kept in the data folder, included in the diagnostics download.
+STATUS_FILES = ('update-status.json', 'setup-status.json', 'gps-status.json', 'wifi-status.json')
+
+
+def read_json(path):
+    try:
+        return json.loads(path.read_text(encoding='utf-8'))
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
+def load_resume(folder, wall=time.time):
+    """The code and session kept across an update restart, while still fresh."""
+    data = read_json(folder / 'hotspot-resume.json') if folder else None
+    if (isinstance(data, dict) and isinstance(data.get('code'), str) and isinstance(data.get('session'), str)
+            and isinstance(data.get('until'), (int, float)) and 0 < data['until'] - wall() <= RESUME_S):
+        return data
+    return None
 
 
 def require_local(request):
@@ -28,12 +50,42 @@ def require_local(request):
 
 
 class TransferPortal:
-    def __init__(self, state):
-        self.state = state
-        self.code = f'{secrets.randbelow(100_000_000):08d}'
-        self.session = secrets.token_urlsafe(32)
+    def __init__(self, state, folder=None, wall=time.time):
+        self.state, self.folder, self.wall = state, folder, wall
+        resume = load_resume(folder, wall)
+        self.code = resume['code'] if resume else f'{secrets.randbelow(100_000_000):08d}'
+        self.session = resume['session'] if resume else secrets.token_urlsafe(32)
         self.attempts = deque(maxlen=10)
         self.runner = None
+
+    def update_status(self):
+        status = read_json(self.folder / 'update-status.json') if self.folder else None
+        if not isinstance(status, dict):
+            status = {'state': 'idle', 'message': 'No update has been run yet'}
+        status['pending'] = bool(self.folder) and (self.folder / 'update-request').exists()
+        return status
+
+    def check(self):
+        return {'report': selftest.report(self.state, self.folder), 'update': self.update_status()}
+
+    def diagnostics(self):
+        """Everything needed to see what went wrong, in one file."""
+        files = {name: read_json(self.folder / name) for name in STATUS_FILES} if self.folder else {}
+        try:
+            failure = (self.folder / 'update-failure.log').read_text(encoding='utf-8', errors='replace')[-20000:]
+        except (OSError, AttributeError):
+            failure = None
+        return {'format': 'dash-diagnostics', 'version': 1, 'created_ms': int(self.wall() * 1000),
+                'check': selftest.report(self.state, self.folder), 'update': self.update_status(),
+                'helpers': files, 'update_failure_log': failure,
+                'logs': self.state.recorder.files() if self.state.recorder else [],
+                'snapshot': self.state.snapshot()}
+
+    def request_update(self, action):
+        (self.folder / 'update-request').write_text('rollback' if action == 'rollback' else 'requested', encoding='utf-8')
+        # The dash restarts during an update: keep this hotspot and login so the phone page carries on.
+        (self.folder / 'hotspot-resume.json').write_text(json.dumps(
+            {'until': self.wall() + RESUME_S, 'code': self.code, 'session': self.session}), encoding='utf-8')
 
     def app(self, allowed_network='10.42.0.0/24'):
         network = ipaddress.ip_network(allowed_network)
@@ -58,6 +110,38 @@ class TransferPortal:
             return response
 
         app = web.Application(middlewares=[access], client_max_size=1024)
+
+        async def check(request):
+            return web.json_response(await asyncio.to_thread(self.check))
+
+        async def diagnostics(request):
+            body = json.dumps(await asyncio.to_thread(self.diagnostics), default=str, indent=1)
+            name = time.strftime('dash-diagnostics-%Y%m%d-%H%M%S.json', time.gmtime(self.wall()))
+            return web.Response(text=body, content_type='application/json',
+                                headers={'Content-Disposition': f'attachment; filename="{name}"'})
+
+        async def finish_log(request):
+            # Closes the file being recorded so it can be downloaded; recording carries on in a new one.
+            if not self.state.recorder:
+                raise web.HTTPNotFound(text='Logging is not enabled')
+            if not self.state.recorder.finish_current():
+                raise web.HTTPServiceUnavailable(text='The recorder is busy; try again')
+            return web.json_response({'ok': True})
+
+        async def update(request):
+            if not self.folder or self.state.mode == 'replay':
+                raise web.HTTPNotFound(text='Updates are not available here')
+            if request.method == 'POST':
+                # Two fixed actions, the same two as the buttons on the dash.
+                try:
+                    body = await request.json()
+                    action = body.get('action') if isinstance(body, dict) else None
+                except (ValueError, TypeError):
+                    action = None
+                if action not in ('update', 'rollback'):
+                    raise web.HTTPBadRequest(text='Expected action: update or rollback')
+                await asyncio.to_thread(self.request_update, action)
+            return web.json_response(await asyncio.to_thread(self.update_status))
 
         async def asset(request):
             return web.FileResponse(TRANSFER_UI / request.match_info.get('name', 'index.html'))
@@ -116,6 +200,8 @@ class TransferPortal:
         app.add_routes([web.get('/', asset), web.get('/{name:transfer\\.js|transfer\\.css}', asset),
                         web.get('/{name:review\\.js|review\\.css}', review_asset),
                         web.post('/session', login), web.get('/api/status', status), web.get('/api/logs', logs),
+                        web.get('/api/check', check), web.get('/diagnostics.json', diagnostics),
+                        web.post('/api/logs/finish', finish_log), web.get('/api/update', update), web.post('/api/update', update),
                         web.get('/api/drives', drives), web.get('/api/drives/{name}', review),
                         web.get('/logs/{name}', download)])
         return app
@@ -139,8 +225,8 @@ class TransferPortal:
 
 
 class Connectivity:
-    def __init__(self, state, socket_path):
-        self.state, self.socket_path = state, socket_path
+    def __init__(self, state, socket_path, folder=None):
+        self.state, self.socket_path, self.folder = state, socket_path, folder
         self.status = {'configured': False, 'enabled': False, 'error': None}
         self.client = self.task = self.portal = None
         self.lock = asyncio.Lock()
@@ -166,7 +252,7 @@ class Connectivity:
                     response.raise_for_status()
                     status = await response.json()
                 if status['enabled'] and not self.portal:
-                    portal = TransferPortal(self.state)
+                    portal = TransferPortal(self.state, self.folder)
                     await portal.start()
                     self.portal = portal
                 elif not status['enabled'] and self.portal:
@@ -179,7 +265,8 @@ class Connectivity:
                     await self.portal.close()
                     self.portal = None
                 self.status = {'configured': False, 'enabled': False,
-                               'error': 'Wi-Fi helper or transfer page unavailable. Check Pi hotspot setup and service journal.'}
+                               'error': 'The phone hotspot is not set up yet. Press Update now: the dash sets it up itself '
+                                        '(System check > Updates > Phone hotspot shows progress).'}
                 raise
             return dict(self.status)
 
@@ -189,8 +276,10 @@ class Connectivity:
             with suppress(asyncio.CancelledError):
                 await self.task
         if self.client:
-            with suppress(OSError, aiohttp.ClientError, TimeoutError):
-                await self.update(False)
+            # An update started from the phone restarts the dash: the hotspot stays up for it.
+            if not load_resume(self.folder):
+                with suppress(OSError, aiohttp.ClientError, TimeoutError):
+                    await self.update(False)
             await self.client.close()
         if self.portal:
             await self.portal.close()

@@ -163,6 +163,9 @@ class RotatingWriter:
             self.closed = True
 
 
+ROTATE = object()  # Queue marker: close the current file so it can be downloaded.
+
+
 class Recorder:
     def __init__(self, state, config):
         self.state, self.config = state, config
@@ -201,6 +204,11 @@ class Recorder:
             try:
                 if item is None:
                     return
+                if item is ROTATE:
+                    # Done here, on the writer's own thread of work: never raced with a write.
+                    await asyncio.to_thread(self.writer.finish_file)
+                    self.status = {**self.status, 'file': None}
+                    continue
                 snapshot, stamp = item
                 if time.monotonic() < retry_at:
                     self.dropped += 1
@@ -234,6 +242,14 @@ class Recorder:
             await self.tasks[1]
         await asyncio.to_thread(self.writer.close)
         self.status = {**self.status, 'state': 'stopped', 'file': None}
+
+    def finish_current(self):
+        """Close the file being recorded; the next sample starts a new one. False when busy."""
+        try:
+            self.queue.put_nowait(ROTATE)
+        except asyncio.QueueFull:
+            return False
+        return True
 
     def files(self):
         active = self.writer.path

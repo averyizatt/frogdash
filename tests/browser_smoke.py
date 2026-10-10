@@ -4,6 +4,7 @@ Run from repo root: python tests/browser_smoke.py [--browser /path/to/chromium]
 """
 import argparse
 import asyncio
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -19,8 +20,19 @@ from tools.inspect_mlg import inspect as inspect_mlg
 from hardware.frogdash.connectivity import TransferPortal
 
 
+async def until(check, timeout=20):
+    """Poll from here: the phone page's content policy forbids evaluated wait conditions."""
+    for _ in range(int(timeout / .1)):
+        if await check():
+            return
+        await asyncio.sleep(.1)
+    raise AssertionError('Timed out waiting on the phone page')
+
+
 async def check_transfer(browser, state, errors):
-    portal = TransferPortal(state)
+    folder = Path(tempfile.mkdtemp())
+    (folder / 'update-status.json').write_text('{"state": "current", "message": "Already up to date", "version": "abc1234", "previous": "def5678"}')
+    portal = TransferPortal(state, folder)
     runner = web.AppRunner(portal.app('127.0.0.0/8'), access_log=None)
     await runner.setup()
     site = web.TCPSite(runner, '127.0.0.1', 0)
@@ -38,6 +50,40 @@ async def check_transfer(browser, state, errors):
             await page.locator('#files a').first.click()
         await (await download_info.value).save_as('.tmp/phone-download.mlg')
         assert inspect_mlg('.tmp/phone-download.mlg')['data_records'] > 0
+        # Faults first, with the fix; everything that passed on request.
+        async def text(selector):
+            return await page.locator(selector).inner_text()
+        async def has(selector, words):
+            return words in await text(selector)
+        await until(lambda: has('#check-summary', 'OK'))
+        shown = await page.locator('#check-lines li').count()
+        assert shown == await page.locator('#check-lines li[data-state="fail"], #check-lines li[data-state="warn"]').count()
+        await page.locator('#check-all').click()
+        async def more():
+            return await page.locator('#check-lines li').count() > shown
+        await until(more)
+        await page.locator('#check-all').click()
+        # One file with everything, for sending on.
+        async with page.expect_download() as download_info:
+            await page.locator('#diagnostics').click()
+        await (await download_info.value).save_as('.tmp/phone-diagnostics.json')
+        bundle = json.loads(Path('.tmp/phone-diagnostics.json').read_text(encoding='utf-8'))
+        assert bundle['format'] == 'dash-diagnostics' and bundle['check']['lines'] and 'values' in bundle['snapshot']
+        # Update: two presses, then the page follows the dash through its restart.
+        assert 'Already up to date · version abc1234' in await page.locator('#update-status').inner_text()
+        await page.locator('#update-run').click()
+        assert not (folder / 'update-request').exists()
+        assert await page.locator('#update-run').inner_text() == 'Press again to update'
+        await page.locator('#update-run').click()
+        await until(lambda: has('#update-status', 'Waiting for the dash'))
+        assert (folder / 'update-request').read_text() == 'requested'
+        assert await page.locator('#update-run').is_disabled()
+        (folder / 'update-request').unlink()                       # The updater collected it...
+        (folder / 'update-status.json').write_text('{"state": "updated", "message": "Updated (3 changes). The dash restarted and passed its check", "version": "9999999", "previous": "abc1234"}')
+        await until(lambda: has('#update-status', 'Updated (3 changes)'))
+        async def enabled():
+            return not await page.locator('#update-run').is_disabled()
+        await until(enabled)
         assert await page.evaluate('document.documentElement.scrollWidth <= innerWidth')
         await page.screenshot(path='.tmp/phone-log-transfer.png', full_page=True)
         await portal.close()

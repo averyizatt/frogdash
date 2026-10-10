@@ -472,7 +472,7 @@
     $('wifi-password').textContent = status.enabled ? status.password || '—' : '—';
     $('wifi-url').textContent = status.enabled ? status.url || '—' : '—';
     $('wifi-code').textContent = status.enabled ? status.access_code || '—' : '—';
-    $('wifi-feedback').textContent = status.error || (demo ? 'Preview only — no Wi-Fi network is created.' : status.configured ? 'Ready. Access switches off automatically after 20 minutes.' : 'Configure the Pi Wi-Fi helper to enable hotspot access.');
+    $('wifi-feedback').textContent = status.error || (demo ? 'Preview only — no Wi-Fi network is created.' : status.configured ? 'Ready. Access switches off automatically after 20 minutes.' : 'The phone hotspot is not set up yet. Press Update now in Dash management: the dash sets it up itself.');
     $('wifi-on').disabled = wifiBusy || !status.configured || status.enabled;
     $('wifi-off').disabled = wifiBusy || !status.configured || !status.enabled;
   }

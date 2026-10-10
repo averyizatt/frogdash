@@ -14,7 +14,7 @@ from .gps import GPS, gpsd
 from .gpswatch import GpsRecovery
 from .helpers import Helpers
 from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
-from .connectivity import Connectivity, require_local
+from .connectivity import Connectivity, DEFAULT_SOCKET, require_local
 from .race import Race
 from .driving import Driving, atomic_write
 from .health import Health
@@ -794,7 +794,10 @@ def main():
         adapter = lambda: replay(state, frames, args.loop)
     else:
         adapter = lambda: socketcan(state, args.interface)
-    connectivity = Connectivity(state, args.hotspot_socket) if args.hotspot_socket else None
+    # The helper's socket has a fixed place; the option only overrides it. Until the Pi
+    # setup has installed the helper the Wi-Fi tab says so and nothing else changes.
+    socket_path = args.hotspot_socket or (DEFAULT_SOCKET if os.name == 'posix' and not args.replay else None)
+    connectivity = Connectivity(state, socket_path, args.data_dir) if socket_path else None
     web.run_app(create_app(state, adapter, connectivity), host="127.0.0.1", port=args.port, access_log=None, shutdown_timeout=3)
 
 
