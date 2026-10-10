@@ -102,6 +102,7 @@ def report(state, folder=None, wall=time.time):
             out.append(line('GPS and time', 'GPS recovery helper', OK if recovery['helper'] == 'ok' else WARN if recovery['helper'] == 'missing' else SKIP,
                             {'ok': recovery['last'] or 'Installed', 'missing': 'Not installed: the dash cannot restart the GPS service or reset the receiver itself',
                              'unknown': 'Not needed yet'}[recovery['helper']],
+                            'The dash installs it by itself within a minute of starting (Updates > Dash helpers). By hand: '
                             'sudo cp hardware/systemd/frogdash-gps.* /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now frogdash-gps.path'))
         out.append(line('GPS and time', 'GPS broadcast to the bus (0x203)', FAIL if state.gps.conflict else OK, state.gps.tx_status,
                         'Another node also sends 0x203; disable its GPS transmit'))
@@ -153,6 +154,17 @@ def report(state, folder=None, wall=time.time):
                     f"{update['message']} · version {update.get('version', '?')}" if update else 'Update not run yet',
                     'The dash is on the last version that worked; the failed start is saved in update-failure.log for the next fix'
                     if undone else 'Dash management > Support > Update now, with internet connected'))
+
+    helpers = state.helpers.snapshot() if state.helpers else None
+    if helpers:
+        names = ', '.join(helpers['missing'])
+        out.append(line('Updates', 'Dash helpers', {'ok': OK, 'installing': WARN, 'unknown': SKIP}.get(helpers['state'], FAIL),
+                        {'ok': 'All installed', 'installing': f'Installing: {names}', 'unknown': 'Not checked yet',
+                         'failed': f'Could not install: {names}',
+                         'no-updater': 'The update helper is not installed, so the dash cannot update or add its other helpers'}[helpers['state']],
+                        'Needs a keyboard or SSH once: cd /opt/frogdash && sudo cp hardware/systemd/frogdash-update.* /etc/systemd/system/ && '
+                        'sudo systemctl daemon-reload && sudo systemctl enable --now frogdash-update.path' if helpers['state'] == 'no-updater'
+                        else 'Dash management > Support > Update now installs them too'))
 
     counts = {s: sum(1 for item in out if item['status'] == s) for s in (OK, WARN, FAIL, SKIP)}
     return {'lines': out, 'counts': counts, 'time_ms': int(wall() * 1000)}

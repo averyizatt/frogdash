@@ -42,6 +42,7 @@ class State:
         self.received = self.malformed = self.ignored = self.seq = 0
         self.gps = None
         self.gps_recovery = None  # GpsRecovery when the USB GPS is in use.
+        self.helpers = None  # Helpers: installs the dash's missing root helpers through the updater.
         self.recorder = None
         self.camera = None
         self.dashcam = None

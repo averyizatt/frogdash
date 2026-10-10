@@ -12,6 +12,7 @@ from .adapters import read_replay, replay, socketcan
 from .state import State
 from .gps import GPS, gpsd
 from .gpswatch import GpsRecovery
+from .helpers import Helpers
 from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
 from .connectivity import Connectivity, require_local
 from .race import Race
@@ -69,6 +70,8 @@ def create_app(state, adapter=None, connectivity=None):
             tasks.append(asyncio.create_task(gpsd(state.gps)))
             if state.gps_recovery:
                 tasks.append(asyncio.create_task(state.gps_recovery.run()))
+        if state.helpers:
+            tasks.append(asyncio.create_task(state.helpers.run()))
         if state.recorder:
             state.recorder.start()
         if connectivity:
@@ -777,6 +780,8 @@ def main():
             state.camera = Camera(width, height, args.camera_fps, args.camera_rotate, idle_s=10 ** 9 if args.camera_keep_warm else 20, quality=args.camera_quality)
         except ValueError as exc:
             parser.error(f'Invalid camera option: {exc}')
+    if not args.replay:
+        state.helpers = Helpers(args.data_dir)
     if args.gpsd:
         state.gps = GPS(device=args.gps_device, transmit=not args.gps_no_transmit)
         # Watches for a missing position and works through the recovery steps (gpswatch.py).

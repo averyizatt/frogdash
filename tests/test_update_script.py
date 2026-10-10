@@ -17,7 +17,10 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / 'tools/frogdash_update.sh'
 SHELL = shutil.which('sh')
 SHIMS = {
-    'systemctl': 'echo "$@" >> "$FROGDASH_STATE/systemctl.log"\ncase "$1" in show) echo 0;; esac\nexit 0\n',
+    'systemctl': 'echo "$@" >> "$FROGDASH_STATE/systemctl.log"\n'
+                 'case "$1" in show) echo 0;;\n'
+                 'is-enabled) [ -f "$FROGDASH_UNITS/enabled-$3" ] || exit 1;;\n'
+                 'enable) touch "$FROGDASH_UNITS/enabled-$3";; esac\nexit 0\n',
     'curl': '[ -f "$FROGDASH_REPO/BROKEN" ] && exit 22\n'
             'if [ -f "$FROGDASH_REPO/NOSCREEN" ]; then echo \'{"mode": "socketcan", "ui_clients": 0}\'\n'
             'else echo \'{"mode": "socketcan", "ui_clients": 1}\'; fi\n',
@@ -121,6 +124,50 @@ class UpdateScriptTests(unittest.TestCase):
         self.publish('BROKEN', 'crashes on start')
         self.assertEqual(self.run_script()['state'], 'rolledback')
         self.assertEqual(unit.read_text(), 'new unit')
+
+    def helper(self, name, text='unit'):
+        folder = self.origin / 'hardware/systemd'
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / f'{name}.path').write_text(f'{text} path')
+        (folder / f'{name}.service').write_text(f'{text} service')
+
+    def test_a_new_helper_installs_itself_without_a_laptop(self):
+        units = Path(self.env['FROGDASH_UNITS'])
+        log = self.state / 'systemctl.log'
+        self.helper('frogdash-update')
+        self.helper('frogdash-gps')
+        (self.origin / 'hardware/systemd/frogdash-kiosk.service').write_text('not a helper: no path unit')
+        self.publish('dash.txt', 'version two')
+        status = self.run_script()
+        self.assertEqual(status['state'], 'updated')
+        self.assertIn('Added helpers: gps update', status['message'])
+        self.assertEqual(sorted(p.name for p in units.glob('frogdash-*')), ['frogdash-gps.path', 'frogdash-gps.service', 'frogdash-update.path', 'frogdash-update.service'])
+        self.assertIn('enable --now frogdash-gps.path', log.read_text())
+        # Already there: nothing is copied or enabled again.
+        calls = log.read_text().count('enable --now')
+        self.assertEqual(self.run_script()['message'], 'Already up to date')
+        self.assertEqual(log.read_text().count('enable --now'), calls)
+
+    def test_the_dash_can_ask_for_missing_helpers_alone(self):
+        units = Path(self.env['FROGDASH_UNITS'])
+        self.helper('frogdash-gps')
+        self.publish('dash.txt', 'version two')
+        self.assertEqual(self.run_script()['state'], 'updated')
+        before = (self.state / 'update-status.json').read_text()
+        (units / 'frogdash-gps.path').unlink()            # As on a Pi that updated with the older script.
+        (units / 'enabled-frogdash-gps.path').unlink()
+        newer = self.publish('dash.txt', 'version three')
+        log = self.state / 'systemctl.log'
+        restarts = log.read_text().count('restart frogdash.service')
+        self.run_script(request='helpers')
+        self.assertTrue((units / 'frogdash-gps.path').exists())
+        self.assertTrue((units / 'enabled-frogdash-gps.path').exists())
+        self.assertFalse((self.state / 'update-request').exists())
+        # Nothing else happened: no update, no restart, and the last update's result still shows.
+        self.assertNotEqual(self.head(), newer)
+        self.assertEqual(log.read_text().count('restart frogdash.service'), restarts)
+        self.assertEqual((self.state / 'update-status.json').read_text(), before)
+
 
 if __name__ == '__main__':
     unittest.main()

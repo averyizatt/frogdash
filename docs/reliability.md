@@ -87,10 +87,19 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now frogdash-update.path
 ```
 
+That is the only helper that ever needs a keyboard or SSH. The dash's other root
+helpers (Wi-Fi, GPS recovery) install themselves through it: about 10 s after the dash
+starts it checks which helpers of its version are installed and enabled, and asks the
+updater to add the missing ones (the request word `helpers`: the updater copies and
+enables those unit files from `/opt/frogdash/hardware/systemd` and does nothing else).
+**Update now** does the same. So a new helper arrives with the update that brings it,
+within about a minute of the restart. **System check → Updates → Dash helpers** shows
+`All installed`, `Installing: gps`, or that the update helper itself is missing.
+
 The Pi needs internet on its built-in Wi-Fi. Join a network from the dash:
 **Controls → Wi-Fi → Internet (for updates)**: Scan, pick the network, type the
 password with the on-screen keyboard and Connect. The network is remembered and
-rejoined automatically. One-time setup for that menu:
+rejoined automatically. Its helper installs itself as described above; by hand:
 
 ```sh
 sudo cp hardware/systemd/frogdash-wifi.service hardware/systemd/frogdash-wifi.path /etc/systemd/system/
@@ -218,8 +227,9 @@ each one where the speed would be. A position at any point stops it.
 | | Clear its memory and search from nothing, once | 3 minutes later |
 | | Restart the search again | Every 15 minutes |
 
-The first three steps need root, which the dash does not have. A small helper does them,
-installed once over SSH (updates from the dash keep it current afterwards):
+The first three steps need root, which the dash does not have. A small helper does
+them. It installs itself after the update that brings it (see **Dash helpers** above);
+nothing needs typing. By hand it would be:
 
 ```sh
 cd /opt/frogdash

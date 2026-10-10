@@ -11,6 +11,10 @@
 # on HTTP and stay up, and the screen must reconnect if it was connected before. If it
 # does not, the previous version is put back and restarted, and that commit is not
 # installed again (a newer one is). The failed start is kept in update-failure.log.
+#
+# The dash's other root helpers (Wi-Fi, GPS recovery: a .path unit and its .service in
+# hardware/systemd) are installed and enabled from here when they are missing, so a new
+# one never needs a laptop. The dash asks for that alone with the request word 'helpers'.
 REPO=${FROGDASH_REPO:-/opt/frogdash}
 STATE=${FROGDASH_STATE:-$(readlink -f /var/lib/frogdash 2>/dev/null || echo /var/lib/frogdash)}
 UNITS=${FROGDASH_UNITS:-/etc/systemd/system}
@@ -43,6 +47,20 @@ sync_units() {  # Refresh only the unit files that are already installed.
     [ $changed = 1 ] && systemctl daemon-reload
     return 0
 }
+install_helpers() {  # Add the dash's path-started helpers that are not installed and enabled yet.
+    added=""
+    for path in $REPO/hardware/systemd/frogdash-*.path; do
+        [ -f "$path" ] || continue
+        name=$(basename "$path" .path)
+        [ -f "$REPO/hardware/systemd/$name.service" ] || continue
+        [ -f "$UNITS/$name.path" ] && [ -f "$UNITS/$name.service" ] && systemctl is-enabled --quiet "$name.path" && continue
+        cp "$REPO/hardware/systemd/$name.service" "$REPO/hardware/systemd/$name.path" "$UNITS/" || continue
+        systemctl daemon-reload
+        systemctl enable --now "$name.path" >/dev/null 2>&1 && added="$added ${name#frogdash-}"
+    done
+    [ -z "$added" ] || added=". Added helpers:$added"
+    return 0
+}
 restart_dash() {
     systemctl restart frogdash.service
     systemctl try-restart 'frogdash-console@*.service' 2>/dev/null
@@ -65,6 +83,11 @@ healthy() {  # $1 = 1 when a screen was connected before, so it has to come back
     if [ $good -ge 5 ]; then why="the screen did not reconnect"; else why="the dash service did not stay up"; fi
     return 1
 }
+
+if [ "$action" = helpers ]; then  # From the dash at start-up when one is missing. Nothing else changes.
+    install_helpers
+    exit 0
+fi
 
 before=$(git -C $REPO rev-parse HEAD) || { report failed "Not a git checkout: $REPO"; exit 1; }
 had_screen=0
@@ -131,7 +154,8 @@ if ! out=$(git -C $REPO merge --ff-only --quiet FETCH_HEAD 2>&1); then
 fi
 after=$(git -C $REPO rev-parse HEAD)
 if [ "$before" = "$after" ]; then
-    report current "Already up to date"; exit 0
+    install_helpers
+    report current "Already up to date$added"; exit 0
 fi
 sync_units
 changes=$(git -C $REPO rev-list --count "$before..$after")
@@ -140,7 +164,8 @@ report running "Updated ($changes changes). Restarting the dash and checking it"
 restart_dash
 if healthy $had_screen; then
     rm -f "$STATE/update-bad"
-    report updated "Updated ($changes changes). The dash restarted and passed its check"; exit 0
+    install_helpers
+    report updated "Updated ($changes changes). The dash restarted and passed its check$added"; exit 0
 fi
 
 # The new version is not usable: keep the evidence, then put the old one back.
