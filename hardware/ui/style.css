@@ -65,6 +65,13 @@ svg { display:block; }
 .speed-readout { display:flex; align-items:baseline; gap:14px; margin-top:20px; }
 #speed-digits { font-size:234px; line-height:1; letter-spacing:-12px; font-weight:800; }
 .speed-readout .unit { font-size:25px; }
+/* No speed: the reason takes the place of the digits. */
+.speed-problem { display:flex; flex-direction:column; align-items:center; gap:10px; max-width:88%; margin-top:20px; text-align:center; }
+.speed-problem[hidden] { display:none; }
+.speed-problem strong { font-size:44px; line-height:1.05; font-weight:800; letter-spacing:.5px; color:var(--warn,#ffb84d); }
+.speed-problem span { font-size:17px; line-height:1.35; color:var(--text); }
+.speed-problem small { font-size:15px; line-height:1.35; color:var(--muted); }
+.has-speed-problem > .speed-readout { display:none; }
 .speed-source { position:absolute; bottom:23px; display:flex; align-items:center; gap:10px; color:var(--muted); font-size:15px; font-weight:700; }
 .status-dot { width:7px; height:7px; background:var(--dim); border-radius:50%; }
 body[data-speed-live="true"] .speed-source .status-dot { background:var(--accent); }

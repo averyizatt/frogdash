@@ -77,6 +77,7 @@
     display('speed-digits', 'vehicle.speed_kph', 0, window.FrogdashUnits.distance);
     document.body.dataset.speedLive = live('vehicle.speed_kph') !== null;
     const gpsState = snapshot.gps?.diagnosis?.state;
+    renderSpeedProblem(gpsState);
     $('gps-sats').textContent = live('vehicle.speed_kph') === null ? ({'no-gpsd': 'GPS · SERVICE NOT RUNNING', silent: 'GPS · RECEIVER NOT FOUND',
         deaf: 'GPS · NO SATELLITES HEARD', weak: 'GPS · SIGNAL TOO WEAK', searching: 'GPS · FINDING POSITION'})[gpsState] || 'GPS · NO LIVE FIX' :
       live('nav.speed_source') === 'wheel' && snapshot.gps ? 'WHEEL SPEED · GPS LOST' :
@@ -167,6 +168,31 @@
       ['[data-signal="engine.oil_pressure_psi"]', u.metric ? 'kPa' : 'psi', [0,u.pressure(100)]],
       ['[data-signal="engine.fuel_pressure_psi"]', u.metric ? 'kPa' : 'psi', [0,u.pressure(100)]]
     ]) { const card = document.querySelector(selector); card.querySelector('.unit').textContent = unit; [...card.querySelectorAll('.scale-labels span')].forEach((n,i) => n.textContent = Math.round(scales[i])); }
+  }
+  // No speed: say why, right where the speed would be, and what the dash is trying.
+  const SPEED_PROBLEMS = {
+    'no-gpsd': 'GPS SERVICE NOT RUNNING', silent: 'GPS RECEIVER NOT FOUND', deaf: 'NO SATELLITES HEARD',
+    weak: 'GPS SIGNAL TOO WEAK', searching: 'FINDING POSITION', starting: 'GPS STARTING'};
+  function renderSpeedProblem(gpsState) {
+    const gps = snapshot.gps, missing = connected && live('vehicle.speed_kph') === null;
+    let title = '', detail = '', trying = '';
+    if (missing && snapshot.mode !== 'demo') {
+      title = gps ? SPEED_PROBLEMS[gpsState] || 'NO GPS SPEED' : 'NO SPEED SOURCE';
+      detail = gps ? gps.diagnosis?.text || '' : 'No speed on the CAN bus (0x203), and the USB GPS is not enabled (--gpsd)';
+      const recovery = gps?.recovery;
+      if (recovery?.trying) trying = `Trying: ${recovery.trying.text} (step ${recovery.trying.step} of ${recovery.trying.steps})`;
+      else if (recovery?.helper === 'missing' && recovery.kind === 'silent') trying ='Automatic recovery needs the GPS helper: see Sensors > System check';
+      else if (recovery?.exhausted) trying = gps.diagnosis?.fix || '';
+      else if (recovery?.kind && recovery.next_in_s !== null) trying = `Next try in ${recovery.next_in_s} s`;
+    }
+    for (const box of document.querySelectorAll('.speed-problem')) {
+      if (box.hidden !== !title) box.hidden = !title;
+      const [head, body, foot] = box.children;
+      if (head.textContent !== title) head.textContent = title;
+      if (body.textContent !== detail) body.textContent = detail;
+      if (foot.textContent !== trying) foot.textContent = trying;
+      box.closest('.speed, [data-speed-card]')?.classList.toggle('has-speed-problem', !!title);
+    }
   }
   function renderKnock() {
     const energy = display('knock-energy-num', 'knock.energy');

@@ -1,0 +1,7 @@
+[Unit]
+Description=GPS recovery step for Frogdash (restart gpsd, find the receiver, reset its USB port)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /opt/frogdash/tools/frogdash_gps.sh
+TimeoutStartSec=60

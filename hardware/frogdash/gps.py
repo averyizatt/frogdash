@@ -1,9 +1,39 @@
 """USB GPS through the distribution's python3-gps/libgps bindings."""
 import asyncio
+import json
 import math
+import socket
 import time
 
 STALL_S = 10  # Reopen the gpsd connection after this long without any report.
+QUIET_S = 15  # No report from any receiver for this long: the receiver is not being heard.
+
+
+def ubx(message_class, message_id, payload=b''):
+    """A u-blox binary command with its header and checksum."""
+    body = bytes([message_class, message_id]) + len(payload).to_bytes(2, 'little') + payload
+    a = b = 0
+    for byte in body:
+        a = (a + byte) & 0xFF
+        b = (b + a) & 0xFF
+    return b'\xb5\x62' + body + bytes([a, b])
+
+
+# CFG-RST, GNSS-only controlled restart. Warm keeps what the receiver knows about the
+# satellites; cold clears it and starts from nothing.
+UBX_WARM_START = ubx(0x06, 0x04, bytes([0x01, 0x00, 0x02, 0x00]))
+UBX_COLD_START = ubx(0x06, 0x04, bytes([0xFF, 0xFF, 0x02, 0x00]))
+
+
+def send_to_receiver(path, frame, host='127.0.0.1', port=2947, timeout=2):
+    """Pass raw bytes to the receiver through gpsd (gpsd 3.21 or newer; not in read-only mode)."""
+    with socket.create_connection((host, port), timeout) as link:
+        link.sendall(('?DEVICE=' + json.dumps({'path': path, 'hexdata': frame.hex()}, separators=(',', ':')) + '\n').encode())
+        link.settimeout(.5)
+        try:
+            link.recv(4096)
+        except OSError:
+            pass
 
 
 class GPS:
@@ -26,9 +56,22 @@ class GPS:
         self.sky_seen = float('-inf')
         self.other_device = None  # A receiver gpsd hears that this dash is not using.
         self.other_seen = float('-inf')
+        self.gpsd_ok = None        # Whether the last connection attempt reached gpsd.
+        self.gpsd_error = None
+        self.started = None        # When the dash first tried to reach gpsd.
+        self.linked_at = float('-inf')
+        self.first_fix_s = None    # Seconds from start to the first position.
+        self.devices = {}          # What gpsd is watching: path -> driver name.
 
     def update(self, report):
         kind = report.get("class")
+        if kind == "DEVICES":
+            self.devices = {d.get("path"): d.get("driver") for d in report.get("devices", []) if d.get("path")}
+            return
+        if kind == "DEVICE" and report.get("path"):
+            if report.get("activated") or report.get("driver"):
+                self.devices[report["path"]] = report.get("driver") or self.devices.get(report["path"])
+            return
         if kind not in ("TPV", "SKY"):
             return
         device = report.get("device")
@@ -58,6 +101,8 @@ class GPS:
             self.mode = report.get("mode", 0)
             self.fix_seen = now
             self.status = "GPS fix" if self.mode in (2, 3) else "GPS searching"
+            if self.mode in (2, 3) and self.first_fix_s is None and self.started is not None:
+                self.first_fix_s = round(now - self.started, 1)
             if self.mode not in (2, 3) or report.get("status") in (5, 6, 8):
                 self.mode = 0
                 self.fields.clear()
@@ -86,15 +131,21 @@ class GPS:
         """Why there is or is not a position, in words, with what to do about it."""
         now = self.clock()
         device = self.device or 'no receiver'
-        if not self.connected:
-            return {'state': 'no-gpsd', 'text': self.status, 'fix': 'sudo systemctl status gpsd; check python3-gps is installed'}
-        if self.device_fixed and now - self.other_seen <= 15 and now - self.device_seen > 15:
+        if self.gpsd_ok is None:
+            return {'state': 'starting', 'text': self.status, 'fix': ''}
+        if not self.gpsd_ok:
+            return {'state': 'no-gpsd', 'text': f'GPS service not reachable: {self.gpsd_error or self.status}',
+                    'fix': 'sudo systemctl status gpsd; check python3-gps is installed'}
+        if self.device_fixed and now - self.other_seen <= QUIET_S and now - self.device_seen > QUIET_S:
             return {'state': 'silent', 'text': f'gpsd hears a receiver at {self.other_device}, but the dash is set to use only {self.device}',
                     'fix': 'Remove --gps-device from FROGDASH_ARGS in /etc/default/frogdash (the dash then follows the receiver), and restart frogdash'}
-        if now - self.report_seen > 15:
-            return {'state': 'silent', 'text': f'gpsd is running but no receiver is reporting ({device})',
+        if now - self.report_seen > QUIET_S:
+            if self.started is not None and now - self.started <= QUIET_S:
+                return {'state': 'starting', 'text': 'Waiting for the receiver to report', 'fix': ''}
+            watching = ', '.join(sorted(self.devices)) or 'no port at all'
+            return {'state': 'silent', 'text': f'No receiver is reporting (the GPS service is watching {watching})',
                     'fix': 'Receiver unplugged, or gpsd is watching the wrong port: ls -l /dev/serial/by-id/ and set DEVICES in /etc/default/gpsd to the GPS'}
-        sky = self.sky if now - self.sky_seen <= 15 else None
+        sky = self.sky if now - self.sky_seen <= QUIET_S else None
         if self.mode in (2, 3):
             return {'state': 'fix', 'text': f"Fix with {sky['used'] if sky else '?'} satellites ({device})", 'fix': ''}
         if not sky or not sky['heard']:
@@ -106,6 +157,18 @@ class GPS:
                     'fix': 'Weak signals with a clear sky mean radio noise: move the receiver away from the Pi blue USB 3 ports, the dash cam and the Wi-Fi adapter with a USB extension cable'}
         return {'state': 'searching', 'text': f"Hears {sky['heard']} satellites, {strength}; working out a position",
                 'fix': 'A first fix after a long break can take a few minutes with a clear view of the sky'}
+
+    def driver(self):
+        """gpsd's name for the receiver in use, such as 'u-blox'; None until it is identified."""
+        return self.devices.get(self.device) or next((name for name in self.devices.values() if name), None)
+
+    def restart_receiver(self, cold=False, send=send_to_receiver):
+        """Ask a u-blox receiver to restart its satellite search. Returns False for other makes."""
+        path = self.device or next(iter(self.devices), None)
+        if not path or 'u-blox' not in (self.driver() or '').lower():
+            return False
+        send(path, UBX_COLD_START if cold else UBX_WARM_START)
+        return True
 
     def values(self):
         now = self.clock()
@@ -150,8 +213,11 @@ async def gpsd(gps_state):
     except ImportError:
         gps_state.status = "Install python3-gps; create venv with --system-site-packages"
         return
+    failures = 0
     while True:
         session = None
+        if gps_state.started is None:
+            gps_state.started = gps_state.clock()
         try:
             session = await asyncio.to_thread(libgps.gps, host="127.0.0.1", port="2947",
                                               mode=libgps.WATCH_ENABLE | libgps.WATCH_NEWSTYLE)
@@ -160,7 +226,11 @@ async def gpsd(gps_state):
             gps_state.mode = 0
             gps_state.fix_seen = float("-inf")
             gps_state.connected, gps_state.status = True, "gpsd connected; waiting for fix"
-            gps_state.report_seen = gps_state.clock()
+            gps_state.gpsd_ok, gps_state.gpsd_error = True, None
+            # Stall detection counts from this connection; report_seen is only ever a real report,
+            # so a receiver that says nothing is recognised as silent across reconnects.
+            gps_state.linked_at = gps_state.clock()
+            failures = 0
             while True:
                 if await asyncio.to_thread(session.waiting, .2):
                     report = await asyncio.to_thread(next_report, session)
@@ -168,13 +238,17 @@ async def gpsd(gps_state):
                         gps_state.update(report)
                 else:
                     await asyncio.sleep(.05)
-                if gps_state.clock() - gps_state.report_seen > STALL_S:
+                if gps_state.clock() - max(gps_state.report_seen, gps_state.linked_at) > STALL_S:
                     # A connection that delivers nothing is treated as dead and reopened.
                     raise ConnectionError(f"no GPS reports for {STALL_S} s")
         except (OSError, ValueError, KeyError, libgps.json_error) as exc:
             gps_state.status = f"gpsd disconnected: {exc}"
+            if session is None:
+                gps_state.gpsd_ok, gps_state.gpsd_error = False, str(exc)
         finally:
             gps_state.connected = False
             if session is not None:
                 session.close()
-        await asyncio.sleep(1)
+        # At start-up gpsd may come up a moment after the dash: retry quickly, then ease off.
+        failures += 1
+        await asyncio.sleep(.25 if failures <= 20 else 1)

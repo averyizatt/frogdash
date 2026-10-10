@@ -93,6 +93,16 @@ def report(state, folder=None, wall=time.time):
         found = state.gps.diagnosis()
         out.append(line('GPS and time', 'USB GPS', OK if found['state'] == 'fix' else FAIL if found['state'] in ('no-gpsd', 'silent') else WARN,
                         found['text'], found['fix']))
+        recovery = state.gps_recovery.snapshot() if state.gps_recovery else None
+        if recovery:
+            took = recovery['first_fix_s']
+            out.append(line('GPS and time', 'Time to first position', SKIP if took is None else OK if took <= 60 else WARN,
+                            'No position yet' if took is None else f'{took:.0f} s after the dash started',
+                            'Over a minute means the receiver starts from nothing each time (no backup battery) or the signal is weak'))
+            out.append(line('GPS and time', 'GPS recovery helper', OK if recovery['helper'] == 'ok' else WARN if recovery['helper'] == 'missing' else SKIP,
+                            {'ok': recovery['last'] or 'Installed', 'missing': 'Not installed: the dash cannot restart the GPS service or reset the receiver itself',
+                             'unknown': 'Not needed yet'}[recovery['helper']],
+                            'sudo cp hardware/systemd/frogdash-gps.* /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now frogdash-gps.path'))
         out.append(line('GPS and time', 'GPS broadcast to the bus (0x203)', FAIL if state.gps.conflict else OK, state.gps.tx_status,
                         'Another node also sends 0x203; disable its GPS transmit'))
     else:

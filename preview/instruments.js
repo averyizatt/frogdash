@@ -32,6 +32,11 @@
       if (id === 'rpm' && (i + 1) / segments > 6 / 7) bar.className = 'redline';
       meter.append(bar);
     }
+    if (id === 'speed') {
+      // No speed: app.js writes the reason here, over the dial, as it does on the standard layout.
+      card.dataset.speedCard = '';
+      card.insertAdjacentHTML('beforeend', '<div class="speed-problem" role="status" hidden><strong></strong><span></span><small></small></div>');
+    }
     if (id === 'speed' || id === 'rpm') {
       const digits = svgNode('svg',{class:'terminal-digits',viewBox:`0 0 ${id==='speed'?168:224} 94`,'aria-hidden':'true'});
       const segments = ['12,4 42,4','46,10 46,39','46,53 46,82','12,88 42,88','8,53 8,82','8,10 8,39','12,46 42,46'];

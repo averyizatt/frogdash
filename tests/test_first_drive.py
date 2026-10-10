@@ -112,8 +112,10 @@ class GpsDiagnosisTests(unittest.TestCase):
                          'satellites': [{'ss': s, 'used': i < used} for i, s in enumerate(strengths)]})
 
     def test_each_reason_for_no_speed_is_named(self):
+        self.assertEqual(self.gps.diagnosis()['state'], 'starting')     # Not tried yet: not an error.
+        self.gps.gpsd_ok, self.gps.gpsd_error = False, 'Connection refused'
         self.assertEqual(self.gps.diagnosis()['state'], 'no-gpsd')
-        self.gps.connected = True
+        self.gps.gpsd_ok = True
         self.assertEqual(self.gps.diagnosis()['state'], 'silent')       # gpsd up, nothing from a receiver.
         self.assertIn('wrong port', self.gps.diagnosis()['fix'])
         self.gps.update({'class': 'TPV', 'device': '/dev/ttyACM0', 'mode': 1})
@@ -139,7 +141,7 @@ class GpsDiagnosisTests(unittest.TestCase):
 
     def test_a_named_port_that_no_longer_matches_is_called_out(self):
         gps = GPS(clock=lambda: self.now, wall=lambda: 0, device='/dev/ttyACM0')
-        gps.connected = True
+        gps.gpsd_ok = True
         gps.update({'class': 'TPV', 'device': '/dev/ttyACM1', 'mode': 3, 'speed': 5.0})   # Came back under another name.
         found = gps.diagnosis()
         self.assertEqual(found['state'], 'silent')
@@ -149,7 +151,7 @@ class GpsDiagnosisTests(unittest.TestCase):
     def test_system_check_and_snapshot_carry_it(self):
         state = State(clock=lambda: self.now)
         state.gps = self.gps
-        self.gps.connected = True
+        self.gps.gpsd_ok = True
         self.gps.update({'class': 'TPV', 'device': '/dev/ttyACM0', 'mode': 1})
         self.sky([15, 20])
         self.assertEqual(state.snapshot()['gps']['diagnosis']['state'], 'weak')
@@ -159,7 +161,7 @@ class GpsDiagnosisTests(unittest.TestCase):
         self.now += 30
         line = next(l for l in selftest.report(state)['lines'] if l['name'] == 'USB GPS')
         self.assertEqual(line['status'], 'fail')
-        self.assertIn('no receiver is reporting', line['detail'])
+        self.assertIn('No receiver is reporting', line['detail'])
 
 
 class PumpTestWithoutGpsTests(unittest.IsolatedAsyncioTestCase):

@@ -1,0 +1,9 @@
+[Unit]
+Description=Run a GPS recovery step when the Frogdash watchdog asks for one
+
+[Path]
+PathExists=/var/lib/private/frogdash/gps-request
+Unit=frogdash-gps.service
+
+[Install]
+WantedBy=multi-user.target

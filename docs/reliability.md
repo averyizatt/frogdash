@@ -189,15 +189,74 @@ stray bytes to the ECU.
 
 ### No speed: what the dash tells you
 
-The line under the speed and **Sensors → System check → USB GPS** name the reason:
+When there is no speed, the reason takes the place of the speed digits, in every gauge
+style, with what the dash is trying under it. **Sensors → System check → USB GPS** shows
+the same reason with the fix.
 
 | Message | Meaning | What to do |
 |---|---|---|
+| GPS starting | The first 15 s after the dash starts | Nothing: not a fault yet |
 | Service not running | gpsd is not reachable | `sudo systemctl status gpsd` |
 | Receiver not found | gpsd runs but nothing reports | Unplugged, or gpsd is watching the wrong port: check `DEVICES` above |
 | No satellites heard | The receiver talks but hears nothing | No sky view, or strong radio noise |
 | Signal too weak | Satellites heard, none strong enough | Radio noise: see below |
 | Finding position | Good signals, no position yet | Wait; a first fix after a long break can take minutes |
+
+### GPS recovery: what the dash tries by itself
+
+A watchdog (`hardware/frogdash/gpswatch.py`) works through these steps and announces
+each one where the speed would be. A position at any point stops it.
+
+| Problem | Step | When |
+|---|---|---|
+| Service not running | Restart the GPS service | After 5 s |
+| Receiver not found | Restart the GPS service | After 15 s |
+| | Look for the receiver on the USB ports and point gpsd at it | 25 s later |
+| | Reset the receiver's USB connection (as if unplugged and replugged) | 25 s later |
+| | Start again from the top | Every 5 minutes |
+| Receiver reports, no position | Restart its satellite search (u-blox command) | After 2 minutes |
+| | Clear its memory and search from nothing, once | 3 minutes later |
+| | Restart the search again | Every 15 minutes |
+
+The first three steps need root, which the dash does not have. A small helper does them,
+installed once over SSH (updates from the dash keep it current afterwards):
+
+```sh
+cd /opt/frogdash
+sudo cp hardware/systemd/frogdash-gps.service hardware/systemd/frogdash-gps.path /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now frogdash-gps.path
+```
+
+The helper (`tools/frogdash_gps.sh`) does only those three things. The dash asks by
+leaving one word (`restart`, `repin` or `usb`) in its data folder; anything else is
+refused. Until it is installed, the dash says so under the reason and in System check
+(**GPS recovery helper**), and the satellite-search restarts still work.
+
+"Look for the receiver" sets `DEVICES`, `GPSD_OPTIONS="-n"` and `USBAUTO="false"` in
+`/etc/default/gpsd` (the original is kept as `/etc/default/gpsd.frogdash-bak`), and
+only when exactly one device in `/dev/serial/by-id/` names itself as a GPS (u-blox,
+GPS, GNSS, GlobalSat). A receiver that appears as a plain serial adapter, such as a
+Prolific-based BU-353, is never guessed at, because the MicroSquirt tuning cable looks
+the same: the dash lists what is plugged in and `DEVICES` is set by hand, as above.
+
+Run a step by hand: `sudo sh /opt/frogdash/tools/frogdash_gps.sh repin`.
+
+### Getting a position sooner
+
+**System check → Time to first position** shows how long it took after the dash started.
+
+- gpsd starts with the Pi and reads the receiver from the first second (`-n`, and
+  `gpsd.service` enabled), instead of starting when the dash first asks. The helper's
+  restart and "look for the receiver" steps set both.
+- The dash retries the GPS service four times a second while it comes up.
+- A 2D position is enough for speed; it does not wait for altitude.
+- What software cannot change: the receiver loses power with the ignition. One with a
+  backup battery or capacitor keeps its satellite data and has a position in a few
+  seconds if the car was off for under about four hours; one without starts from
+  nothing every time, about 30 s under a clear sky and much longer with a weak
+  signal. If the time shown is always over a minute, it is the receiver or the noise
+  around it, not the Pi.
 
 **Radio noise is the usual cause in a car.** A Pi 4's blue USB 3 ports, the dash cam and
 a Wi-Fi adapter all radiate right at GPS frequencies. A receiver plugged straight into

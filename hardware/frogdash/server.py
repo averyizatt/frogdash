@@ -11,6 +11,7 @@ from aiohttp import web, WSMsgType, ClientError
 from .adapters import read_replay, replay, socketcan
 from .state import State
 from .gps import GPS, gpsd
+from .gpswatch import GpsRecovery
 from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
 from .connectivity import Connectivity, require_local
 from .race import Race
@@ -66,6 +67,8 @@ def create_app(state, adapter=None, connectivity=None):
         if state.gps:
             state.gps.on_report = state.race.feed
             tasks.append(asyncio.create_task(gpsd(state.gps)))
+            if state.gps_recovery:
+                tasks.append(asyncio.create_task(state.gps_recovery.run()))
         if state.recorder:
             state.recorder.start()
         if connectivity:
@@ -776,6 +779,8 @@ def main():
             parser.error(f'Invalid camera option: {exc}')
     if args.gpsd:
         state.gps = GPS(device=args.gps_device, transmit=not args.gps_no_transmit)
+        # Watches for a missing position and works through the recovery steps (gpswatch.py).
+        state.gps_recovery = GpsRecovery(state.gps, args.data_dir, state.clock)
     if args.replay:
         try:
             frames = read_replay(args.replay)

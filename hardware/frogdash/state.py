@@ -41,6 +41,7 @@ class State:
         self.events = deque(maxlen=100)
         self.received = self.malformed = self.ignored = self.seq = 0
         self.gps = None
+        self.gps_recovery = None  # GpsRecovery when the USB GPS is in use.
         self.recorder = None
         self.camera = None
         self.dashcam = None
@@ -198,7 +199,8 @@ class State:
                 "transport": {"connected": self.connected, "status": self.status,
                               "received": self.received, "malformed": self.malformed, "ignored": self.ignored},
                 "runtime": self.runtime.snapshot(), "nav": self.nav.snapshot(), "tune": self.tune.snapshot(),
-                "gps": {"status": self.gps.status, "diagnosis": self.gps.diagnosis(), "tx_status": self.gps.tx_status,
+                "gps": {"status": self.gps.status, "diagnosis": self.gps.diagnosis(),
+                        "recovery": self.gps_recovery.snapshot() if self.gps_recovery else None, "tx_status": self.gps.tx_status,
                         "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
                 "controls": self.controls.status(), "taillight": self.taillight.snapshot(), "meth_tune": self.meth_tune.snapshot(), "events": list(self.events), "race": race,
                 "drive": self.driving.snapshot(), "trip": self.trip.snapshot(),
