@@ -4,6 +4,7 @@ Run from repo root: python tests/browser_smoke.py [--browser /path/to/chromium]
 """
 import argparse
 import asyncio
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -33,6 +34,13 @@ async def check_transfer(browser, state, errors):
     folder = Path(tempfile.mkdtemp())
     (folder / 'update-status.json').write_text('{"state": "current", "message": "Already up to date", "version": "abc1234", "previous": "def5678"}')
     portal = TransferPortal(state, folder)
+    # Module firmware on the phone page: a gateway that answers, with a newer build on the Pi.
+    from hardware.frogdash import fwupdate
+    image = b'firmware image for the phone page test'
+    (folder / 'gateway.bin').write_bytes(image)
+    (folder / 'gateway.json').write_text(json.dumps({'build': '1a2b3c4d', 'size': len(image), 'sha256': hashlib.sha256(image).hexdigest()}))
+    state.firmware = fwupdate.Firmware(state, folder)
+    state.firmware.observe(bytes.fromhex('01010a0b0c0d0001'))
     runner = web.AppRunner(portal.app('127.0.0.0/8'), access_log=None)
     await runner.setup()
     site = web.TCPSite(runner, '127.0.0.1', 0)
@@ -69,6 +77,14 @@ async def check_transfer(browser, state, errors):
         await (await download_info.value).save_as('.tmp/phone-diagnostics.json')
         bundle = json.loads(Path('.tmp/phone-diagnostics.json').read_text(encoding='utf-8'))
         assert bundle['format'] == 'dash-diagnostics' and bundle['check']['lines'] and 'values' in bundle['snapshot']
+        # Module firmware: every module listed; a button only where a new build is ready, armed by the first press.
+        await until(lambda: has('#firmware', 'Gateway firmware: build 0a0b0c0d. Build 1a2b3c4d is ready to install'))
+        assert await page.locator('#firmware li').count() == 2 and 'Taillight firmware' in await text('#firmware')
+        assert await page.locator('#firmware button').count() == 1
+        await page.locator('[data-firmware="gateway"]').click()
+        await until(lambda: has('#firmware', 'Stop the car first. Speed, fuel, wheel buttons and interior lights pause'))
+        assert await page.locator('[data-firmware="gateway"]').inner_text() == 'Press again to install'
+        assert state.firmware.modules['gateway'].job['state'] == 'idle'      # One press sends nothing.
         # Update: two presses, then the page follows the dash through its restart.
         assert 'Already up to date · version abc1234' in await page.locator('#update-status').inner_text()
         await page.locator('#update-run').click()
@@ -90,6 +106,7 @@ async def check_transfer(browser, state, errors):
         await page.locator('#refresh').click()
         await page.locator('#login').wait_for(state='visible')
     finally:
+        state.firmware = None
         await page.close()
         await runner.cleanup()
 

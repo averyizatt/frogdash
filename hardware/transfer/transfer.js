@@ -72,21 +72,29 @@
       catch (error) { $('message').textContent = error.message; needLogin(error); }
     };
   }
-  // The gateway's firmware goes over the CAN bus from the dash; this only presses the button.
-  let installing = false;
+  // Module firmware goes over the CAN bus from the dash; this only presses its button.
+  let installing = false, firmwareNote = null;   // {name, text, until}: a prompt or refusal kept readable
   function renderFirmware(firmware) {
-    const module = firmware && firmware.gateway, line = $('firmware-status'), button = $('firmware-install');
-    if (!module) { line.hidden = button.hidden = true; return; }
-    const job = module.job, running = job.state === 'running';
-    line.hidden = false;
-    line.textContent = running ? `Gateway firmware: ${job.message} (${Math.round(job.progress * 100)}%)` :
-      job.state === 'failed' ? `Gateway firmware: ${job.message}` : job.state === 'done' ? job.message :
-      `Gateway firmware: ${module.installed ? `build ${module.installed}. ` : ''}${module.note}`;
-    line.dataset.state = job.state === 'failed' ? 'fail' : module.new ? 'warn' : '';
-    button.hidden = !(module.new || running);
-    button.disabled = running || !module.can_install;
-    if (armed !== button) button.textContent = running ? 'Installing…' : 'Install gateway firmware';
-    if (running && !installing) watchFirmware();
+    const modules = Object.values(firmware || {}), busy = modules.some(module => module.job.state === 'running');
+    $('firmware').replaceChildren(...modules.map(module => {
+      const row = document.createElement('li'), text = document.createElement('span'), job = module.job, running = job.state === 'running';
+      const held = firmwareNote && firmwareNote.name === module.name && Date.now() < firmwareNote.until && !running;
+      text.textContent = held ? firmwareNote.text : running ? `${module.title}: ${job.message} (${Math.round(job.progress * 100)}%)` :
+        job.state === 'failed' ? `${module.title}: ${job.message}` : job.state === 'done' ? job.message :
+        `${module.title}: ${module.installed ? `build ${module.installed}. ` : ''}${module.note}`;
+      row.dataset.state = job.state === 'failed' ? 'fail' : module.new ? 'warn' : '';
+      row.append(text);
+      if (module.new || running) {
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'quiet'; button.dataset.firmware = module.name;
+        button.disabled = busy || !module.can_install;
+        button.textContent = running ? 'Installing…' : armed === module.name ? 'Press again to install' : `Install ${module.title.toLowerCase()}`;
+        button.onclick = () => installFirmware(module);
+        row.append(button);
+      }
+      return row;
+    }));
+    if (busy && !installing) watchFirmware();
   }
   async function watchFirmware() {
     installing = true;
@@ -94,26 +102,29 @@
       await new Promise(resolve => setTimeout(resolve, 1500));
       try {
         const firmware = await request('/api/firmware');
+        if (!Object.values(firmware).some(module => module.job.state === 'running')) installing = false;
         renderFirmware(firmware);
-        if (firmware.gateway.job.state !== 'running') installing = false;
       } catch (error) { installing = false; needLogin(error); }
     }
   }
-  $('firmware-install').onclick = async () => {
-    const button = $('firmware-install');
-    if (armed !== button) {
-      armed = button; button.textContent = 'Press again to install';
-      $('firmware-status').textContent = 'Stop the car first. The gateway (speed, fuel, wheel buttons, interior lights) pauses for about a minute.';
-      clearTimeout(armTimer); armTimer = setTimeout(() => { armed = null; refresh(); }, 6000);
-      return;
+  async function showFirmware() {
+    try { renderFirmware(await request('/api/firmware')); } catch (error) { needLogin(error); }
+  }
+  async function installFirmware(module) {
+    if (armed !== module.name) {
+      armed = module.name;
+      firmwareNote = {name: module.name, text: `Stop the car first. ${module.warning}`, until: Date.now() + 6000};
+      clearTimeout(armTimer); armTimer = setTimeout(() => { armed = null; firmwareNote = null; showFirmware(); }, 6000);
+      return showFirmware();
     }
-    armed = null; clearTimeout(armTimer); button.disabled = true;
+    armed = null; firmwareNote = null; clearTimeout(armTimer);
     try {
-      const response = await fetch('/api/firmware', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({module: 'gateway', action: 'install'}), signal: AbortSignal.timeout(10000)});
-      if (response.ok) renderFirmware(await response.json());
-      else { $('firmware-status').textContent = `Gateway firmware: ${(await response.text()).slice(0, 160)}`; button.disabled = false; }
-    } catch { $('firmware-status').textContent = 'Gateway firmware: the dash did not answer'; button.disabled = false; }
-  };
+      const response = await fetch('/api/firmware', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({module: module.name, action: 'install'}), signal: AbortSignal.timeout(10000)});
+      if (response.ok) return renderFirmware(await response.json());
+      firmwareNote = {name: module.name, text: `${module.title}: ${(await response.text()).slice(0, 200)}`, until: Date.now() + 8000};
+    } catch { firmwareNote = {name: module.name, text: `${module.title}: the dash did not answer`, until: Date.now() + 8000}; }
+    showFirmware();
+  }
   twoPress($('update-run'), 'update', 'update');
   twoPress($('update-undo'), 'go back', 'rollback');
 

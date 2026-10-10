@@ -45,7 +45,9 @@ constexpr uint16_t ID_REPLY = 0x681;
 constexpr uint8_t VERSION = 1;
 
 constexpr uint8_t TARGET_GATEWAY = 1;
-constexpr uint8_t TARGET_TAILLIGHT = 2;  // Reserved: not implemented.
+constexpr uint8_t TARGET_TAILLIGHT = 2;
+// A new module takes the next number here, in the dash's table (fwupdate.py MODULES) and
+// in the Pi setup's download list; nothing else about the protocol changes.
 
 constexpr uint8_t COMMAND_FLAG = 0x80;
 constexpr uint8_t QUERY = 0x80;
@@ -65,6 +67,7 @@ constexpr uint8_t STATUS_TOO_LARGE = 3;
 constexpr uint8_t STATUS_FLASH_ERROR = 4;
 constexpr uint8_t STATUS_CHECK_FAILED = 5;  // Whole-image CRC or the image's own checksum.
 constexpr uint8_t STATUS_WRONG_BUILD = 6;   // CONFIRM named a build that is not the one running.
+constexpr uint8_t STATUS_BUSY = 7;          // The module is in use and will not update now (a light input is on).
 
 constexpr uint8_t FLAG_ON_TRIAL = 1;        // Running a new image that has not been confirmed.
 constexpr uint8_t FLAG_UPDATING = 2;        // A transfer is open.
@@ -260,6 +263,9 @@ class Receiver {
         return false;
     }
   }
+
+  // The module itself calls a transfer off (its real work is needed). The running firmware is kept.
+  void cancel() { if (active_) stop(); }
 
   // Call regularly. True when a transfer was given up because the dash went quiet.
   bool expired(uint32_t nowMs) {

@@ -68,7 +68,7 @@ class TransferPortal:
 
     def firmware_status(self):
         firmware = getattr(self.state, 'firmware', None)
-        return {firmware.name: firmware.snapshot()} if firmware else {}
+        return firmware.snapshot() if firmware else {}
 
     def check(self):
         return {'report': selftest.report(self.state, self.folder), 'update': self.update_status(), 'firmware': self.firmware_status()}
@@ -150,18 +150,18 @@ class TransferPortal:
 
         async def firmware(request):
             # A module's firmware over the CAN bus: the same fixed action as the dash's own button.
-            module = getattr(self.state, 'firmware', None)
-            if not module:
+            firmware = getattr(self.state, 'firmware', None)
+            if not firmware:
                 raise web.HTTPNotFound(text='Firmware updates are not available here')
             if request.method == 'POST':
                 try:
                     body = await request.json()
-                    valid = isinstance(body, dict) and body.get('module') == module.name and body.get('action') == 'install'
+                    valid = isinstance(body, dict) and body.get('module') in firmware.modules and body.get('action') == 'install'
                 except (ValueError, TypeError):
                     valid = False
                 if not valid:
-                    raise web.HTTPBadRequest(text='Expected module and action: install')
-                error = module.start()
+                    raise web.HTTPBadRequest(text='Expected a known module and action: install')
+                error = firmware.start(body['module'])
                 if error:
                     raise web.HTTPConflict(text=error)
             return web.json_response(self.firmware_status())

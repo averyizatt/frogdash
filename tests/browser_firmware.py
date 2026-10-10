@@ -29,7 +29,7 @@ class Gateway:
     async def sender(self, identifier, data):
         assert identifier == fw.ID_COMMAND and len(data) == 8
         op = data[0]
-        if not op & 0x80:
+        if not op & 0x80 or data[1] != 1:   # Data frames, and commands for another module.
             return
         self.commands.append(op)
         if op == fw.QUERY:
@@ -58,9 +58,10 @@ async def main(browser_path):
         state.connected = True
         async def quick(seconds):
             await asyncio.sleep(min(seconds, .01))
-        state.firmware = fw.ModuleFirmware(state, folder, sleep=quick)
+        state.firmware = fw.Firmware(state, folder, sleep=quick)
         state.firmware.run = lambda: asyncio.sleep(3600)   # No background asking: the test decides when the gateway is heard.
         gateway = Gateway(state.firmware)
+        module = state.firmware.modules['gateway']
         state.controls.attach(gateway.sender)
         runner = web.AppRunner(create_app(state), access_log=None)
         await runner.setup()
@@ -77,10 +78,10 @@ async def main(browser_path):
                 await page.locator('#operations-launch').click()
                 await page.locator('[data-ops-tab="support"]').click()
                 # Before the gateway has answered: said plainly, and nothing to press.
-                await page.wait_for_function("document.getElementById('firmware-status').textContent.includes('not answering')")
+                await page.wait_for_function("document.getElementById('firmware-status').textContent === 'Gateway firmware: not answering · Taillight firmware: not answering'")
                 assert await page.locator('#firmware-install').is_hidden()
-                await state.firmware.query()
-                await page.wait_for_function(f"document.getElementById('firmware-status').textContent.includes('build {OLD}. Build {NEW} is ready to install')")
+                await module.query()
+                await page.wait_for_function(f"document.getElementById('firmware-status').textContent.startsWith('Gateway firmware: build {OLD}, {NEW} ready to install · Taillight')")
                 button = page.locator('#firmware-install')
                 assert await button.is_visible() and await button.inner_text() == 'Install gateway firmware'
                 box = await page.locator('#firmware-status').bounding_box()
@@ -90,7 +91,7 @@ async def main(browser_path):
                 # One press only arms it and says what will pause.
                 await button.click()
                 assert await button.inner_text() == 'Press again'
-                assert 'Stop the car first' in await page.locator('#firmware-status').inner_text()
+                assert 'Stop the car first. Speed, fuel, wheel buttons and interior lights pause' in await page.locator('#firmware-status').inner_text()
                 assert fw.BEGIN not in gateway.commands
                 # Moving: refused with the reason, nothing sent.
                 state.samples['vehicle.speed_kph', 0x203] = dict(value=40, quality='live', seen=state.clock(), source_id=0x203, timestamp_ms=0)
@@ -106,7 +107,7 @@ async def main(browser_path):
                 await button.click()
                 await page.wait_for_function("/Sending: \\d+ of \\d+ KB \\(\\d+%\\)/.test(document.getElementById('firmware-status').textContent)")
                 assert await button.is_disabled()
-                await page.wait_for_function(f"document.getElementById('firmware-status').textContent === 'Gateway updated to build {NEW}'", timeout=30000)
+                await page.wait_for_function(f"document.getElementById('firmware-status').textContent.startsWith('Gateway updated to build {NEW} · Taillight')", timeout=30000)
                 await page.wait_for_function("document.getElementById('firmware-install').hidden")
                 assert gateway.blocks == -(-len(image) // fw.BLOCK_BYTES) and gateway.commands[-1] == fw.CONFIRM and not gateway.trial
                 assert not errors, errors

@@ -1,4 +1,4 @@
-"""New firmware for a module, sent over the CAN bus (can_contract/firmware_update.h).
+"""New firmware for the car's modules, sent over the CAN bus (can_contract/firmware_update.h).
 
 The dash sends the image in blocks of 64 frames, waits for the module to accept each
 block, and repeats a block the module asks for again. The module checks the whole image
@@ -7,6 +7,10 @@ to the new build: otherwise the module goes back to the firmware it had.
 
 The image and its manifest are downloaded by the Pi setup during Update now
 (tools/frogdash_setup.sh) into <data>/firmware/. Nothing is sent while the car is moving.
+
+Adding a module: give it the next target number in firmware_update.h and use the
+header's Receiver in its firmware; add a row to MODULES below and a line to the Pi
+setup's download list. The screens, the phone page and System check follow the table.
 """
 import asyncio
 import hashlib
@@ -18,12 +22,20 @@ from .parking import rolling
 ID_COMMAND, ID_REPLY = 0x680, 0x681
 QUERY, BEGIN, BLOCK_END, END, ABORT, CONFIRM = 0x80, 0x81, 0x82, 0x83, 0x84, 0x85
 INFO, ACK = 1, 2
-OK, RESEND = 0, 1
+OK, RESEND, BUSY = 0, 1, 7
 STATUS = {0: 'accepted', 1: 'asked for the block again', 2: 'was not expecting it', 3: 'has no room for it',
-          4: 'could not write its flash', 5: 'found the image damaged', 6: 'is running a different build'}
+          4: 'could not write its flash', 5: 'found the image damaged', 6: 'is running a different build',
+          7: 'is in use and will not update now'}
 ON_TRIAL, UPDATING = 1, 2
 BLOCK_BYTES, FRAMES_PER_BLOCK = 448, 64
 TARGET_GATEWAY = 1
+# name (file and API name), label (in sentences), title (on buttons), target, and what to tell the driver first.
+MODULES = (
+    ('gateway', 'Gateway', 'Gateway firmware', 1,
+     'Speed, fuel, wheel buttons and interior lights pause for about a minute.'),
+    ('taillights', 'Taillight controller', 'Taillight firmware', 2,
+     'Lights off and foot off the brake: the taillights stay dark for a few minutes, and any light switched on stops the update.'),
+)
 MAX_IMAGE = 0x330000
 QUERY_EVERY_S = 20
 BLOCK_TRIES = 8
@@ -69,8 +81,11 @@ class Failure(Exception):
 class ModuleFirmware:
     """One module's firmware: what it runs, what is available, and installing it."""
 
-    def __init__(self, state, folder, name='gateway', label='Gateway', target=TARGET_GATEWAY, sleep=asyncio.sleep):
+    def __init__(self, state, folder, name='gateway', label='Gateway', target=TARGET_GATEWAY, sleep=asyncio.sleep,
+                 title=None, warning=''):
         self.state, self.folder, self.name, self.label, self.target, self.sleep = state, folder, name, label, target, sleep
+        self.title, self.warning = title or f'{label} firmware', warning
+        self.blocked = lambda: False   # Set by Firmware: another module is being updated.
         self.installed = None        # Build the module reports, as 8 hex digits
         self.flags = 0
         self.heard = None            # When it last answered
@@ -115,15 +130,18 @@ class ModuleFirmware:
         new = bool(manifest) and answered and manifest['build'] != self.installed
         if not answered:
             note = f'The {self.label.lower()} is not answering. Firmware from before this feature must be replaced once by USB'
+            short = 'not answering'
         elif not manifest:
-            note = reason
+            note, short = reason, f'build {self.installed}, no newer file on the Pi'
         elif new:
-            note = f'Build {manifest["build"]} is ready to install'
+            note, short = f'Build {manifest["build"]} is ready to install', f'build {self.installed}, {manifest["build"]} ready to install'
         else:
-            note = 'Up to date'
-        return {'name': self.name, 'label': self.label, 'installed': self.installed if answered else None,
+            note, short = 'Up to date', f'build {self.installed}, up to date'
+        return {'name': self.name, 'label': self.label, 'title': self.title, 'warning': self.warning,
+                'installed': self.installed if answered else None,
                 'on_trial': bool(answered and self.flags & ON_TRIAL), 'available': manifest['build'] if manifest else None,
-                'can_install': bool(manifest) and answered and not self.busy(), 'new': new, 'note': note, 'job': dict(self.job)}
+                'can_install': bool(manifest) and answered and not self.busy() and not self.blocked(),
+                'new': new, 'note': note, 'short': short, 'job': dict(self.job)}
 
     # ---- talking to the module ----
     async def send(self, payload):
@@ -179,7 +197,7 @@ class ModuleFirmware:
     # ---- installing ----
     def start(self):
         """Begin installing the downloaded image. Returns an error text, or None when started."""
-        if self.busy():
+        if self.busy() or self.blocked():
             return 'An update is already running'
         if self.state.mode != 'socketcan' or not self.state.connected or not self.state.controls.sender:
             return 'CAN is disconnected'
@@ -204,6 +222,8 @@ class ModuleFirmware:
             reply = await self.ask(command(BEGIN, target, len(data).to_bytes(3, 'big') + b'FW'), ack(BEGIN), 6.0, tries=2)
             if not reply:
                 raise Failure(f'The {self.label.lower()} did not accept the update')
+            if reply[3] == BUSY:
+                raise Failure(f'The {self.label.lower()} is in use and did not start the update. {self.warning}')
             if reply[3] != OK:
                 raise Failure(f'The {self.label.lower()} {STATUS.get(reply[3], "refused")}')
             blocks = -(-len(data) // BLOCK_BYTES)
@@ -252,7 +272,9 @@ class ModuleFirmware:
     async def block(self, number, chunk):
         frames = data_frames(chunk)
         end = command(BLOCK_END, self.target, number.to_bytes(2, 'big') + crc16(chunk).to_bytes(2, 'big') + bytes([len(frames)]))
-        answered = lambda reply: reply[0] == ACK and reply[2] == BLOCK_END and (reply[3] != OK or reply[4:6] == number.to_bytes(2, 'big'))
+        # An answer to this block, or the module calling the whole transfer off because it is needed.
+        answered = lambda reply: reply[0] == ACK and (reply[3] == BUSY or (
+            reply[2] == BLOCK_END and (reply[3] != OK or reply[4:6] == number.to_bytes(2, 'big'))))
         for _ in range(BLOCK_TRIES):
             # The module reads the bus with two buffers: a couple of frames, then a pause.
             for index, frame in enumerate(frames, 1):
@@ -263,6 +285,8 @@ class ModuleFirmware:
             reply = await self.expect(answered, 1.5)
             if reply is None:
                 continue                      # Our frames or its answer were lost: the block is sent again.
+            if reply[3] == BUSY:
+                raise Failure(f'The {self.label.lower()} stopped the update because it was needed; its old firmware is still running. {self.warning}')
             if reply[3] == OK:
                 return
             if reply[3] == RESEND:            # It missed frames: go slower from here on.
@@ -270,3 +294,37 @@ class ModuleFirmware:
                 continue
             raise Failure(f'The {self.label.lower()} {STATUS.get(reply[3], "refused a block")} (block {number})')
         raise Failure(f'Block {number} could not be delivered: check the CAN wiring')
+
+
+class Firmware:
+    """Every module that takes firmware over CAN. One update at a time."""
+
+    def __init__(self, state, folder, sleep=asyncio.sleep, modules=MODULES):
+        self.sleep = sleep
+        self.modules = {name: ModuleFirmware(state, folder, name, label, target, sleep, title, warning)
+                        for name, label, title, target, warning in modules}
+        for module in self.modules.values():
+            module.blocked = lambda module=module: any(other.busy() for other in self.modules.values() if other is not module)
+
+    def observe(self, data):
+        for module in self.modules.values():   # Each takes only the answers that name it.
+            module.observe(data)
+
+    def busy(self):
+        return any(module.busy() for module in self.modules.values())
+
+    def snapshot(self):
+        return {name: module.snapshot() for name, module in self.modules.items()}
+
+    def start(self, name):
+        module = self.modules.get(name) if isinstance(name, str) else None
+        return module.start() if module else 'Unknown module'
+
+    async def run(self):
+        await self.sleep(5)
+        while True:
+            for module in self.modules.values():
+                if not self.busy():
+                    await module.query()
+                    await self.sleep(.3)
+            await self.sleep(QUERY_EVERY_S)

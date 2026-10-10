@@ -147,10 +147,12 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
         # The module's answers, as the dash reads them.
         state = State('socketcan', clock=lambda: 10)
         state.connected = True
-        state.firmware = fw.ModuleFirmware(state, None)
+        state.firmware = fw.Firmware(state, None)
         state.ingest(*vectors()['fw_info'])
         self.assertEqual(vectors()['fw_info'][0], fw.ID_REPLY)
-        self.assertEqual((state.firmware.installed, state.firmware.flags & fw.ON_TRIAL), ('1a2b3c4d', fw.ON_TRIAL))
+        gateway = state.firmware.modules['gateway']
+        self.assertEqual((gateway.installed, gateway.flags & fw.ON_TRIAL), ('1a2b3c4d', fw.ON_TRIAL))
+        self.assertIsNone(state.firmware.modules['taillights'].installed)   # Answers are told apart by the module they name.
         ack = vectors()['fw_ack'][1]
         self.assertEqual((ack[0], ack[2], ack[3], ack[4:6]), (fw.ACK, fw.BLOCK_END, fw.RESEND, bytes.fromhex('0123')))
         self.assertEqual(state.malformed, 0)

@@ -124,26 +124,33 @@ class SetupScriptTests(unittest.TestCase):
         self.assertTrue(self.log('systemctl.log').rstrip().endswith('restart frogdash.service'))   # Last: its new permission.
         self.assertIn('-aG dialout foxbody', self.log('usermod.log'))
         self.assertIn('try-restart frogdash-console@foxbody.service', self.log('systemctl.log'))
-        for name in ('Gateway firmware file', 'Clock from GPS', 'TunerStudio: Java and display', 'TunerStudio: program'):
+        for name in ('Gateway firmware file', 'Taillight firmware file', 'Clock from GPS', 'TunerStudio: Java and display', 'TunerStudio: program'):
             self.assertEqual(steps[name][0], 'waiting', name)
             self.assertIn('press Update now', steps[name][1])
         self.assertEqual((self.log('apt.log'), list(self.fake.glob('home/*'))), ('', []))  # Nothing was fetched.
         self.assertEqual(said, 'Set up: Dash helpers, GPS service, TunerStudio: serial port, Phone hotspot')
 
-    def publish_firmware(self, image=b'gateway firmware image', build='1a2b3c4d'):
-        (self.fake / 'dl-gateway-firmware.bin').write_bytes(image)
-        (self.fake / 'dl-gateway-firmware.json').write_text(json.dumps(
+    def publish_firmware(self, image=b'gateway firmware image', build='1a2b3c4d', name='gateway'):
+        (self.fake / f'dl-{name}-firmware.bin').write_bytes(image)
+        (self.fake / f'dl-{name}-firmware.json').write_text(json.dumps(
             {'build': build, 'size': len(image), 'sha256': hashlib.sha256(image).hexdigest()}))
 
     def test_the_newest_gateway_firmware_is_kept_on_the_pi_for_the_dash_to_install(self):
         from hardware.frogdash.fwupdate import load_image
         folder = self.state / 'firmware'
         _, _, steps = self.run_setup('online')
-        self.assertEqual(steps['Gateway firmware file'], ('waiting', 'No gateway firmware has been published yet'))
+        self.assertEqual(steps['Gateway firmware file'], ('waiting', 'No firmware has been published yet'))
+        self.assertEqual(steps['Taillight firmware file'], ('waiting', 'No firmware has been published yet'))
         self.assertFalse(folder.exists())
         self.publish_firmware()
         _, _, steps = self.run_setup('online')
         self.assertEqual(steps['Gateway firmware file'][0], 'done')
+        self.assertEqual(steps['Taillight firmware file'][0], 'waiting')       # Each module by itself.
+        self.publish_firmware(b'taillight image', '4d5e6f70', 'taillights')
+        _, _, steps = self.run_setup('online')
+        self.assertEqual((steps['Gateway firmware file'][0], steps['Taillight firmware file'][0]), ('ok', 'done'))
+        self.assertEqual(load_image(folder, 'taillights')[1], b'taillight image')
+        steps['Gateway firmware file'] = ('done', 'Downloaded build 1a2b3c4d: install it under Dash management, Support')
         self.assertIn('Downloaded build 1a2b3c4d', steps['Gateway firmware file'][1])
         manifest, image = load_image(folder, 'gateway')        # Exactly what the dash's installer accepts.
         self.assertEqual((manifest['build'], image), ('1a2b3c4d', b'gateway firmware image'))
@@ -161,6 +168,7 @@ class SetupScriptTests(unittest.TestCase):
     def test_with_internet_the_rest_is_installed_and_a_second_run_changes_nothing(self):
         (self.fake / 'download').write_bytes(self.archive)
         self.publish_firmware()
+        self.publish_firmware(b'taillight image', '4d5e6f70', 'taillights')
         said, _, steps = self.run_setup('online')
         self.assertEqual(steps['TunerStudio: Java and display'], ('done', 'Installed xwayland default-jre'))
         self.assertIn('install -y -q xwayland default-jre', self.log('apt.log'))

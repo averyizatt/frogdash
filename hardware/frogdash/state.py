@@ -42,7 +42,7 @@ class State:
         self.received = self.malformed = self.ignored = self.seq = 0
         self.gps = None
         self.gps_recovery = None  # GpsRecovery when the USB GPS is in use.
-        self.firmware = None  # ModuleFirmware: the gateway's firmware over CAN (fwupdate.py).
+        self.firmware = None  # Firmware: the modules' firmware over CAN (fwupdate.py).
         self.helpers = None  # Helpers: has the updater run this version's Pi setup (helpers.py).
         self.recorder = None
         self.camera = None
@@ -210,6 +210,6 @@ class State:
                 "drive": self.driving.snapshot(), "trip": self.trip.snapshot(),
                 "operations": self.operations.status(), "system": dict(self.health.status) if self.health else None,
                 "can_errors": dict(self.can_errors),
-                "firmware": {self.firmware.name: self.firmware.snapshot()} if self.firmware else None,
+                "firmware": self.firmware.snapshot() if self.firmware else None,
                 "wheel": self.wheel.snapshot(self.connected and self.mode == "socketcan"),
                 "recording": dict(self.recorder.status) if self.recorder else {"enabled": False, "state": "disabled"}}

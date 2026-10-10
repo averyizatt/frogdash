@@ -17,8 +17,9 @@ OPT=${FROGDASH_OPT:-/opt}
 STATUS=$STATE/setup-status.json
 # Services that are not started by a request file but belong to every install.
 SERVICES="frogdash-netkeeper"
-# The gateway's firmware, built and published by its repository on every change.
+# Module firmware, built and published by each module's repository on every change.
 GATEWAY_FW_URL=${FROGDASH_GATEWAY_FW_URL:-https://github.com/averyizatt/DIYComfortControlModule/releases/download/gateway-latest}
+TAILLIGHT_FW_URL=${FROGDASH_TAILLIGHT_FW_URL:-https://github.com/averyizatt/CustomTaillights/releases/download/taillights-latest}
 # TunerStudio MS for Linux, from its publisher. The archive must match this SHA-256.
 TS_URL=${FROGDASH_TS_URL:-https://www.tunerstudio.com/downloads2/TunerStudioMS_v3.3.01.tar.gz}
 TS_SHA=${FROGDASH_TS_SHA:-4f4781a6ff90127ef36672cc43d3edc78c4f61ef682dca38a02f9e17e652517f}
@@ -177,38 +178,42 @@ else
     step "TunerStudio: serial port" failed "Could not add $user to the dialout group"
 fi
 
-# --- Gateway firmware: the newest published build, kept ready to install over the CAN bus ---
-# Only downloaded here. Installing it is a button on the dash (Dash management > Support).
+# --- Module firmware: the newest published builds, kept ready to install over the CAN bus ---
+# Only downloaded here. Installing is a button on the dash (Dash management > Support).
+# A new module is one more firmware_file line.
 firmware=$STATE/firmware
 field() { sed -n "s/.*\"$1\": *\"\([0-9a-zA-Z]*\)\".*/\1/p" "$2" 2>/dev/null | head -n 1; }
-on_pi=$(field build "$firmware/gateway.json")
-[ -f "$firmware/gateway.bin" ] || on_pi=""
-if ! is_online; then
-    if [ -n "$on_pi" ]; then step "Gateway firmware file" ok "Build $on_pi is on the Pi (no internet to look for a newer one)"
-    else step "Gateway firmware file" waiting "Not downloaded yet: $NEEDS_NET"
-    fi
-else
-    work=$(mktemp -d)
-    fetch "$GATEWAY_FW_URL/gateway-firmware.json" "$work/gateway.json"
-    newest=$(field build "$work/gateway.json"); sum=$(field sha256 "$work/gateway.json")
-    if [ -z "$newest" ] || [ ${#sum} != 64 ]; then
-        if [ -n "$on_pi" ]; then step "Gateway firmware file" ok "Build $on_pi is on the Pi (the published list could not be read)"
-        else step "Gateway firmware file" waiting "No gateway firmware has been published yet"
+firmware_file() {  # name, step name, release URL
+    on_pi=$(field build "$firmware/$1.json")
+    [ -f "$firmware/$1.bin" ] || on_pi=""
+    if ! is_online; then
+        if [ -n "$on_pi" ]; then step "$2" ok "Build $on_pi is on the Pi (no internet to look for a newer one)"
+        else step "$2" waiting "Not downloaded yet: $NEEDS_NET"
         fi
-    elif [ -n "$on_pi" ] && [ "$sum" = "$(field sha256 "$firmware/gateway.json")" ]; then
-        step "Gateway firmware file" ok "Build $on_pi is the newest"
-    elif fetch "$GATEWAY_FW_URL/gateway-firmware.bin" "$work/gateway.bin" &&
-         [ "$(sha256sum "$work/gateway.bin" | cut -c1-64)" = "$sum" ]; then
+        return
+    fi
+    work=$(mktemp -d)
+    fetch "$3/$1-firmware.json" "$work/$1.json"
+    newest=$(field build "$work/$1.json"); sum=$(field sha256 "$work/$1.json")
+    if [ -z "$newest" ] || [ ${#sum} != 64 ]; then
+        if [ -n "$on_pi" ]; then step "$2" ok "Build $on_pi is on the Pi (the published list could not be read)"
+        else step "$2" waiting "No firmware has been published yet"
+        fi
+    elif [ -n "$on_pi" ] && [ "$sum" = "$(field sha256 "$firmware/$1.json")" ]; then
+        step "$2" ok "Build $on_pi is the newest"
+    elif fetch "$3/$1-firmware.bin" "$work/$1.bin" && [ "$(sha256sum "$work/$1.bin" | cut -c1-64)" = "$sum" ]; then
         # The image first, its manifest last: the dash only offers an image whose manifest matches it.
-        mkdir -p "$firmware" && chmod 755 "$firmware" && rm -f "$firmware/gateway.json" &&
-            cp "$work/gateway.bin" "$firmware/gateway.bin" && cp "$work/gateway.json" "$firmware/gateway.json" &&
-            chmod 644 "$firmware/gateway.bin" "$firmware/gateway.json"
-        step "Gateway firmware file" done "Downloaded build $newest: install it under Dash management, Support"
+        mkdir -p "$firmware" && chmod 755 "$firmware" && rm -f "$firmware/$1.json" &&
+            cp "$work/$1.bin" "$firmware/$1.bin" && cp "$work/$1.json" "$firmware/$1.json" &&
+            chmod 644 "$firmware/$1.bin" "$firmware/$1.json"
+        step "$2" done "Downloaded build $newest: install it under Dash management, Support"
     else
-        step "Gateway firmware file" failed "Build $newest did not download or did not match its checksum"
+        step "$2" failed "Build $newest did not download or did not match its checksum"
     fi
     rm -rf "$work"
-fi
+}
+firmware_file gateway "Gateway firmware file" "$GATEWAY_FW_URL"
+firmware_file taillights "Taillight firmware file" "$TAILLIGHT_FW_URL"
 
 # --- Phone hotspot: the dash's own Wi-Fi network for logs, faults and updates from a phone ---
 # Off until switched on under Controls > Wi-Fi. Made on a Wi-Fi adapter the dash cam does

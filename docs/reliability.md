@@ -107,7 +107,7 @@ new requirement arrives with the update that needs it.
 | TunerStudio: Java and display | Installs `xwayland` and `default-jre` | First time |
 | TunerStudio: program | Downloads TunerStudio MS from tunerstudio.com (checked against a known SHA-256) into the screen user's home | First time |
 | TunerStudio: serial port | Adds the screen user to `dialout`, then restarts the screen once | No |
-| Gateway firmware file | Downloads the newest published gateway firmware, checked against its SHA-256, ready to install over CAN ([firmware-updates.md](firmware-updates.md)) | Yes |
+| Gateway firmware file, Taillight firmware file | Downloads the newest published firmware of each module, checked against its SHA-256, ready to install over CAN ([firmware-updates.md](firmware-updates.md)) | Yes |
 | Phone hotspot | Creates the dash's own Wi-Fi network on an adapter the dash cam does not use, installs its helper, and restarts the dash once ([wifi-access.md](wifi-access.md)) | No |
 
 A step that needs the internet waits and says so; **Update now** with Wi-Fi connected

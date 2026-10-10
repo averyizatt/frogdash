@@ -32,7 +32,7 @@
   // Software update over Wi-Fi: asks the Pi's update helper to pull and restart.
   dialog.querySelector('[data-ops-panel="support"] .ops-columns').lastElementChild.insertAdjacentHTML('afterbegin',
     '<div class="speaker-test"><div><span>Software update</span><small id="update-status">Uses a saved Wi-Fi network (home or phone hotspot) and returns to the dash cam afterwards.</small><small id="firmware-status" hidden></small></div>' +
-    '<div class="speaker-test-buttons"><button type="button" id="update-run">Update now</button><button type="button" id="update-undo" disabled>Undo update</button><button type="button" id="update-check">Show version</button><button type="button" id="firmware-install" hidden>Install gateway firmware</button></div></div>');
+    '<div class="speaker-test-buttons"><button type="button" id="update-run">Update now</button><button type="button" id="update-undo" disabled>Undo update</button><button type="button" id="update-check">Show version</button><button type="button" id="firmware-install" hidden>Install firmware</button></div></div>');
   // TunerStudio is a desktop program: the kiosk opens it over the dash (hardware/frogdash/tune.py).
   dialog.querySelector('[data-ops-panel="support"]').insertAdjacentHTML('afterend',
     '<section class="driver-panel ops-panel control-section" data-ops-panel="tune" hidden><div class="ops-columns">' +
@@ -86,36 +86,47 @@
       clearInterval(updateTimer); updateTimer = setInterval(updatePoll, 2000);
     } catch { $('update-status').textContent = 'Update is not available here'; $('update-run').disabled = false; }
   }
-  // Gateway firmware over the CAN bus (hardware/frogdash/fwupdate.py). The file arrives with
-  // Update now; this installs it, with the car stopped. Two presses, like Undo.
+  // Module firmware over the CAN bus (hardware/frogdash/fwupdate.py). The files arrive with
+  // Update now; this installs one, with the car stopped. Two presses, like Undo.
   let firmwareArmed = false, firmwareTimer = null, firmwareHold = 0;   // A refusal stays readable for a few seconds.
+  const firmwareModules = () => Object.values(latest.firmware || {});
+  // The one the button is for: the update that is running, else the first with a new build.
+  const firmwareFocus = () => firmwareModules().find(m => m.job.state === 'running') || firmwareModules().find(m => m.new);
+  function firmwareText(module) {
+    const job = module.job;
+    if (job.state === 'running') return `${module.title}: ${job.message} (${Math.round(job.progress * 100)}%)`;
+    if (job.state === 'failed') return `${module.title}: ${job.message}`;
+    if (job.state === 'done') return job.message;
+    return `${module.title}: ${module.short}`;
+  }
   function renderFirmware() {
-    const module = latest.firmware?.gateway, line = $('firmware-status'), button = $('firmware-install');
-    if (!module || demo()) { line.hidden = button.hidden = true; return; }
-    const job = module.job, running = job.state === 'running';
-    const text = running ? `Gateway firmware: ${job.message} (${Math.round(job.progress * 100)}%)` :
-      job.state === 'failed' ? `Gateway firmware: ${job.message}` :
-      job.state === 'done' ? `${job.message}` :
-      `Gateway firmware: ${module.installed ? `build ${module.installed}. ` : ''}${module.note}`;
+    const modules = firmwareModules(), line = $('firmware-status'), button = $('firmware-install');
+    if (!modules.length || demo()) { line.hidden = button.hidden = true; return; }
+    const focus = firmwareFocus(), running = focus?.job.state === 'running';
+    const text = modules.map(firmwareText).join(' · ');
     line.hidden = false;
     if (running) firmwareHold = 0;
     if (!firmwareArmed && performance.now() >= firmwareHold && line.textContent !== text) line.textContent = text;
-    button.hidden = !(module.new || running);
-    button.disabled = running || !module.can_install;
-    if (!firmwareArmed) button.textContent = running ? 'Installing…' : 'Install gateway firmware';
+    button.hidden = !focus;
+    if (!focus) return;
+    button.disabled = running || !focus.can_install;
+    button.dataset.module = focus.name;
+    if (!firmwareArmed) button.textContent = running ? 'Installing…' : `Install ${focus.title.toLowerCase()}`;
   }
   $('firmware-install').onclick = async () => {
+    const focus = firmwareFocus();
+    if (!focus) return;
     if (!firmwareArmed) {
       firmwareArmed = true; $('firmware-install').textContent = 'Press again';
-      $('firmware-status').textContent = 'Stop the car first. The gateway (speed, fuel, wheel buttons, interior lights) pauses for about a minute. Press again to install.';
+      $('firmware-status').textContent = `Stop the car first. ${focus.warning} Press again to install.`;
       clearTimeout(firmwareTimer); firmwareTimer = setTimeout(() => { firmwareArmed = false; renderFirmware(); }, 6000);
       return;
     }
     firmwareArmed = false; clearTimeout(firmwareTimer);
     try {
-      const response = await fetch('/firmware', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({module: 'gateway', action: 'install'})});
-      if (!response.ok) { firmwareHold = performance.now() + 6000; $('firmware-status').textContent = `Gateway firmware: ${(await response.text()).slice(0, 160)}`; }
-    } catch { firmwareHold = performance.now() + 6000; $('firmware-status').textContent = 'Gateway firmware: the dash did not answer'; }
+      const response = await fetch('/firmware', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({module: focus.name, action: 'install'})});
+      if (!response.ok) { firmwareHold = performance.now() + 6000; $('firmware-status').textContent = `${focus.title}: ${(await response.text()).slice(0, 200)}`; }
+    } catch { firmwareHold = performance.now() + 6000; $('firmware-status').textContent = `${focus.title}: the dash did not answer`; }
   };
   $('update-check').onclick = () => updatePoll();
   $('update-run').onclick = () => updateRequest('update', 'Requesting update…');
