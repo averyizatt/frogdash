@@ -20,6 +20,7 @@ SERVICES="frogdash-netkeeper"
 # Module firmware, built and published by each module's repository on every change.
 GATEWAY_FW_URL=${FROGDASH_GATEWAY_FW_URL:-https://github.com/averyizatt/DIYComfortControlModule/releases/download/gateway-latest}
 TAILLIGHT_FW_URL=${FROGDASH_TAILLIGHT_FW_URL:-https://github.com/averyizatt/CustomTaillights/releases/download/taillights-latest}
+WATERMETH_FW_URL=${FROGDASH_WATERMETH_FW_URL:-https://github.com/averyizatt/DIYWaterMethInjection/releases/download/watermeth-latest}
 # TunerStudio MS for Linux, from its publisher. The archive must match this SHA-256.
 TS_URL=${FROGDASH_TS_URL:-https://www.tunerstudio.com/downloads2/TunerStudioMS_v3.3.01.tar.gz}
 TS_SHA=${FROGDASH_TS_SHA:-4f4781a6ff90127ef36672cc43d3edc78c4f61ef682dca38a02f9e17e652517f}
@@ -214,6 +215,8 @@ firmware_file() {  # name, step name, release URL
 }
 firmware_file gateway "Gateway firmware file" "$GATEWAY_FW_URL"
 firmware_file taillights "Taillight firmware file" "$TAILLIGHT_FW_URL"
+# For the ESP32 water/meth board. Kept ready while the Nano board is still fitted.
+firmware_file watermeth "Water/meth firmware file" "$WATERMETH_FW_URL"
 
 # --- Phone hotspot: the dash's own Wi-Fi network for logs, faults and updates from a phone ---
 # Off until switched on under Controls > Wi-Fi. Made on a Wi-Fi adapter the dash cam does

@@ -4,7 +4,7 @@
   "upstream_header_sha256": "e788343d14948985305261d4b031a65d8acd5f9f5b8ffbb3dd746007911be220",
   "repositories": {
     "DIYComfortControlModule": "207a064697c26c2dced69ae97804091fe1e18292",
-    "DIYWaterMethInjection": "dc688b5472fb0856f3ae2bc4e0875102ef52a491",
+    "DIYWaterMethInjection": "57274e200d5479715f7f08b71512115f10566bde",
     "CustomTaillights": "498e4bf3c68711e4bea91cadaad0742f90a2c247"
   },
   "ecu_spec": "https://www.msextra.com/doc/pdf/Megasquirt_CAN_Broadcast.pdf",

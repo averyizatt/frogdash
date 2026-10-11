@@ -78,7 +78,7 @@ async def main(browser_path):
                 await page.locator('#operations-launch').click()
                 await page.locator('[data-ops-tab="support"]').click()
                 # Before the gateway has answered: said plainly, and nothing to press.
-                await page.wait_for_function("document.getElementById('firmware-status').textContent === 'Gateway firmware: not answering · Taillight firmware: not answering'")
+                await page.wait_for_function("document.getElementById('firmware-status').textContent === 'Gateway firmware: not answering · Taillight firmware: not answering · Water/meth firmware: no answer (normal with the Nano board)'")
                 assert await page.locator('#firmware-install').is_hidden()
                 await module.query()
                 await page.wait_for_function(f"document.getElementById('firmware-status').textContent.startsWith('Gateway firmware: build {OLD}, {NEW} ready to install · Taillight')")

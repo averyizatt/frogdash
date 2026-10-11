@@ -79,7 +79,8 @@ async def check_transfer(browser, state, errors):
         assert bundle['format'] == 'dash-diagnostics' and bundle['check']['lines'] and 'values' in bundle['snapshot']
         # Module firmware: every module listed; a button only where a new build is ready, armed by the first press.
         await until(lambda: has('#firmware', 'Gateway firmware: build 0a0b0c0d. Build 1a2b3c4d is ready to install'))
-        assert await page.locator('#firmware li').count() == 2 and 'Taillight firmware' in await text('#firmware')
+        assert await page.locator('#firmware li').count() == 3 and 'Taillight firmware' in await text('#firmware')
+        assert 'Water/meth firmware' in await text('#firmware') and 'normal with the Nano board' in await text('#firmware')
         assert await page.locator('#firmware button').count() == 1
         await page.locator('[data-firmware="gateway"]').click()
         await until(lambda: has('#firmware', 'Stop the car first. Speed, fuel, wheel buttons and interior lights pause'))

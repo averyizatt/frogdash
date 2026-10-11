@@ -124,7 +124,8 @@ class SetupScriptTests(unittest.TestCase):
         self.assertTrue(self.log('systemctl.log').rstrip().endswith('restart frogdash.service'))   # Last: its new permission.
         self.assertIn('-aG dialout foxbody', self.log('usermod.log'))
         self.assertIn('try-restart frogdash-console@foxbody.service', self.log('systemctl.log'))
-        for name in ('Gateway firmware file', 'Taillight firmware file', 'Clock from GPS', 'TunerStudio: Java and display', 'TunerStudio: program'):
+        for name in ('Gateway firmware file', 'Taillight firmware file', 'Water/meth firmware file', 'Clock from GPS',
+                     'TunerStudio: Java and display', 'TunerStudio: program'):
             self.assertEqual(steps[name][0], 'waiting', name)
             self.assertIn('press Update now', steps[name][1])
         self.assertEqual((self.log('apt.log'), list(self.fake.glob('home/*'))), ('', []))  # Nothing was fetched.
@@ -150,6 +151,12 @@ class SetupScriptTests(unittest.TestCase):
         _, _, steps = self.run_setup('online')
         self.assertEqual((steps['Gateway firmware file'][0], steps['Taillight firmware file'][0]), ('ok', 'done'))
         self.assertEqual(load_image(folder, 'taillights')[1], b'taillight image')
+        # The water/meth image is kept ready too (for the ESP32 board), from its own release.
+        self.assertEqual(steps['Water/meth firmware file'], ('waiting', 'No firmware has been published yet'))
+        self.publish_firmware(b'water/meth image', '5e6f7081', 'watermeth')
+        self.assertEqual(self.run_setup('online')[2]['Water/meth firmware file'][0], 'done')
+        self.assertEqual(load_image(folder, 'watermeth')[1], b'water/meth image')
+        self.assertIn('DIYWaterMethInjection/releases/download/watermeth-latest', (ROOT / 'tools/frogdash_setup.sh').read_text(encoding='utf-8'))
         steps['Gateway firmware file'] = ('done', 'Downloaded build 1a2b3c4d: install it under Dash management, Support')
         self.assertIn('Downloaded build 1a2b3c4d', steps['Gateway firmware file'][1])
         manifest, image = load_image(folder, 'gateway')        # Exactly what the dash's installer accepts.
@@ -169,6 +176,7 @@ class SetupScriptTests(unittest.TestCase):
         (self.fake / 'download').write_bytes(self.archive)
         self.publish_firmware()
         self.publish_firmware(b'taillight image', '4d5e6f70', 'taillights')
+        self.publish_firmware(b'water/meth image', '5e6f7081', 'watermeth')
         said, _, steps = self.run_setup('online')
         self.assertEqual(steps['TunerStudio: Java and display'], ('done', 'Installed xwayland default-jre'))
         self.assertIn('install -y -q xwayland default-jre', self.log('apt.log'))

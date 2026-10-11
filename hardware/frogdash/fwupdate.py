@@ -29,12 +29,19 @@ STATUS = {0: 'accepted', 1: 'asked for the block again', 2: 'was not expecting i
 ON_TRIAL, UPDATING = 1, 2
 BLOCK_BYTES, FRAMES_PER_BLOCK = 448, 64
 TARGET_GATEWAY = 1
-# name (file and API name), label (in sentences), title (on buttons), target, and what to tell the driver first.
+# name (file and API name), label (in sentences), title (on buttons), target, what to tell the driver first,
+# and optionally what silence means for this module when that is not simply "old firmware".
 MODULES = (
     ('gateway', 'Gateway', 'Gateway firmware', 1,
      'Speed, fuel, wheel buttons and interior lights pause for about a minute.'),
     ('taillights', 'Taillight controller', 'Taillight firmware', 2,
      'Lights off and foot off the brake: the taillights stay dark for a few minutes, and any light switched on stops the update.'),
+    # Only the ESP32 water/meth board answers. The Arduino Nano board it replaces cannot
+    # take firmware over CAN, and says nothing here: that is not a fault.
+    ('watermeth', 'Water/meth controller', 'Water/meth firmware', 3,
+     'Engine off: injection is off for about a minute, and the controller stops the update if boost comes up.',
+     ('no answer (normal with the Nano board)',
+      'No answer. That is normal with the Nano board, which is updated by USB; the ESP32 board answers here once it is fitted')),
 )
 MAX_IMAGE = 0x330000
 QUERY_EVERY_S = 20
@@ -82,9 +89,15 @@ class ModuleFirmware:
     """One module's firmware: what it runs, what is available, and installing it."""
 
     def __init__(self, state, folder, name='gateway', label='Gateway', target=TARGET_GATEWAY, sleep=asyncio.sleep,
-                 title=None, warning=''):
+                 title=None, warning='', silent=None):
         self.state, self.folder, self.name, self.label, self.target, self.sleep = state, folder, name, label, target, sleep
         self.title, self.warning = title or f'{label} firmware', warning
+        # (short, note) shown while the module does not answer.
+        self.silent = silent or ('not answering', f'The {label.lower()} is not answering. '
+                                 'Firmware from before this feature must be replaced once by USB')
+        # What an install attempt says when it gets no answer.
+        self.no_answer = (f'The {label.lower()}: {silent[1][0].lower()}{silent[1][1:]}' if silent else
+                          f'The {label.lower()} did not answer. Its firmware may be from before this feature: flash it once by USB')
         self.blocked = lambda: False   # Set by Firmware: another module is being updated.
         self.installed = None        # Build the module reports, as 8 hex digits
         self.flags = 0
@@ -129,8 +142,7 @@ class ModuleFirmware:
         answered = self.heard is not None and self.state.clock() - self.heard < 3 * QUERY_EVERY_S
         new = bool(manifest) and answered and manifest['build'] != self.installed
         if not answered:
-            note = f'The {self.label.lower()} is not answering. Firmware from before this feature must be replaced once by USB'
-            short = 'not answering'
+            short, note = self.silent
         elif not manifest:
             note, short = reason, f'build {self.installed}, no newer file on the Pi'
         elif new:
@@ -218,7 +230,7 @@ class ModuleFirmware:
         ack = lambda op: (lambda reply: reply[0] == ACK and reply[2] == op)
         try:
             if not await self.ask(command(QUERY, target), info, 1.0):
-                raise Failure(f'The {self.label.lower()} did not answer. Its firmware may be from before this feature: flash it once by USB')
+                raise Failure(self.no_answer)
             reply = await self.ask(command(BEGIN, target, len(data).to_bytes(3, 'big') + b'FW'), ack(BEGIN), 6.0, tries=2)
             if not reply:
                 raise Failure(f'The {self.label.lower()} did not accept the update')
@@ -301,8 +313,8 @@ class Firmware:
 
     def __init__(self, state, folder, sleep=asyncio.sleep, modules=MODULES):
         self.sleep = sleep
-        self.modules = {name: ModuleFirmware(state, folder, name, label, target, sleep, title, warning)
-                        for name, label, title, target, warning in modules}
+        self.modules = {name: ModuleFirmware(state, folder, name, label, target, sleep, title, warning, *silent)
+                        for name, label, title, target, warning, *silent in modules}
         for module in self.modules.values():
             module.blocked = lambda module=module: any(other.busy() for other in self.modules.values() if other is not module)
 

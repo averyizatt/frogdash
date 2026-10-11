@@ -7,7 +7,8 @@ wire that already connects them. No USB cable, and no Wi-Fi in the modules.
 |---|---|---|---|
 | Sensor gateway | Yes | About a minute | Speed, fuel level, wheel buttons and interior lights pause |
 | Taillight controller | Yes | A few minutes (its firmware is three times the size) | Lamps dark. Lights off and foot off the brake: any light input stops the update at once |
-| Water/meth Nano | No: see below | | |
+| Water/meth controller, ESP32 board | Yes | About a minute | Injection off. Engine off: it will not start, and stops, if the pump is on or boost comes up |
+| Water/meth controller, Nano board | No: see below | | The dash shows "no answer (normal with the Nano board)" |
 
 ## Using it
 
@@ -29,10 +30,10 @@ not answering.
 ## Where the firmware comes from
 
 Each module's repository builds its firmware on GitHub on every change and publishes it
-as a release (`gateway-latest`, `taillights-latest`) with a manifest holding the build
-number, size and SHA-256. The Pi setup (`tools/frogdash_setup.sh`, steps *Gateway
-firmware file* and *Taillight firmware file*) downloads them and only keeps a file that
-matches its SHA-256. The build number is the first eight hex digits of the commit; a
+as a release (`gateway-latest`, `taillights-latest`, `watermeth-latest`) with a manifest
+holding the build number, size and SHA-256. The Pi setup (`tools/frogdash_setup.sh`,
+steps *Gateway firmware file*, *Taillight firmware file* and *Water/meth firmware
+file*) downloads them and only keeps a file that matches its SHA-256. The build number is the first eight hex digits of the commit; a
 build flashed from the editor reports `00000000`, so the published build is offered
 over it.
 
@@ -41,7 +42,7 @@ over it.
 | | |
 |---|---|
 | Moving | The dash refuses to start while a speed reading says the car is moving, and stops the transfer if it starts moving. The module then simply carries on |
-| The module's real work | The taillight controller will not start while any light input is on, and drops the transfer the instant one comes on. The lights always win |
+| The module's real work | The taillight controller will not start while any light input is on, and drops the transfer the instant one comes on. The lights always win. The ESP32 water/meth controller does the same for the pump running or boost within 1 psi of its start, and holds the pump off during a transfer |
 | A bad frame | The image goes in blocks of 448 bytes. The module writes a block only when every frame arrived and its CRC-16 matches; otherwise the dash sends that block again, more slowly |
 | A bad image | Before restarting, the module checks the CRC-32 of everything received and the image's own checksum. A wrong or incomplete image is discarded and the old firmware keeps running |
 | A firmware that does not work | The new firmware starts on trial. If the dash has not confirmed it within 90 seconds, or it hangs or crashes, the module restarts into the firmware it had before. The dash reports that it went back |
@@ -59,9 +60,14 @@ simply ignore them.
 | 0x680 | dash → module | 8 | Commands (query, begin, block end, end, abort, confirm) naming a target module, and the image data, seven bytes a frame |
 | 0x681 | module → dash | 8 | Build and state, and an acknowledgement of every command |
 
-Target 1 is the sensor gateway, target 2 the taillight controller. Target 3 is reserved
-for the ESP32 water/meth controller: its firmware already answers, but it is not in the
-dash's table until that board is in the car.
+Target 1 is the sensor gateway, target 2 the taillight controller, target 3 the ESP32
+water/meth controller.
+
+The water/meth line reads "no answer (normal with the Nano board)" for as long as the
+Arduino Nano board is fitted: the Nano cannot take firmware over CAN and is flashed by
+USB. Its image is still downloaded and kept on the Pi, so it is ready when the ESP32
+board goes in. That board refuses an update, and drops one that is running, when the
+pump is on or boost is near: install with the engine off.
 
 ## Adding another module
 
@@ -87,16 +93,16 @@ program from a bootloader, the one it has listens on USB serial, and there is no
 slot to keep the old firmware in. Doing it over CAN means replacing that bootloader
 with a CAN one, which needs a hardware programmer once and leaves no automatic
 way back if a transfer goes wrong (the bootloader survives, so it can be tried again,
-but the pump controller is out of action until one succeeds). Replacing the Nano with
-an ESP32 board would put it on the same footing as the other modules.
+but the pump controller is out of action until one succeeds). The ESP32 board that is
+replacing the Nano is on the same footing as the other modules: see the table above.
 
 ## Tests
 
 `tests/test_fwupdate.py` runs the dash's sender against the modules' real receiver code,
-compiled for the computer from the shared header: complete transfers to both targets,
-lost frames and lost answers, a module that goes back to its old firmware, one that
-never comes back, one that refuses or stops because it is needed, and the car moving
-off mid-transfer. `tests/test_can_contract.py` checks every frame the dash builds
-against the modules' own builders. Both firmwares are compiled by their GitHub
-workflows. None of this has run on the car: the first real transfer is the test of
+compiled for the computer from the shared header: complete transfers to all three
+targets, lost frames and lost answers, a module that goes back to its old firmware, one
+that never comes back, one that refuses or stops because it is needed, a controller
+that cannot answer at all (the Nano), and the car moving off mid-transfer.
+`tests/test_can_contract.py` checks every frame the dash builds against the modules'
+own builders. All three firmwares are compiled by their GitHub workflows. None of this has run on the car: the first real transfer is the test of
 the wiring and timing.
