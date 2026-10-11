@@ -860,7 +860,7 @@ inline CanFrame packMethConfigAck(uint8_t acceptedVersion, uint8_t status, uint8
 
 // BEGIN FROGDASH ADDITIVE EXTENSION
 // Existing schema-2 IDs, layouts and ACK schema remain unchanged.
-constexpr uint8_t FROGDASH_EXTENSION_VERSION = 4;
+constexpr uint8_t FROGDASH_EXTENSION_VERSION = 5;
 constexpr uint16_t ID_FUEL_LEVEL_STATE = 0x204;
 constexpr uint8_t FUEL_LEVEL_DLC = 3;
 constexpr uint32_t FUEL_LEVEL_TX_MS = 500;
@@ -1118,6 +1118,7 @@ inline CanFrame packTaillightStatus(uint8_t revision, uint8_t flags, uint8_t sho
 // and the controller reports on the new ID 0x30F. Firmware that predates them answers
 // UNSUPPORTED_COMMAND on 0x30A and never sends 0x30F.
 #define CAN_PROTOCOL_HAS_METH_TUNE 1
+#define CAN_PROTOCOL_HAS_METH_PWM 1  // meth_tune_setting MIN_DUTY_PCT / MAX_DUTY_PCT
 constexpr uint16_t ID_METH_TUNE = 0x30F;  // TX by water/meth controller, DLC 8
 constexpr uint32_t METH_TUNE_STATUS_TX_MS = 500;
 constexpr uint32_t METH_TUNE_TEMPS_TX_MS = 200;
@@ -1149,8 +1150,18 @@ constexpr uint8_t MAX_DOSE_PCT = 14;     // 0..40 most fluid allowed as % of est
 constexpr uint8_t EARLY_RPM = 15;        // 0..8000; 0 = off. Inject from this RPM with the throttle open, before boost
 constexpr uint8_t HOT_START_C = 16;      // 0..145; 0 = off. Air before the nozzle hotter than this adds on-time
 constexpr uint8_t HOT_FULL_C = 17;       // 20..150 air temperature where on-time reaches MAX_ON_MS
-constexpr uint8_t COUNT = 17;
+// Controllers that drive the pump through a MOSFET with PWM (extension 5). They use these
+// two in place of PERIOD_MS, MIN_ON_MS and MAX_ON_MS, report the duty in the status
+// frame as on-time out of a period of 1000, and mark every setting report with
+// meth_drive::PWM. A relay controller keeps the two settings but ignores them.
+constexpr uint8_t MIN_DUTY_PCT = 18;     // 10..100 pump duty at start boost; the least that still atomises
+constexpr uint8_t MAX_DUTY_PCT = 19;     // 10..100 pump duty at full boost
+constexpr uint8_t COUNT = 19;
 }  // namespace meth_tune_setting
+namespace meth_drive {            // Byte 6 of a setting report; 0 from firmware before extension 5
+constexpr uint8_t RELAY = 0;      // Pump switched by a relay in slow pulses
+constexpr uint8_t PWM = 1;        // Pump on a MOSFET, speed set by duty
+}  // namespace meth_drive
 namespace meth_tune_action {
 constexpr uint8_t SAVE = 0;      // Persist current settings on the controller
 constexpr uint8_t REVERT = 1;    // Reload the saved settings
@@ -1224,7 +1235,8 @@ inline CanFrame packMethTuneAck(uint8_t command, uint8_t status, uint8_t subject
   frame.data[6] = revision;
   return frame;
 }
-inline CanFrame packMethTuneSettingReport(uint8_t key, uint16_t value, uint8_t revision, uint8_t flags) {
+inline CanFrame packMethTuneSettingReport(uint8_t key, uint16_t value, uint8_t revision, uint8_t flags,
+                                          uint8_t drive = meth_drive::RELAY) {
   CanFrame frame{};
   frame.id = ID_METH_TUNE;
   frame.dlc = 8;
@@ -1233,6 +1245,7 @@ inline CanFrame packMethTuneSettingReport(uint8_t key, uint16_t value, uint8_t r
   encodeU16BE(value, frame.data[2], frame.data[3]);
   frame.data[4] = revision;
   frame.data[5] = flags;
+  frame.data[6] = drive;
   return frame;
 }
 inline CanFrame packMethTuneStatus(uint8_t revision, uint8_t flags, uint8_t hold, uint16_t onMs, uint16_t periodMs) {

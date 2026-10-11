@@ -1,15 +1,20 @@
-"""Mirror of the water/meth controller's pulse tuning, kept in sync from its 0x30F reports.
+"""Mirror of the water/meth controller's tuning, kept in sync from its 0x30F reports.
 
-The pump is switched directly by a mechanical relay, so flow is set by how long the pump
-runs in each slow cycle (at least half a second on, at least half a second off, or on
-continuously). The controller owns the settings, enforces their hard limits and saves
-them; this module mirrors what it reports, validates requests the same way, keeps the
-presets and works out what the flow means next to the engine's fuel use.
+Two kinds of controller exist. The relay board switches the pump with a mechanical
+relay, so flow is set by how long the pump runs in each slow cycle (at least half a
+second on, at least half a second off, or on continuously). The ESP32 board drives the
+pump through a MOSFET with PWM: the pump runs continuously at a duty that follows
+boost, and flow goes with the square root of the duty. Each setting report says which
+kind it came from. The controller owns the settings, enforces their hard limits and
+saves them; this module mirrors what it reports, validates requests the same way, keeps
+the presets and works out what the flow means next to the engine's fuel use.
 
 Ranges and defaults match meth_tune.h in the DIYWaterMethInjection firmware and the
-key numbers match can_protocol.h meth_tune_setting (extension 4).
+key numbers match can_protocol.h meth_tune_setting (extension 5; firmware from
+extension 4 reports the first 17 and is still understood).
 """
 import json
+import math
 
 from .driving import atomic_write
 
@@ -20,10 +25,15 @@ SETTINGS = {
     7: ('max_spray_s', 1, 120, 12), 8: ('rest_s', 0, 60, 6), 9: ('ramp_ms', 0, 5000, 500),
     10: ('min_pre_temp_c', 0, 120, 0), 11: ('overboost_assist', 0, 1, 0),
     12: ('meth_pct', 0, 100, 0), 13: ('nozzle_ml_min', 20, 1000, 60), 14: ('max_dose_pct', 0, 40, 10),
-    15: ('early_rpm', 0, 8000, 3500), 16: ('hot_start_c', 0, 145, 0), 17: ('hot_full_c', 20, 150, 70)}
+    15: ('early_rpm', 0, 8000, 3500), 16: ('hot_start_c', 0, 145, 0), 17: ('hot_full_c', 20, 150, 70),
+    18: ('min_duty_pct', 10, 100, 25), 19: ('max_duty_pct', 10, 100, 50)}
 KEYS = {name: key for key, (name, _, _, _) in SETTINGS.items()}
 NAMES = [SETTINGS[key][0] for key in sorted(SETTINGS)]
 DEFAULTS = {name: default for name, _, _, default in SETTINGS.values()}
+# The two drives each have settings the other ignores.
+PULSE_NAMES = ('period_ms', 'min_on_ms', 'max_on_ms')   # Relay only
+DUTY_NAMES = ('min_duty_pct', 'max_duty_pct')           # PWM only; absent from older firmware
+BASE_NAMES = [name for name in NAMES if name not in DUTY_NAMES]
 HOLDS = 'NONE DISARMED BELOW_BOOST RPM_LOW RPM_MISSING AIR_COLD TEMP_SENSOR RESTING TANK_LOW FAULT DOSE_LIMIT'.split()
 FLAGS = {'unsaved': 1, 'rpm_ok': 2, 'pre_valid': 4, 'post_valid': 8, 'pump_on': 16, 'early_start': 32, 'hot_air': 64, 'ecu_temp': 128}
 ACTIONS = {'save': 0, 'revert': 1, 'defaults': 2, 'report': 3}
@@ -34,16 +44,18 @@ USER_SLOTS = ('Custom 1', 'Custom 2', 'Custom 3')
 # RPM, more for hot intake air) are separate from the flow presets.
 FLUID_NAMES = ('meth_pct', 'max_dose_pct')
 TRIGGER_NAMES = ('early_rpm', 'hot_start_c', 'hot_full_c')
-TIMING_NAMES = [name for name in NAMES if name not in (*FLUID_NAMES, *TRIGGER_NAMES, 'nozzle_ml_min')]
-TIMING_DEFAULTS = {name: DEFAULTS[name] for name in TIMING_NAMES}
-# Flow presets, all on a 4 s cycle so the relay switches at most once every 4 s.
-# Standard reaches the pump on continuously at full boost (no switching at all there).
+TIMING_NAMES = [name for name in BASE_NAMES if name not in (*FLUID_NAMES, *TRIGGER_NAMES, 'nozzle_ml_min')]
+PRESET_NAMES = [*TIMING_NAMES, *DUTY_NAMES]
+TIMING_DEFAULTS = {name: DEFAULTS[name] for name in PRESET_NAMES}
+# Flow presets. Relay: all on a 4 s cycle so the relay switches at most once every 4 s,
+# and Standard reaches the pump on continuously at full boost. PWM: the same three steps
+# as pump duty (flow is about the nozzle's rating times the square root of the duty).
 PRESETS = {
     'Conservative': dict(TIMING_DEFAULTS),
     'Mild': {**TIMING_DEFAULTS, 'min_on_ms': 1500, 'max_on_ms': 3000, 'start_psi_x10': 45, 'full_psi_x10': 90,
-             'max_spray_s': 20, 'rest_s': 5, 'ramp_ms': 1000},
+             'max_spray_s': 20, 'rest_s': 5, 'ramp_ms': 1000, 'min_duty_pct': 30, 'max_duty_pct': 70},
     'Standard': {**TIMING_DEFAULTS, 'min_on_ms': 2000, 'max_on_ms': 4000, 'start_psi_x10': 40, 'full_psi_x10': 80,
-                 'max_spray_s': 30, 'rest_s': 4, 'ramp_ms': 2000},
+                 'max_spray_s': 30, 'rest_s': 4, 'ramp_ms': 2000, 'min_duty_pct': 35, 'max_duty_pct': 100},
 }
 # Tank mixes by methanol volume, each with a dose limit (most fluid as a share of fuel).
 # Methanol burns, so the engine tolerates more fluid as the methanol share rises.
@@ -75,6 +87,10 @@ def apply_setting(values, name, requested):
         value = min(value, values['hot_full_c'] - 5)
     elif name == 'hot_full_c' and values['hot_start_c'] > 0:
         value = max(value, values['hot_start_c'] + 5)
+    elif name == 'min_duty_pct':
+        value = min(value, values['max_duty_pct'])
+    elif name == 'max_duty_pct':
+        value = max(value, values['min_duty_pct'])
     values[name] = value
     if name == 'period_ms':
         values['max_on_ms'] = min(values['max_on_ms'], value)
@@ -83,13 +99,16 @@ def apply_setting(values, name, requested):
 
 
 def valid(values):
-    if not isinstance(values, dict) or set(values) != set(NAMES):
+    """A whole set of settings: all of them, or the 17 that firmware before PWM reports."""
+    if not isinstance(values, dict) or set(values) not in (set(NAMES), set(BASE_NAMES)):
         return False
-    if any(type(values[name]) is not int or not low <= values[name] <= high for name, low, high, _ in SETTINGS.values()):
+    if any(type(values[name]) is not int or not low <= values[name] <= high
+           for name, low, high, _ in SETTINGS.values() if name in values):
         return False
     return (values['min_on_ms'] <= values['max_on_ms'] <= values['period_ms']
             and values['full_psi_x10'] >= values['start_psi_x10'] + 10
-            and (values['hot_start_c'] == 0 or values['hot_full_c'] >= values['hot_start_c'] + 5))
+            and (values['hot_start_c'] == 0 or values['hot_full_c'] >= values['hot_start_c'] + 5)
+            and values.get('min_duty_pct', 0) <= values.get('max_duty_pct', 100))
 
 
 def plan(current, changes):
@@ -98,7 +117,9 @@ def plan(current, changes):
     The controller clamps each change against its partner (minimum against maximum,
     start against full), so the order depends on which way the pair is moving.
     """
-    values, target, steps = dict(current), {**current, **changes}, []
+    # Settings this controller does not have (pump duty on older firmware) are left out.
+    values, steps = dict(current), []
+    target = {**current, **{name: value for name, value in changes.items() if name in current}}
     order = ['period_ms']
     after_period = dict(values)
     apply_setting(after_period, 'period_ms', target['period_ms'])
@@ -107,7 +128,10 @@ def plan(current, changes):
               else ['start_psi_x10', 'full_psi_x10'])
     order += (['hot_full_c', 'hot_start_c'] if values['hot_start_c'] == 0 or target['hot_full_c'] >= values['hot_start_c'] + 5
               else ['hot_start_c', 'hot_full_c'])
-    order += [name for name in NAMES if name not in order]
+    if 'max_duty_pct' in values:
+        order += (['max_duty_pct', 'min_duty_pct'] if target['max_duty_pct'] >= values['min_duty_pct']
+                  else ['min_duty_pct', 'max_duty_pct'])
+    order += [name for name in NAMES if name not in order and name in values]
     for name in order:
         if values[name] != target[name]:
             apply_setting(values, name, target[name])
@@ -122,6 +146,14 @@ def relay_on_ms(on_ms, period_ms):
     if period_ms - on_ms < SHORTEST_GAP_MS:
         on_ms = max(0, period_ms - SHORTEST_GAP_MS)
     return on_ms if on_ms >= SHORTEST_PULSE_MS else 0
+
+
+def pwm_flow_fraction(duty_pct):
+    """Share of the nozzle's rated flow at this pump duty (meth_tune::flowFraction).
+
+    Pressure at the nozzle rises roughly with duty and flow with the square root of pressure.
+    """
+    return 0.0 if duty_pct <= 0 else 1.0 if duty_pct >= 100 else math.sqrt(duty_pct / 100)
 
 
 def fuel_g_min(rpm, map_kpa):
@@ -182,6 +214,7 @@ class MethTune:
 
     def reset(self):
         self.values = {}
+        self.drive = 'relay'    # 'pwm' once a setting report says so.
         self.revision = self.flags = self.hold = self.on_ms = self.period_ms = None
         self.status_seen = None
         self.reported_revision = None  # Revision the current values belong to.
@@ -194,8 +227,10 @@ class MethTune:
         self.path = path
         try:
             saved = json.loads(path.read_text(encoding='utf-8'))
+            # Presets stored before pump duty existed have the timing settings only.
             self.user = {slot: saved[slot] for slot in USER_SLOTS
-                         if slot in saved and isinstance(saved[slot], dict) and set(saved[slot]) == set(TIMING_NAMES)
+                         if slot in saved and isinstance(saved[slot], dict)
+                         and set(saved[slot]) in (set(TIMING_NAMES), set(PRESET_NAMES))
                          and valid({**DEFAULTS, **saved[slot]})}
         except (OSError, ValueError, TypeError, AttributeError):
             self.user = {}
@@ -213,13 +248,23 @@ class MethTune:
         elif kind == 2 and data[1] in SETTINGS:
             self.values[SETTINGS[data[1]][0]] = int.from_bytes(data[2:4], 'big')
             self.reported_revision = data[4]
+            self.drive = 'pwm' if len(data) > 6 and data[6] == 1 else 'relay'
         elif kind == 3:
             self.revision, self.flags, self.hold = data[1], data[2], data[3]
             self.on_ms, self.period_ms = int.from_bytes(data[4:6], 'big'), int.from_bytes(data[6:8], 'big')
             self.status_seen = self.clock()
 
+    @property
+    def pwm(self):
+        return self.drive == 'pwm'
+
     def complete(self):
-        return len(self.values) == len(SETTINGS) and self.reported_revision == self.revision
+        needed = NAMES if self.pwm else BASE_NAMES
+        return all(name in self.values for name in needed) and self.reported_revision == self.revision
+
+    def relevant(self, name):
+        """A setting this controller has and its kind of pump drive uses."""
+        return name in self.values and name not in (PULSE_NAMES if self.pwm else DUTY_NAMES)
 
     def needs_report(self):
         """True when the mirror is out of date and no report request is in flight."""
@@ -241,14 +286,14 @@ class MethTune:
         if not self.complete():
             return None
         return next((name for name, values in choices.items()
-                     if all(self.values.get(key) == value for key, value in values.items())), None)
+                     if all(self.values[key] == value for key, value in values.items() if self.relevant(key))), None)
 
     def store(self, slot):
         if slot not in USER_SLOTS:
             raise ValueError('Presets can be saved to Custom 1, 2 or 3')
         if not self.complete() or not valid(self.values):
             raise ValueError('The controller has not reported its settings yet')
-        self.user[slot] = {name: self.values[name] for name in TIMING_NAMES}
+        self.user[slot] = {name: self.values[name] for name in PRESET_NAMES if name in self.values}
 
     def remove(self, slot):
         if slot not in self.user:
@@ -269,8 +314,10 @@ class MethTune:
                     'source_id': None, 'timestamp_ms': stamp_ms}
         flow = dose = None
         if self.supported and self.complete() and self.on_ms is not None and self.period_ms:
-            # The average over a cycle: the nozzle flows while the pump runs.
-            flow = round(self.values['nozzle_ml_min'] * min(self.on_ms, self.period_ms) / self.period_ms, 1)
+            share = min(self.on_ms, self.period_ms) / self.period_ms
+            # Relay: the average over a cycle, the nozzle flows while the pump runs.
+            # PWM: the pump runs all the time and the duty sets the pressure.
+            flow = round(self.values['nozzle_ml_min'] * (pwm_flow_fraction(share * 100) if self.pwm else share), 1)
             rpm, map_kpa = live('engine.rpm'), live('ecu.map_kpa')
             if rpm and map_kpa:
                 dose = round(flow / fuel_g_min(rpm, map_kpa) * 100, 1)
@@ -283,7 +330,9 @@ class MethTune:
         return {'supported': self.supported, 'complete': self.complete(), 'revision': self.revision,
                 **{name: bool(flags & bit) for name, bit in FLAGS.items()},
                 'hold': HOLDS[self.hold] if self.hold is not None and self.hold < len(HOLDS) else None,
-                'on_ms': self.on_ms, 'period_ms': self.period_ms,
+                'on_ms': self.on_ms, 'period_ms': self.period_ms, 'drive': self.drive,
+                'duty_pct': (round(min(self.on_ms, self.period_ms) / self.period_ms * 100, 1)
+                             if self.pwm and self.on_ms is not None and self.period_ms else None),
                 'settings': dict(self.values), 'preset': self.matching(self.presets()), 'fluid': self.matching(FLUIDS),
                 'last_spray': dict(self.cooling.last) if self.cooling.last else None, 'last_ack': self.last_ack}
 

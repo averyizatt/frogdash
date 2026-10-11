@@ -25,6 +25,7 @@ and the [MCP2515 setup](mcp2515.md) provide the Pi transport. IDs below are hex.
 | CCM wheel input task | 205 | Five debounced button levels and report sequence, new additive contract |
 | Water/meth Nano | 300, 302, 303, 306, 307, 308, 30A-30D | Meth, sensors, knock, configuration replies and acknowledgements |
 | Water/meth Nano | 30F | Pulse tuning status, settings and intake air temperatures (extension 4, additive) |
+| Water/meth ESP32 | 30F | The same message; two more settings (pump duty) and a drive-type byte in setting reports (extension 5, additive) |
 | Configuration requester | 305 | Meth configuration request |
 | Control owner | 101, 301 | Lighting and meth/knock commands |
 | CCM unless control ownership transferred | 304 | Meth configuration broadcast with XOR checksum |

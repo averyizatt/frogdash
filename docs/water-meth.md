@@ -7,6 +7,12 @@ Everything here needs the current firmware on the water/meth Nano
 (DIYWaterMethInjection, CAN contract extension 4). With older firmware the tuning page
 says so and the rest of the dash works as before.
 
+An ESP32 board is being built to replace the Nano: the pump on a MOSFET with PWM
+instead of the relay, and boost and RPM read straight from the MicroSquirt. The dash
+works with either and tells them apart by itself; what changes with the new board is
+in [The ESP32 board](#the-esp32-board-pump-speed-instead-of-pulses) below. Everything
+else on this page applies to both.
+
 ## How much fluid the engine can use
 
 The numbers are estimates: 85% volumetric efficiency, 50 °C charge air, 12:1 air/fuel
@@ -239,7 +245,48 @@ gauges**, and they are in every data log next to boost, RPM, pump run time, cycl
 length, flow in ml/min, share of fuel and the hold reason, so MegaLogViewer can plot
 cooling against flow.
 
-## CAN messages (contract extension 4)
+## The ESP32 board: pump speed instead of pulses
+
+Wiring and first start-up: `docs/ESP32_HARDWARE.md` in DIYWaterMethInjection.
+
+With this board fitted the tuning page shows two settings in place of cycle length and
+the two run times:
+
+| Setting | Default | Range |
+|---|---|---|
+| Pump duty at start boost | 25% | 10–100% |
+| Pump duty at full boost | 50% | 10–100% |
+
+The pump runs continuously while injecting, at a duty that rises in a straight line
+from the first to the second between start boost and full boost.
+
+- **Flow is not proportional to duty.** It goes roughly with the square root: 25% duty
+  is about half the nozzle's rating (30 ml/min from the 60 ml/min nozzle), 50% about
+  70% (42 ml/min), 100% all of it. The page shows the estimate next to each duty. It is
+  an estimate; a pump test into a measuring cup at a known duty is the way to check it.
+- **The least it can spray is more than the relay's least.** The relay board's
+  Conservative preset starts at 15 ml/min; this board cannot go below about 19 ml/min
+  (10% duty), and below roughly 25% the spray may dribble rather than atomise. So at low
+  RPM and low boost the dose limit holds the pump off more often than with the relay:
+  the status line then says "Held: too little airflow for the dose limit". That is the
+  limit working, not a fault.
+- The flow presets carry duty as well: Conservative 25–50%, Mild 30–70%, Standard
+  35–100%. Tank mixes, the dose limit, minimum RPM, early start, hot air, the longest
+  spray and the rest work as described above. "Run-time growth" becomes the time the
+  duty may take to climb from lowest to highest.
+- **No data from the MicroSquirt means no injection.** The board has no MAP sensor: it
+  needs the ECU's manifold pressure and RPM on CAN, less than half a second old. If they
+  stop, the dash shows "WATER/METH OFF: NO MANIFOLD PRESSURE".
+- The Pump line on the Water / meth tab reads "Pump at 37% duty" instead of run time
+  and cycle.
+
+The Nano board keeps working exactly as before for as long as it is fitted. Its
+firmware and its build are unchanged in the repository, next to the new board's.
+
+To see the new board's tuning page without the hardware, open the preview with
+`?meth=pwm` at the end of the address.
+
+## CAN messages (contract extension 4, and 5 for the ESP32 board)
 
 Additive: no existing message changed.
 
@@ -249,3 +296,8 @@ Additive: no existing message changed.
 | `0x301` cmd `0x11` | Dash | Save, revert, defaults, or report all settings |
 | `0x301` cmd `0x12` | Dash | The MicroSquirt's intake temperature, about four times a second, not acknowledged |
 | `0x30F` | Controller | Acknowledgements, settings, status every 0.5 s (why it is holding, run time, cycle), temperatures every 0.2 s |
+
+Extension 5 adds settings 18 and 19 (lowest and highest pump duty) and one byte in each
+setting report saying how the pump is driven (0 relay, 1 PWM). A PWM controller reports
+its duty in the status message as run time out of a cycle of 1000. Firmware from
+extension 4 reports 17 settings and a zero in that byte, and is read as a relay board.

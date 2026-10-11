@@ -23,9 +23,11 @@
   };
   let scenario = 'drive', paused = false, elapsed = 3, previous = performance.now();
   let tick = 0, testTimer, lightingMode = 0;
-  // Simulated water/meth pulse tuning (can_protocol.h extension 4); rules come from meth-tune.js.
+  // Simulated water/meth tuning (can_protocol.h extension 5); rules come from meth-tune.js.
+  // The relay board is simulated unless the address ends in ?meth=pwm (the ESP32 board).
   const mt = () => window.FrogdashMethTune;
   let mtLive = null, mtSaved = null, mtRevision = 1, mtAck = null;
+  let mtDrive = new URLSearchParams(location.search).get('meth') === 'pwm' ? 'pwm' : 'relay';
   // Simulated taillight extras: show/demo/override/custom, parked-only and cleared when moving.
   const TL_STATES = ['OFF', 'RUNNING', 'BRAKE', 'TURN', 'REVERSE', 'BRAKE_TURN', 'HAZARD'];
   const TL_PARKED = ['lighting.show', 'lighting.demo', 'lighting.override', 'lighting.custom'];
@@ -98,7 +100,8 @@
   playbackLabels();
   // Static scenarios remain available for repeatable design checks.
   // This entire transport is loaded only by the standalone preview.
-  window.frogdashDemo = {scenario: setScenario, methPreset(values) { mtLive = {...mtLive, ...values}; mtRevision++; }};
+  window.frogdashDemo = {scenario: setScenario, methPreset(values) { mtLive = {...mtLive, ...values}; mtRevision++; },
+    methDrive(drive) { mtDrive = drive === 'pwm' ? 'pwm' : 'relay'; mtRevision++; }};
   class FrogdashDemoSocket {
     static OPEN = 1;
     readyState = 1;
@@ -149,20 +152,24 @@
       const early = armed && belowBoost && mtLive.early_rpm > 0 && current['engine.rpm'] >= mtLive.early_rpm && boostPsi >= -1.5;
       let hold = !armed ? 'DISARMED' : belowBoost && !early ? 'BELOW_BOOST' : current['engine.rpm'] < mtLive.min_rpm ? 'RPM_LOW' : 'NONE';
       const ramp = Math.min(1, Math.max(0, (boostPsi * 10 - mtLive.start_psi_x10) / (mtLive.full_psi_x10 - mtLive.start_psi_x10)));
-      let wanted = Math.round(mtLive.min_on_ms + (mtLive.max_on_ms - mtLive.min_on_ms) * ramp);
+      // Relay: on-time in each cycle. PWM: pump duty, reported as on-time out of 1000.
+      const pwm = mtDrive === 'pwm', low = pwm ? mtLive.min_duty_pct * 10 : mtLive.min_on_ms, high = pwm ? mtLive.max_duty_pct * 10 : mtLive.max_on_ms;
+      const period = pwm ? 1000 : mtLive.period_ms;
+      let wanted = Math.round(low + (high - low) * ramp);
       const airC = 38 + Math.max(0, boostPsi) * 5;
       const heat = mtLive.hot_start_c > 0 && airC > mtLive.hot_start_c ?
-        Math.round(mtLive.min_on_ms + (mtLive.max_on_ms - mtLive.min_on_ms) * Math.min(1, (airC - mtLive.hot_start_c) / (mtLive.hot_full_c - mtLive.hot_start_c))) : 0;
+        Math.round(low + (high - low) * Math.min(1, (airC - mtLive.hot_start_c) / (mtLive.hot_full_c - mtLive.hot_start_c))) : 0;
       const hotAir = heat > wanted;
       if (hotAir) wanted = heat;
-      if (mtLive.max_dose_pct) wanted = Math.min(wanted, Math.floor(mtLive.period_ms * Math.min(1, fuel * mtLive.max_dose_pct / 100 / mtLive.nozzle_ml_min)));
-      const onMs = hold === 'NONE' ? mt().relayOn(wanted, mtLive.period_ms) : 0;
+      const share = Math.min(1, fuel * mtLive.max_dose_pct / 100 / mtLive.nozzle_ml_min);
+      if (mtLive.max_dose_pct) wanted = Math.min(wanted, Math.floor(period * (pwm ? share * share : share)));
+      const onMs = hold !== 'NONE' ? 0 : pwm ? (wanted >= low ? wanted : 0) : mt().relayOn(wanted, period);
       if (hold === 'NONE' && !onMs) hold = 'DOSE_LIMIT';
-      if (onMs) { current['meth.state'] = 'SPRAYING'; current['meth.duty_pct'] = Math.round(onMs * 100 / mtLive.period_ms); }
-      const flow = mtLive.nozzle_ml_min * onMs / mtLive.period_ms;
+      if (onMs) { current['meth.state'] = 'SPRAYING'; current['meth.duty_pct'] = Math.round(onMs * 100 / period); }
+      const flow = mtLive.nozzle_ml_min * (pwm ? mt().pwmFlow(onMs / 10) : onMs / period);
       const preC = airC, dropC = flow / 60 * 22;
       Object.assign(current, {'meth.pre_temp_c': Math.round(preC * 10) / 10, 'meth.post_temp_c': Math.round((preC - dropC) * 10) / 10,
-        'meth.temp_drop_c': Math.round(dropC * 10) / 10, 'meth.hold': hold, 'meth.on_ms': onMs, 'meth.period_ms': mtLive.period_ms,
+        'meth.temp_drop_c': Math.round(dropC * 10) / 10, 'meth.hold': hold, 'meth.on_ms': onMs, 'meth.period_ms': period,
         'meth.flow_ml_min': Math.round(flow * 10) / 10, 'meth.dose_pct': fuel > 0 ? Math.round(flow / fuel * 1000) / 10 : null});
       const values = Object.fromEntries(Object.entries(current).map(([key, value]) => [key,
         {value, quality: value === null ? 'unavailable' : scenario === 'offline' ? 'stale' : 'live', source: 'SIMULATED'}]));
@@ -181,9 +188,9 @@
         modules: Object.fromEntries(['taillights', 'comfort', 'watermeth', 'knock'].map(name => [name, scenario === 'offline' ? 'stale' : 'live'])),
         transport: {connected: scenario !== 'offline', status: 'Design preview — simulated data', received: tick, malformed: 0},
         meth_tune: {supported: scenario !== 'offline', complete: true, revision: mtRevision, unsaved: JSON.stringify(mtLive) !== JSON.stringify(mtSaved),
-          rpm_ok: current['engine.rpm'] >= mtLive.min_rpm, pre_valid: true, post_valid: true, pump_on: onMs > 0 && (tick * 100) % mtLive.period_ms < onMs,
+          rpm_ok: current['engine.rpm'] >= mtLive.min_rpm, pre_valid: true, post_valid: true, pump_on: onMs > 0 && (pwm || (tick * 100) % period < onMs),
           early_start: early && onMs > 0, hot_air: hotAir && onMs > 0,
-          hold, on_ms: onMs, period_ms: mtLive.period_ms, settings: mtLive, last_ack: mtAck},
+          hold, on_ms: onMs, period_ms: period, drive: mtDrive, duty_pct: pwm ? onMs / 10 : null, settings: mtLive, last_ack: mtAck},
         taillight: {supported: scenario !== 'offline', complete: true, revision: tlRevision, unsaved: JSON.stringify(tlLive) !== JSON.stringify(tlSaved),
           show: false, demo: false, custom: false, override: false, show_anim: tlLive.settings.show_anim, phase_ms: 0,
           profiles: tlProfiles.map(Boolean), settings: tlLive.settings, colors: tlLive.colors, text: tlLive.text, last_ack: tlAck},

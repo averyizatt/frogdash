@@ -46,6 +46,7 @@ constexpr uint8_t VERSION = 1;
 
 constexpr uint8_t TARGET_GATEWAY = 1;
 constexpr uint8_t TARGET_TAILLIGHT = 2;
+constexpr uint8_t TARGET_WATER_METH = 3;
 // A new module takes the next number here, in the dash's table (fwupdate.py MODULES) and
 // in the Pi setup's download list; nothing else about the protocol changes.
 

@@ -34,7 +34,7 @@ class CanCheckTests(unittest.TestCase):
         row = self.row(0x300)
         text = ' '.join(row['notes'])
         self.assertEqual(row['status'], 'fault')
-        self.assertIn('MAP sensor reading invalid', text)
+        self.assertIn('No valid manifold pressure', text)   # Either board: its MAP sensor, or no ECU data.
         self.assertIn('No command master', text)
         self.assertIn('Tank byte is 255', text)
 

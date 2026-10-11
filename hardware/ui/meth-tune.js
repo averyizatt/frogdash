@@ -1,8 +1,12 @@
-/* Water/meth pulse tuning (can_protocol.h extension 4). The pump is switched directly by
-   a mechanical relay, so flow is set by how long the pump runs in each slow cycle: at
-   least half a second on, at least half a second off, or on continuously. Every value
-   shown is the controller's own reported setting (0x30F), and the controller enforces
-   the limits. Changes apply at once; Save stores them on the controller. */
+/* Water/meth tuning (can_protocol.h extension 5). Two kinds of controller:
+   - relay board: the pump is switched by a mechanical relay, so flow is set by how long
+     the pump runs in each slow cycle (at least half a second on, at least half a second
+     off, or on continuously);
+   - PWM board (ESP32): the pump runs through a MOSFET at a duty that follows boost, and
+     flow goes with the square root of the duty.
+   The controller says which it is (meth_tune.drive) and the page shows that kind's
+   settings. Every value shown is the controller's own reported setting (0x30F), and the
+   controller enforces the limits. Changes apply at once; Save stores them on the controller. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -13,6 +17,8 @@
     ['period_ms', 1, 'Cycle length', 's', 1000, 1, 10, .5],
     ['min_on_ms', 2, 'Pump runs at start boost', 's', 1000, .5, 10, .1],
     ['max_on_ms', 3, 'Pump runs at full boost', 's', 1000, .5, 10, .1],
+    ['min_duty_pct', 18, 'Pump duty at start boost', '%', 1, 10, 100, 1],
+    ['max_duty_pct', 19, 'Pump duty at full boost', '%', 1, 10, 100, 1],
     ['start_psi_x10', 4, 'Start boost', 'psi', 10, 1, 30, .5],
     ['full_psi_x10', 5, 'Full boost', 'psi', 10, 2, 35, .5],
     ['min_rpm', 6, 'Minimum engine RPM', '', 1, 0, 8000, 100],
@@ -30,8 +36,12 @@
   const RULES = {period_ms: [1000, 10000, 4000], min_on_ms: [500, 10000, 1000], max_on_ms: [500, 10000, 2000], start_psi_x10: [10, 300, 50],
     full_psi_x10: [20, 350, 100], min_rpm: [0, 8000, 2500], max_spray_s: [1, 120, 12], rest_s: [0, 60, 6], ramp_ms: [0, 5000, 500],
     min_pre_temp_c: [0, 120, 0], overboost_assist: [0, 1, 0], meth_pct: [0, 100, 0], nozzle_ml_min: [20, 1000, 60], max_dose_pct: [0, 40, 10],
-    early_rpm: [0, 8000, 3500], hot_start_c: [0, 145, 0], hot_full_c: [20, 150, 70]};
+    early_rpm: [0, 8000, 3500], hot_start_c: [0, 145, 0], hot_full_c: [20, 150, 70], min_duty_pct: [10, 100, 25], max_duty_pct: [10, 100, 50]};
   const NAMES = Object.keys(RULES);
+  // Settings only one kind of pump drive uses, and the wording that changes with PWM.
+  const PULSE = ['period_ms', 'min_on_ms', 'max_on_ms'], DUTY = ['min_duty_pct', 'max_duty_pct'];
+  const PWM_TEXT = {ramp_ms: 'Climb from lowest to highest duty takes (0 = at once)', hot_start_c: 'Hot air raises pump duty from (0 = off)',
+    hot_full_c: 'Hot air: highest duty at'};
   const DEFAULTS = Object.fromEntries(NAMES.map(name => [name, RULES[name][2]]));
   // Flow presets cover pulse timing and limits; the tank mix, nozzle and the extra
   // triggers (early start at high RPM, more for hot intake air) are separate.
@@ -39,8 +49,8 @@
   const timing = values => Object.fromEntries(TIMING.map(name => [name, values[name]]));
   const BUILT_IN = [
     {name: 'Conservative', builtin: true, values: timing(DEFAULTS)},
-    {name: 'Mild', builtin: true, values: timing({...DEFAULTS, min_on_ms: 1500, max_on_ms: 3000, start_psi_x10: 45, full_psi_x10: 90, max_spray_s: 20, rest_s: 5, ramp_ms: 1000})},
-    {name: 'Standard', builtin: true, values: timing({...DEFAULTS, min_on_ms: 2000, max_on_ms: 4000, start_psi_x10: 40, full_psi_x10: 80, max_spray_s: 30, rest_s: 4, ramp_ms: 2000})},
+    {name: 'Mild', builtin: true, values: timing({...DEFAULTS, min_on_ms: 1500, max_on_ms: 3000, start_psi_x10: 45, full_psi_x10: 90, max_spray_s: 20, rest_s: 5, ramp_ms: 1000, min_duty_pct: 30, max_duty_pct: 70})},
+    {name: 'Standard', builtin: true, values: timing({...DEFAULTS, min_on_ms: 2000, max_on_ms: 4000, start_psi_x10: 40, full_psi_x10: 80, max_spray_s: 30, rest_s: 4, ramp_ms: 2000, min_duty_pct: 35, max_duty_pct: 100})},
   ];
   const FLUIDS = [
     {name: 'Water', values: {meth_pct: 0, max_dose_pct: 10}}, {name: '18% meth', values: {meth_pct: 18, max_dose_pct: 12}},
@@ -63,6 +73,8 @@
     else if (name === 'full_psi_x10') value = Math.max(value, values.start_psi_x10 + 10);
     else if (name === 'hot_start_c' && value > 0) value = Math.min(value, values.hot_full_c - 5);
     else if (name === 'hot_full_c' && values.hot_start_c > 0) value = Math.max(value, values.hot_start_c + 5);
+    else if (name === 'min_duty_pct') value = Math.min(value, values.max_duty_pct);
+    else if (name === 'max_duty_pct') value = Math.max(value, values.min_duty_pct);
     values[name] = value;
     if (name === 'period_ms') { values.max_on_ms = Math.min(values.max_on_ms, value); values.min_on_ms = Math.min(values.min_on_ms, values.max_on_ms); }
     return value;
@@ -73,9 +85,12 @@
     if (period - on < 500) on = Math.max(0, period - 500);
     return on < 500 ? 0 : on;
   }
+  // PWM: share of the nozzle's rated flow at a pump duty. Pressure rises roughly with duty
+  // and flow with the square root of pressure (meth_tune::flowFraction).
+  const pwmFlow = duty => duty <= 0 ? 0 : duty >= 100 ? 1 : Math.sqrt(duty / 100);
   // Fuel flow estimate shared with the controller's dose limit (2.3 L, see meth_tune.h).
   const fuelGPerMin = (rpm, mapKpa) => rpm * mapKpa * 8.79e-4;
-  window.FrogdashMethTune = {RULES, DEFAULTS, applySetting, relayOn, fuelGPerMin, keyName: key => NAMES[key - 1]};
+  window.FrogdashMethTune = {RULES, DEFAULTS, applySetting, relayOn, pwmFlow, fuelGPerMin, keyName: key => NAMES[key - 1]};
 
   let latest = {}, presets = BUILT_IN.map(p => ({...p})), demoCustom = {}, loaded = false, busy = false;
   const mirror = () => latest.meth_tune || {supported: false, settings: {}};
@@ -154,10 +169,12 @@
   $('mt-preset').addEventListener('change', () => render());
   $('mt-fluid').addEventListener('change', () => { if ($('mt-fluid').value) presetRequest('fluid', $('mt-fluid').value); });
 
-  const matches = (subset, s) => !!subset && Object.entries(subset).every(([name, value]) => s[name] === value);
+  // A preset matches on the settings this controller has and its kind of pump drive uses.
+  const matches = (subset, s, pwm) => !!subset && Object.entries(subset).every(([name, value]) =>
+    (pwm ? PULSE : DUTY).includes(name) || s[name] === undefined || s[name] === value);
   function render() {
-    const m = mirror(), s = m.settings || {}, ready = m.supported && m.complete;
-    const active = ready ? presets.find(p => matches(p.values, s))?.name : null;
+    const m = mirror(), s = m.settings || {}, ready = m.supported && m.complete, pwm = m.drive === 'pwm';
+    const active = ready ? presets.find(p => matches(p.values, s, pwm))?.name : null;
     const fluid = ready ? FLUIDS.find(f => f.values.meth_pct === s.meth_pct)?.name ?? '' : null;
     const sync = $('mt-sync');
     sync.dataset.state = !m.supported ? 'off' : m.unsaved ? 'unsaved' : 'saved';
@@ -166,9 +183,11 @@
       : (m.unsaved ? 'Unsaved changes: they work now but are lost at power-off until you Save to controller.' : 'Saved on the controller.') + (active ? ` Matches preset: ${active}.` : ' Custom flow settings.');
     for (const field of FIELDS) {
       const [name, , text, unit] = field, input = inputs[name], title = input.previousSibling;
-      const label = `${text}${unit === 'temp' ? ` · ${tempUnit()}` : unit ? ` · ${unit}` : ''}`;
+      const label = `${pwm && PWM_TEXT[name] || text}${unit === 'temp' ? ` · ${tempUnit()}` : unit ? ` · ${unit}` : ''}`;
       if (title.textContent !== label) title.textContent = label;
-      input.disabled = !ready || busy;
+      const unused = (pwm ? PULSE : DUTY).includes(name);
+      if (input.parentNode.hidden !== unused) input.parentNode.hidden = unused;
+      input.disabled = !ready || busy || unused;
       const editing = document.activeElement === input || input.classList.contains('wheel-editing');
       if (ready && !editing && s[name] !== undefined) { const value = tidy(shown(field, s[name])); if (input.value !== value) input.value = value; }
       if (unit === 'temp') { input.min = 0; input.max = u.metric ? field[6] : Math.round(field[6] * 1.8 + 32); input.step = u.metric ? 1 : 5; } else { input.min = field[5]; input.max = field[6]; }
@@ -182,12 +201,22 @@
     $('mt-store').disabled = !ready || busy || !chosen || chosen.builtin;
     $('mt-save').disabled = !ready || busy || !m.unsaved;
     $('mt-revert').disabled = !ready || busy || !m.unsaved;
-    $('mt-defaults').disabled = !ready || busy || matches(DEFAULTS, s);
+    $('mt-defaults').disabled = !ready || busy || matches(DEFAULTS, s, pwm);
     $('mt-summary').textContent = ready ? summary(s, m) : '';
     renderLive(m);
   }
   // What the settings mean in fluid, in words: the reason for the numbers above.
   function summary(s, m) {
+    if (m.drive === 'pwm') {
+      const at = duty => `${duty}% duty (about ${Math.round(s.nozzle_ml_min * pwmFlow(duty))} ml/min)`;
+      return `At ${tidy(s.start_psi_x10 / 10)} psi the pump runs at ${at(s.min_duty_pct)}, rising to ${at(s.max_duty_pct)} at ${tidy(s.full_psi_x10 / 10)} psi. ` +
+        `${s.early_rpm ? `It also starts above ${s.early_rpm} RPM with the throttle open, before boost. ` : ''}` +
+        `${s.hot_start_c ? `Intake air hotter than ${degrees(s.hot_start_c)} raises the duty, reaching the highest at ${degrees(s.hot_full_c)}. ` : ''}` +
+        `${(s.hot_start_c || s.min_pre_temp_c) && m.ecu_temp ? 'Temperature comes from the MicroSquirt IAT while the sensor before the nozzle is not reading. ' : ''}` +
+        `${s.max_dose_pct ? `Never more than ${s.max_dose_pct}% of the engine's fuel flow; when that would need less than ${s.min_duty_pct}% duty the pump stays off. ` : 'No dose limit. '}` +
+        `Flow is an estimate: it goes with the square root of the duty. Boost and RPM come from the MicroSquirt over CAN; needs ${s.min_rpm} RPM` +
+        `${s.rest_s ? `; rests ${s.rest_s} s after ${s.max_spray_s} s of spraying` : '; no spray time limit'}.`;
+    }
     const flow = ms => { const on = relayOn(ms, s.period_ms); return `${seconds(on)} in every ${seconds(s.period_ms)} (${Math.round(s.nozzle_ml_min * on / s.period_ms)} ml/min)`; };
     const top = relayOn(s.max_on_ms, s.period_ms);
     return `At ${tidy(s.start_psi_x10 / 10)} psi the pump runs ${flow(s.min_on_ms)}, rising to ${top >= s.period_ms ? `on continuously (${s.nozzle_ml_min} ml/min)` : flow(s.max_on_ms)} at ${tidy(s.full_psi_x10 / 10)} psi. ` +
@@ -216,7 +245,8 @@
     const text = {
       'meth-live-hold': !m.supported ? 'Needs the current controller firmware' : m.hold === 'NONE' ?
         `Injecting${m.early_start ? ': early start, before boost' : ''}${m.hot_air ? `${m.early_start ? ',' : ':'} extra for hot intake air` : ''}` : HOLD[m.hold] || 'Waiting for the controller',
-      'meth-live-pulse': !m.supported ? '—' : !m.on_ms ? 'Pump off' : m.on_ms >= m.period_ms ? 'Pump on continuously' : `Pump runs ${seconds(m.on_ms)} in every ${seconds(m.period_ms)}`,
+      'meth-live-pulse': !m.supported ? '—' : !m.on_ms ? 'Pump off' : m.drive === 'pwm' ? `Pump at ${tidy(m.duty_pct ?? m.on_ms / 10)}% duty`
+        : m.on_ms >= m.period_ms ? 'Pump on continuously' : `Pump runs ${seconds(m.on_ms)} in every ${seconds(m.period_ms)}`,
       'meth-live-flow': !m.supported || flow === null ? '—' : !flow ? 'None' : `About ${Math.round(flow)} ml/min${dose === null ? '' : ` · ${dose.toFixed(1)}% of fuel`}`,
       'meth-live-rpm': !m.supported ? '—' : m.rpm_ok ? 'OK: above the minimum' : 'Not met',
       'meth-live-pre': value('meth.pre_temp_c') === null ? 'No sensor fitted yet' : temp('meth.pre_temp_c'),

@@ -21,7 +21,7 @@ COMMANDS = {
     "meth.clear_faults": (0x301, 0x06, None, None, True),
     # Pulse tuning (can_protocol.h extension 4), acknowledged on 0x30F. setting = key << 16 | value;
     # tune_action = 0 save, 1 revert, 2 defaults, 3 report.
-    "meth.setting": (0x301, 0x10, 1 << 16, (17 << 16) | 0xFFFF, True),
+    "meth.setting": (0x301, 0x10, 1 << 16, (19 << 16) | 0xFFFF, True),
     "meth.tune_action": (0x301, 0x11, 0, 3, True),
     "knock.enable": (0x301, 0x40, 0, 1, True),
     "knock.threshold": (0x301, 0x41, 0, 200, True),
@@ -65,7 +65,8 @@ LABELS = {
 # Water/meth controller fault bits (methFaultFlagsFor in its firmware), most actionable first.
 METH_FAULTS = [
     (1, 'the tank level sensor reads LOW. Fill the tank, or check the float switch wiring and polarity'),
-    (2, "the controller's MAP sensor reading is invalid. Check its wiring and vacuum line"),
+    (2, "the controller has no valid manifold pressure. Relay board: check its MAP sensor wiring and vacuum line. "
+        "ESP32 board: the MicroSquirt's CAN broadcast is not reaching it"),
     (8, 'an overboost emergency is latched. Check boost control, then Clear faults'),
     (16, 'the blend or boost setting is invalid. Re-apply the boost start value'),
 ]
@@ -254,6 +255,8 @@ class Controls:
             name, low, high, _ = methtune.SETTINGS[key]
             if not low <= number <= high:
                 raise ValueError(f'{name} must be {low} to {high}')
+            if name in methtune.DUTY_NAMES and self.state.meth_tune.complete() and name not in self.state.meth_tune.values:
+                raise ValueError('This water/meth controller has no pump duty setting')
         if action == 'lighting.override' and (value >> 4 > 6 or value & 15 > 6):
             raise ValueError('Override sides must each be a light state from 0 to 6')
         if action == 'lighting.custom' and not self.valid_custom(value):

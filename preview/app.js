@@ -110,8 +110,8 @@
     if (target !== null) $('afr-target-marker').style.left = `${clamp((target - 10) / 8 * 100, 0, 100)}%`;
     display('meth-state-pill', 'meth.state');
     $('meth-state-pill').dataset.state = live('meth.state') || 'UNKNOWN';
-    // The tile lights up while the pump relay is closed. Current controller firmware
-    // reports the relay itself; older firmware only says it is spraying or testing.
+    // The tile lights up while the pump runs. Current controller firmware reports the
+    // pump itself; older firmware only says it is spraying or testing.
     const tune = snapshot.meth_tune, methState = live('meth.state');
     const pumpOn = connected && (tune?.supported ? !!tune.pump_on : methState === 'SPRAYING' || (methState === 'TEST' && live('meth.duty_pct') > 0));
     const pump = pumpOn ? 'on' : connected && methState === 'SPRAYING' ? 'paused' : 'off';
@@ -313,7 +313,7 @@
   $('signal-filter').addEventListener('input', renderDiagnostics);
   // Name the water/meth fault instead of a bare "fault" (bits from the controller firmware).
   function methFaultTitle(flags) {
-    return flags & 1 ? 'WATER/METH OFF: TANK LEVEL SENSOR LOW' : flags & 2 ? 'WATER/METH OFF: MAP SENSOR INVALID'
+    return flags & 1 ? 'WATER/METH OFF: TANK LEVEL SENSOR LOW' : flags & 2 ? 'WATER/METH OFF: NO MANIFOLD PRESSURE'
       : flags & 8 ? 'WATER/METH: OVERBOOST EMERGENCY' : flags & 16 ? 'WATER/METH OFF: INVALID SETTING' : 'WATER/METH FAULT';
   }
   window.FrogdashMethFault = methFaultTitle;

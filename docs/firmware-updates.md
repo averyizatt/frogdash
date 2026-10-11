@@ -59,7 +59,9 @@ simply ignore them.
 | 0x680 | dash → module | 8 | Commands (query, begin, block end, end, abort, confirm) naming a target module, and the image data, seven bytes a frame |
 | 0x681 | module → dash | 8 | Build and state, and an acknowledgement of every command |
 
-Target 1 is the sensor gateway, target 2 the taillight controller.
+Target 1 is the sensor gateway, target 2 the taillight controller. Target 3 is reserved
+for the ESP32 water/meth controller: its firmware already answers, but it is not in the
+dash's table until that board is in the car.
 
 ## Adding another module
 

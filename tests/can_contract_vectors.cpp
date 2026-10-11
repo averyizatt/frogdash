@@ -81,8 +81,9 @@ int main() {
   emit("meth_intake_temp_cold", packMethLiveIntakeTemp(-123));
   emit("meth_tune_ack", packMethTuneAck(meth_tune_command::SET_SETTING, config_ack_status::VALUE_CLAMPED, meth_tune_setting::MAX_ON_MS, 2000, 7));
   emit("meth_tune_setting", packMethTuneSettingReport(meth_tune_setting::MIN_RPM, 2500, 7, meth_tune_flag::UNSAVED));
+  emit("meth_tune_setting_pwm", packMethTuneSettingReport(meth_tune_setting::MAX_DUTY_PCT, 50, 7, 0, meth_drive::PWM));
   emit("meth_tune_status", packMethTuneStatus(7, meth_tune_flag::UNSAVED | meth_tune_flag::PUMP_ON | meth_tune_flag::RPM_OK | meth_tune_flag::EARLY_START, meth_hold::DOSE_LIMIT, 1500, 4000));
-  static_assert(meth_tune_setting::COUNT == 17 && meth_tune_setting::MAX_DOSE_PCT == 14 && meth_tune_setting::HOT_FULL_C == 17, "Water/meth tuning keys changed");
+  static_assert(meth_tune_setting::COUNT == 19 && meth_tune_setting::MAX_DOSE_PCT == 14 && meth_tune_setting::HOT_FULL_C == 17 && meth_tune_setting::MAX_DUTY_PCT == 19, "Water/meth tuning keys changed");
   emit("meth_tune_temps", packMethTuneTemps(612, -35, 3));
   emit("meth_tune_temps_pre_only", packMethTuneTemps(612, 0, 1));
   gateway::Light interior; interior.channel = 1; interior.red = interior.green = interior.blue = 255; interior.brightness = 35;

@@ -122,6 +122,23 @@ async def preview(browser):
         await page.locator('#mt-revert').click()
         await page.wait_for_function('document.getElementById("mt-max_on_ms").value === "3"')
         assert await page.locator('#mt-fluid').input_value() == '53% meth'
+        # The ESP32 board drives the pump with PWM: duty settings replace the pulse settings.
+        assert await page.locator('#mt-min_duty_pct').is_hidden() and await page.locator('#mt-period_ms').is_visible()
+        await page.evaluate('window.frogdashDemo.methDrive("pwm")')
+        await page.wait_for_function('document.getElementById("mt-summary").textContent.includes("% duty (about")')
+        assert await page.locator('#mt-period_ms').is_hidden() and await page.locator('#mt-max_on_ms').is_hidden()
+        assert 'Matches preset: Mild' in await page.locator('#mt-sync').inner_text()
+        assert await page.locator('#mt-min_duty_pct').input_value() == '30'
+        await page.locator('#mt-min_duty_pct').fill('90')    # Above the highest duty: limited, never raising it.
+        await page.locator('#mt-min_duty_pct').blur()
+        await page.wait_for_function('document.getElementById("mt-min_duty_pct").value === "70"')
+        await page.locator('#mt-min_duty_pct').fill('25')
+        await page.locator('#mt-min_duty_pct').blur()
+        await page.wait_for_function('document.getElementById("mt-summary").textContent.includes("the pump runs at 25% duty (about 30 ml/min), rising to 70% duty (about 50 ml/min)")')
+        assert 'Custom flow settings' in await page.locator('#mt-sync').inner_text()
+        await page.evaluate('window.frogdashDemo.methDrive("relay")')
+        await page.wait_for_function('!document.getElementById("mt-period_ms").parentNode.hidden')
+        assert 'Matches preset: Mild' in await page.locator('#mt-sync').inner_text()   # Duty is not a relay setting.
         await page.locator('#tab-meth').click()
         assert await page.locator('#meth-live-hold').inner_text() in ('Disarmed', 'Armed: waiting for boost', 'Injecting', 'Held: engine RPM is below the minimum')
         assert await page.locator('#meth-live-flow').inner_text() != '—'

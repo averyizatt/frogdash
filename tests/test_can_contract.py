@@ -119,6 +119,13 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((mirror['unsaved'], mirror['pump_on'], mirror['rpm_ok'], mirror['pre_valid']), (True, True, True, False))
         self.assertEqual((mirror['early_start'], mirror['hot_air']), (True, False))
         self.assertEqual((mirror['on_ms'], mirror['period_ms'], mirror['settings']), (1500, 4000, {'min_rpm': 2500}))
+        # A setting report from the PWM board says so; one from the relay board does not.
+        self.assertEqual(mirror['drive'], 'relay')
+        state.ingest(*vectors()['meth_tune_setting_pwm'])
+        mirror = state.meth_tune.snapshot()
+        self.assertEqual((mirror['drive'], mirror['settings']), ('pwm', {'min_rpm': 2500, 'max_duty_pct': 50}))
+        state.ingest(*vectors()['meth_tune_setting'])
+        mirror = state.meth_tune.snapshot()
         self.assertEqual(mirror['last_ack'], {'command': 0x10, 'status': 3, 'subject': 3, 'value': 2000, 'revision': 7})
         values = state.snapshot()['values']
         self.assertEqual([values[key]['value'] for key in ('meth.pre_temp_c', 'meth.post_temp_c', 'meth.temp_drop_c', 'meth.hold', 'meth.on_ms')],
