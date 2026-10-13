@@ -860,7 +860,7 @@ inline CanFrame packMethConfigAck(uint8_t acceptedVersion, uint8_t status, uint8
 
 // BEGIN FROGDASH ADDITIVE EXTENSION
 // Existing schema-2 IDs, layouts and ACK schema remain unchanged.
-constexpr uint8_t FROGDASH_EXTENSION_VERSION = 5;
+constexpr uint8_t FROGDASH_EXTENSION_VERSION = 6;
 constexpr uint16_t ID_FUEL_LEVEL_STATE = 0x204;
 constexpr uint8_t FUEL_LEVEL_DLC = 3;
 constexpr uint32_t FUEL_LEVEL_TX_MS = 500;
@@ -1269,6 +1269,121 @@ inline CanFrame packMethTuneTemps(int16_t preC10, int16_t postC10, uint8_t valid
   encodeU16BE(static_cast<uint16_t>(preC10), frame.data[1], frame.data[2]);
   encodeU16BE(static_cast<uint16_t>(postC10), frame.data[3], frame.data[4]);
   frame.data[5] = validBits;
+  return frame;
+}
+
+// ---- Knock detail (extension 6) ----
+// The ESP32 water/meth controller listens for knock on every sample, finds the
+// engine's real knock frequency from a spectrum and sets its amplifier's gain itself.
+// It reports all of that on one new ID, the first byte saying which report it is.
+// Additive: the Nano controller never sends 0x30E and answers the three new commands
+// with UNSUPPORTED_COMMAND on 0x30A; the dash then shows what the Nano does report.
+#define CAN_PROTOCOL_HAS_KNOCK_DETAIL 1
+constexpr uint16_t ID_KNOCK_DETAIL = 0x30E;   // TX by the ESP32 controller, DLC 8
+namespace knock_detail {
+constexpr uint8_t AMPLIFIER = 1;        // twice a second
+constexpr uint8_t FREQUENCY = 2;        // twice a second
+constexpr uint8_t ENGINE = 3;           // twice a second
+constexpr uint8_t LISTENING = 4;        // five times a second
+constexpr uint8_t SPECTRUM_NORMAL = 5;  // what each frequency normally carries
+constexpr uint8_t SPECTRUM_BURST = 6;   // the loudest block of the last second
+// A spectrum is SPECTRUM_POINTS values, the first at SPECTRUM_START_HZ and one every
+// SPECTRUM_STEP_HZ, sent SPECTRUM_PER_FRAME to a frame. Each value is a level in dB
+// (10 dB = ten times the power): byte = (dB + 10) * 3, so thirds of a dB from -10 to 75.
+constexpr uint8_t SPECTRUM_POINTS = 36;
+constexpr uint8_t SPECTRUM_PER_FRAME = 6;
+constexpr uint16_t SPECTRUM_START_HZ = 2000;
+constexpr uint16_t SPECTRUM_STEP_HZ = 300;
+}  // namespace knock_detail
+namespace knock_amplifier_flag {
+constexpr uint8_t AUTOMATIC = 1 << 0;    // The controller is setting the gain
+constexpr uint8_t INEFFECTIVE = 1 << 1;  // Gain changes show no effect: potentiometer not working
+constexpr uint8_t OVERLOADED = 1 << 2;   // Clipping at the lowest gain
+constexpr uint8_t SILENT = 1 << 3;       // Nothing heard at the highest gain with the engine at speed
+constexpr uint8_t FIXED = 1 << 4;        // Held at a position chosen from the dash
+}  // namespace knock_amplifier_flag
+namespace knock_frequency_flag {
+constexpr uint8_t LEARNING = 1 << 0;       // The filter follows what the spectrum shows
+constexpr uint8_t LEARNED = 1 << 1;        // It sits on a learned frequency, not the bore's figure
+constexpr uint8_t SECOND_ACTIVE = 1 << 2;  // The second-resonance filter is in use
+}  // namespace knock_frequency_flag
+namespace knock_listening_flag {
+constexpr uint8_t NOTABLE = 1 << 0;    // This pass was more than normal, narrow-band and a burst
+constexpr uint8_t CONFIRMED = 1 << 1;  // The second resonance was ringing too
+}  // namespace knock_listening_flag
+// Commands on 0x301, acknowledged on 0x30A like the other knock commands.
+namespace knock_detail_command {
+constexpr uint8_t SET_AMPLIFIER_GAIN = 0x4B;  // 0 = automatic; n = hold potentiometer position n - 1
+constexpr uint8_t SET_BORE_MM = 0x4C;         // 40..200: where the knock frequency is looked for
+constexpr uint8_t RELEARN_FREQUENCY = 0x4D;   // Forget the learned knock frequency and start again
+}  // namespace knock_detail_command
+
+// gainX10: amplifier gain * 10. rest / swing / room in millivolts at the ADC pin: where
+// the signal rests, its typical swing either side, and the distance to the nearer limit.
+inline CanFrame packKnockAmplifier(uint8_t flags, uint8_t gainX10, uint8_t step, uint8_t topStep,
+                                   uint16_t restMv, uint16_t swingMv, uint16_t roomMv) {
+  CanFrame frame{};
+  frame.id = ID_KNOCK_DETAIL;
+  frame.dlc = 8;
+  frame.data[0] = knock_detail::AMPLIFIER;
+  frame.data[1] = flags;
+  frame.data[2] = gainX10;
+  frame.data[3] = step;
+  frame.data[4] = topStep;
+  frame.data[5] = clampU8(restMv / 16);
+  frame.data[6] = clampU8(swingMv / 8);
+  frame.data[7] = clampU8(roomMv / 16);
+  return frame;
+}
+// filterHz: where the knock filter sits. foundHz: where the votes last agreed the engine
+// rings (0 = not yet). agreementPct and votes describe those votes.
+inline CanFrame packKnockFrequency(uint8_t flags, uint16_t filterHz, uint16_t foundHz, uint8_t agreementPct, uint8_t votes) {
+  CanFrame frame{};
+  frame.id = ID_KNOCK_DETAIL;
+  frame.dlc = 8;
+  frame.data[0] = knock_detail::FREQUENCY;
+  frame.data[1] = flags;
+  encodeU16BE(filterHz, frame.data[2], frame.data[3]);
+  encodeU16BE(foundHz, frame.data[4], frame.data[5]);
+  frame.data[6] = agreementPct;
+  frame.data[7] = votes;
+  return frame;
+}
+// boreHz: the knock frequency the bore suggests. toneHz: a steady tone near it (0 = none).
+// sampleRateHz: knock samples a second as measured.
+inline CanFrame packKnockEngine(uint16_t boreHz, uint16_t toneHz, uint16_t sampleRateHz) {
+  CanFrame frame{};
+  frame.id = ID_KNOCK_DETAIL;
+  frame.dlc = 8;
+  frame.data[0] = knock_detail::ENGINE;
+  encodeU16BE(boreHz, frame.data[1], frame.data[2]);
+  encodeU16BE(toneHz, frame.data[3], frame.data[4]);
+  encodeU16BE(sampleRateHz, frame.data[5], frame.data[6]);
+  return frame;
+}
+// Levels in the units of 0x307 (half ADC counts, 255 = full scale). second /
+// secondNormal: the second resonance now and its learned normal. background: the
+// typical knock-band level of the pass. crestX10: loudest moment over that, * 10.
+inline CanFrame packKnockListening(uint8_t flags, uint8_t second, uint8_t secondNormal, uint8_t background, uint8_t crestX10) {
+  CanFrame frame{};
+  frame.id = ID_KNOCK_DETAIL;
+  frame.dlc = 8;
+  frame.data[0] = knock_detail::LISTENING;
+  frame.data[1] = flags;
+  frame.data[2] = second;
+  frame.data[3] = secondNormal;
+  frame.data[4] = background;
+  frame.data[5] = crestX10;
+  return frame;
+}
+// kind: knock_detail::SPECTRUM_NORMAL or SPECTRUM_BURST. firstPoint: index of values[0].
+inline CanFrame packKnockSpectrum(uint8_t kind, uint8_t firstPoint, const uint8_t* values) {
+  CanFrame frame{};
+  frame.id = ID_KNOCK_DETAIL;
+  frame.dlc = 8;
+  frame.data[0] = kind;
+  frame.data[1] = firstPoint;
+  for (uint8_t i = 0; i < knock_detail::SPECTRUM_PER_FRAME; ++i) frame.data[2 + i] = values[i];
   return frame;
 }
 // END FROGDASH ADDITIVE EXTENSION

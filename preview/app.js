@@ -7,7 +7,6 @@
   let connected = false, lastMessage = 0, retry = 250, ws;
   let commandSeq = 0, testRequested = false, lastControlResult = '';
   const commands = new Map();
-  const history = [];
   const absent = {value: null, quality: 'unavailable'};
   const qualityNames = {live: 'Live', stale: 'Stale', unavailable: 'No signal', fault: 'Fault'};
   const instrumentCards = [...document.querySelectorAll('[data-signal]')];
@@ -150,7 +149,6 @@
     if (bad) warnings.push('SENSOR FAULT');
     $('warn-banner').hidden = warnings.length === 0;
     $('warn-banner').textContent = warnings.join(' · ');
-    if ($('knock-overlay').open) renderKnock();
     renderControls();
     if ($('diagnostics').open) renderDiagnostics();
     window.frogdashRendered = (window.frogdashRendered || 0) + 1;
@@ -194,51 +192,6 @@
       box.closest('.speed, [data-speed-card]')?.classList.toggle('has-speed-problem', !!title);
     }
   }
-  function renderKnock() {
-    const energy = display('knock-energy-num', 'knock.energy');
-    display('knock-baseline-num', 'knock.baseline');
-    const threshold = display('knock-threshold-num', 'knock.threshold');
-    display('knock-events-num', 'knock.event_count');
-    display('knock-last-rpm', 'knock.last_rpm');
-    display('knock-last-boost', 'knock.last_boost_kpa', 0, n => `${n} kPa`);
-    $('knock-headroom-num').textContent = energy === null || threshold === null ? '—' : threshold - energy;
-    $('knock-status').textContent = energy === null ? signal('knock.energy').quality.toUpperCase() :
-      live('knock.critical') ? 'CRITICAL' : live('knock.warning') ? 'WARNING' : !live('knock.learned') ? 'LEARNING' : 'OK';
-    $('knock-status').dataset.status = $('knock-status').textContent;
-    // What the detector is listening at, and the amplifier's resting level and swing:
-    // the three things needed to check the sensor circuit from the driver's seat.
-    const centre = live('knock.config.center_hz'), rest = live('knock.hook.bias_adc'), swing = live('knock.hook.envelope'), share = live('knock.band_share_pct');
-    $('knock-source').textContent = `${snapshot.mode === 'demo' ? 'SIMULATED' : snapshot.mode === 'replay' ? 'REPLAY' : 'KNOCK SENSOR'} · ${qualityNames[signal('knock.energy').quality].toUpperCase()}` +
-      `${centre ? ` · LISTENING AT ${(centre / 1000).toFixed(1)} kHz` : ''}${rest === null ? '' : ` · AMPLIFIER RESTS AT ${(rest * 5 / 1024).toFixed(1)} V`}`;
-    $('knock-share').textContent = share === null ? '—' : `${share}%`;
-    $('knock-swing').textContent = swing === null ? '—' : `${Math.round(swing * 2 * 100 / 512)}%`;
-    const now = performance.now();
-    while (history.length && history[0].at < now - 6700) history.shift();
-    const y = n => 270 - clamp(n, 0, 255) / 255 * 252;
-    function path(key) {
-      let d = '', pen = false;
-      for (const p of history) {
-        if (p[key] === null) { pen = false; continue; }
-        const x = 936 - (now - p.at) / 6700 * 888;
-        d += `${pen ? 'L' : 'M'}${x.toFixed(1)},${y(p[key]).toFixed(1)} `;
-        pen = true;
-      }
-      return d;
-    }
-    $('knock-energy').setAttribute('d', path('energy'));
-    $('knock-baseline').setAttribute('d', path('baseline'));
-    $('knock-thresh').setAttribute('visibility', threshold === null ? 'hidden' : 'visible');
-    $('knock-thresh').setAttribute('y1', y(threshold || 0));
-    $('knock-thresh').setAttribute('y2', y(threshold || 0));
-    $('knock-thresh-label').textContent = threshold === null ? '' : `THRESHOLD ${threshold}`;
-    $('knock-thresh-label').setAttribute('y', Math.max(30, y(threshold || 0) - 7));
-    $('knock-danger-zone').setAttribute('height', threshold === null ? 0 : y(threshold) - 18);
-    $('knock-current-dot').setAttribute('visibility', energy === null ? 'hidden' : 'visible');
-    $('knock-current-dot').setAttribute('cy', y(energy || 0));
-    const samples = history.filter(p => p.energy !== null);
-    $('knock-peak').textContent = samples.length ? Math.max(...samples.map(p => p.energy)) : '—';
-  }
-
   function renderDiagnostics() {
     $('module-health').textContent = $('source-health').textContent + ` · ${snapshot.transport.received || 0} received · ${snapshot.transport.malformed || 0} malformed`;
     const filter = $('signal-filter').value.toLowerCase().trim();
@@ -261,7 +214,6 @@
     }
     for (const timer of commands.values()) clearTimeout(timer);
     commands.clear(); testRequested = false;
-    history.length = 0;
     render();
   }
   function connect() {
@@ -278,7 +230,6 @@
         }
         if (next.type !== 'state' || !next.values || !next.transport) return;
         snapshot = next; connected = true; lastMessage = performance.now(); retry = 250;
-        history.push({at: lastMessage, energy: live('knock.energy'), baseline: live('knock.baseline')});
         render();
       } catch { ws.close(); }
     };
@@ -514,7 +465,7 @@
   $('controls-dialog').addEventListener('close', stopLocalTest);
   document.addEventListener('visibilitychange', () => { if (document.hidden) stopLocalTest(); });
   window.addEventListener('pagehide', stopLocalTest);
-  $('knock-launch').onclick = () => { $('knock-overlay').showModal(); renderKnock(); };
+  $('knock-launch').onclick = () => window.FrogdashKnock.open('live');
   $('knock-close').onclick = () => $('knock-overlay').close();
   document.addEventListener('keydown', event => {
     if (event.target.matches('input, textarea, select')) return;

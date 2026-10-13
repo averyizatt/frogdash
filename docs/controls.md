@@ -61,10 +61,15 @@ was changed or firmware flashed by this implementation.
 
 ## Knock and lighting
 
-Knock controls support enable/disable, threshold offset (0–200), adaptive
-multiplier (encoded as ×10, 12–38), clearing events, and requesting current
-configuration pages. The panel displays actual readback separately from requested
-input values. Enabling/disabling this setting changes the Nano's knock monitor.
+The Controls tab keeps the knock monitor's on/off switch and CLEAR EVENTS. Every
+other knock setting is on the knock page under **Settings** ([knock.md](knock.md)):
+threshold margin (0–200), multiplier (×10, 12–38), arming RPM and manifold pressure,
+warning hold time, level gain, frequency mode, frequency and band width, and, with
+the ESP32 controller, amplifier gain, bore and "learn it again". Each field shows
+the controller's own value and sends a change at once. Settings other than on/off
+and CLEAR EVENTS are refused while the car is moving. Because the same command is
+refused twice within 1.5 s of its acknowledgement, the page holds a second change
+until it can be sent and sends only the latest value.
 
 Taillight controls support brightness 0–255 and STOCK/SEQUENTIAL modes through
 `0x101`. Brake/turn/running/reverse inputs keep their firmware-defined behavior.

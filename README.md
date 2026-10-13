@@ -23,7 +23,8 @@ Arrow keys and Enter provide the same navigation in the preview.
 - Matched coolant, oil pressure, fuel pressure, intake air, battery, and fuel cards.
 - Taillight turn, brake, running, and reverse inputs; module connection health.
 - Water/meth summary opens its controls directly. Separate tabs for injection, knock settings, and lighting.
-- Knock history graph, searchable sensor readings, connection details, and raw CAN traffic.
+- Knock page: level history, the sensor signal's spectrum with the listening band and the frequency the engine rings at, amplifier gain, and every knock setting ([docs/knock.md](docs/knock.md)).
+- Searchable sensor readings, connection details, and raw CAN traffic.
 - Explicit stale, fault, and unavailable states. Fuel level arrives from the external controller over CAN.
 
 See [UI design and gauge behavior](docs/ui-design.md) for display scales and review details.

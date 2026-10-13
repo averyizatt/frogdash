@@ -65,6 +65,15 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
             'meth_config_ack': {'meth.ack.version':7, 'meth.ack.ratio_pct':50},
             'command_ack': {'engine.ack.command':65, 'engine.ack.applied_value':20, 'engine.ack.schema':2},
             'knock_fault': {'knock.last_fault.severity':2},
+            # Knock detail from the ESP32 controller (extension 6). Millivolts are sent in steps of 16 and 8.
+            'knock_amplifier': {'knock.amp.automatic':True, 'knock.amp.fixed':False, 'knock.amp.gain':8.0, 'knock.amp.step':21,
+                                'knock.amp.top_step':30, 'knock.amp.rest_mv':816, 'knock.amp.swing_mv':144, 'knock.amp.room_mv':800},
+            'knock_amplifier_fixed': {'knock.amp.automatic':False, 'knock.amp.fixed':True, 'knock.amp.overloaded':True, 'knock.amp.gain':1.0},
+            'knock_frequency': {'knock.freq.learning':True, 'knock.freq.learned':True, 'knock.freq.second_active':True,
+                                'knock.freq.filter_hz':6250, 'knock.freq.found_hz':6262, 'knock.freq.agreement_pct':84, 'knock.freq.votes':120},
+            'knock_engine': {'knock.freq.bore_hz':5966, 'knock.freq.tone_hz':6000, 'knock.freq.sample_rate_hz':38460},
+            'knock_listening': {'knock.listen.notable':True, 'knock.listen.confirmed':True, 'knock.listen.second':44,
+                                'knock.listen.second_normal':12, 'knock.listen.background':9, 'knock.listen.crest':3.1},
             'wheel': {'wheel.buttons_mask':8, 'wheel.sequence':255},
             'fuel': {'vehicle.fuel_pct':50}, 'gps': {'vehicle.speed_kph':75.6, 'gps.altitude_m':-10},
         }
@@ -83,6 +92,8 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
                   'lighting.setting':(13 << 16) | 5, 'lighting.color':(1 << 24) | 0xFF6400,
                   'lighting.text':'FOX', 'lighting.action':(5 << 8) | 2,
                   'meth.setting':(3 << 16) | 1500, 'meth.tune_action':0,
+                  'knock.min_rpm':25, 'knock.min_map':120, 'knock.hold':30, 'knock.level_gain':15, 'knock.center':62,
+                  'knock.bandwidth':9, 'knock.auto_frequency':1, 'knock.amp_gain':13, 'knock.bore':96,
                   'interior.light':(1 << 32) | (0xFFFFFF << 8) | 35}
         for action in COMMANDS:
             state = State(clock=lambda: 10)
@@ -91,6 +102,7 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
             for identifier, data in [(0x300, '0000640000282800'), (0x307, '13140fb400000000'), (0x100, '01010202ff3c00'),
                                      (0x103, '0501000000000000'),  # Taillight firmware with the settings extension.
                                      (0x30F, '03000001000003e8'),  # Water/meth firmware with pulse tuning.
+                                     (0x30E, '0101501e33123200'[:16]),  # The ESP32 controller's knock detail.
                                      (0x503, '01000000000100')]:  # Sensor gateway interior lights online.
                 state.ingest(identifier, bytes.fromhex(data))
             sent = []
@@ -108,6 +120,69 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(sent[0],vectors()[action],action)
             finally:
                 await state.controls.close()
+
+    def test_knock_spectra_are_put_back_together_from_their_chunks(self):
+        from hardware.frogdash import knockview
+        now = [50.0]
+        state = State(clock=lambda: now[0])
+        state.connected = True
+        self.assertEqual(state.snapshot()['knock_detail'], {'supported': False, 'start_hz': 2000, 'step_hz': 300, 'normal': None, 'burst': None})
+        state.ingest(*vectors()['knock_amplifier'])
+        detail = state.snapshot()['knock_detail']
+        self.assertEqual((detail['supported'], detail['normal']), (True, None))       # Heard from, but no spectrum yet.
+        # The firmware's own chunk: points 12..17 of the normal spectrum, bytes 30 33 60 150 255 0.
+        state.ingest(*vectors()['knock_spectrum_normal'])
+        self.assertIsNone(state.snapshot()['knock_detail']['normal'])                 # Not shown until it is whole.
+        for first in range(0, knockview.POINTS, knockview.PER_FRAME):
+            if first != 12:
+                state.ingest(0x30E, bytes([knockview.NORMAL, first, 90, 90, 90, 90, 90, 90]))
+        normal = state.snapshot()['knock_detail']['normal']
+        self.assertEqual(len(normal), 36)
+        self.assertEqual(normal[12:18], [0.0, 1.0, 10.0, 40.0, 75.0, -10.0])           # (byte / 3) - 10 dB
+        self.assertEqual((normal[0], normal[35]), (20.0, 20.0))
+        self.assertIsNone(state.snapshot()['knock_detail']['burst'])                  # The other spectrum is separate.
+        state.ingest(*vectors()['knock_spectrum_burst'])                              # Points 30..35.
+        for first in range(0, 30, knockview.PER_FRAME):
+            state.ingest(0x30E, bytes([knockview.BURST, first, 120, 120, 120, 120, 120, 120]))
+        self.assertEqual(state.snapshot()['knock_detail']['burst'][28:32], [30.0, 30.0, 0.0, 1.0])
+        # A chunk that does not sit on a frame boundary is refused, not written somewhere odd.
+        with self.assertRaises(ValueError):
+            decode(0x30E, bytes([knockview.NORMAL, 13, 0, 0, 0, 0, 0, 0]))
+        with self.assertRaises(ValueError):
+            decode(0x30E, bytes([9, 0, 0, 0, 0, 0, 0, 0]))
+        # No frequency found yet is "unavailable", not zero hertz.
+        found = decode(0x30E, bytes([2, 1, 0x17, 0x4E, 0, 0, 0, 0]))['knock.freq.found_hz']
+        self.assertEqual((found.value, found.quality), (None, 'unavailable'))
+        # The controller goes quiet (or the Nano is fitted): the page falls back.
+        now[0] += 5
+        self.assertEqual(state.snapshot()['knock_detail'], {'supported': False, 'start_hz': 2000, 'step_hz': 300, 'normal': None, 'burst': None})
+
+    async def test_knock_settings_for_the_esp32_controller_are_refused_for_the_nano(self):
+        state = State(clock=lambda: 10)
+        state.connected = True
+        state.samples['ecu.rpm', 1520] = dict(value=0, quality='live', seen=10, source_id=1520, timestamp_ms=0)
+        state.ingest(0x307, bytes.fromhex('13140fb400000000'))
+        sent = []
+        async def send(identifier, data):
+            sent.append((identifier, data))
+            state.ingest(0x30A, bytes([data[0], 0, data[1] if len(data) > 1 else 0, 2]))
+        state.controls.attach(send); state.controls.ready_at = 0
+        try:
+            for action, value in (('knock.amp_gain', 5), ('knock.bore', 96), ('knock.relearn', None)):
+                with self.assertRaisesRegex(ValueError, 'needs the ESP32'):
+                    await state.controls.execute(action, value)
+            self.assertEqual(sent, [])
+            # Settings the Nano has too still go out.
+            self.assertEqual((await state.controls.execute('knock.min_rpm', 25))['status'], 'acknowledged')
+            self.assertEqual(sent, [vectors()['knock.min_rpm']])
+            for action, value in (('knock.min_rpm', 81), ('knock.center', 29), ('knock.center', 91), ('knock.hold', 9), ('knock.bore', 39), ('knock.amp_gain', 101)):
+                with self.assertRaises(ValueError):
+                    await state.controls.execute(action, value)
+        finally:
+            await state.controls.close()
+        # Knock calibration is not changed while the car is moving.
+        state.samples['vehicle.speed_kph', 0x203] = dict(value=40, quality='live', seen=10, source_id=0x203, timestamp_ms=0)
+        self.assertIn('Stop the car', state.controls.reason('knock.min_map', 120) or '')
 
     async def test_water_meth_tuning_reports_decode_and_fill_the_mirror(self):
         state = State(clock=lambda: 10)

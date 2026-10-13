@@ -160,9 +160,12 @@ async def preview(browser):
         await page.locator('[data-action="meth.stop"]').click()
         await page.wait_for_function('document.getElementById("meth-live-summary").textContent.startsWith("OFF")')
         await page.locator('#tab-knock').click()
-        await page.locator('#knock-offset-input').fill('28')
-        await page.locator('[data-action="knock.threshold"]').click()
+        # The knock settings are on the knock page; the tab opens them and shows the result.
+        await page.locator('#knock-open-settings').click()
+        await page.locator('#knock-set-offset').fill('28')
+        await page.locator('#knock-set-offset').blur()
         await page.wait_for_function('document.getElementById("knock-live-summary").textContent.includes("Offset 28")')
+        await page.locator('#knock-close').click()
         assert await page.evaluate('Math.max(...speeds) > Math.min(...speeds) + 1')
         assert not errors, errors
         assert not network, network

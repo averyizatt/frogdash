@@ -17,6 +17,8 @@
     'knock.critical': false, 'knock.event_count': 0, 'knock.last_rpm': 0,
     'knock.last_boost_kpa': 0, 'knock.config.threshold_offset': 20,
     'knock.config.multiplier': 2, 'knock.config.center_hz': 6000,
+    'knock.config.flags': 3, 'knock.config.min_rpm': 0, 'knock.config.min_map_kpa': 120,
+    'knock.config.debounce_ms': 300, 'knock.config.gain': 1, 'knock.config.bandwidth_hz': 1500, 'knock.config.bore_mm': 96,
     'knock.band_share_pct': 14, 'knock.hook.bias_adc': 512, 'knock.hook.envelope': 22,
     'interior.upper.color': '#ffb46b', 'interior.upper.brightness': 0,
     'interior.lower.color': '#ffb46b', 'interior.lower.brightness': 0
@@ -28,6 +30,12 @@
   const mt = () => window.FrogdashMethTune;
   let mtLive = null, mtSaved = null, mtRevision = 1, mtAck = null;
   let mtDrive = new URLSearchParams(location.search).get('meth') === 'pwm' ? 'pwm' : 'relay';
+  // Simulated knock controller. The ESP32 board (can_protocol.h extension 6: spectrum, the
+  // knock frequency it finds, amplifier gain) unless the address ends in ?knock=nano.
+  const knockSim = {esp32: new URLSearchParams(location.search).get('knock') !== 'nano', ringsAt: 6250, learnedFrom: 0, fixedStep: -1, top: 30, boreMm: 96};
+  const KNOCK_ESP32_ONLY = ['knock.amp_gain', 'knock.bore', 'knock.relearn'];
+  const KNOCK_SETTINGS = ['knock.threshold', 'knock.multiplier', 'knock.min_rpm', 'knock.min_map', 'knock.hold', 'knock.level_gain',
+    'knock.center', 'knock.bandwidth', 'knock.auto_frequency', ...KNOCK_ESP32_ONLY];
   // Simulated taillight extras: show/demo/override/custom, parked-only and cleared when moving.
   const TL_STATES = ['OFF', 'RUNNING', 'BRAKE', 'TURN', 'REVERSE', 'BRAKE_TURN', 'HAZARD'];
   const TL_PARKED = ['lighting.show', 'lighting.demo', 'lighting.override', 'lighting.custom'];
@@ -101,6 +109,7 @@
   // Static scenarios remain available for repeatable design checks.
   // This entire transport is loaded only by the standalone preview.
   window.frogdashDemo = {scenario: setScenario, methPreset(values) { mtLive = {...mtLive, ...values}; mtRevision++; },
+    knockController(kind) { knockSim.esp32 = kind !== 'nano'; },
     methDrive(drive) { mtDrive = drive === 'pwm' ? 'pwm' : 'relay'; mtRevision++; }};
   class FrogdashDemoSocket {
     static OPEN = 1;
@@ -171,6 +180,46 @@
       Object.assign(current, {'meth.pre_temp_c': Math.round(preC * 10) / 10, 'meth.post_temp_c': Math.round((preC - dropC) * 10) / 10,
         'meth.temp_drop_c': Math.round(dropC * 10) / 10, 'meth.hold': hold, 'meth.on_ms': onMs, 'meth.period_ms': period,
         'meth.flow_ml_min': Math.round(flow * 10) / 10, 'meth.dose_pct': fuel > 0 ? Math.round(flow / fuel * 1000) / 10 : null});
+      // Stand-in knock controller: where it listens, its amplifier, and two spectra.
+      const knockDetail = {supported: knockSim.esp32 && scenario !== 'offline', start_hz: 2000, step_hz: 300, normal: null, burst: null};
+      {
+        const boreHz = Math.round(1800000 / (Math.PI * knockSim.boreMm));
+        const byHand = !(readings['knock.config.flags'] & 2), loud = scenario === 'warning';
+        const learned = knockSim.esp32 && !byHand && performance.now() >= knockSim.learnedFrom;
+        const filterHz = byHand ? readings['knock.config.center_hz'] : learned ? knockSim.ringsAt : boreHz;
+        current['knock.config.center_hz'] = filterHz;
+        current['knock.config.sample_rate_hz'] = knockSim.esp32 ? 38400 : 19200;
+        const step = knockSim.fixedStep >= 0 ? knockSim.fixedStep : Math.min(knockSim.top, Math.max(0, Math.round(34 - current['engine.rpm'] / 240)));
+        const bell = (hz, centre, width) => Math.exp(-(((hz - centre) / width) ** 2));
+        const esp32 = knockSim.esp32 ? {
+          'knock.amp.automatic': knockSim.fixedStep < 0, 'knock.amp.fixed': knockSim.fixedStep >= 0, 'knock.amp.ineffective': false,
+          'knock.amp.overloaded': false, 'knock.amp.silent': false, 'knock.amp.gain': Math.round((1 + 10 * step / knockSim.top) * 10) / 10,
+          'knock.amp.step': step, 'knock.amp.top_step': knockSim.top, 'knock.amp.rest_mv': 816,
+          'knock.amp.swing_mv': Math.round((150 + 18 * Math.sin(tick / 11)) / 8) * 8, 'knock.amp.room_mv': 800,
+          'knock.freq.learning': !byHand, 'knock.freq.learned': learned, 'knock.freq.second_active': true, 'knock.freq.filter_hz': filterHz,
+          'knock.freq.found_hz': learned ? knockSim.ringsAt + 12 : null, 'knock.freq.agreement_pct': learned ? 84 : 0,
+          'knock.freq.votes': learned ? 120 : byHand ? 0 : Math.min(39, Math.floor((4000 - (knockSim.learnedFrom - performance.now())) / 100)),
+          'knock.freq.bore_hz': boreHz, 'knock.freq.tone_hz': 0, 'knock.freq.sample_rate_hz': 38460,
+          'knock.listen.notable': loud, 'knock.listen.confirmed': loud, 'knock.listen.second': loud ? 44 : Math.round(9 + 2 * Math.sin(tick / 6)),
+          'knock.listen.second_normal': 9, 'knock.listen.background': 14, 'knock.listen.crest': loud ? 3.1 : Math.round((1.3 + .1 * Math.sin(tick / 4)) * 10) / 10,
+        } : Object.fromEntries(['amp.automatic', 'amp.fixed', 'amp.ineffective', 'amp.overloaded', 'amp.silent', 'amp.gain', 'amp.step', 'amp.top_step',
+          'amp.rest_mv', 'amp.swing_mv', 'amp.room_mv', 'freq.learning', 'freq.learned', 'freq.second_active', 'freq.filter_hz', 'freq.found_hz',
+          'freq.agreement_pct', 'freq.votes', 'freq.bore_hz', 'freq.tone_hz', 'freq.sample_rate_hz', 'listen.notable', 'listen.confirmed',
+          'listen.second', 'listen.second_normal', 'listen.background', 'listen.crest'].map(name => [`knock.${name}`, null]));
+        Object.assign(current, esp32);
+        if (knockDetail.supported) {
+          // The engine's own spectrum: falling with frequency, a hump where the cylinder
+          // rings and a smaller one at its second resonance. Bursts lift both.
+          const lift = loud ? 17 : 4 + 2 * Math.sin(tick / 5);
+          knockDetail.normal = []; knockDetail.burst = [];
+          for (let point = 0; point < 36; point++) {
+            const hz = 2000 + 300 * point;
+            const normal = 25 - (hz - 2000) / 1000 * 1.1 + 6 * bell(hz, knockSim.ringsAt, 520) + 3 * bell(hz, knockSim.ringsAt * 1.659, 620) + .5 * Math.sin(tick / 9 + point);
+            knockDetail.normal.push(Math.round(normal * 3) / 3);
+            knockDetail.burst.push(Math.round((normal + 2 + lift * bell(hz, knockSim.ringsAt, 430) + lift * .5 * bell(hz, knockSim.ringsAt * 1.659, 520) + 1.4 * Math.abs(Math.sin(point * 1.7 + tick / 3))) * 3) / 3);
+          }
+        }
+      }
       const values = Object.fromEntries(Object.entries(current).map(([key, value]) => [key,
         {value, quality: value === null ? 'unavailable' : scenario === 'offline' ? 'stale' : 'live', source: 'SIMULATED'}]));
       const test = readings['meth.state'] === 'TEST';
@@ -180,11 +229,13 @@
       if (test) reasons['meth.arm'] = reasons['meth.test'] = reasons['meth.boost'] = 'Stop the pump test first';
       if (readings['meth.state'] === 'ARMED') reasons['meth.test'] = reasons['meth.boost'] = 'Disarm before adjusting or testing';
       if (!(speed < 1)) for (const action of TL_PARKED) reasons[action] = 'Park first: shows and overrides replace the turn signals';
+      if (!knockSim.esp32) for (const action of KNOCK_ESP32_ONLY) reasons[action] = 'This setting needs the ESP32 water/meth controller';
       if (scenario === 'offline') {
         for (const button of document.querySelectorAll('[data-action]')) reasons[button.dataset.action] = 'Simulated controller offline';
         reasons['meth.disarm'] = 'Simulated controller offline';
+        for (const action of KNOCK_SETTINGS) reasons[action] = 'Simulated controller offline';
       }
-      this.emit({type: 'state', mode: 'demo', values, events: [],
+      this.emit({type: 'state', mode: 'demo', values, events: [], knock_detail: knockDetail,
         modules: Object.fromEntries(['taillights', 'comfort', 'watermeth', 'knock'].map(name => [name, scenario === 'offline' ? 'stale' : 'live'])),
         transport: {connected: scenario !== 'offline', status: 'Design preview — simulated data', received: tick, malformed: 0},
         meth_tune: {supported: scenario !== 'offline', complete: true, revision: mtRevision, unsaved: JSON.stringify(mtLive) !== JSON.stringify(mtSaved),
@@ -232,6 +283,24 @@
         case 'knock.multiplier': readings['knock.config.multiplier'] = value / 10; break;
         case 'knock.refresh': detail = 'Simulated knock settings refreshed.'; break;
         case 'knock.clear_events': readings['knock.event_count'] = 0; break;
+        case 'knock.min_rpm': readings['knock.config.min_rpm'] = value * 100; break;
+        case 'knock.min_map': readings['knock.config.min_map_kpa'] = value; break;
+        case 'knock.hold': readings['knock.config.debounce_ms'] = value * 10; break;
+        case 'knock.level_gain': readings['knock.config.gain'] = value / 10; break;
+        case 'knock.center': readings['knock.config.center_hz'] = value * 100; readings['knock.config.flags'] &= ~2; detail = 'Simulated: the knock frequency is set by hand.'; break;
+        case 'knock.bandwidth': readings['knock.config.bandwidth_hz'] = value * 100; break;
+        case 'knock.auto_frequency':
+          readings['knock.config.flags'] = value ? readings['knock.config.flags'] | 2 : readings['knock.config.flags'] & ~2;
+          detail = value ? 'Simulated: the knock frequency is found from the engine.' : detail; break;
+        case 'knock.amp_gain': case 'knock.bore': case 'knock.relearn':
+          if (!knockSim.esp32) { this.emit({type: 'command_result', request_id, status: 'rejected', message: 'This setting needs the ESP32 water/meth controller'}); return; }
+          if (action === 'knock.amp_gain') { knockSim.fixedStep = value ? Math.min(value - 1, knockSim.top) : -1; detail = value ? `Simulated: gain held at position ${knockSim.fixedStep}.` : 'Simulated: the controller sets the gain.'; }
+          else {
+            // A new bore, or learning again: the bore's figure for a few seconds, then the engine's.
+            if (action === 'knock.bore') { knockSim.boreMm = value; readings['knock.config.bore_mm'] = value; }
+            knockSim.learnedFrom = performance.now() + 4000; detail = 'Simulated: learning the knock frequency again.';
+          }
+          break;
         case 'lighting.brightness': readings['lighting.brightness'] = value; break;
         case 'lighting.mode': lightingMode = value; tl = {show: null, override: null, customUntil: 0}; detail = `Simulated lighting mode: ${lightingMode ? 'Sequential' : 'Stock'}.`; break;
         case 'lighting.show': tl = {show: value, override: null, customUntil: 0}; detail = `Simulated show ${value}.`; break;

@@ -29,6 +29,7 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
         self.state.samples['ecu.rpm', 1520] = dict(value=0, quality='live', seen=self.now, source_id=1520, timestamp_ms=0)
         self.state.ingest(0x300, bytes([mode, 0, tank, 0, 0, 40, 40, flags]))
         self.state.ingest(0x307, bytes([19, 20, 15, 180, 0, 0, 0, 0]))
+        self.state.ingest(0x30E, bytes([1, 1, 80, 21, 30, 51, 18, 50]))   # The ESP32 controller's knock detail.
         self.state.ingest(0x100, bytes([1, 1, 2, 2, 255, 60, 0]))
 
     async def asyncTearDown(self):

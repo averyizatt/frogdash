@@ -85,6 +85,26 @@ int main() {
   emit("meth_tune_status", packMethTuneStatus(7, meth_tune_flag::UNSAVED | meth_tune_flag::PUMP_ON | meth_tune_flag::RPM_OK | meth_tune_flag::EARLY_START, meth_hold::DOSE_LIMIT, 1500, 4000));
   static_assert(meth_tune_setting::COUNT == 19 && meth_tune_setting::MAX_DOSE_PCT == 14 && meth_tune_setting::HOT_FULL_C == 17 && meth_tune_setting::MAX_DUTY_PCT == 19, "Water/meth tuning keys changed");
   emit("meth_tune_temps", packMethTuneTemps(612, -35, 3));
+  // Knock detail (extension 6): the ESP32 controller's amplifier, frequency and spectrum.
+  static_assert(ID_KNOCK_DETAIL == 0x30E && knock_detail::SPECTRUM_POINTS == 36 && knock_detail::SPECTRUM_PER_FRAME == 6 &&
+                knock_detail::SPECTRUM_START_HZ == 2000 && knock_detail::SPECTRUM_STEP_HZ == 300, "Knock spectrum layout changed");
+  emit("knock_amplifier", packKnockAmplifier(knock_amplifier_flag::AUTOMATIC, 80, 21, 30, 825, 150, 800));
+  emit("knock_amplifier_fixed", packKnockAmplifier(knock_amplifier_flag::FIXED | knock_amplifier_flag::OVERLOADED, 10, 0, 30, 830, 760, 800));
+  emit("knock_frequency", packKnockFrequency(knock_frequency_flag::LEARNING | knock_frequency_flag::LEARNED | knock_frequency_flag::SECOND_ACTIVE, 6250, 6262, 84, 120));
+  emit("knock_engine", packKnockEngine(5966, 6000, 38460));
+  emit("knock_listening", packKnockListening(knock_listening_flag::NOTABLE | knock_listening_flag::CONFIRMED, 44, 12, 9, 31));
+  { const uint8_t values[6] = {30, 33, 60, 150, 255, 0}; emit("knock_spectrum_normal", packKnockSpectrum(knock_detail::SPECTRUM_NORMAL, 12, values));
+    emit("knock_spectrum_burst", packKnockSpectrum(knock_detail::SPECTRUM_BURST, 30, values)); }
+  emit("knock.amp_gain", packEngineKnockCommand(knock_detail_command::SET_AMPLIFIER_GAIN, 13));
+  emit("knock.bore", packEngineKnockCommand(knock_detail_command::SET_BORE_MM, 96));
+  { CanFrame relearn = packEngineKnockCommand(knock_detail_command::RELEARN_FREQUENCY); relearn.dlc = 1; emit("knock.relearn", relearn); }
+  emit("knock.min_rpm", packEngineKnockCommand(knock_command::SET_MIN_RPM, 25));
+  emit("knock.min_map", packEngineKnockCommand(knock_command::SET_MIN_MAP_KPA, 120));
+  emit("knock.hold", packEngineKnockCommand(knock_command::SET_DEBOUNCE, 30));
+  emit("knock.level_gain", packEngineKnockCommand(knock_command::SET_GAIN, 15));
+  emit("knock.center", packEngineKnockCommand(knock_command::SET_CENTER_FREQUENCY, 62));
+  emit("knock.bandwidth", packEngineKnockCommand(knock_command::SET_BANDWIDTH, 9));
+  emit("knock.auto_frequency", packEngineKnockCommand(knock_command::SET_AUTO_FREQUENCY_FROM_BORE, 1));
   emit("meth_tune_temps_pre_only", packMethTuneTemps(612, 0, 1));
   gateway::Light interior; interior.channel = 1; interior.red = interior.green = interior.blue = 255; interior.brightness = 35;
   emit("interior.light", gateway::packLight(interior));

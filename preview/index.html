@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="instruments.css?v=eb10e480f82a">
 <link rel="stylesheet" href="camera.css?v=de128841ad65">
 <link rel="stylesheet" href="taillights.css?v=d1359011b47c">
+<link rel="stylesheet" href="knock.css?v=0c2fbd4e553a">
 <script src="boot.js?v=edeb844a6e53"></script>
 </head>
 <body>
@@ -164,21 +165,11 @@
           <button type="button" data-action="knock.enable" data-value="1">ENABLE</button>
           <button type="button" data-action="knock.enable" data-value="0">DISABLE</button>
         </div>
-        <div class="settings-grid">
-          <div class="setting-card"><h3>Detection threshold</h3>
-            <label>Threshold offset <input id="knock-offset-input" type="number" min="0" max="200" step="1" value="20"></label>
-            <button type="button" data-action="knock.threshold" data-input="knock-offset-input">APPLY OFFSET</button>
-          </div>
-          <div class="setting-card"><h3>Adaptive sensitivity</h3>
-            <label>Multiplier <input id="knock-multiplier-input" type="number" min="1.2" max="3.8" step="0.1" value="2.0"></label>
-            <button type="button" data-action="knock.multiplier" data-input="knock-multiplier-input" data-scale="10">APPLY MULTIPLIER</button>
-          </div>
-        </div>
         <div class="control-row">
-          <button type="button" data-action="knock.refresh">READ SETTINGS</button>
           <button type="button" data-action="knock.clear_events">CLEAR EVENTS</button>
+          <button type="button" id="knock-open-settings">ALL KNOCK SETTINGS</button>
         </div>
-        <p class="control-note">Live settings above come from the controller; input fields are requested values.</p>
+        <p class="control-note">Threshold, frequency, amplifier gain and the rest are on the knock page, under Settings.</p>
       </section>
       <section class="control-section" id="panel-lighting" role="tabpanel" aria-labelledby="tab-lighting" hidden>
         <p id="lighting-live-summary"></p>
@@ -285,42 +276,48 @@
 </dialog>
 
 <dialog class="workspace-dialog knock-dialog" id="knock-overlay" aria-labelledby="knock-title">
-  <header class="dialog-header"><div><span class="eyebrow">ENGINE MONITORING</span><h2 id="knock-title">Knock monitor</h2><p id="knock-source">Waiting for signal</p></div><button class="close-button" id="knock-close" type="button">Close <span aria-hidden="true">×</span></button></header>
-  <div class="knock-body">      <div class="knock-summary">
+  <header class="dialog-header"><div><span class="eyebrow">ENGINE MONITORING</span><h2 id="knock-title">Knock monitor</h2><p id="knock-source">Waiting for signal</p></div>
+    <div class="knock-views" role="tablist" aria-label="Knock page view"><button type="button" role="tab" id="knock-view-live-tab" aria-selected="true" aria-controls="knock-view-live">LIVE</button><button type="button" role="tab" id="knock-view-settings-tab" aria-selected="false" aria-controls="knock-view-settings">SETTINGS</button></div>
+    <button class="close-button" id="knock-close" type="button">Close <span aria-hidden="true">×</span></button></header>
+  <div class="knock-body" id="knock-view-live" role="tabpanel" aria-labelledby="knock-view-live-tab">
+      <div class="knock-summary">
         <div class="knock-primary">
           <span class="klab">Knock-band level</span>
           <span class="knock-big" id="knock-energy-num">—</span>
         </div>
-        <div class="knock-summary-item"><span class="klab">Baseline</span><strong id="knock-baseline-num">—</strong></div>
+        <div class="knock-summary-item"><span class="klab">Normal for this RPM</span><strong id="knock-baseline-num">—</strong></div>
         <div class="knock-summary-item"><span class="klab">Threshold</span><strong id="knock-threshold-num">—</strong></div>
         <div class="knock-summary-item"><span class="klab">Headroom</span><strong id="knock-headroom-num">—</strong></div>
+        <div class="knock-summary-item"><span class="klab">Listening at</span><strong id="knock-freq">—</strong><small id="knock-freq-note"></small></div>
+        <div class="knock-summary-item"><span class="klab">Amplifier gain</span><strong id="knock-amp">—</strong><small id="knock-amp-note"></small></div>
         <div class="knock-status-pill" id="knock-status">—</div>
       </div>
 
+      <div class="knock-graphs">
       <div class="knock-graph-wrap">
-        <svg class="knock-graph" id="knock-graph" viewBox="0 0 960 300" preserveAspectRatio="xMidYMid meet" aria-label="Live knock energy history">
+        <svg class="knock-graph" id="knock-graph" viewBox="0 0 960 250" preserveAspectRatio="xMidYMid meet" aria-label="Live knock level history">
           <rect id="knock-danger-zone" class="knock-danger-zone" x="48" y="18" width="888" height="0" />
           <g class="knock-grid">
             <line x1="48" y1="18"  x2="936" y2="18" />
-            <line x1="48" y1="81"  x2="936" y2="81" />
-            <line x1="48" y1="144" x2="936" y2="144" />
-            <line x1="48" y1="207" x2="936" y2="207" />
-            <line x1="48" y1="270" x2="936" y2="270" />
-            <line x1="48" y1="18" x2="48" y2="270" />
-            <line x1="270" y1="18" x2="270" y2="270" />
-            <line x1="492" y1="18" x2="492" y2="270" />
-            <line x1="714" y1="18" x2="714" y2="270" />
-            <line x1="936" y1="18" x2="936" y2="270" />
+            <line x1="48" y1="68.5"  x2="936" y2="68.5" />
+            <line x1="48" y1="119" x2="936" y2="119" />
+            <line x1="48" y1="169.5" x2="936" y2="169.5" />
+            <line x1="48" y1="220" x2="936" y2="220" />
+            <line x1="48" y1="18" x2="48" y2="220" />
+            <line x1="270" y1="18" x2="270" y2="220" />
+            <line x1="492" y1="18" x2="492" y2="220" />
+            <line x1="714" y1="18" x2="714" y2="220" />
+            <line x1="936" y1="18" x2="936" y2="220" />
           </g>
           <g class="knock-axis">
             <text x="38" y="22" text-anchor="end">255</text>
-            <text x="38" y="85" text-anchor="end">192</text>
-            <text x="38" y="148" text-anchor="end">128</text>
-            <text x="38" y="211" text-anchor="end">64</text>
-            <text x="38" y="274" text-anchor="end">0</text>
-            <text x="48" y="292">−6.7s</text>
-            <text x="492" y="292" text-anchor="middle">−3.3s</text>
-            <text x="936" y="292" text-anchor="end">NOW</text>
+            <text x="38" y="72.5" text-anchor="end">192</text>
+            <text x="38" y="123" text-anchor="end">128</text>
+            <text x="38" y="173.5" text-anchor="end">64</text>
+            <text x="38" y="224" text-anchor="end">0</text>
+            <text x="48" y="242">−6.7s</text>
+            <text x="492" y="242" text-anchor="middle">−3.3s</text>
+            <text x="936" y="242" text-anchor="end">NOW</text>
           </g>
           <line id="knock-thresh" visibility="hidden" class="knock-thresh" x1="48" y1="0" x2="936" y2="0" />
           <text id="knock-thresh-label" class="knock-thresh-label" x="928" y="0" text-anchor="end">THRESHOLD —</text>
@@ -328,9 +325,32 @@
           <path id="knock-baseline"      class="knock-baseline"      d="" />
           <path id="knock-energy"        class="knock-energy"        d="" />
           <g id="knock-events"></g>
-          <circle id="knock-current-dot" visibility="hidden" class="knock-current-dot" cx="936" cy="270" r="4" />
+          <circle id="knock-current-dot" visibility="hidden" class="knock-current-dot" cx="936" cy="220" r="4" />
         </svg>
-        <div class="knock-legend"><span class="energy">ENERGY</span><span class="baseline">BASELINE</span><span class="threshold">THRESHOLD</span></div>
+        <div class="knock-legend"><span class="energy">LEVEL</span><span class="baseline">NORMAL</span><span class="threshold">THRESHOLD</span></div>
+      </div>
+      <div class="knock-graph-wrap knock-spectrum-wrap" id="knock-spectrum-wrap">
+        <svg class="knock-graph" id="knock-spectrum" viewBox="0 0 960 250" preserveAspectRatio="xMidYMid meet" aria-label="Spectrum of the knock sensor signal">
+          <rect id="knock-band" class="knock-band" x="48" y="18" width="0" height="202" />
+          <rect id="knock-band-second" class="knock-band second" x="48" y="18" width="0" height="202" />
+          <g class="knock-grid">
+            <line x1="48" y1="18" x2="936" y2="18" />
+            <line x1="48" y1="68.5" x2="936" y2="68.5" />
+            <line x1="48" y1="119" x2="936" y2="119" />
+            <line x1="48" y1="169.5" x2="936" y2="169.5" />
+            <line x1="48" y1="220" x2="936" y2="220" />
+            <line x1="48" y1="18" x2="48" y2="220" />
+            <line x1="936" y1="18" x2="936" y2="220" />
+            <g id="knock-spectrum-ticks"></g>
+          </g>
+          <g class="knock-axis" id="knock-spectrum-axis"></g>
+          <path id="knock-spectrum-normal" class="knock-spectrum-normal" d="" />
+          <path id="knock-spectrum-burst" class="knock-spectrum-burst" d="" />
+          <g id="knock-marks"></g>
+        </svg>
+        <div class="knock-legend"><span class="normal">NORMAL</span><span class="burst">LOUDEST BURST, LAST SECOND</span><span class="band">LISTENING BAND</span><span class="bore">BORE</span><span class="found">ENGINE</span></div>
+        <p class="knock-spectrum-missing" id="knock-spectrum-missing" hidden>The spectrum comes from the ESP32 water/meth controller. The controller fitted now does not send one.</p>
+      </div>
       </div>
 
       <div class="knock-stats">
@@ -339,10 +359,16 @@
         <div class="kstat"><span class="klab">Last event / boost</span><span class="kval" id="knock-last-boost">—</span></div>
         <div class="kstat"><span class="klab">Peak (window)</span><span class="kval" id="knock-peak">—</span></div>
         <div class="kstat" title="How much of the sensor signal is at the knock frequency. Ringing is narrow; ordinary engine noise is spread out."><span class="klab">At knock frequency</span><span class="kval" id="knock-share">—</span></div>
-        <div class="kstat" title="Largest swing of the sensor signal as a share of the input range. Aim for 5 to 15% at idle and under 60% at full load."><span class="klab">Sensor swing</span><span class="kval" id="knock-swing">—</span></div>
+        <div class="kstat" title="How far the loudest moment of the last pass stood above the rest of it. Knock is a burst."><span class="klab">Stands out by</span><span class="kval" id="knock-crest">—</span></div>
+        <div class="kstat" title="The cylinder's next resonance, 1.66 times higher. Real knock rings both."><span class="klab">Second resonance</span><span class="kval" id="knock-second">—</span></div>
+        <div class="kstat" title="The sensor signal at the controller's input: its swing either side of rest, and how much of the room to the nearer limit that is."><span class="klab">Sensor signal</span><span class="kval" id="knock-swing">—</span></div>
+        <div class="kstat" title="Where the amplifier's output rests."><span class="klab">Amplifier rests at</span><span class="kval" id="knock-rest">—</span></div>
+        <div class="kstat" title="Where the engine's own ringing under boost says the knock frequency is."><span class="klab">Engine rings at</span><span class="kval" id="knock-found">—</span></div>
+        <div class="kstat" title="A steady tone near the knock frequency: an alternator, or the water/meth pump's PWM."><span class="klab">Steady tone</span><span class="kval" id="knock-tone">—</span></div>
+        <div class="kstat"><span class="klab">Samples a second</span><span class="kval" id="knock-rate">—</span></div>
       </div>
-
-</div>
+  </div>
+  <div class="knock-body knock-settings" id="knock-view-settings" role="tabpanel" aria-labelledby="knock-view-settings-tab" hidden></div>
 </dialog>
 <dialog id="race-dialog" class="workspace-dialog" aria-labelledby="race-title">
   <header class="dialog-header"><div><span class="eyebrow">PERFORMANCE / CLOSED COURSE</span><h2 id="race-title">Race mode</h2><p id="race-source">USB GPS timing · independent of the display</p></div><button id="race-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
@@ -474,7 +500,8 @@
 <script src="taillights.js?v=04906b265706"></script>
 <script src="taillight-settings.js?v=179b3ed31292"></script>
 <script src="meth-tune.js?v=bbc2e2ab5df0"></script>
-<script src="demo.js?v=0890edd21333"></script>
-<script src="app.js?v=eb629ac91dc1"></script>
+<script src="knock.js?v=66cbe88a2670"></script>
+<script src="demo.js?v=e9f324c86a0a"></script>
+<script src="app.js?v=50a5cf6b5033"></script>
 </body>
 </html>

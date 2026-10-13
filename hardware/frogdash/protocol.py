@@ -18,11 +18,11 @@ LENGTHS = {0x100: 7, 0x102: 4, 0x103: 8, 0x200: 8, 0x202: 8, 0x203: 8, 0x204: 3,
            0x500: 8, 0x501: 4, 0x503: 7,
            0x300: 8, 0x302: 4, 0x303: 8, 0x304: 8, 0x305: 1,
            0x306: 4, 0x307: 8, 0x308: 4, 0x309: 4, 0x30A: 4,
-           0x30B: 8, 0x30C: 8, 0x30D: 8, 0x30F: 8}
+           0x30B: 8, 0x30C: 8, 0x30D: 8, 0x30E: 8, 0x30F: 8}
 TIMEOUTS = {0x100: .5, 0x103: 1.5, 0x200: 1.5, 0x202: .5, 0x203: 2, 0x204: 2, 0x205: .35,
             0x500: .5, 0x501: .5, 0x503: .5,
             0x300: .5, 0x303: 1.5, 0x304: 3, 0x307: .5,
-            0x309: .5, 0x30B: 1, 0x30C: 5, 0x30D: 5, 0x30F: 1.5}
+            0x309: .5, 0x30B: 1, 0x30C: 5, 0x30D: 5, 0x30E: 2, 0x30F: 1.5}
 # MicroSquirt broadcast groups can run at a few Hz; allow 1 s before calling them stale.
 ECU_TIMEOUT = 1.0
 EVENT_IDS = {0x102, 0x302, 0x308, 0x305, 0x306, 0x30A}
@@ -171,6 +171,35 @@ def decode(can_id, data):
     elif can_id == 0x30B:
         fields("knock.hook", "flags rms threshold baseline event_count bias_adc raw_adc envelope",
                [*d[:5], d[5] * 16, d[6] * 16, d[7]])
+    elif can_id == 0x30E:
+        # Knock detail from the ESP32 controller (extension 6): its amplifier, the knock
+        # frequency it has found, how the last pass sounded, and two spectra. The
+        # spectra are put together in knockview.py.
+        kind = d[0]
+        if kind == 1:
+            for name, bit in (("automatic", 1), ("ineffective", 2), ("overloaded", 4), ("silent", 8), ("fixed", 16)):
+                put("knock.amp." + name, bool(d[1] & bit))
+            fields("knock.amp", "gain step top_step rest_mv swing_mv room_mv", [d[2] / 10, d[3], d[4], d[5] * 16, d[6] * 8, d[7] * 16])
+        elif kind == 2:
+            for name, bit in (("learning", 1), ("learned", 2), ("second_active", 4)):
+                put("knock.freq." + name, bool(d[1] & bit))
+            put("knock.freq.filter_hz", u(2))
+            # 0: the votes have not agreed on a frequency yet.
+            put("knock.freq.found_hz", u(4) or None, "live" if u(4) else "unavailable")
+            fields("knock.freq", "agreement_pct votes", [d[6], d[7]])
+        elif kind == 3:
+            put("knock.freq.bore_hz", u(1))
+            put("knock.freq.tone_hz", u(3))   # 0: no steady tone near the knock frequency.
+            put("knock.freq.sample_rate_hz", u(5))
+        elif kind == 4:
+            put("knock.listen.notable", bool(d[1] & 1))
+            put("knock.listen.confirmed", bool(d[1] & 2))
+            fields("knock.listen", "second second_normal background crest", [d[2], d[3], d[4], d[5] / 10])
+        elif kind in (5, 6):
+            if d[1] % 6 or d[1] > 30:
+                raise ValueError("0x30E knock spectrum chunk out of place")
+        else:
+            raise ValueError("0x30E unknown knock detail report kind")
     elif can_id == 0x30F:
         # Water/meth pulse tuning (extension 4): acknowledgements, settings, status and
         # the two intake air temperatures share one ID. Settings are mirrored in methtune.py.

@@ -129,7 +129,9 @@ class RotationTests(unittest.TestCase):
         self.assertEqual(len(inventory(self.path)), 3)
 
     def test_size_rotation_retention_and_foreign_files(self):
-        config = self.config(file_bytes=65536, total_bytes=131072)
+        # Sized so that a file holds dozens of rows: the header alone is about 55 KB (one
+        # entry per logged channel), and a second of rows is kept in reserve.
+        config = self.config(file_bytes=131072, total_bytes=327680)
         unrelated = self.path / 'tunerstudio-original.mlg'
         unrelated.write_bytes(b'preserve this')
         writer = RotatingWriter(config)

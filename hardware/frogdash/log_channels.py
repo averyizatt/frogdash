@@ -129,6 +129,11 @@ def channels():
         elif can_id == 0x103:
             keys.update(decode(can_id, bytes([1, 0, 0, 0, 0, 0, 0, 2])))  # Acknowledgement.
             frame = bytes([5, 0, 0, 0, 0, 0, 0, 0])  # Status.
+        elif can_id == 0x30E:
+            # Knock detail: amplifier, frequency and engine reports, then how the pass sounded.
+            for kind in (1, 2, 3):
+                keys.update(decode(can_id, bytes([kind, 0, 0, 0, 0, 0, 0, 0])))
+            frame = bytes([4, 0, 0, 0, 0, 0, 0, 0])
         elif can_id == 0x30F:
             keys.update(decode(can_id, bytes([4, 0, 0, 0, 0, 3, 0, 0])))  # Temperatures.
             frame = bytes([3, 0, 0, 0, 0, 0, 0, 0])  # Status.
@@ -137,7 +142,7 @@ def channels():
             frame = bytes([1, 0, 0, 0, 0, 1, 0])
         keys.update(decode(can_id, frame))
     covered = {c.key for c in primary}
-    units = {'_us': 'us', '_g_s': 'g/s', '_rpm_s': 'RPM/s', '_pct_s': '%/s', '_kpa_s': 'kPa/s', '_c': 'C', '_kpa': 'kPa', '_psi': 'psi', '_pct': '%', '_ms': 'ms',
+    units = {'_us': 'us', '_g_s': 'g/s', '_rpm_s': 'RPM/s', '_pct_s': '%/s', '_kpa_s': 'kPa/s', '_c': 'C', '_kpa': 'kPa', '_psi': 'psi', '_pct': '%', '_ms': 'ms', '_mv': 'mV',
              '_hz': 'Hz', '_v': 'V', '_rpm': 'RPM', '_kph': 'km/h', '_mm': 'mm', '_deg': 'deg'}
     for key in sorted(keys - covered):
         unit = next((unit for suffix, unit in units.items() if key.endswith(suffix)), '')

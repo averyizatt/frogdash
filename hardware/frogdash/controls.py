@@ -26,7 +26,18 @@ COMMANDS = {
     "knock.enable": (0x301, 0x40, 0, 1, True),
     "knock.threshold": (0x301, 0x41, 0, 200, True),
     "knock.multiplier": (0x301, 0x42, 12, 38, True),
+    "knock.min_rpm": (0x301, 0x43, 0, 80, True),          # x 100 RPM
+    "knock.min_map": (0x301, 0x44, 0, 250, True),         # kPa absolute
+    "knock.hold": (0x301, 0x45, 10, 250, True),           # x 10 ms
+    "knock.level_gain": (0x301, 0x46, 1, 200, True),      # x 0.1
+    "knock.center": (0x301, 0x47, 30, 90, True),          # x 100 Hz; also switches to "set by hand"
+    "knock.bandwidth": (0x301, 0x48, 3, 200, True),       # x 100 Hz
+    "knock.auto_frequency": (0x301, 0x49, 0, 1, True),    # 1: found from the engine (from the bore on the Nano)
     "knock.clear_events": (0x301, 0x4A, None, None, True),
+    # ESP32 controller only (can_protocol.h extension 6).
+    "knock.amp_gain": (0x301, 0x4B, 0, 100, True),        # 0 automatic; n holds potentiometer position n - 1
+    "knock.bore": (0x301, 0x4C, 40, 200, True),           # mm
+    "knock.relearn": (0x301, 0x4D, None, None, True),
     "knock.refresh": (0x305, 0x40, None, None, False),
     "lighting.brightness": (0x101, 0x01, 0, 255, False),
     "lighting.mode": (0x101, 0x05, 0, 1, False),
@@ -49,6 +60,10 @@ COMMANDS = {
 INTERIOR_REFRESH = .5  # The gateway turns a channel off 5 s after its last command.
 SHOW_MODE_KEY = 21
 METH_TUNE = ('meth.setting', 'meth.tune_action')
+# Knock calibration is not changed while driving; these three need the ESP32 controller.
+KNOCK_CALIBRATION = ('knock.threshold', 'knock.multiplier', 'knock.min_rpm', 'knock.min_map', 'knock.hold', 'knock.level_gain',
+                     'knock.center', 'knock.bandwidth', 'knock.auto_frequency', 'knock.amp_gain', 'knock.bore', 'knock.relearn')
+KNOCK_DETAIL = ('knock.amp_gain', 'knock.bore', 'knock.relearn')
 # Water/meth status bits that are information, not faults: overboost assist active (4)
 # and "no command master seen for 3 s" (32), which clears with the next frame from the dash.
 METH_INFO_FLAGS = 4 | 32
@@ -59,6 +74,10 @@ LABELS = {
     'meth.setting': 'water/meth setting', 'meth.tune_action': 'water/meth settings action',
     'knock.enable': 'knock monitor mode', 'knock.threshold': 'knock threshold offset',
     'knock.multiplier': 'knock multiplier', 'knock.clear_events': 'knock event reset',
+    'knock.min_rpm': 'knock minimum RPM', 'knock.min_map': 'knock minimum manifold pressure', 'knock.hold': 'knock warning hold time',
+    'knock.level_gain': 'knock level gain', 'knock.center': 'knock frequency', 'knock.bandwidth': 'knock band width',
+    'knock.auto_frequency': 'knock frequency mode', 'knock.amp_gain': 'knock amplifier gain', 'knock.bore': 'cylinder bore',
+    'knock.relearn': 'knock frequency relearn',
 }
 
 
@@ -138,7 +157,7 @@ class Controls:
         stop = action == 'meth.stop' or (action == 'meth.arm' and value == 0)
         if stop: return None  # Always allow an explicit stop/disarm on an open bus.
         if self.state.operations.restoring: return 'Configuration restore recovery pending'
-        if action in ('meth.boost', 'knock.threshold', 'knock.multiplier') and rolling(self.state):
+        if (action == 'meth.boost' or action in KNOCK_CALIBRATION) and rolling(self.state):
             return 'Stop the car first to change controller calibration'
         if self.closing: return 'Dashboard is shutting down'
         if self.state.clock() < self.ready_at: return 'Checking CAN control ownership'
@@ -168,6 +187,8 @@ class Controls:
                 if self.state.clock() - self.last_stop < 3: return 'Pump test cooldown (3 seconds)'
         elif action.startswith('knock.'):
             if self.live('knock.status_flags', 0x307) is None: return 'Knock controller is offline'
+            if action in KNOCK_DETAIL and not self.state.knock_detail.supported:
+                return 'This setting needs the ESP32 water/meth controller'
         elif action == 'interior.light':
             if self.live('interior.upper.brightness', 0x503, 1) is None and self.live('interior.lower.brightness', 0x503, 1) is None:
                 return 'Sensor gateway interior lights are offline'
