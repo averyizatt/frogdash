@@ -16,6 +16,14 @@ SIZES = [(1920, 720), (1980, 720), (1280, 480), (960, 360),
 async def inspect(page, selector, scroll_selector=None):
     # Viewport RPC completion can precede Chromium's resize event by one frame.
     await page.wait_for_function("Math.abs(document.getElementById('display').getBoundingClientRect().width - (matchMedia('(max-aspect-ratio: 11/5)').matches ? document.documentElement.clientWidth : Math.min(innerWidth, innerHeight * 1920 / 720))) < 1")
+    # Dialogs are sized from --viewport-width and --viewport-height, which viewport.js sets in
+    # its resize handler. Between two narrow sizes the check above is already true before that
+    # handler has run, so wait for it too (seen on the slower CI machine).
+    await page.wait_for_function("""() => {
+      const style = getComputedStyle(document.documentElement), view = window.visualViewport;
+      return Math.abs(parseFloat(style.getPropertyValue('--viewport-width')) - (view?.width || innerWidth)) < 1 &&
+        Math.abs(parseFloat(style.getPropertyValue('--viewport-height')) - (view?.height || innerHeight)) < 1;
+    }""")
     responsive = await page.evaluate("matchMedia('(max-aspect-ratio: 11/5)').matches")
     if responsive or selector == '#appearance-dialog':
         await inspect_responsive(page, selector)
