@@ -1,0 +1,8 @@
+[Unit]
+Description=Try, keep or undo exact 1920 x 720 on the dash screen
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/frogdash/tools/frogdash_screen.py
+# Writes the boot partition, then may restart the Pi.
+TimeoutStartSec=120

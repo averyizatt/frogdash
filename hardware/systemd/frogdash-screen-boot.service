@@ -1,0 +1,11 @@
+[Unit]
+Description=Frogdash screen check after each start: finish or undo a screen trial, record the boot
+
+[Service]
+# Not oneshot: the start must not wait for it (it waits up to a minute for KEEP, then records the boot time).
+Type=simple
+ExecStart=/usr/bin/python3 /opt/frogdash/tools/frogdash_screen.py boot
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

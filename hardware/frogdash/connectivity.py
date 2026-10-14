@@ -20,7 +20,7 @@ DEFAULT_SOCKET = Path('/run/frogdash-connect/control.sock')
 RESUME_S = 15 * 60   # An update started from the phone keeps the hotspot and the login this long.
 CAMERAS_OFF = 'Cameras are off while the phone hotspot is on (they share one Wi-Fi adapter)'
 # Helper results kept in the data folder, included in the diagnostics download.
-STATUS_FILES = ('update-status.json', 'setup-status.json', 'gps-status.json', 'wifi-status.json')
+STATUS_FILES = ('update-status.json', 'setup-status.json', 'gps-status.json', 'wifi-status.json', 'screen-status.json')
 
 
 def read_json(path):

@@ -64,6 +64,15 @@
 .speaker-test span { display:block; font-size:17px; font-weight:750; }
 .speaker-test small { display:block; margin-top:4px; color:var(--muted); font-size:12px; line-height:1.4; }
 .speaker-test-buttons { display:flex; gap:8px; flex:none; }
+/* The screen mode trial (screen.js): asked over everything after the trial restart. */
+.screen-trial { max-width:min(760px, calc(100vw - 32px)); padding:30px 34px; border:2px solid var(--accent); border-radius:14px; background:var(--surface); color:var(--text); text-align:center; }
+.screen-trial::backdrop { background:rgba(0,0,0,.72); }
+.screen-trial h2 { margin:0 0 12px; font-size:30px; font-weight:850; }
+.screen-trial p { margin:0 0 10px; font-size:17px; line-height:1.45; color:var(--muted); }
+.screen-trial .screen-trial-count { color:var(--warn); font-weight:800; }
+.screen-trial-buttons { display:flex; gap:14px; justify-content:center; margin-top:18px; flex-wrap:wrap; }
+.screen-trial-buttons button { min-height:60px; padding:12px 26px; border-radius:10px; border:1px solid var(--line); background:#243742; color:var(--text); font-size:19px; font-weight:850; }
+.screen-trial-buttons #screen-keep { background:var(--accent); border-color:var(--accent); color:#092318; }
 .speaker-test-buttons button { min-height:44px; padding:6px 14px; }
 @media (max-aspect-ratio:11/5) and (max-width:600px) { .speaker-test { flex-direction:column; align-items:stretch; } .speaker-test-buttons button { flex:1; } }
 /* Dash cam: wide 16:9 picture, narrow controls on the right (clear of the dash hump). */

@@ -1,0 +1,9 @@
+[Unit]
+Description=Change the dash screen mode when the dash asks (try, keep, go back)
+
+[Path]
+PathExists=/var/lib/private/frogdash/screen-request
+Unit=frogdash-screen.service
+
+[Install]
+WantedBy=multi-user.target

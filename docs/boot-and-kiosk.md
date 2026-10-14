@@ -1,5 +1,52 @@
 # Console boot and startup measurement
 
+## Exact 1920 x 720, and a quicker start
+
+**What the September 29 report showed.** The Pi had two HDMI outputs active: HDMI-A-1
+forced on by the Pi's firmware (`video=HDMI-A-1:1920x1080M@60D`) with a description
+(EDID) that could not be read (Cage: "Failed to parse EDID"), and HDMI-A-2 offering 26
+modes, 1920 x 1080 first and no 1920 x 720 at all. So the 1920 x 720 panel was sent
+1920 x 1080 and scaled it, and every mode change on the way up (firmware, kernel, the
+kiosk) made it search for its signal again. The first kiosk start also timed out after
+11 s, so the gauges appeared at 32 s.
+
+**Exact 1920 x 720** (`tools/frogdash_screen.py`). The Pi is given an EDID that offers
+one mode only, 1920 x 720 at 60 Hz: the panel's own timing for it when its EDID has
+one, else the standard reduced-blanking timing (2080 x 741, 92.25 MHz). It still says
+HDMI with two-channel audio, so sound through the screen keeps working. It has no
+range-limits descriptor, because from one Linux adds every standard mode that fits.
+
+A mode the panel refuses would leave it dark, and there is no SSH, so it is tried first.
+Dash management > Support & testing > Screen mode > **Try exact 1920 x 720** (two
+presses, car stopped) restarts the Pi into the bootloader's one-time trial ("tryboot"):
+a `[tryboot]` section in `config.txt`, and a `tryboot.txt` beside it (some firmware reads
+that in a trial start instead), point at a trial command line with
+`drm.edid_firmware=edid/frogdash-1920x720.bin`, `disable_fw_kms_setup=1` stops the
+firmware adding its own `video=` modes, and any output the firmware had forced on stays
+forced on (some panels do not signal that they are plugged in). After the restart the
+dash asks **Is the dash showing properly?** KEEP makes it the normal start. No answer
+within 90 s, or **Go back now**, restarts the Pi normally: a normal start never reads
+the trial section, so it is the old setup, untouched. A dark screen therefore fixes
+itself in about two minutes. If the trial start does not carry the trial command line,
+or the bootloader is too old for a trial start, nothing is changed and the dash says
+so. **Use the screen's own modes** undoes a kept setting (one restart).
+
+**Quicker start**, done by the updater (`tools/frogdash_setup.sh`, step "Screen and
+start-up"): `disable_splash=1` (no rainbow screen, one mode change less) and
+`boot_delay=0` in a marked block at the end of `config.txt`, and `e2scrub_reap`
+switched off (1.8 s of disk work at every start looking for LVM snapshots this Pi does
+not have). They take effect at the next start.
+
+**What the Pi sees, after every start** (`frogdash-screen-boot.service`): its HDMI
+ports, whether each EDID can be read and has 1920 x 720, how many modes it offers, the
+relevant `config.txt` lines, the command line (MAC address removed), the boot time and
+when the dash first drew. The Screen mode row shows the short version; the whole of it
+is in **Download diagnostics** (`screen-status.json`), which can be fetched from a phone
+over the dash's hotspot. That is the report to send when tuning the start further.
+
+Not measured on the Pi yet: the trial start, the panel's response to 1920 x 720, and the
+seconds saved.
+
 Target hardware: Raspberry Pi 4, 4 GB RAM, microSD. The installed distribution
 is not yet identified. **No physical cold-boot benchmark has been measured.**
 Under 15 seconds from key-on to visible instruments is an optimization target,

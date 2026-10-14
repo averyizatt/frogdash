@@ -29,6 +29,7 @@ from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
 from .paint import Paint, validate as validate_paint
 from .imports import Imports
 from . import cancheck, methtune, selftest
+from .parking import rolling
 
 WIFI_SSID, WIFI_PASSWORD = re.compile(r"[\x20-\x7E]{1,32}"), re.compile(r"[\x20-\x7E]{8,63}")
 IMAGE_DATA = re.compile(r"data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+")
@@ -221,6 +222,34 @@ def create_app(state, adapter=None, connectivity=None):
             status = {'state': 'idle', 'message': 'No update has been run yet'}
         status['pending'] = (folder / 'update-request').exists()
         return web.json_response(status, headers={'Cache-Control': 'no-store'})
+
+    async def screen(request):
+        # The screen mode (tools/frogdash_screen.py, run as root by frogdash-screen.path):
+        # try exact 1920 x 720 with a restart, keep it, or go back to the screen's own modes.
+        require_local(request)
+        folder = state.paint.path.parent if state.paint else None
+        if not folder or state.mode == 'replay':
+            raise web.HTTPNotFound()
+        if request.method == 'POST':
+            try:
+                action = (await request.json()).get('action')
+            except (ValueError, AttributeError):
+                raise web.HTTPBadRequest(text='Invalid screen request')
+            if action not in ('trial', 'keep', 'revert'):
+                raise web.HTTPBadRequest(text='Unknown screen action')
+            # Trying and going back restart the Pi; KEEP is the answer during a trial.
+            if action != 'keep' and rolling(state):
+                raise web.HTTPConflict(text='Stop the car first: this restarts the dash')
+            await asyncio.to_thread((folder / 'screen-request').write_text, action)
+            return web.json_response({'state': 'requested'})
+        try:
+            status = json.loads(await asyncio.to_thread((folder / 'screen-status.json').read_text))
+        except (OSError, ValueError):
+            status = {'state': 'idle', 'message': 'Not checked yet: the screen helper runs after the next update or start'}
+        status['pending'] = (folder / 'screen-request').exists()
+        # Only what the screen page needs; the full survey goes into the diagnostics download.
+        keep = ('state', 'message', 'pending', 'started', 'deadline_s', 'applied', 'connectors', 'boot_time', 'first_render')
+        return web.json_response({k: status[k] for k in keep if k in status}, headers={'Cache-Control': 'no-store'})
 
     async def firmware(request):
         # A module's firmware over the CAN bus (fwupdate.py): what it runs, what is ready, install.
@@ -559,7 +588,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js", "knock.js", "knock.css"}:
+        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js", "knock.js", "knock.css", "screen.js"}:
             raise web.HTTPNotFound()
         if name == 'index.html' and state.paint and state.paint.value:
             page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')
@@ -719,7 +748,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),

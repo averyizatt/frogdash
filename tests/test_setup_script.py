@@ -25,7 +25,7 @@ LAST = 'for a; do last=$a; done\n'
 SHIMS = {
     'systemctl': 'echo "$@" >> "$FAKE/systemctl.log"\n' + LAST +
                  'case "$1" in is-enabled) [ -f "$FROGDASH_UNITS/enabled-$last" ] || exit 1;;\n'
-                 'enable) touch "$FROGDASH_UNITS/enabled-$last";; esac\nexit 0\n',
+                 'enable) touch "$FROGDASH_UNITS/enabled-$last";; disable) rm -f "$FROGDASH_UNITS/enabled-$last";; esac\nexit 0\n',
     'dpkg': '[ -f "$FAKE/pkg-$2" ] || exit 1\necho "Status: install ok installed"\n',
     'apt-get': 'echo "$@" >> "$FAKE/apt.log"\n[ "$1" = install ] || exit 0\n[ -f "$FAKE/apt-fails" ] && exit 100\n'
                'for a; do case "$a" in -*|install) ;; *) touch "$FAKE/pkg-$a";; esac; done\n',
@@ -45,7 +45,10 @@ SHIMS = {
              '*"DEVICE,TYPE dev"*) [ -f "$FAKE/one-adapter" ] || echo wlan0:wifi; echo wlan1:wifi; echo eth0:ethernet;;\n'
              '*"WIFI-PROPERTIES.AP device show"*) [ -f "$FAKE/no-ap" ] && echo no || echo yes;;\nesac\n',
     # Stands in for tools/setup_hotspot.py, which only runs as root on the Pi.
-    'python3': 'echo "$@" >> "$FAKE/python.log"\ncase "$*" in *setup_hotspot.py*) mkdir -p "$FROGDASH_ETC/frogdash" && echo "{}" > "$FROGDASH_ETC/frogdash/hotspot.json";; esac\n',
+    # The screen helper (tools/frogdash_screen.py) has its own tests; here it answers as on a Pi.
+    'python3': 'echo "$@" >> "$FAKE/python.log"\ncase "$*" in *setup_hotspot.py*) mkdir -p "$FROGDASH_ETC/frogdash" && echo "{}" > "$FROGDASH_ETC/frogdash/hotspot.json";;\n'
+               '*frogdash_screen.py*install*) if [ -f "$FAKE/screen-done" ]; then echo "ok: Ready: try exact 1920 x 720 under Dash management, Support"; '
+               'else touch "$FAKE/screen-done"; echo "done: Ready: try exact 1920 x 720 under Dash management, Support"; fi;; esac\n',
     'sleep': 'exit 0\n',
 }
 
@@ -66,6 +69,7 @@ class SetupScriptTests(unittest.TestCase):
         for name in ('frogdash-update.path', 'frogdash-update.service'):
             shutil.copy(ROOT / 'hardware/systemd' / name, self.units / name)
         (self.units / 'enabled-frogdash-update.path').write_text('')
+        (self.units / 'enabled-e2scrub_reap.service').write_text('')   # On by default in Raspberry Pi OS
         (self.units / 'multi-user.target.wants/frogdash-console@foxbody.service').write_text('')
         self.gpsd = self.etc / 'default/gpsd'
         self.gpsd.write_text('DEVICES=""\nGPSD_OPTIONS=""\nUSBAUTO="true"\n', newline='\n')
@@ -90,7 +94,7 @@ class SetupScriptTests(unittest.TestCase):
         self.folder.cleanup()
 
     def run_setup(self, *args):
-        done = subprocess.run([SHELL, SCRIPT.as_posix(), *args], env=self.env, capture_output=True, text=True, timeout=120)
+        done = subprocess.run([SHELL, SCRIPT.as_posix(), *args], env=self.env, capture_output=True, text=True, timeout=300)   # A busy Windows PC runs sh slowly
         status = json.loads((self.state / 'setup-status.json').read_text())
         return done.stdout.strip(), status, {s['name']: (s['result'], s['detail']) for s in status['steps']}
 
@@ -101,12 +105,20 @@ class SetupScriptTests(unittest.TestCase):
     def test_first_run_without_internet_does_all_it_can_and_names_what_waits(self):
         said, status, steps = self.run_setup('offline')
         self.assertEqual((status['stamp'], status['running']), (stamp(SCRIPT), False))   # The dash recognises this run.
-        self.assertEqual(steps['Dash helpers'], ('done', 'Installed: gps wifi netkeeper'))
-        for unit in ('frogdash-gps.path', 'frogdash-gps.service', 'frogdash-wifi.path', 'frogdash-wifi.service', 'frogdash-netkeeper.service'):
+        self.assertEqual(steps['Dash helpers'], ('done', 'Installed: gps screen wifi netkeeper screen-boot'))
+        for unit in ('frogdash-gps.path', 'frogdash-gps.service', 'frogdash-wifi.path', 'frogdash-wifi.service', 'frogdash-netkeeper.service',
+                     'frogdash-screen.path', 'frogdash-screen.service', 'frogdash-screen-boot.service'):
             self.assertTrue((self.units / unit).is_file(), unit)
         self.assertIn('enable --now frogdash-gps.path', self.log('systemctl.log'))
         self.assertIn('enable --now frogdash-netkeeper.service', self.log('systemctl.log'))
         self.assertFalse((self.units / 'frogdash-netkeeper.path').exists())
+        # The screen: the EDID file and boot settings, but the mode itself only through a trial from the dash.
+        self.assertEqual(steps['Screen and start-up'][0], 'done')
+        self.assertIn('Takes effect at the next start', steps['Screen and start-up'][1])
+        self.assertIn('frogdash_screen.py install', self.log('python.log'))
+        self.assertIn('enable --now frogdash-screen-boot.service', self.log('systemctl.log'))
+        self.assertEqual(steps['Start-up: unused disk check'][0], 'done')
+        self.assertIn('disable e2scrub_reap.service', self.log('systemctl.log'))
         self.assertFalse((self.units / 'frogdash-kiosk.service').exists())               # Only the listed services.
         # gpsd is pointed at the receiver alone, so it can never open the tuning cable.
         self.assertEqual(steps['GPS service'][0], 'done')
@@ -129,7 +141,7 @@ class SetupScriptTests(unittest.TestCase):
             self.assertEqual(steps[name][0], 'waiting', name)
             self.assertIn('press Update now', steps[name][1])
         self.assertEqual((self.log('apt.log'), list(self.fake.glob('home/*'))), ('', []))  # Nothing was fetched.
-        self.assertEqual(said, 'Set up: Dash helpers, GPS service, TunerStudio: serial port, Phone hotspot')
+        self.assertEqual(said, 'Set up: Dash helpers, GPS service, TunerStudio: serial port, Screen and start-up, Start-up: unused disk check, Phone hotspot')
 
     def publish_firmware(self, image=b'gateway firmware image', build='1a2b3c4d', name='gateway'):
         (self.fake / f'dl-{name}-firmware.bin').write_bytes(image)

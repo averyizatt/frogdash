@@ -35,3 +35,4 @@ jobs:
       - run: python tests/browser_power.py
       - run: python tests/browser_interactions.py
       - run: python tests/browser_knock.py
+      - run: python tests/browser_screen.py

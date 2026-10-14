@@ -16,7 +16,7 @@ ETC=${FROGDASH_ETC:-/etc}
 OPT=${FROGDASH_OPT:-/opt}
 STATUS=$STATE/setup-status.json
 # Services that are not started by a request file but belong to every install.
-SERVICES="frogdash-netkeeper"
+SERVICES="frogdash-netkeeper frogdash-screen-boot"
 # Module firmware, built and published by each module's repository on every change.
 GATEWAY_FW_URL=${FROGDASH_GATEWAY_FW_URL:-https://github.com/averyizatt/DIYComfortControlModule/releases/download/gateway-latest}
 TAILLIGHT_FW_URL=${FROGDASH_TAILLIGHT_FW_URL:-https://github.com/averyizatt/CustomTaillights/releases/download/taillights-latest}
@@ -177,6 +177,30 @@ elif usermod -aG dialout "$user" >/dev/null 2>&1; then
     restart_screen=1; step "TunerStudio: serial port" done "$user can now open the tuning cable"
 else
     step "TunerStudio: serial port" failed "Could not add $user to the dialout group"
+fi
+
+# --- Screen and start-up: exactly 1920 x 720 ready to try, and a quicker start ---
+# The 1920 x 720 EDID file and two boot settings (no rainbow screen, no 1 s boot delay).
+# The screen mode itself only ever changes through a trial started from the dash
+# (Dash management, Support), because a mode the panel refuses leaves it dark.
+if [ ! -f "$REPO/tools/frogdash_screen.py" ]; then
+    step "Screen and start-up" skipped "No screen helper in this version"
+else
+    said=$(FROGDASH_STATE=$STATE python3 "$REPO/tools/frogdash_screen.py" install 2>/dev/null | tail -n 1)
+    case "$said" in
+        done:*) step "Screen and start-up" done "${said#done: }. Takes effect at the next start";;
+        ok:*) step "Screen and start-up" ok "${said#ok: }";;
+        skipped:*) step "Screen and start-up" skipped "${said#skipped: }";;
+        *) step "Screen and start-up" failed "The screen helper did not finish";;
+    esac
+fi
+# e2scrub_reap looks for LVM snapshots, which this Pi does not use: 1.8 s of disk work at every start.
+if ! systemctl is-enabled --quiet e2scrub_reap.service 2>/dev/null; then
+    step "Start-up: unused disk check" ok "Off"
+elif systemctl disable e2scrub_reap.service >/dev/null 2>&1; then
+    step "Start-up: unused disk check" done "Switched off e2scrub_reap (1.8 s of disk work at every start)"
+else
+    step "Start-up: unused disk check" failed "Could not switch off e2scrub_reap"
 fi
 
 # --- Module firmware: the newest published builds, kept ready to install over the CAN bus ---
