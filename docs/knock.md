@@ -58,9 +58,11 @@ Under the graphs:
 
 ### Settings
 
-A field shows the controller's own value. Changing it sends the change at once and the
-controller keeps it through a restart. A change made right after another waits a
-moment for its turn; the line under CLEAR EVENTS shows what the controller answered.
+A field shows the controller's own value. Changing it sends the change at once. The
+ESP32 keeps it through a restart; **the Nano does not**: it starts with its built-in
+values at every power-up, so a change made from here lasts until the ignition is off.
+A change made right after another waits a moment for its turn; the line under CLEAR
+EVENTS shows what the controller answered.
 
 | Setting | Range | Effect |
 |---|---|---|
@@ -70,7 +72,7 @@ moment for its turn; the line under CLEAR EVENTS shows what the controller answe
 | A warning stays up for | 0.1 to 2.5 s | |
 | Level gain | 0.1 to 20 | A software gain on the level. Leave it at 1. |
 | Only above engine speed | 0 to 8000 RPM | Hits are judged only above this |
-| Only above manifold pressure | 0 to 250 kPa absolute | 120 is 3 to 5 psi of boost, depending on altitude |
+| Only above manifold pressure | 0 to 250 kPa absolute | At about 5,000 ft the air outside is 85 to 87 kPa: 100 is about 2 psi of boost, 120 about 5 |
 | Where it listens | | Found from the engine (ESP32; from the bore on the Nano), or set by hand |
 | Frequency, when set by hand | 3 to 9 kHz | Choosing "Set by hand" starts from where the filter is now |
 | Band width | 1500 or 900 Hz | |
@@ -96,7 +98,9 @@ raise a warning; a strong, clearly narrow hit is critical at once. Knock is neve
 learned as normal.
 
 Readings are judged only while armed: knock monitoring enabled, RPM above the minimum
-and manifold pressure above the arming level. They are measured and shown all the
+and manifold pressure above the arming level (100 kPa absolute in current firmware,
+120 in the Nano firmware now in the car: set it to 100 on the Settings view).
+The ESP32 learns the knock frequency only while armed too. They are measured and shown all the
 time.
 
 **Nano:** fifty times a second it takes a burst of 64 samples at 19,200 samples a

@@ -17,7 +17,7 @@
     'knock.critical': false, 'knock.event_count': 0, 'knock.last_rpm': 0,
     'knock.last_boost_kpa': 0, 'knock.config.threshold_offset': 20,
     'knock.config.multiplier': 2, 'knock.config.center_hz': 6000,
-    'knock.config.flags': 3, 'knock.config.min_rpm': 0, 'knock.config.min_map_kpa': 120,
+    'knock.config.flags': 3, 'knock.config.min_rpm': 0, 'knock.config.min_map_kpa': 100,
     'knock.config.debounce_ms': 300, 'knock.config.gain': 1, 'knock.config.bandwidth_hz': 1500, 'knock.config.bore_mm': 96,
     'knock.band_share_pct': 14, 'knock.hook.bias_adc': 512, 'knock.hook.envelope': 22,
     'interior.upper.color': '#ffb46b', 'interior.upper.brightness': 0,

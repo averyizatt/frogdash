@@ -104,7 +104,7 @@ async def settings_view(page):
     await page.wait_for_function("document.getElementById('knock-set-multiplier').value === '2'")
     shown = {name: await page.locator(f'#knock-set-{name}').input_value() for name in
              ('multiplier', 'offset', 'hold', 'level-gain', 'min-rpm', 'min-map', 'center', 'bore', 'freq-mode', 'bandwidth', 'amp-mode')}
-    assert shown == {'multiplier': '2', 'offset': '20', 'hold': '0.3', 'level-gain': '1', 'min-rpm': '0', 'min-map': '120', 'center': '6.25',
+    assert shown == {'multiplier': '2', 'offset': '20', 'hold': '0.3', 'level-gain': '1', 'min-rpm': '0', 'min-map': '100', 'center': '6.25',
                      'bore': '96', 'freq-mode': 'auto', 'bandwidth': '15', 'amp-mode': 'auto'}, shown
     assert await page.locator('#knock-set-center').is_disabled()       # Found from the engine: nothing to type.
     assert await page.locator('#knock-set-amp-step').is_disabled()     # The controller is setting the gain.

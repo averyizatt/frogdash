@@ -5,7 +5,8 @@
    bore suggests and the one the engine itself rings at; and the amplifier, the second
    resonance and the sensor signal as numbers.
    Settings view: everything the controller lets the dash set. Each field shows the
-   controller's own value and sends a change at once; the controller keeps it.
+   controller's own value and sends a change at once; the ESP32 keeps it through a
+   restart, the Nano only until power-off.
 
    The spectrum, the frequency it finds and the amplifier gain come from the ESP32
    water/meth controller (0x30E, can_protocol.h extension 6). With the Nano controller
@@ -279,7 +280,7 @@
   detect.append(power);
   NUMBERS.detect.forEach(d => numberField(detect, d));
 
-  const arm = card('When it is judged', 'Knock matters under load. Manifold pressure is absolute: the air outside is about 85 to 100 kPa, so 120 is light boost.');
+  const arm = card('When it is judged', 'Knock matters under load. Manifold pressure is absolute: at 5,000 ft the air outside is about 85 kPa, so 100 is about 2 psi of boost.');
   NUMBERS.arm.forEach(d => numberField(arm, d));
   const actions = el('div', 'control-row');
   button(actions, 'CLEAR EVENTS', 'knock.clear_events');
