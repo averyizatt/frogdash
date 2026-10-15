@@ -125,6 +125,34 @@
     } catch { firmwareNote = {name: module.name, text: `${module.title}: the dash did not answer`, until: Date.now() + 8000}; }
     showFirmware();
   }
+  // Uploads after each update: the owner's private repository and a token for it.
+  function renderUpload(upload) {
+    const last = upload.last;
+    $('upload-status').textContent = !upload.configured ? 'Not set up: nothing is uploaded.' :
+      `Uploading to ${upload.repo} after each update.${last ? ` Last: ${last.message} (${new Date(last.time * 1000).toLocaleString()}).` : ' Nothing uploaded yet.'}`;
+    $('upload-status').dataset.state = last?.state === 'failed' ? 'fail' : '';
+    if (upload.repo && document.activeElement !== $('upload-repo')) $('upload-repo').value = upload.repo;
+    $('upload-off').hidden = !upload.configured;
+  }
+  async function showUpload() {
+    try { renderUpload(await request('/api/upload')); } catch (error) { needLogin(error); }
+  }
+  async function saveUpload(token) {
+    try {
+      const response = await fetch('/api/upload', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({repo: $('upload-repo').value.trim(), token}), signal: AbortSignal.timeout(10000)});
+      if (!response.ok) { $('message').textContent = response.status === 401 ? 'Enter the current access code shown on the dash.' : await response.text(); return; }
+      $('upload-token').value = '';
+      $('message').textContent = token ? 'Saved. The next update uploads.' : 'Uploads stopped.';
+      renderUpload(await response.json());
+    } catch { $('message').textContent = 'The dash did not answer'; }
+  }
+  $('upload-form').onsubmit = event => {
+    event.preventDefault();
+    if (!$('upload-token').value.trim()) { $('message').textContent = 'Paste the token first.'; return; }
+    saveUpload($('upload-token').value.trim());
+  };
+  $('upload-off').onclick = () => saveUpload('');
   twoPress($('update-run'), 'update', 'update');
   twoPress($('update-undo'), 'go back', 'rollback');
 
@@ -138,6 +166,7 @@
       const system = status.system;
       $('system-status').textContent = system ? `System: ${system.cpu_c == null ? 'temperature unavailable' : system.cpu_c.toFixed(1) + ' °C'} · ${system.disk ? (system.disk.free_bytes / 1073741824).toFixed(1) + ' GiB free' : 'storage unavailable'} · CAN ${system.can?.state || 'diagnostics unavailable'}` : 'System diagnostics unavailable';
       renderCheck(check.report); renderUpdate(check.update); renderFirmware(check.firmware);
+      showUpload();
       $('finish-log').disabled = !listing.files.some(file => file.active);
       $('files').replaceChildren(...listing.files.map(file => {
         const row = document.createElement('li'), name = document.createElement(file.active ? 'span' : 'a'), detail = document.createElement('small');

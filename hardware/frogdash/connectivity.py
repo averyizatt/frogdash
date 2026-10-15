@@ -3,7 +3,9 @@ import asyncio
 from collections import deque
 from contextlib import suppress
 import ipaddress
+import os
 import json
+import re
 from pathlib import Path
 import secrets
 import time
@@ -20,7 +22,9 @@ DEFAULT_SOCKET = Path('/run/frogdash-connect/control.sock')
 RESUME_S = 15 * 60   # An update started from the phone keeps the hotspot and the login this long.
 CAMERAS_OFF = 'Cameras are off while the phone hotspot is on (they share one Wi-Fi adapter)'
 # Helper results kept in the data folder, included in the diagnostics download.
-STATUS_FILES = ('update-status.json', 'setup-status.json', 'gps-status.json', 'wifi-status.json', 'screen-status.json')
+UPLOAD_REPO = re.compile(r'[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}')
+UPLOAD_TOKEN = re.compile(r'(github_pat_|ghp_)[A-Za-z0-9_]{20,250}')
+STATUS_FILES = ('update-status.json', 'setup-status.json', 'gps-status.json', 'wifi-status.json', 'screen-status.json', 'upload-status.json')
 
 
 def read_json(path):
@@ -86,6 +90,25 @@ class TransferPortal:
                 'logs': self.state.recorder.files() if self.state.recorder else [],
                 'snapshot': self.state.snapshot()}
 
+    # Uploads after each update (tools/frogdash_upload.py): the owner's private GitHub
+    # repository and a token that can write only to it. The token is never sent back.
+    def upload_status(self):
+        config = read_json(self.folder / 'log-upload.json') if self.folder else None
+        last = read_json(self.folder / 'upload-status.json') if self.folder else None
+        last = {k: v for k, v in (last or {}).items() if k in ('time', 'state', 'message')}
+        return {'configured': bool(isinstance(config, dict) and config.get('token')),
+                'repo': config.get('repo') if isinstance(config, dict) else None, 'last': last or None}
+
+    def save_upload(self, repo, token):
+        path = self.folder / 'log-upload.json'
+        if not token:
+            path.unlink(missing_ok=True)
+            return
+        tmp = path.with_suffix('.tmp')
+        tmp.write_text(json.dumps({'repo': repo, 'token': token}), encoding='utf-8')
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, path)
+
     def request_update(self, action):
         (self.folder / 'update-request').write_text('rollback' if action == 'rollback' else 'requested', encoding='utf-8')
         # The dash restarts during an update: keep this hotspot and login so the phone page carries on.
@@ -147,6 +170,20 @@ class TransferPortal:
                     raise web.HTTPBadRequest(text='Expected action: update or rollback')
                 await asyncio.to_thread(self.request_update, action)
             return web.json_response(await asyncio.to_thread(self.update_status))
+
+        async def upload(request):
+            if not self.folder or self.state.mode == 'replay':
+                raise web.HTTPNotFound(text='Uploads are not available here')
+            if request.method == 'POST':
+                try:
+                    body = await request.json()
+                    repo, token = str(body.get('repo', '')).strip(), str(body.get('token', '')).strip()
+                except (ValueError, TypeError, AttributeError):
+                    raise web.HTTPBadRequest(text='Expected repo and token')
+                if not UPLOAD_REPO.fullmatch(repo) or (token and not UPLOAD_TOKEN.fullmatch(token)):
+                    raise web.HTTPBadRequest(text='Expected owner/repository and a GitHub token')
+                await asyncio.to_thread(self.save_upload, repo, token)
+            return web.json_response(await asyncio.to_thread(self.upload_status))
 
         async def firmware(request):
             # A module's firmware over the CAN bus: the same fixed action as the dash's own button.
@@ -225,6 +262,7 @@ class TransferPortal:
                         web.post('/session', login), web.get('/api/status', status), web.get('/api/logs', logs),
                         web.get('/api/check', check), web.get('/diagnostics.json', diagnostics),
                         web.post('/api/logs/finish', finish_log), web.get('/api/update', update), web.post('/api/update', update),
+                        web.get('/api/upload', upload), web.post('/api/upload', upload),
                         web.get('/api/firmware', firmware), web.post('/api/firmware', firmware),
                         web.get('/api/drives', drives), web.get('/api/drives/{name}', review),
                         web.get('/logs/{name}', download)])

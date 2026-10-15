@@ -21,6 +21,10 @@ from tools.inspect_mlg import inspect as inspect_mlg
 from hardware.frogdash.connectivity import TransferPortal
 
 
+async def _text_is(page, selector, start):
+    return (await page.locator(selector).inner_text()).startswith(start)
+
+
 async def until(check, timeout=20):
     """Poll from here: the phone page's content policy forbids evaluated wait conditions."""
     for _ in range(int(timeout / .1)):
@@ -53,6 +57,14 @@ async def check_transfer(browser, state, errors):
         await page.locator('#code').fill(portal.code)
         await page.locator('#login-form button').click()
         await page.locator('#content').wait_for(state='visible')
+        # Uploads: the token is saved on the Pi and never shown again.
+        await until(lambda: _text_is(page, '#upload-status', 'Not set up'))
+        await page.locator('#upload-repo').fill('owner/frogdash-logs')
+        await page.locator('#upload-token').fill('github_pat_' + 'x' * 40)
+        await page.locator('#upload-form button[type="submit"]').click()
+        await until(lambda: _text_is(page, '#upload-status', 'Uploading to owner/frogdash-logs after each update. Nothing uploaded yet.'))
+        assert await page.locator('#upload-token').input_value() == ''
+        assert 'x' * 40 not in await page.content()          # The token itself is nowhere on the page
         await page.locator('#files a').first.wait_for()
         async with page.expect_download() as download_info:
             await page.locator('#files a').first.click()

@@ -56,6 +56,13 @@ setup() {  # $1 = online when GitHub was just reached. Leaves what it did in $no
     [ -z "$note" ] || note=". $note"
     return 0
 }
+upload() {  # Diagnostics and the newest drive to the owner's private repository, while online.
+    [ -f "$REPO/tools/frogdash_upload.py" ] || return 0
+    report running "Uploading the diagnostics and the newest drive"
+    said=$(FROGDASH_STATE=$STATE FROGDASH_REPO=$REPO FROGDASH_UNITS=$UNITS timeout 1200 python3 "$REPO/tools/frogdash_upload.py" 2>/dev/null | tail -n 1 | tr -cd 'A-Za-z0-9 .,:;()/_-')
+    [ -z "$said" ] || note="$note. $said"
+    return 0
+}
 restart_dash() {
     systemctl restart frogdash.service
     systemctl try-restart 'frogdash-console@*.service' 2>/dev/null
@@ -151,6 +158,7 @@ after=$(git -C $REPO rev-parse HEAD)
 if [ "$before" = "$after" ]; then
     report running "Already up to date. Checking the Pi setup (a first-time install can take several minutes)"
     setup online
+    upload
     report current "Already up to date$note"; exit 0
 fi
 sync_units
@@ -162,6 +170,7 @@ if healthy $had_screen; then
     rm -f "$STATE/update-bad"
     report running "Updated ($changes changes) and checked. Finishing the Pi setup (a first-time install can take several minutes)"
     setup online
+    upload
     report updated "Updated ($changes changes). The dash restarted and passed its check$note"; exit 0
 fi
 
@@ -172,8 +181,10 @@ echo "$after" > "$STATE/update-bad"
 rm -f "$STATE/update-previous"
 failed=$(short "$after"); reason=$why
 report running "Version $failed did not start properly ($reason). Going back to the previous version"
+note=""
 if git -C $REPO reset --keep --quiet "$before" && sync_units && restart_dash && healthy 0; then
-    report rolledback "Update undone: version $failed did not start properly ($reason), so the dash went back to the version that worked"
+    upload   # The failed start's evidence is in the diagnostics.
+    report rolledback "Update undone: version $failed did not start properly ($reason), so the dash went back to the version that worked$note"
 else
     report failed "Version $failed did not start and going back failed too. From a laptop: sudo git -C $REPO reset --keep $(short "$before"), then sudo systemctl restart frogdash"
 fi

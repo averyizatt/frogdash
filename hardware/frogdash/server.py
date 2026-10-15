@@ -185,6 +185,14 @@ def create_app(state, adapter=None, connectivity=None):
         return web.json_response({'recording': dict(state.recorder.status) if state.recorder else {'state': 'disabled', 'enabled': False}, 'files': files},
                                  headers={'Cache-Control': 'no-store'})
 
+    async def finish_log(request):
+        # The uploader (tools/frogdash_upload.py) finishes the file being recorded so the
+        # drive that has just ended goes up complete.
+        require_local(request)
+        if not state.recorder:
+            raise web.HTTPNotFound()
+        return web.json_response({'ok': state.recorder.finish_current()})
+
     async def download_log(request):
         name = request.match_info['name']
         if not state.recorder or not LOG_NAME.fullmatch(name):
@@ -748,7 +756,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),
