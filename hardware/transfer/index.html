@@ -8,10 +8,10 @@
 <p><a id="diagnostics" class="button" href="/diagnostics.json" download>Download diagnostics file</a></p><p class="note">One file with the system check, every reading, helper results and the last failed start. Send it when something needs looking at.</p>
 <h2>Software</h2><p id="update-status">Checking…</p><div class="actions"><button id="update-run" type="button">Update now</button><button id="update-undo" type="button" class="quiet">Undo last update</button></div><ul id="firmware"></ul><p class="note">The dash needs internet for an update: a saved Wi-Fi network in range. It restarts during the update; this page reconnects by itself.</p>
 <h2>Uploads</h2><p id="upload-status">Checking…</p>
-<form id="upload-form" class="upload-form"><label for="upload-repo">Private GitHub repository</label><input id="upload-repo" autocomplete="off" spellcheck="false" placeholder="owner/repository" required>
+<form id="upload-form" class="upload-form"><label for="upload-repo">GitHub repository</label><input id="upload-repo" autocomplete="off" spellcheck="false" value="averyizatt/frogdash" placeholder="owner/repository" required>
 <label for="upload-token">Token that can write to it</label><input id="upload-token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…">
 <div class="actions"><button type="submit">Save</button><button id="upload-off" type="button" class="quiet">Stop uploading</button></div></form>
-<p class="note">After every update the dash uploads its diagnostics and the newest drive's recordings to this repository. Keep it private: recordings contain GPS positions. The token is kept on the Pi and never shown again.</p>
+<p class="note">After every update the dash uploads its diagnostics and the newest drive's recordings to this repository, on its own branch (pi-logs). In a public repository anyone can see them, GPS positions included; Wi-Fi passwords and network names are blanked out first. The token is kept on the Pi and never shown again.</p>
 <h2>Drive review</h2><div id="phone-review"></div>
 <h2>Saved logs</h2><p>Tap a completed file to save it. The file being recorded can be finished now and a new one started.</p><p><button id="finish-log" type="button" class="quiet">Finish the current log</button></p><ul id="files"></ul></section>
 <footer>Hotspot sessions last 20 minutes. Vehicle controls stay on the dash.</footer></main><script src="review.js"></script><script src="transfer.js"></script></body></html>

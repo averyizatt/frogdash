@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""After an update: the dash's diagnostics and its newest drive, to the owner's private
-GitHub repository (run as root by tools/frogdash_update.sh while the Pi is online).
+"""After an update: the dash's diagnostics and its newest drive, to the owner's GitHub
+repository (run as root by tools/frogdash_update.sh while the Pi is online).
+
+By the owner's choice this is the public frogdash repository itself, on its own branch
+(pi-logs), so nothing lands on main: no test runs, no mixing with the code. Recordings
+contain GPS positions; the owner is fine with them being public. Wi-Fi passwords and
+network names, the hotspot password and the phone page's code are blanked out of every
+text that goes up (secrets()).
 
 Set up once on the phone page (Logs, faults & updates > Uploads): a GitHub token that can
-write only to that repository, saved in log-upload.json in the dash's state folder.
+write to the repository, saved in log-upload.json in the dash's state folder.
 
 What goes up, every time, whatever the connection:
   - pi/<date>/<time>-diagnostics.json: the dash's self check, every helper's status, the
@@ -12,7 +18,6 @@ What goes up, every time, whatever the connection:
   - pi/<date>/<time>-journal.txt: the dash's own service logs since the Pi started;
   - the newest drive's recordings, gzip-compressed, as files of a GitHub release named
     after the drive, so the repository's history does not grow with them.
-The repository must be private: recordings contain GPS positions.
 
 Prints one line for the update's status message. Never prints the token.
 """
@@ -38,6 +43,7 @@ LOGS = STATE / 'logs'
 UNITS = Path(os.environ.get('FROGDASH_UNITS', '/etc/systemd/system'))
 API, UPLOADS = 'https://api.github.com', 'https://uploads.github.com'
 NAME = re.compile(r'frogdash-(?:live|replay)-(\d{8}T\d{6}Z)-[0-9a-f]{12}\.mlg')
+BRANCH = 'pi-logs'
 DRIVE_GAP_S = 10 * 60          # Recordings further apart than this belong to different drives
 MAX_DRIVE_BYTES = 400 << 20    # Compressed; GitHub takes up to 2 GB a file
 STATUS_FILES = ('update-status.json', 'setup-status.json', 'gps-status.json', 'wifi-status.json', 'screen-status.json')
@@ -64,8 +70,8 @@ def local(path, method='GET', timeout=10):
 
 
 class GitHub:
-    def __init__(self, repo, token, opener=None):
-        self.repo, self.token = repo, token
+    def __init__(self, repo, token, opener=None, branch=BRANCH):
+        self.repo, self.token, self.branch = repo, token, branch
         self.opener = opener or urllib.request.build_opener()
 
     def call(self, method, url, body=None, data=None, content_type='application/json', timeout=60):
@@ -91,7 +97,7 @@ class GitHub:
 
     def put_file(self, path, content, message):
         status, body = self.call('PUT', f'{API}/repos/{self.repo}/contents/{path}',
-                                 {'message': message, 'content': base64.b64encode(content).decode()})
+                                 {'message': message, 'content': base64.b64encode(content).decode(), 'branch': self.branch})
         if status not in (200, 201):
             raise RuntimeError(f'GitHub refused {path} ({status}{": " + body.get("message", "") if isinstance(body, dict) else ""})')
 
@@ -100,7 +106,8 @@ class GitHub:
         if status == 200:
             return body
         status, body = self.call('POST', f'{API}/repos/{self.repo}/releases',
-                                 {'tag_name': tag, 'name': title, 'body': notes, 'draft': False, 'prerelease': False})
+                                 {'tag_name': tag, 'target_commitish': self.branch, 'name': title, 'body': notes,
+                                  'draft': False, 'prerelease': True})
         if status != 201:
             raise RuntimeError(f'GitHub refused the release ({status}{": " + body.get("message", "") if isinstance(body, dict) else ""})')
         return body
@@ -165,6 +172,41 @@ def diagnostics(now):
             'throttled': text_of('vcgencmd', 'get_throttled').strip(), 'disk': text_of('df', '-h', '/', str(STATE)).strip()}
 
 
+def secrets(config):
+    """Everything that must not go up: (text, replacement). Saved Wi-Fi passwords and
+    network names (NetworkManager), the dash's hotspot password, the phone page's code
+    and session, and the upload token itself."""
+    found = {}
+    names = text_of('nmcli', '-t', '-f', 'NAME,TYPE', 'connection', 'show')
+    for line in names.splitlines():
+        name, _, kind = line.rpartition(':')
+        if kind != '802-11-wireless' or not name:
+            continue
+        name = name.replace('\\:', ':')
+        psk = text_of('nmcli', '-s', '-g', '802-11-wireless-security.psk', 'connection', 'show', name).strip()
+        ssid = text_of('nmcli', '-g', '802-11-wireless.ssid', 'connection', 'show', name).strip()
+        if psk:
+            found[psk] = '(password hidden)'
+        for label in (ssid, name):
+            if label and label not in ('dashcam', 'preconfigured'):
+                found.setdefault(label, '(Wi-Fi network)')
+    for path in (Path('/etc/frogdash/hotspot.json'), STATE / 'hotspot-resume.json'):
+        values = load(path, {})
+        for key, value in (values.items() if isinstance(values, dict) else []):
+            if isinstance(value, str) and any(word in key.lower() for word in ('pass', 'psk', 'code', 'session', 'secret')):
+                found[value] = '(hidden)'
+    if config.get('token'):
+        found[config['token']] = '(hidden)'
+    # Longest first, so a password containing a network name is blanked whole.
+    return sorted(((k, v) for k, v in found.items() if len(k) >= 4), key=lambda kv: -len(kv[0]))
+
+
+def scrub(text, hidden):
+    for secret, replacement in hidden:
+        text = text.replace(secret, replacement)
+    return text
+
+
 def load(path, default):
     try:
         return json.loads(path.read_text())
@@ -185,19 +227,20 @@ def run(now=None, github=None, wait=time.sleep):
     repo, token = config.get('repo', ''), config.get('token', '')
     if not repo or not token:
         return 'Uploads not set up (phone page, Uploads)'
-    github = github or GitHub(repo, token)
+    github = github or GitHub(repo, token, branch=config.get('branch') or BRANCH)
+    hidden = secrets(config)
     sent = load(STATUS, {}).get('sent', [])
     stamp = time.strftime('%Y-%m-%d/%H%M%S', time.gmtime(now))
     message = f'Pi report {time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(now))}'
 
     # The reports first: small, and the most useful when something went wrong.
-    github.put_file(f'pi/{stamp}-diagnostics.json', json.dumps(diagnostics(now), indent=1, default=str).encode(), message)
+    github.put_file(f'pi/{stamp}-diagnostics.json', scrub(json.dumps(diagnostics(now), indent=1, default=str), hidden).encode(), message)
     user = kiosk_user()
     boot = text_of(sys.executable, str(REPO_DIR / 'tools/boot_report.py'), *(['--user', user] if user else []), timeout=90)
-    github.put_file(f'pi/{stamp}-boot.txt', boot.encode(errors='replace'), message)
+    github.put_file(f'pi/{stamp}-boot.txt', scrub(boot, hidden).encode(errors='replace'), message)
     journal = text_of('journalctl', '-b', '--no-pager', '-o', 'short-monotonic', '-n', '3000',
                       '-u', 'frogdash*', timeout=60)
-    github.put_file(f'pi/{stamp}-journal.txt', journal.encode(errors='replace')[-3_000_000:], message)
+    github.put_file(f'pi/{stamp}-journal.txt', scrub(journal, hidden).encode(errors='replace')[-3_000_000:], message)
 
     # Then the newest drive. The file being recorded is finished first, so a drive that
     # has just ended is complete.

@@ -75,7 +75,7 @@ class UploadTests(unittest.TestCase):
         self.assertEqual(self.up.run(github=FakeGitHub(), wait=lambda s: None), 'Uploads not set up (phone page, Uploads)')
 
     def test_reports_and_the_newest_drive_go_up_once(self):
-        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash-logs', 'token': TOKEN}))
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
         (self.state / 'screen-status.json').write_text('{"state": "original"}')
         self.log('20261014T170000Z', 30, b'yesterday')
         first = self.log('20261015T120000Z', 30, b'drive part one' * 100)
@@ -96,13 +96,35 @@ class UploadTests(unittest.TestCase):
         self.assertEqual(self.up.run(now=1792069200, github=hub2, wait=lambda s: None), 'Uploaded the diagnostics (no new drive to send)')
         self.assertEqual((len(hub2.files), hub2.assets), (3, []))
 
+    def test_wifi_passwords_and_names_are_blanked_before_anything_goes_up(self):
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
+        (self.state / 'wifi-status.json').write_text(json.dumps({'state': 'joined', 'ssid': 'HomeNet42', 'message': 'Joined HomeNet42'}))
+        (self.state / 'hotspot-resume.json').write_text(json.dumps({'until': 1, 'code': '48151623', 'session': 'sessiontoken-abc'}))
+        answers = {
+            ('nmcli', '-t', '-f', 'NAME,TYPE', 'connection', 'show'): 'HomeNet42:802-11-wireless\nPhone Hot\\:spot:802-11-wireless\ndashcam:802-11-wireless\nWired:802-3-ethernet\n',
+            ('nmcli', '-s', '-g', '802-11-wireless-security.psk', 'connection', 'show', 'HomeNet42'): 'correct-horse-77\n',
+            ('nmcli', '-g', '802-11-wireless.ssid', 'connection', 'show', 'HomeNet42'): 'HomeNet42\n',
+            ('nmcli', '-s', '-g', '802-11-wireless-security.psk', 'connection', 'show', 'Phone Hot:spot'): 'battery-staple-9\n',
+            ('nmcli', '-g', '802-11-wireless.ssid', 'connection', 'show', 'Phone Hot:spot'): 'Phone Hot:spot\n',
+        }
+        story = 'Joined HomeNet42 (psk correct-horse-77), then Phone Hot:spot with battery-staple-9; portal code 48151623; dashcam up\n'
+        self.up.text_of = lambda *args, timeout=30: answers.get(args, '') if args[0] == 'nmcli' else story
+        hub = FakeGitHub()
+        self.up.run(now=1792065600, github=hub, wait=lambda s: None)
+        sent = b''.join(hub.files.values()).decode()
+        for secret in ('HomeNet42', 'correct-horse-77', 'Phone Hot:spot', 'battery-staple-9', '48151623', 'sessiontoken-abc', TOKEN):
+            self.assertNotIn(secret, sent, secret)
+        self.assertIn('(Wi-Fi network)', sent)
+        self.assertIn('(password hidden)', sent)
+        self.assertIn('dashcam up', sent)              # The dash cam's own connection name stays readable
+
     def test_a_failure_is_one_line_and_never_shows_the_token(self):
-        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash-logs', 'token': TOKEN}))
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
 
         class Refusing(FakeGitHub):
             def put_file(self, path, content, message):
                 raise RuntimeError('GitHub refused it (401: Bad credentials)')
-        self.up.GitHub = lambda repo, token: Refusing()
+        self.up.GitHub = lambda repo, token, **kw: Refusing()
         printed = []
         self.up.print = printed.append
         self.up.main()

@@ -1,6 +1,8 @@
 name: CAN and GPS tests
 on:
   push:
+    # The Pi's uploads (tools/frogdash_upload.py) are data, not code.
+    branches-ignore: [pi-logs]
   pull_request:
 permissions:
   contents: read
