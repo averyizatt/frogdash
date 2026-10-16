@@ -32,6 +32,8 @@ from .imports import Imports
 from . import cancheck, methtune, selftest
 from .parking import rolling
 
+TERMINAL_SOCKET = Path('/run/frogdash-terminal.sock')
+
 WIFI_SSID, WIFI_PASSWORD = re.compile(r"[\x20-\x7E]{1,32}"), re.compile(r"[\x20-\x7E]{8,63}")
 IMAGE_DATA = re.compile(r"data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+")
 
@@ -392,20 +394,38 @@ def create_app(state, adapter=None, connectivity=None):
                                   'remaining_s': max(0, round(state.capture_until - now)), 'available': state.capture is not None},
                                  headers={'Cache-Control': 'no-store'})
 
+    def terminal_helper():
+        # The Terminal helper (tools/frogdash_terminal.py, frogdash-terminal.socket) runs a
+        # command as the screen user, so sudo works. The setup lets this service reach it
+        # only while --terminal is set; without it the command runs here, restricted.
+        return os.name == 'posix' and TERMINAL_SOCKET.exists() and os.access(TERMINAL_SOCKET, os.W_OK)
+
     async def terminal(request):
-        # Optional (--terminal): run a command as the dash's own unprivileged, sandboxed
-        # service user. Only from the dash's own screen; no sudo, not interactive.
+        # Optional (--terminal): a command from the dash's own screen (loopback only), as
+        # the screen user through the helper when it is installed, else as this service's
+        # own restricted user. Not interactive either way.
         require_local(request)
         if not state.terminal_enabled or state.mode == 'replay':
             raise web.HTTPNotFound(text='Terminal is not enabled (--terminal)')
         if request.method == 'GET':
-            return web.json_response({'enabled': True})
+            return web.json_response({'enabled': True, 'sudo': terminal_helper()})
         try:
             command = (await request.json()).get('command')
             if not isinstance(command, str) or not command.strip() or len(command) > 2000:
                 raise ValueError()
         except (ValueError, AttributeError, TypeError):
             raise web.HTTPBadRequest(text='Type a command (up to 2000 characters)')
+        if terminal_helper():
+            try:
+                reader, writer = await asyncio.open_unix_connection(str(TERMINAL_SOCKET), limit=1 << 20)
+                writer.write(json.dumps({'command': command}).encode() + b'\n')
+                await writer.drain()
+                answer = json.loads(await asyncio.wait_for(reader.readline(), 90))
+                writer.close()
+                return web.json_response({'exit': answer.get('exit'), 'output': answer.get('output', ''), 'user': answer.get('user')},
+                                         headers={'Cache-Control': 'no-store'})
+            except (OSError, ValueError, asyncio.TimeoutError) as error:
+                return web.json_response({'exit': 2, 'output': f'The Terminal helper did not answer: {error}'}, headers={'Cache-Control': 'no-store'})
         process = await asyncio.create_subprocess_exec('/bin/bash', '-c', command, stdin=asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT, env={'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'TERM': 'dumb', 'LC_ALL': 'C'})
         try:

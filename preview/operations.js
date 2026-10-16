@@ -167,7 +167,18 @@
     else if (event.key === 'ArrowUp' && terminalIndex > 0) { $('terminal-command').value = terminalHistory[--terminalIndex]; event.preventDefault(); }
     else if (event.key === 'ArrowDown' && terminalIndex < terminalHistory.length) { $('terminal-command').value = terminalHistory[++terminalIndex] || ''; event.preventDefault(); }
   });
-  fetch('/terminal').then(r => { if (!r.ok) $('terminal-note').textContent = 'Terminal is off. Add --terminal to FROGDASH_ARGS in /etc/default/frogdash and restart frogdash.service to enable it.'; }).catch(() => {});
+  // Asked again each time the tab opens: the dash may have been restarted with --terminal since.
+  async function terminalCheck() {
+    try {
+      const response = await fetch('/terminal', {cache: 'no-store'});
+      const info = response.ok ? await response.json() : null;
+      $('terminal-note').textContent = !info ? 'Terminal is off. Add --terminal to FROGDASH_ARGS in /etc/default/frogdash and restart frogdash.service to enable it.'
+        : info.sudo ? 'Runs as the screen user, so sudo works as at the keyboard. Not interactive: no editors or top; a command is stopped after 60 s. Use a keyboard; press Enter to run.'
+        : 'Runs as the dash service user: no sudo and not interactive. Press Update now once with --terminal set to install the helper that allows sudo.';
+    } catch { /* The dash is restarting. */ }
+  }
+  terminalCheck();
+  document.querySelector('[data-ops-tab="terminal"]').addEventListener('click', terminalCheck);
   const launch = el('button', 'Dash management', 'close-button'); launch.id = 'operations-launch'; launch.type = 'button';
   $('drive-close').before(launch);
   function tab(key) { document.querySelectorAll('[data-ops-panel]').forEach(n => n.hidden = n.dataset.opsPanel !== key); document.querySelectorAll('[data-ops-tab]').forEach(n => n.setAttribute('aria-selected', String(n.dataset.opsTab === key))); }

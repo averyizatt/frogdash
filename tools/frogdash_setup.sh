@@ -203,6 +203,40 @@ else
     step "Start-up: unused disk check" failed "Could not switch off e2scrub_reap"
 fi
 
+# --- Terminal tab with sudo: only while --terminal is in /etc/default/frogdash ---
+# A helper (tools/frogdash_terminal.py, socket-activated, root) runs each command as the
+# screen user, so sudo works as at the keyboard. The dash service gets the group that may
+# reach it through a drop-in; without --terminal both are taken away again.
+dropin=$UNITS/frogdash.service.d/terminal.conf
+if grep -qs -- '--terminal' "$ETC/default/frogdash"; then
+    if [ -z "$user" ]; then
+        step "Terminal with sudo" skipped "The dash screen service is not installed"
+    else
+        changed=""
+        groupadd --system --force frogdash-terminal >/dev/null 2>&1
+        for unit in frogdash-terminal.socket frogdash-terminal@.service; do
+            cmp -s "$REPO/hardware/systemd/$unit" "$UNITS/$unit" || { cp "$REPO/hardware/systemd/$unit" "$UNITS/$unit" && changed=1; }
+        done
+        if ! cmp -s "$REPO/config/terminal-service.conf" "$dropin"; then
+            mkdir -p "$UNITS/frogdash.service.d" && cp "$REPO/config/terminal-service.conf" "$dropin" && changed=1 && restart_dash=1
+        fi
+        [ -n "$changed" ] && systemctl daemon-reload
+        if ! systemctl is-enabled --quiet frogdash-terminal.socket; then
+            systemctl enable --now frogdash-terminal.socket >/dev/null 2>&1 && changed=1
+        fi
+        if [ -n "$changed" ]; then step "Terminal with sudo" done "Commands from the Terminal tab now run as $user, so sudo works"
+        else step "Terminal with sudo" ok "Commands from the Terminal tab run as $user, so sudo works"
+        fi
+    fi
+elif [ -f "$dropin" ]; then
+    rm -f "$dropin"
+    systemctl disable --now frogdash-terminal.socket >/dev/null 2>&1
+    systemctl daemon-reload; restart_dash=1
+    step "Terminal with sudo" done "Off, as --terminal is no longer set"
+else
+    step "Terminal with sudo" ok "Off (add --terminal to FROGDASH_ARGS in /etc/default/frogdash to turn on the Terminal tab)"
+fi
+
 # --- Module firmware: the newest published builds, kept ready to install over the CAN bus ---
 # Only downloaded here. Installing is a button on the dash (Dash management > Support).
 # A new module is one more firmware_file line.

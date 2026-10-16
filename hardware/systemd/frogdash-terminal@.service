@@ -1,0 +1,10 @@
+[Unit]
+Description=Run one command from the Frogdash Terminal tab
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/frogdash/tools/frogdash_terminal.py
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+# A command is stopped after 60 s by the helper itself.
+TimeoutStartSec=90

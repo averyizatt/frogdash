@@ -1,0 +1,13 @@
+[Unit]
+Description=Frogdash Terminal tab: commands as the screen user (only with --terminal)
+
+[Socket]
+ListenStream=/run/frogdash-terminal.sock
+SocketUser=root
+SocketGroup=frogdash-terminal
+SocketMode=0660
+Accept=yes
+MaxConnections=4
+
+[Install]
+WantedBy=sockets.target

@@ -50,6 +50,7 @@ SHIMS = {
                '*frogdash_screen.py*install*) if [ -f "$FAKE/screen-done" ]; then echo "ok: Ready: try exact 1920 x 720 under Dash management, Support"; '
                'else touch "$FAKE/screen-done"; echo "done: Ready: try exact 1920 x 720 under Dash management, Support"; fi;; esac\n',
     'sleep': 'exit 0\n',
+    'groupadd': 'echo "$@" >> "$FAKE/groupadd.log"\n',
 }
 
 
@@ -101,6 +102,26 @@ class SetupScriptTests(unittest.TestCase):
     def log(self, name):
         path = self.fake / name
         return path.read_text() if path.exists() else ''
+
+    def test_the_terminal_gets_sudo_only_while_it_is_switched_on(self):
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Terminal with sudo'][0], 'ok')                  # Off: nothing installed
+        self.assertFalse((self.units / 'frogdash-terminal.socket').exists())
+        (self.etc / 'default/frogdash').write_text('FROGDASH_ARGS="--interface can0 --gpsd --terminal"\n', newline='\n')
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Terminal with sudo'], ('done', 'Commands from the Terminal tab now run as foxbody, so sudo works'))
+        for unit in ('frogdash-terminal.socket', 'frogdash-terminal@.service'):
+            self.assertEqual((self.units / unit).read_bytes(), (ROOT / 'hardware/systemd' / unit).read_bytes())
+        self.assertEqual((self.units / 'frogdash.service.d/terminal.conf').read_bytes(), (ROOT / 'config/terminal-service.conf').read_bytes())
+        self.assertIn('--system --force frogdash-terminal', self.log('groupadd.log'))
+        self.assertIn('enable --now frogdash-terminal.socket', self.log('systemctl.log'))
+        self.assertTrue(self.log('systemctl.log').rstrip().endswith('restart frogdash.service'))   # Its new group
+        self.assertEqual(self.run_setup('offline')[2]['Terminal with sudo'][0], 'ok')             # Nothing more to do
+        (self.etc / 'default/frogdash').write_text('FROGDASH_ARGS="--interface can0 --gpsd"\n', newline='\n')
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Terminal with sudo'], ('done', 'Off, as --terminal is no longer set'))
+        self.assertFalse((self.units / 'frogdash.service.d/terminal.conf').exists())
+        self.assertIn('disable --now frogdash-terminal.socket', self.log('systemctl.log'))
 
     def test_first_run_without_internet_does_all_it_can_and_names_what_waits(self):
         said, status, steps = self.run_setup('offline')
