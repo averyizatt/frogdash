@@ -133,7 +133,7 @@ ART = [
 <div style="position:absolute;left:0;right:0;top:458px;text-align:center;{WIDE};font-size:96px;line-height:1;letter-spacing:26px;color:#f4f4f4">Fox Body</div>
 <div style="position:absolute;left:760px;top:574px;width:400px;height:4px;background:#f2b705"></div>""")),
     ('splash-built-not-bought.jpg', 'splash', 'Built not bought', stage(
-        car(FRONT, 780, 'left:1040px;top:96px') + f"""
+        car(FRONT, 780, 'left:1040px;top:96px') + """
 <div style="position:absolute;left:120px;top:176px;font:700 150px/.95 Oswald,sans-serif;color:#f5f5f5;text-transform:uppercase">Built<br><span style="color:#e2b13c">not bought</span></div>
 <div style="position:absolute;left:124px;top:490px;width:520px;height:5px;background:#e2b13c"></div>
 <div style="position:absolute;left:124px;top:518px;font:400 26px/1 Oswald,sans-serif;letter-spacing:12px;color:#8d98a2">GARAGE MADE</div>""", glow='#221d12')),
