@@ -151,19 +151,26 @@ class TrialTests(unittest.TestCase):
         with_block = s.with_block(CONFIG, 'boot', s.BOOT_CONFIG)
         (pi.boot / 'config.txt').write_text(with_block)
         self.assertEqual(s.install()[0], 'done')
-        self.assertEqual(pi.config(), CONFIG)
+        self.assertNotIn('boot_delay', pi.config())
+        self.assertNotIn('disable_splash', pi.config())
+        self.assertTrue(pi.config().startswith(CONFIG.rstrip()))          # Everything that was there before stays
 
-    def test_install_puts_the_files_in_place_and_changes_no_screen_setting(self):
+    def test_install_forces_1920x720_for_linux_and_the_firmware_and_keeps_the_rest(self):
         pi = Pi(self.folder.name, panel=panel_edid())
+        own = CMDLINE.strip() + ' video=HDMI-A-2:1920x720@60 drm.edid_firmware=edid/old.bin\n'
+        (pi.boot / 'cmdline.txt').write_text(own)
         s = pi.load()
         self.assertEqual(s.install()[0], 'done')
         edid = (pi.firmware / 'edid/frogdash-1920x720.bin').read_bytes()
         self.assertEqual(edid, (pi.boot / 'frogdash-1920x720.bin').read_bytes())
         self.assertEqual(s.parse_dtd(edid[54:72])['clock_khz'], 87920)      # The panel's own timing
-        self.assertNotIn('boot_delay', pi.config())                     # The panel needs the boot delay
-        self.assertNotIn('edid', pi.config())                                # The mode only through a trial
-        self.assertEqual((pi.boot / 'cmdline.txt').read_text(), CMDLINE)
-        self.assertEqual(s.install(), ('ok', 'Ready: try exact 1920 x 720 under Dash management, Support'))
+        self.assertNotIn('boot_delay', pi.config())                          # The panel needs the boot delay
+        self.assertIn('# frogdash-screen begin\n[all]\ndisable_fw_kms_setup=1\nhdmi_edid_file:0=1', pi.config())
+        self.assertIn('hdmi_edid_filename:1=frogdash-1920x720.bin', pi.config())
+        self.assertEqual((pi.boot / 'cmdline.txt').read_text(),
+                         CMDLINE.strip() + ' video=HDMI-A-2:1920x720@60 drm.edid_firmware=edid/frogdash-1920x720.bin\n')
+        self.assertEqual((pi.boot / 'cmdline.txt.frogdash-before').read_text(), own)
+        self.assertEqual(s.install(), ('ok', 'The screen gets exactly 1920 x 720, from start-up on'))
         survey = s.survey()
         self.assertEqual(survey['connectors'][0]['name'], 'HDMI-A-1')
         self.assertTrue(survey['connectors'][0]['panel_1920x720'])

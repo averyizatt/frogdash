@@ -1,16 +1,14 @@
-/* The screen mode (tools/frogdash_screen.py, through /screen): try exact 1920 x 720, keep
-   it, or go back to the screen's own modes. Trying restarts the Pi into a one-time trial;
-   the dash then asks whether the picture is right, and without an answer the Pi goes back
-   by itself. Not in the preview: there is no Pi behind it. */
+/* The screen mode (tools/frogdash_screen.py, through /screen): what the Pi sees on its
+   HDMI ports and how long it took to start. The setup forces exactly 1920 x 720 (the car's
+   panel cannot describe itself), so there is nothing to choose here. A trial started
+   earlier still gets its question (KEEP / go back). Not in the preview: no Pi behind it. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
   const columns = document.querySelector('[data-ops-panel="support"] .ops-columns');
   if (!columns) return;
   columns.firstElementChild.insertAdjacentHTML('beforeend',
-    '<div class="speaker-test" id="screen-row" hidden><div><span>Screen mode</span><small id="screen-status">Checking…</small></div>' +
-    '<div class="speaker-test-buttons"><button type="button" id="screen-try">Try exact 1920 × 720</button>' +
-    '<button type="button" id="screen-back" hidden>Use the screen’s own modes</button></div></div>');
+    '<div class="speaker-test" id="screen-row" hidden><div><span>Screen mode</span><small id="screen-status">Checking…</small></div></div>');
   const dialog = document.createElement('dialog');
   dialog.id = 'screen-trial';
   dialog.className = 'screen-trial';
@@ -22,7 +20,7 @@
     '<button type="button" id="screen-undo">Go back now</button></div>';
   document.body.append(dialog);
 
-  let status = null, armed = '', armTimer = null, timer = null, note = '', noteUntil = 0;
+  let status = null, timer = null, note = '', noteUntil = 0;
   const busy = () => status && (status.pending || ['restarting', 'trial', 'reverting'].includes(status.state));
 
   // What the Pi sees on its HDMI ports, in a few words.
@@ -40,14 +38,7 @@
     const extra = [screens(status), (status.boot_time || [])[0], (status.first_render || [])[0]?.replace(/^.*Frogdash kiosk: /, 'Dash: ')]
       .filter(Boolean).join(' · ');
     const text = Date.now() < noteUntil ? note : status.pending ? 'Waiting for the screen helper… (is frogdash-screen.path enabled?)' : status.message;
-    $('screen-status').textContent = armed ? $('screen-status').textContent : `${text}${extra ? ` · ${extra}` : ''}`;
-    $('screen-try').hidden = !!status.applied;
-    $('screen-back').hidden = !status.applied;
-    $('screen-try').disabled = $('screen-back').disabled = busy();
-    if (!armed) {
-      $('screen-try').textContent = 'Try exact 1920 × 720';
-      $('screen-back').textContent = 'Use the screen’s own modes';
-    }
+    $('screen-status').textContent = `${text}${extra ? ` · ${extra}` : ''}`;
     // The question during a trial, over everything else.
     if (status.state === 'trial') {
       if (!dialog.open) { dialog.showModal(); $('screen-keep').focus(); }
@@ -75,21 +66,6 @@
     poll();
   }
 
-  // Trying and going back restart the Pi: two presses, like installing firmware.
-  function twoPress(button, action, warning) {
-    button.onclick = () => {
-      if (armed !== action) {
-        armed = action; button.textContent = 'Press again';
-        $('screen-status').textContent = warning;
-        clearTimeout(armTimer); armTimer = setTimeout(() => { armed = ''; render(); }, 6000);
-        return;
-      }
-      armed = ''; clearTimeout(armTimer);
-      ask(action);
-    };
-  }
-  twoPress($('screen-try'), 'trial', 'The dash restarts to try it. If the screen stays dark, wait: it goes back by itself within two minutes. Press again to try.');
-  twoPress($('screen-back'), 'revert', 'The dash restarts with the screen’s own modes. Press again to go back.');
   $('screen-keep').onclick = () => ask('keep');
   $('screen-undo').onclick = () => ask('revert');
   dialog.addEventListener('cancel', event => event.preventDefault());   // Escape is not an answer.

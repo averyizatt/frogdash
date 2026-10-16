@@ -306,11 +306,24 @@ def survey():
 
 
 def install():
-    """Setup's part: the EDID files and the boot speed-ups. Changes nothing about the screen
-    mode itself; that is only ever done through a trial."""
+    """Setup's part, at every update: exactly 1920 x 720, for Linux and for the firmware.
+
+    The car's panel cannot describe itself (its EDID does not parse), so without this the
+    firmware shows 640 x 480 while the Pi starts and Linux falls back to 1024 x 768. The
+    owner tried 1920 x 720 (October 2026) and wants it always: the command line points
+    Linux at the EDID file, and a config.txt block gives the firmware the same file for
+    both HDMI ports. Anything else on the command line, the owner's own video= included,
+    is kept. The first time, the command line is saved as cmdline.txt.frogdash-before."""
     boot = boot_dir()
     if not boot:
         return 'skipped', 'No Raspberry Pi boot partition found'
+    changed = force(boot, edid_files(boot))
+    note = 'The screen gets exactly 1920 x 720, from start-up on'
+    return ('done' if changed else 'ok'), note + ('. Takes effect at the next start' if changed else '')
+
+
+def edid_files(boot):
+    """The 1920 x 720 EDID, where Linux and the firmware look for it."""
     panel = panel_edid()
     current = read(FIRMWARE / 'edid' / EDID_NAME, True)
     if panel is None and edid_ok(current) and current[8:10] == OUR_MAKER:
@@ -323,15 +336,31 @@ def install():
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(edid)
             changed.append(str(target))
+    return changed
+
+
+def force(boot, changed):
     config = read(boot / 'config.txt')
-    wanted = with_block(config, 'boot', None)
+    # The boot speed-ups are taken back out (the panel needs the boot delay), a trial left
+    # behind is dropped, and the 1920 x 720 block is put in.
+    wanted = with_block(with_block(with_block(config, 'boot', None), 'screen-trial', None), 'screen', ['[all]', *SCREEN_CONFIG])
     if wanted != config:
         write_atomic(boot / 'config.txt', wanted)
-        changed.append('config.txt: the boot delay and rainbow screen are back (the panel needs the delay)')
-    applied = has_block(read(boot / 'config.txt'), 'screen')
-    note = ('The screen gets exactly 1920 x 720' if applied else
-            'Ready: try exact 1920 x 720 under Dash management, Support')
-    return ('done' if changed else 'ok'), note
+        changed.append('config.txt: the firmware uses 1920 x 720 too')
+    cmdline = read(boot / 'cmdline.txt')
+    token = f'drm.edid_firmware=edid/{EDID_NAME}'
+    words = [w for w in cmdline.split() if not w.startswith('drm.edid_firmware=') or w == token]
+    if token not in words:
+        words.append(token)
+    if ' '.join(words) != cmdline.strip():
+        if not (boot / 'cmdline.txt.frogdash-before').exists():
+            shutil.copy2(boot / 'cmdline.txt', boot / 'cmdline.txt.frogdash-before')
+        write_atomic(boot / 'cmdline.txt', ' '.join(words) + '\n')
+        changed.append('cmdline.txt: Linux uses 1920 x 720')
+    for leftover in (boot / TRIAL_CMDLINE,):
+        if leftover.exists():
+            leftover.unlink()
+    return changed
 
 
 def request_trial():
@@ -343,7 +372,7 @@ def request_trial():
     tryboot_txt = boot / 'tryboot.txt'
     if tryboot_txt.exists() and TRYBOOT_MARK not in read(tryboot_txt):
         return status('failed', 'tryboot.txt on the boot partition belongs to something else, so no trial was started')
-    install()
+    edid_files(boot)
     cmdline = read(boot / 'cmdline.txt')
     if not (boot / 'cmdline.txt.frogdash-before').exists():
         shutil.copy2(boot / 'cmdline.txt', boot / 'cmdline.txt.frogdash-before')

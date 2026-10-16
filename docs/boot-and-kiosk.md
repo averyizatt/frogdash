@@ -10,7 +10,22 @@ modes, 1920 x 1080 first and no 1920 x 720 at all. So the 1920 x 720 panel was s
 kiosk) made it search for its signal again. The first kiosk start also timed out after
 11 s, so the gauges appeared at 32 s.
 
-**Exact 1920 x 720** (`tools/frogdash_screen.py`). The Pi is given an EDID that offers
+**Now forced, at every update (October 16, 2026).** On the car the panel sits on
+HDMI-A-2 and Linux cannot parse its EDID, so with `disable_fw_kms_setup=1` it fell back
+to 1024 x 768, and the firmware showed 640 x 480 while starting. The setup step now
+always writes `drm.edid_firmware=edid/frogdash-1920x720.bin` into `cmdline.txt` (the
+rest of the line, the owner's own `video=` included, is kept; the first original is
+saved as `cmdline.txt.frogdash-before`) and a `# frogdash-screen` block into
+`config.txt` that gives the firmware the same file for both ports. The panel then offers
+exactly one mode, 1920 x 720, from power-on. The trial buttons are gone; the Screen mode
+row only reports what the Pi sees. To undo by hand: put `cmdline.txt.frogdash-before`
+back and delete the block (from the SD card in a PC if need be).
+
+Red speckles that remain at both 640 x 480 and 1920 x 720 are signal quality (cable,
+micro-HDMI adapter, ground between the screen's supply and the Pi), not the mode: a
+loose ground on the cable was one cause.
+
+**Exact 1920 x 720, as first built** (`tools/frogdash_screen.py`). The Pi is given an EDID that offers
 one mode only, 1920 x 720 at 60 Hz: the panel's own timing for it when its EDID has
 one, else the standard reduced-blanking timing (2080 x 741, 92.25 MHz). It still says
 HDMI with two-channel audio, so sound through the screen keeps working. It has no

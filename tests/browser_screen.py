@@ -54,18 +54,10 @@ async def main(browser_path):
             assert 'The screen uses its own modes' in line, line
             assert 'HDMI-A-1: 26 modes, none of them 1920 × 720' in line, line
             assert 'HDMI-A-2' not in line and 'Dash: first render heartbeat observed (boot+32.23s' in line, line
-            assert await page.locator('#screen-back').is_hidden()
-            # Two presses, because it restarts the dash.
-            await page.locator('#screen-try').click()
-            assert await text(page, '#screen-try') == 'Press again'
-            assert 'goes back by itself' in await text(page, '#screen-status')
-            assert not (folder / 'screen-request').exists()
-            await page.locator('#screen-try').click()
-            await page.wait_for_function("document.getElementById('screen-try').disabled")
-            assert (folder / 'screen-request').read_text() == 'trial'
+            # The setup forces 1920 x 720 now: nothing to press, only what the Pi sees.
+            assert await page.locator('#screen-row button').count() == 0
             await page.screenshot(path=str(ROOT / '.tmp/screen-support.png'))
-            # The helper restarts the Pi into the trial; the dash comes back and asks.
-            (folder / 'screen-request').unlink()
+            # A trial started before this version still gets its question after the restart.
             status.write_text(json.dumps({'state': 'trial', 'message': 'Trying exact 1920 x 720', 'started': int(time.time()), 'deadline_s': 90,
                                           'applied': False, **SURVEY}))
             await page.reload()
@@ -82,11 +74,6 @@ async def main(browser_path):
             (folder / 'screen-request').unlink()
             status.write_text(json.dumps({'state': 'kept', 'message': 'The screen now gets exactly 1920 x 720 at every start', 'applied': True, **SURVEY}))
             await page.wait_for_function("!document.getElementById('screen-trial').open", timeout=5000)
-            await page.locator('#drive-launch').click()
-            await page.locator('#operations-launch').click()
-            await page.locator('[data-ops-tab="support"]').click()
-            await page.wait_for_function("!document.getElementById('screen-back').hidden", timeout=25000)
-            assert await page.locator('#screen-try').is_hidden()
             assert not errors, errors
             # The preview: no Pi, so no row and no question.
             preview = await browser.new_page(viewport={'width': 1920, 'height': 720})
@@ -99,7 +86,7 @@ async def main(browser_path):
             await browser.close()
     finally:
         await runner.cleanup()
-    print('Screen mode: Support row with what the Pi sees, two-press trial, KEEP question after the restart, kept state; preview untouched; passed.')
+    print('Screen mode: Support row with what the Pi sees, KEEP question for a trial in progress; preview untouched; passed.')
 
 
 if __name__ == '__main__':
