@@ -197,7 +197,7 @@ class SetupScriptTests(unittest.TestCase):
         self.assertEqual(self.run_setup('online')[2]['Water/meth firmware file'][0], 'done')
         self.assertEqual(load_image(folder, 'watermeth')[1], b'water/meth image')
         self.assertIn('DIYWaterMethInjection/releases/download/watermeth-latest', (ROOT / 'tools/frogdash_setup.sh').read_text(encoding='utf-8'))
-        steps['Gateway firmware file'] = ('done', 'Downloaded build 1a2b3c4d: install it under Dash management, Support')
+        steps['Gateway firmware file'] = ('done', 'Downloaded build 1a2b3c4d: install it under Dash management, Software and power')
         self.assertIn('Downloaded build 1a2b3c4d', steps['Gateway firmware file'][1])
         manifest, image = load_image(folder, 'gateway')        # Exactly what the dash's installer accepts.
         self.assertEqual((manifest['build'], image), ('1a2b3c4d', b'gateway firmware image'))

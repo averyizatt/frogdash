@@ -238,7 +238,7 @@ else
 fi
 
 # --- Module firmware: the newest published builds, kept ready to install over the CAN bus ---
-# Only downloaded here. Installing is a button on the dash (Dash management > Support).
+# Only downloaded here. Installing is a button on the dash (Dash management > Software & power).
 # A new module is one more firmware_file line.
 firmware=$STATE/firmware
 field() { sed -n "s/.*\"$1\": *\"\([0-9a-zA-Z]*\)\".*/\1/p" "$2" 2>/dev/null | head -n 1; }
@@ -265,7 +265,7 @@ firmware_file() {  # name, step name, release URL
         mkdir -p "$firmware" && chmod 755 "$firmware" && rm -f "$firmware/$1.json" &&
             cp "$work/$1.bin" "$firmware/$1.bin" && cp "$work/$1.json" "$firmware/$1.json" &&
             chmod 644 "$firmware/$1.bin" "$firmware/$1.json"
-        step "$2" done "Downloaded build $newest: install it under Dash management, Support"
+        step "$2" done "Downloaded build $newest: install it under Dash management, Software and power"
     else
         step "$2" failed "Build $newest did not download or did not match its checksum"
     fi

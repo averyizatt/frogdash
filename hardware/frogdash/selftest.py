@@ -153,7 +153,7 @@ def report(state, folder=None, wall=time.time):
     out.append(line('Updates', 'Last update', FAIL if update and update.get('state') == 'failed' else WARN if undone else OK if update else SKIP,
                     f"{update['message']} · version {update.get('version', '?')}" if update else 'Update not run yet',
                     'The dash is on the last version that worked; the failed start is saved in update-failure.log for the next fix'
-                    if undone else 'Dash management > Support > Update now, with internet connected'))
+                    if undone else 'Dash management > Software & power > Update now, with internet connected'))
 
     # Module firmware over the CAN bus (fwupdate.py).
     for module in (state.firmware.snapshot().values() if state.firmware else ()):
@@ -163,7 +163,7 @@ def report(state, folder=None, wall=time.time):
         detail = (job['message'] if job['state'] in ('failed', 'running') else
                   f"Build {module['installed']}: {module['note'].lower()}" if module['installed'] else module['note'])
         out.append(line('Updates', module['title'], status, detail,
-                        f"Dash management > Support > Install {module['title'].lower()}, with the car stopped. {module['warning']}"))
+                        f"Dash management > Software & power > Install {module['title'].lower()}, with the car stopped. {module['warning']}"))
 
     # What this version needs on the Pi, done by the updater as root (tools/frogdash_setup.sh).
     setup = state.helpers.snapshot() if state.helpers else None
@@ -174,11 +174,11 @@ def report(state, folder=None, wall=time.time):
                          'no-updater': 'The update helper is not installed, so the dash cannot update or set the Pi up itself'}[setup['state']],
                         'Needs a keyboard or SSH once: cd /opt/frogdash && sudo cp hardware/systemd/frogdash-update.* /etc/systemd/system/ && '
                         'sudo systemctl daemon-reload && sudo systemctl enable --now frogdash-update.path' if setup['state'] == 'no-updater'
-                        else 'Dash management > Support > Update now runs it'))
+                        else 'Dash management > Software & power > Update now runs it'))
         for item in setup['steps']:
             out.append(line('Updates', str(item.get('name', 'Setup step')),
                             {'ok': OK, 'done': OK, 'waiting': WARN, 'skipped': SKIP}.get(item.get('result'), FAIL), str(item.get('detail', '')),
-                            'Dash management > Support > Update now, with internet connected, tries again'))
+                            'Dash management > Software & power > Update now, with internet connected, tries again'))
 
     counts = {s: sum(1 for item in out if item['status'] == s) for s in (OK, WARN, FAIL, SKIP)}
     return {'lines': out, 'counts': counts, 'time_ms': int(wall() * 1000)}

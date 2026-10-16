@@ -14,7 +14,7 @@
   const dialog = el('dialog', null, 'workspace-dialog'); dialog.id = 'operations-dialog'; dialog.setAttribute('aria-labelledby', 'operations-title');
   dialog.innerHTML = `<header class="dialog-header"><div><span class="eyebrow">SETUP / SERVICE / SUPPORT</span><h2 id="operations-title">Dash management</h2><p id="operations-summary"></p></div><button id="demo-park" class="close-button" type="button" hidden>Park demo</button><button id="operations-close" class="close-button" type="button">Close ×</button></header>
     <div class="control-workspace"><nav class="control-tabs driver-tabs" aria-label="Management sections">
-    ${[['setup','Setup checklist'],['service','Maintenance'],['backup','Backup & restore'],['display','Units & backlight'],['support','Support & testing'],['tune','TunerStudio'],['terminal','Terminal']].map(([key,label]) => `<button type="button" data-ops-tab="${key}" aria-selected="false">${label}</button>`).join('')}</nav>
+    ${[['setup','Setup checklist'],['service','Maintenance'],['backup','Backup & restore'],['display','Units & backlight'],['software','Software & power'],['support','Support & testing'],['tune','TunerStudio'],['terminal','Terminal']].map(([key,label]) => `<button type="button" data-ops-tab="${key}" aria-selected="false">${label}</button>`).join('')}</nav>
     <div class="driver-panels">
       <section class="driver-panel ops-panel control-section" data-ops-panel="setup"><div class="ops-columns"><div class="setting-card"><h3>1 · Check connected hardware</h3><div id="setup-hardware"></div><p class="control-note">Live presence confirms data is arriving. Verify wiring, CAN oscillator/bitrate and sensor accuracy during commissioning.</p></div><div class="setting-card"><h3>2 · Complete calibration and display</h3><div id="setup-calibration"></div><p class="control-note">3 · Run the vehicle checks under Support & testing. Completion is recorded only when you mark a physical test passed.</p><button type="button" data-ops-go="support">Vehicle test checklist</button></div></div></section>
       <section class="driver-panel ops-panel control-section" data-ops-panel="service" hidden><div class="ops-columns"><form id="maintenance-form" class="setting-card ops-edit"><h3>Add a service reminder</h3><label>Service name<input id="maintenance-name" maxlength="60" required placeholder="Engine oil & filter"></label><div class="ops-fields"><label id="maintenance-distance-label">Distance · km<input id="maintenance-distance" type="number" min="0" max="100000" value="0" required></label><label>Engine hours<input id="maintenance-hours" type="number" min="0" max="10000" value="0" required></label><label>Days<input id="maintenance-days" type="number" min="0" max="3650" value="0" required></label></div><p class="control-note">Zero disables an interval. Due when any enabled interval is reached. Distance and engine hours count only while the dash receives live data; enter intervals remaining until your next service.</p><button type="submit">Add reminder</button></form><div class="setting-card ops-list" id="maintenance-list" aria-live="polite"></div></div></section>
@@ -29,10 +29,20 @@
   dialog.querySelectorAll('[data-speaker-test]').forEach(button => button.onclick = async () => {
     $('speaker-test-status').textContent = await window.FrogdashAudio.speakerTest(button.dataset.speakerTest);
   });
-  // Software update over Wi-Fi: asks the Pi's update helper to pull and restart.
-  dialog.querySelector('[data-ops-panel="support"] .ops-columns').lastElementChild.insertAdjacentHTML('afterbegin',
-    '<div class="speaker-test"><div><span>Software update</span><small id="update-status">Uses a saved Wi-Fi network (home or phone hotspot) and returns to the dash cam afterwards.</small><small id="firmware-status" hidden></small></div>' +
-    '<div class="speaker-test-buttons"><button type="button" id="update-run">Update now</button><button type="button" id="update-undo" disabled>Undo update</button><button type="button" id="update-check">Show version</button><button type="button" id="firmware-install" hidden>Install firmware</button></div></div>');
+  // Software & power: the dash's own update (step by step), each module's firmware over the
+  // CAN bus, and how the Pi gets its power and shuts down. Colour says how each is doing.
+  dialog.querySelector('[data-ops-panel="support"]').insertAdjacentHTML('beforebegin',
+    '<section class="driver-panel ops-panel control-section" data-ops-panel="software" hidden><div class="ops-columns"><div class="sw-column">' +
+    '<div class="software-card" id="software-card">' +
+    '<div class="sw-head"><div><span class="sw-title">Dash software</span><small id="update-version">Version unknown</small></div><span class="sw-pill" id="update-pill" data-tone="idle">Checking…</span></div>' +
+    '<ol class="sw-steps" id="update-steps">' + [['internet', 'Internet'], ['download', 'Download'], ['restart', 'Restart &amp; check'], ['setup', 'Pi setup'], ['upload', 'Upload']]
+      .map(([key, label]) => `<li data-step="${key}" data-state="todo"><i></i><span>${label}</span></li>`).join('') + '</ol>' +
+    '<p class="sw-message" id="update-status">Uses a saved Wi-Fi network (home or phone hotspot) and returns to the dash cam afterwards.</p>' +
+    '<div class="sw-buttons"><button type="button" id="update-run">Update now</button><button type="button" id="update-undo" disabled>Undo update</button><button type="button" id="update-check">Refresh</button></div></div>' +
+    '<div class="software-card" id="power-card"><span class="sw-title">Power and shutdown</span><ul class="sw-modules sw-power" id="power-rows"></ul></div></div>' +
+    '<div class="sw-column"><div class="software-card" id="modules-card"><span class="sw-title">Modules on the CAN bus</span>' +
+    '<ul class="sw-modules" id="firmware-modules"><li class="sw-empty">Waiting for the dash…</li></ul>' +
+    '<p class="control-note">New builds arrive with Update now. Install one with the car stopped: two presses.</p></div></div></div></section>');
   // TunerStudio is a desktop program: the kiosk opens it over the dash (hardware/frogdash/tune.py).
   dialog.querySelector('[data-ops-panel="support"]').insertAdjacentHTML('afterend',
     '<section class="driver-panel ops-panel control-section" data-ops-panel="tune" hidden><div class="ops-columns">' +
@@ -65,17 +75,45 @@
     open() { if (!dialog.open) { $('drive-launch')?.click(); launch.click(); } tab('tune'); if (tuneStatus().state !== 'running') tuneRequest('open'); },
   };
   let updateTimer = null, undoArmed = false;
+  const STEPS = ['internet', 'download', 'restart', 'setup', 'upload'];
+  // Which step an update is at, from the updater's own message (tools/frogdash_update.sh).
+  function updateStep(s) {
+    const m = s.message || '';
+    if (s.pending || /^Checking for updates|No internet|Wi-Fi/i.test(m)) return 'internet';
+    if (/^Uploading/i.test(m)) return 'upload';
+    if (/Pi setup/i.test(m)) return 'setup';
+    if (/Restarting the dash|did not start|Going back|went back|stay(ed)? on/i.test(m)) return 'restart';
+    return 'download';
+  }
+  const PILLS = {running: ['busy', 'Updating…'], updated: ['good', 'Updated'], current: ['good', 'Up to date'], failed: ['bad', 'Failed'],
+    rolledback: ['warn', 'Went back'], held: ['warn', 'Held back'], idle: ['idle', 'No update run yet']};
+  function renderUpdate(s) {
+    const busy = s.pending || s.state === 'running';
+    const [tone, label] = s.pending ? ['busy', 'Starting…'] : PILLS[s.state] || ['idle', s.state || 'Unknown'];
+    $('update-pill').dataset.tone = tone; $('update-pill').textContent = label;
+    $('update-version').textContent = s.version ? `Version ${s.version}${s.previous ? ` · before it ${s.previous}` : ''}` : 'Version unknown';
+    $('update-status').textContent = s.pending ? 'Waiting for the update helper… (is frogdash-update.path enabled?)' : s.message;
+    const at = STEPS.indexOf(updateStep(s)), finished = ['updated', 'current'].includes(s.state), broken = ['failed', 'rolledback', 'held'].includes(s.state);
+    document.querySelectorAll('#update-steps li').forEach((li, i) => {
+      li.dataset.state = finished ? (s.state === 'current' && li.dataset.step === 'download' ? 'skipped' : 'done')
+        : busy ? (i < at ? 'done' : i === at ? 'current' : 'todo')
+        : broken ? (i < at ? 'done' : i === at ? (s.state === 'failed' ? 'bad' : 'warn') : 'todo') : 'todo';
+    });
+    $('update-run').disabled = busy;
+    // Undo is offered while the version before the last update is still saved on the Pi.
+    $('update-undo').disabled = busy || !s.previous;
+    $('update-undo').textContent = 'Undo update'; undoArmed = false;
+    return busy;
+  }
   async function updatePoll() {
+    if (demo()) { renderUpdate({state: 'idle', message: 'The preview has no Pi to update: this works on the dash in the car.'}); return; }
     try {
-      const s = await (await fetch('/update', {cache: 'no-store'})).json();
-      $('update-status').textContent = s.pending ? 'Waiting for the update helper… (is frogdash-update.path enabled?)' : `${s.message}${s.version ? ` · version ${s.version}` : ''}`;
-      const busy = s.pending || s.state === 'running';
+      const response = await fetch('/update', {cache: 'no-store'});
+      if (!response.ok) { renderUpdate({state: 'idle', message: 'Updates are not available on this dash (no update helper).'}); return; }
+      const busy = renderUpdate(await response.json());
       if (!busy) { clearInterval(updateTimer); updateTimer = null; }
-      $('update-run').disabled = busy;
-      // Undo is offered while the version before the last update is still saved on the Pi.
-      $('update-undo').disabled = busy || !s.previous;
-      $('update-undo').textContent = 'Undo update'; undoArmed = false;
-    } catch { $('update-status').textContent = 'Dash restarting…'; }
+      else if (!updateTimer) updateTimer = setInterval(updatePoll, 2000);
+    } catch { $('update-status').textContent = 'Dash restarting…'; $('update-pill').dataset.tone = 'busy'; $('update-pill').textContent = 'Restarting…'; }
   }
   async function updateRequest(action, label) {
     $('update-run').disabled = $('update-undo').disabled = true;
@@ -86,49 +124,104 @@
       clearInterval(updateTimer); updateTimer = setInterval(updatePoll, 2000);
     } catch { $('update-status').textContent = 'Update is not available here'; $('update-run').disabled = false; }
   }
-  // Module firmware over the CAN bus (hardware/frogdash/fwupdate.py). The files arrive with
-  // Update now; this installs one, with the car stopped. Two presses, like Undo.
-  let firmwareArmed = false, firmwareTimer = null, firmwareHold = 0;   // A refusal stays readable for a few seconds.
-  const firmwareModules = () => Object.values(latest.firmware || {});
-  // The one the button is for: the update that is running, else the first with a new build.
-  const firmwareFocus = () => firmwareModules().find(m => m.job.state === 'running') || firmwareModules().find(m => m.new);
-  function firmwareText(module) {
-    const job = module.job;
-    if (job.state === 'running') return `${module.title}: ${job.message} (${Math.round(job.progress * 100)}%)`;
-    if (job.state === 'failed') return `${module.title}: ${job.message}`;
-    if (job.state === 'done') return job.message;
-    return `${module.title}: ${module.short}`;
+  // Module firmware over the CAN bus (hardware/frogdash/fwupdate.py): one row each, with
+  // its own colour, builds and button. The files arrive with Update now; a module is
+  // installed with the car stopped, two presses, like Undo.
+  let firmwareArmed = '', firmwareTimer = null;
+  const firmwareHold = {};   // A refusal stays readable for a few seconds: {name: {text, until}}
+  function moduleView(m) {
+    const job = m.job;
+    if (job.state === 'running') return ['busy', `Installing ${Math.round(job.progress * 100)}%`, job.message, job.progress];
+    if (job.state === 'failed') return ['bad', 'Failed', job.message];
+    if (job.state === 'done') return ['good', 'Updated', job.message];
+    if (m.installed == null) return /Nano/.test(m.short || '') ? ['idle', 'USB only', 'The Nano board is fitted: it is flashed by USB, not over CAN'] : ['warn', 'Not answering', m.note];
+    if (m.on_trial) return ['warn', 'On trial', `Build ${m.installed} is confirming itself`];
+    if (m.new) return ['new', 'New build ready', `Running ${m.installed} · ${m.available} is on the Pi`];
+    return ['good', 'Up to date', `Build ${m.installed}`];
+  }
+  function moduleRow(m) {
+    let row = $(`fw-row-${m.name}`);
+    if (row) return row;
+    row = el('li'); row.id = `fw-row-${m.name}`;
+    row.innerHTML = `<div class="sw-row-main"><strong></strong><small id="fw-detail-${m.name}"></small><div class="sw-bar" hidden><i></i></div></div>` +
+      `<span class="sw-pill" id="fw-state-${m.name}"></span><button type="button" id="fw-install-${m.name}" hidden></button>`;
+    row.querySelector('strong').textContent = m.title.replace(/ firmware$/, '');
+    row.querySelector('button').onclick = () => installFirmware(m.name);
+    $('firmware-modules').append(row);
+    return row;
   }
   function renderFirmware() {
-    const modules = firmwareModules(), line = $('firmware-status'), button = $('firmware-install');
-    if (!modules.length || demo()) { line.hidden = button.hidden = true; return; }
-    const focus = firmwareFocus(), running = focus?.job.state === 'running';
-    const text = modules.map(firmwareText).join(' · ');
-    line.hidden = false;
-    if (running) firmwareHold = 0;
-    if (!firmwareArmed && performance.now() >= firmwareHold && line.textContent !== text) line.textContent = text;
-    button.hidden = !focus;
-    if (!focus) return;
-    button.disabled = running || !focus.can_install;
-    button.dataset.module = focus.name;
-    if (!firmwareArmed) button.textContent = running ? 'Installing…' : `Install ${focus.title.toLowerCase()}`;
-  }
-  $('firmware-install').onclick = async () => {
-    const focus = firmwareFocus();
-    if (!focus) return;
-    if (!firmwareArmed) {
-      firmwareArmed = true; $('firmware-install').textContent = 'Press again';
-      $('firmware-status').textContent = `Stop the car first. ${focus.warning} Press again to install.`;
-      clearTimeout(firmwareTimer); firmwareTimer = setTimeout(() => { firmwareArmed = false; renderFirmware(); }, 6000);
+    const list = $('firmware-modules'), modules = Object.values(latest.firmware || {});
+    if (demo() || !modules.length) {
+      const text = demo() ? 'Modules are only on the car: none in the preview' : 'No module firmware on this dash';
+      if (list.textContent !== text) list.replaceChildren(el('li', text, 'sw-empty'));
       return;
     }
-    firmwareArmed = false; clearTimeout(firmwareTimer);
+    list.querySelector('.sw-empty')?.remove();
+    const running = modules.some(m => m.job.state === 'running');
+    for (const m of modules) {
+      const row = moduleRow(m), [tone, label, detail, progress] = moduleView(m), hold = firmwareHold[m.name];
+      const pill = $(`fw-state-${m.name}`), button = $(`fw-install-${m.name}`), bar = row.querySelector('.sw-bar');
+      pill.dataset.tone = tone; pill.textContent = label; row.dataset.tone = tone;
+      if (firmwareArmed !== m.name) $(`fw-detail-${m.name}`).textContent = hold && performance.now() < hold.until && m.job.state !== 'running' ? hold.text : detail;
+      bar.hidden = progress === undefined;
+      if (progress !== undefined) bar.firstElementChild.style.width = `${Math.round(progress * 100)}%`;
+      button.hidden = !(m.new || m.job.state === 'running');
+      button.disabled = running || !m.can_install;
+      if (firmwareArmed !== m.name) button.textContent = m.job.state === 'running' ? 'Installing…' : 'Install';
+    }
+  }
+  async function installFirmware(name) {
+    const m = (latest.firmware || {})[name];
+    if (!m) return;
+    if (firmwareArmed !== name) {
+      firmwareArmed = name; $(`fw-install-${name}`).textContent = 'Press again';
+      $(`fw-detail-${name}`).textContent = `Stop the car first. ${m.warning} Press again to install.`;
+      clearTimeout(firmwareTimer); firmwareTimer = setTimeout(() => { firmwareArmed = ''; renderFirmware(); }, 6000);
+      return;
+    }
+    firmwareArmed = ''; clearTimeout(firmwareTimer);
     try {
-      const response = await fetch('/firmware', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({module: focus.name, action: 'install'})});
-      if (!response.ok) { firmwareHold = performance.now() + 6000; $('firmware-status').textContent = `${focus.title}: ${(await response.text()).slice(0, 200)}`; }
-    } catch { firmwareHold = performance.now() + 6000; $('firmware-status').textContent = `${focus.title}: the dash did not answer`; }
-  };
+      const response = await fetch('/firmware', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({module: name, action: 'install'})});
+      if (!response.ok) firmwareHold[name] = {text: (await response.text()).slice(0, 200), until: performance.now() + 6000};
+    } catch { firmwareHold[name] = {text: 'The dash did not answer', until: performance.now() + 6000}; }
+    renderFirmware();
+  }
+  // Ignition power and shutdown, from the PiSugar watcher (hardware/power/monitor.py) and the
+  // dash's record of how it last stopped (shutdown.py).
+  function renderPower() {
+    const system = demo() ? {ups: {available: true, battery_percent: 86, battery_volts: 4.05, input_present: true, charging: true, auto_power_on: true},
+      shutdown: {previous: {state: 'saved', ended_ms: Date.now() - 3600000}}} : latest.system || {};
+    const ups = online && system.ups?.available ? system.ups : null, previous = online ? system.shutdown?.previous : undefined;
+    const rows = [];
+    if (!ups) rows.push(['Ignition power', 'idle', 'Not reporting', online ? 'The PiSugar watcher is not answering' : 'Not connected to the dash']);
+    else if (ups.state === 'shutdown_requested') rows.push(['Ignition power', 'bad', 'Shutting down', 'The key is off: Linux is shutting down, then the battery cuts power']);
+    else if (ups.input_present === false) rows.push(['Ignition power', 'warn', ups.remaining_seconds != null ? `Off · ${Math.ceil(ups.remaining_seconds)} s` : 'On battery',
+      ups.remaining_seconds != null ? `Shutting down in ${Math.ceil(ups.remaining_seconds)} s unless the key comes back on` : 'Running on the battery']);
+    else if (ups.input_present === true) rows.push(['Ignition power', 'good', 'On', ups.dry_run ? 'Watching only: shutdown is switched off' : 'Shuts down by itself a few seconds after the key goes off']);
+    else rows.push(['Ignition power', 'idle', 'Unknown', ups.error || 'No reading']);
+    if (ups && Number.isFinite(ups.battery_percent)) {
+      const pct = ups.battery_percent;
+      rows.push(['Battery', pct <= 10 ? 'bad' : pct <= 25 ? 'warn' : 'good', `${Math.round(pct)}%`,
+        `${Number.isFinite(ups.battery_volts) ? ups.battery_volts.toFixed(2) + ' V · ' : ''}${ups.charging ? 'charging' : 'not charging'}${ups.auto_power_on === false ? ' · does NOT start by itself on ignition' : ''}`, pct / 100]);
+    }
+    if (previous === undefined) rows.push(['Last shutdown', 'idle', 'Unknown', 'Not connected to the dash']);
+    else if (!previous) rows.push(['Last shutdown', 'idle', 'No record yet', 'Recorded from the next time the key goes off']);
+    else if (previous.state === 'saved') rows.push(['Last shutdown', 'good', 'Clean', `Logs and settings saved${Number.isFinite(previous.ended_ms) ? ' · ' + new Date(previous.ended_ms).toLocaleString() : ''}`]);
+    else if (previous.state === 'save_failed') rows.push(['Last shutdown', 'bad', 'Save failed', (previous.errors || []).join(' ') || 'A storage error while saving']);
+    else rows.push(['Last shutdown', 'warn', 'Not confirmed', 'Power was cut, or the dash crashed, before it finished saving']);
+    $('power-rows').replaceChildren(...rows.map(([name, tone, label, detail, fraction]) => {
+      const row = el('li'); row.dataset.tone = tone;
+      row.innerHTML = '<div class="sw-row-main"><strong></strong><small></small><div class="sw-bar" hidden><i></i></div></div><span class="sw-pill"></span>';
+      row.querySelector('strong').textContent = name; row.querySelector('small').textContent = detail;
+      const pill = row.querySelector('.sw-pill'); pill.dataset.tone = tone; pill.textContent = label;
+      if (fraction !== undefined) { const bar = row.querySelector('.sw-bar'); bar.hidden = false; bar.firstElementChild.style.width = `${Math.round(fraction * 100)}%`; }
+      return row;
+    }));
+  }
   $('update-check').onclick = () => updatePoll();
+  // The software tab is read each time it opens, and follows an update while it runs.
+  document.querySelector('[data-ops-tab="software"]').addEventListener('click', () => { updatePoll(); renderFirmware(); renderPower(); });
   $('update-run').onclick = () => updateRequest('update', 'Requesting update…');
   $('update-undo').onclick = () => {
     // Two presses, so a stray button press cannot send the dash back a version.
@@ -310,7 +403,7 @@
     $('appearance-access').textContent = demo() ? 'Preview editing enabled \u00b7 changes save on this display' : 'Saved on this display \u00b7 live changes across the dash';
   }
   tab('setup');
-  window.addEventListener('frogdash-state', e => { latest = e.detail.snapshot; online = e.detail.connected; render(); renderFirmware(); });
+  window.addEventListener('frogdash-state', e => { latest = e.detail.snapshot; online = e.detail.connected; render(); renderFirmware(); renderPower(); });
   const token = new URLSearchParams(location.search).get('kiosk');
   let lastBeat = 0, lastRender = 0;
   function heartbeat(now) { if (/^[0-9a-f]{32}$/.test(token) && now - lastBeat > 2000 && window.frogdashRendered !== lastRender) { lastBeat = now; lastRender = window.frogdashRendered; fetch('/ui/heartbeat/' + token, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: window.frogdashDisplayInfo ? JSON.stringify({display: window.frogdashDisplayInfo()}) : undefined, signal: AbortSignal.timeout(3000)}).catch(() => {}); } requestAnimationFrame(heartbeat); }

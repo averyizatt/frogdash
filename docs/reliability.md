@@ -60,7 +60,7 @@ clock follows within a minute. Pick your own zone with `timedatectl list-timezon
 
 ## Updating in the car (no Ethernet)
 
-**Dash management → Support & testing → Update now** pulls the latest version from
+**Dash management → Software & power → Update now** pulls the latest version from
 GitHub and restarts the dash. It only fast-forwards; a failed download or local
 changes leave the running version untouched, and the result is shown next to the button.
 

@@ -76,39 +76,50 @@ async def main(browser_path):
                 await page.goto(f'http://127.0.0.1:{site._server.sockets[0].getsockname()[1]}')
                 await page.locator('#drive-launch').click()
                 await page.locator('#operations-launch').click()
-                await page.locator('[data-ops-tab="support"]').click()
-                # Before the gateway has answered: said plainly, and nothing to press.
-                await page.wait_for_function("document.getElementById('firmware-status').textContent === 'Gateway firmware: not answering · Taillight firmware: not answering · Water/meth firmware: no answer (normal with the Nano board)'")
-                assert await page.locator('#firmware-install').is_hidden()
+                await page.locator('[data-ops-tab="software"]').click()
+                # Before the gateway has answered: one row per module, said plainly, and nothing to press.
+                await page.wait_for_function("document.getElementById('fw-state-gateway')?.textContent === 'Not answering'")
+                assert await page.locator('#firmware-modules li').count() == 3
+                assert await page.locator('#fw-state-taillights').inner_text() == 'Not answering'
+                assert await page.locator('#fw-state-watermeth').inner_text() == 'USB only'           # The Nano board
+                assert 'flashed by USB' in await page.locator('#fw-detail-watermeth').inner_text()
+                assert await page.locator('#fw-install-gateway').is_hidden()
                 await module.query()
-                await page.wait_for_function(f"document.getElementById('firmware-status').textContent.startsWith('Gateway firmware: build {OLD}, {NEW} ready to install · Taillight')")
-                button = page.locator('#firmware-install')
-                assert await button.is_visible() and await button.inner_text() == 'Install gateway firmware'
-                box = await page.locator('#firmware-status').bounding_box()
+                await page.wait_for_function("document.getElementById('fw-state-gateway').textContent === 'New build ready'")
+                assert await page.locator('#fw-detail-gateway').inner_text() == f'Running {OLD} · {NEW} is on the Pi'
+                assert await page.locator('#fw-row-gateway').get_attribute('data-tone') == 'new'
+                button = page.locator('#fw-install-gateway')
+                assert await button.is_visible() and await button.inner_text() == 'Install'
+                box = await page.locator('#fw-row-gateway').bounding_box()
                 dialog = await page.locator('#operations-dialog').bounding_box()
                 assert box['x'] >= dialog['x'] and box['x'] + box['width'] <= dialog['x'] + dialog['width'], (box, dialog)
+                await page.locator('#software-card').scroll_into_view_if_needed()
                 await page.screenshot(path=str(ROOT / '.tmp/firmware-ready.png'))
                 # One press only arms it and says what will pause.
                 await button.click()
                 assert await button.inner_text() == 'Press again'
-                assert 'Stop the car first. Speed, fuel, wheel buttons and interior lights pause' in await page.locator('#firmware-status').inner_text()
+                assert 'Stop the car first. Speed, fuel, wheel buttons and interior lights pause' in await page.locator('#fw-detail-gateway').inner_text()
                 assert fw.BEGIN not in gateway.commands
                 # Moving: refused with the reason, nothing sent.
                 state.samples['vehicle.speed_kph', 0x203] = dict(value=40, quality='live', seen=state.clock(), source_id=0x203, timestamp_ms=0)
                 await button.click()
-                await page.wait_for_function("document.getElementById('firmware-status').textContent.includes('Stop the car first: the module does nothing else')")
+                await page.wait_for_function("document.getElementById('fw-detail-gateway').textContent.includes('Stop the car first: the module does nothing else')")
                 assert fw.BEGIN not in gateway.commands
                 del state.samples['vehicle.speed_kph', 0x203]
                 # Stopped: two presses install it, with progress, to the confirmed result.
                 await page.wait_for_timeout(1500)
-                assert 'Stop the car first: the module does nothing else' in await page.locator('#firmware-status').inner_text()   # Still readable.
-                await page.wait_for_function("document.getElementById('firmware-install').textContent === 'Install gateway firmware'", timeout=10000)
+                assert 'Stop the car first: the module does nothing else' in await page.locator('#fw-detail-gateway').inner_text()   # Still readable.
+                await page.wait_for_function("document.getElementById('fw-install-gateway').textContent === 'Install' && !document.getElementById('fw-install-gateway').disabled", timeout=10000)
                 await button.click()
                 await button.click()
-                await page.wait_for_function("/Sending: \\d+ of \\d+ KB \\(\\d+%\\)/.test(document.getElementById('firmware-status').textContent)")
+                await page.wait_for_function("/^Installing \\d+%$/.test(document.getElementById('fw-state-gateway').textContent)")
+                await page.wait_for_function("/Sending: \\d+ of \\d+ KB/.test(document.getElementById('fw-detail-gateway').textContent)")
                 assert await button.is_disabled()
-                await page.wait_for_function(f"document.getElementById('firmware-status').textContent.startsWith('Gateway updated to build {NEW} · Taillight')", timeout=30000)
-                await page.wait_for_function("document.getElementById('firmware-install').hidden")
+                assert await page.locator('#fw-row-gateway .sw-bar').is_visible()
+                await page.screenshot(path=str(ROOT / '.tmp/firmware-installing.png'))
+                await page.wait_for_function("document.getElementById('fw-state-gateway').textContent === 'Updated'", timeout=30000)
+                assert (await page.locator('#fw-detail-gateway').inner_text()).startswith(f'Gateway updated to build {NEW}')
+                await page.wait_for_function("document.getElementById('fw-install-gateway').hidden")
                 assert gateway.blocks == -(-len(image) // fw.BLOCK_BYTES) and gateway.commands[-1] == fw.CONFIRM and not gateway.trial
                 assert not errors, errors
             finally:

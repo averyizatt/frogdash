@@ -15,7 +15,7 @@ wire that already connects them. No USB cable, and no Wi-Fi in the modules.
 1. **Update now** (with Wi-Fi connected) downloads the newest firmware of each module
    onto the Pi along with the dash's own update. **System check → Updates** shows which
    build of each is on the Pi and which each module is running.
-2. With the car stopped: **Dash management → Support → Install … firmware**, and press
+2. With the car stopped: **Dash management → Software & power → Install** (a row per module), and press
    again to confirm. The same buttons are on the phone page under *Software*.
 3. The status line shows progress. The module then restarts, and the dash confirms it
    is talking to the new build.

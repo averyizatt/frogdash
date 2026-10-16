@@ -10,7 +10,7 @@ keeps reading the engine over CAN at the same time, so the two do not share a co
 
 ## Setup on the Pi: press Update now
 
-Nothing is typed on the Pi. With Wi-Fi connected, press **Dash management → Support →
+Nothing is typed on the Pi. With Wi-Fi connected, press **Dash management → Software & power →
 Update now**. The update's Pi setup (`tools/frogdash_setup.sh`) does all of this the
 first time, which takes several minutes:
 
