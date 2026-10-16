@@ -416,7 +416,7 @@ pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 #panel-tune .control-row { margin:0; }
 @media (max-aspect-ratio:11/5) and (max-width:900px) { .mt-grid { grid-template-columns:1fr 1fr; } .mt-presets { flex-wrap:wrap; } }
 /* Seven sections: slightly shorter rows so the list stays on screen without scrolling. */
-#operations-dialog .driver-tabs button { min-height:52px; padding-block:13px; }
+#operations-dialog .driver-tabs button { min-height:46px; padding-block:10px; margin-bottom:6px; }
 .ops-columns { display:grid; grid-template-columns:1fr 1fr; gap:22px; height:100%; min-height:0; }
 .ops-panel .setting-card { min-height:0; }
 .ops-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px 15px; }
