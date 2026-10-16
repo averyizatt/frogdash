@@ -318,6 +318,28 @@ else
     fi
 fi
 
+# --- Dash cam Wi-Fi only while the engine runs ---
+# The Wi-Fi keeper (tools/frogdash_netkeeper.sh) brings the dash cam connection up when the
+# engine is running and lets it go when it is off, so a saved home Wi-Fi or phone hotspot
+# can connect for updates and SSH. For that the dash cam profile must not connect itself.
+if command -v nmcli >/dev/null 2>&1 && nmcli -t -f NAME con show 2>/dev/null | grep -qx dashcam; then
+    if [ "$(nmcli -g connection.autoconnect con show dashcam 2>/dev/null)" = no ]; then
+        step "Dash cam Wi-Fi" ok "Joined only while the engine runs"
+    elif nmcli con modify dashcam connection.autoconnect no >/dev/null 2>&1; then
+        step "Dash cam Wi-Fi" done "Joined only while the engine runs; with it off the adapter is free for other networks"
+    else
+        step "Dash cam Wi-Fi" failed "Could not change the dash cam connection"
+    fi
+else
+    step "Dash cam Wi-Fi" skipped "No dash cam connection on this Pi"
+fi
+# The keeper runs the script it started with: a new version of it takes over now.
+keeper=$(sha256sum "$REPO/tools/frogdash_netkeeper.sh" 2>/dev/null | cut -c1-12)
+if [ -n "$keeper" ] && [ "$keeper" != "$(cat "$STATE/netkeeper-stamp" 2>/dev/null)" ]; then
+    systemctl try-restart frogdash-netkeeper.service >/dev/null 2>&1
+    echo "$keeper" > "$STATE/netkeeper-stamp"
+fi
+
 # A new display package or group reaches the screen only when its session starts again.
 [ -n "$restart_screen" ] && [ -n "$user" ] && systemctl try-restart "frogdash-console@$user.service" >/dev/null 2>&1
 

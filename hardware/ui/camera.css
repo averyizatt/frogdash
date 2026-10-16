@@ -64,6 +64,8 @@
 .speaker-test span { display:block; font-size:17px; font-weight:750; }
 .speaker-test small { display:block; margin-top:4px; color:var(--muted); font-size:12px; line-height:1.4; }
 .speaker-test-buttons { display:flex; gap:8px; flex:none; }
+.terminal-secret { display:flex; align-items:center; gap:6px; color:var(--muted); font-size:14px; white-space:nowrap; }
+.terminal-line .terminal-secret input { flex:none; min-height:0; padding:0; width:20px; height:20px; }
 /* The screen mode trial (screen.js): asked over everything after the trial restart. */
 .screen-trial { max-width:min(760px, calc(100vw - 32px)); padding:30px 34px; border:2px solid var(--accent); border-radius:14px; background:var(--surface); color:var(--text); text-align:center; }
 .screen-trial::backdrop { background:rgba(0,0,0,.72); }

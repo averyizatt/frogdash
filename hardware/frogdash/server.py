@@ -1,6 +1,7 @@
 """Local HTTP + WebSocket service, independently paced per browser client."""
 import argparse
 import asyncio
+import codecs
 import json
 import os
 import re
@@ -179,9 +180,11 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def health(request):
         snapshot = state.snapshot()
-        # ui_clients lets the updater confirm the screen reconnected after a restart.
+        # ui_clients lets the updater confirm the screen reconnected after a restart;
+        # engine_running lets the Wi-Fi keeper leave the adapter free while the engine is off.
+        rpm = state.runtime.rpm()
         return web.json_response({**{key: snapshot[key] for key in ('mode', 'transport', 'modules', 'gps', 'recording', 'system', 'can_errors')},
-                                  'ui_clients': len(clients)})
+                                  'ui_clients': len(clients), 'engine_running': bool(rpm and rpm >= 300)})
 
     async def logs(request):
         files = await asyncio.to_thread(state.recorder.files) if state.recorder else []
@@ -438,6 +441,51 @@ def create_app(state, adapter=None, connectivity=None):
         if len(text) > 100000:
             text = '[earlier output trimmed]\n' + text[-100000:]
         return web.json_response({'exit': code, 'output': text + note}, headers={'Cache-Control': 'no-store'})
+
+    async def terminal_session(request):
+        # The Terminal tab's live shell: this page's keystrokes in, the shell's output out,
+        # through the helper (as the screen user, in a pty, so prompts wait for an answer).
+        require_local(request)
+        if not state.terminal_enabled or state.mode == 'replay' or not terminal_helper():
+            raise web.HTTPNotFound(text='The interactive terminal needs --terminal and its helper (Update now once)')
+        ws = web.WebSocketResponse(heartbeat=30, max_msg_size=64 * 1024)
+        await ws.prepare(request)
+        try:
+            reader, writer = await asyncio.open_unix_connection(str(TERMINAL_SOCKET))
+        except OSError as error:
+            await ws.send_str(f'The Terminal helper did not answer: {error}\r\n')
+            await ws.close()
+            return ws
+        writer.write(b'{"mode": "session"}\n')
+        await writer.drain()
+        decoder = codecs.getincrementaldecoder('utf-8')('replace')
+
+        async def shell_to_page():
+            while True:
+                data = await reader.read(4096)
+                if not data:
+                    break
+                text = decoder.decode(data)
+                if text and not ws.closed:
+                    await ws.send_str(text)
+            if not ws.closed:
+                await ws.close()
+        relay = asyncio.create_task(shell_to_page())
+        try:
+            async for message in ws:
+                if message.type == WSMsgType.TEXT:
+                    writer.write(message.data.encode('utf-8'))
+                    await writer.drain()
+                elif message.type in (WSMsgType.ERROR, WSMsgType.CLOSE):
+                    break
+        except (ConnectionError, OSError):
+            pass
+        finally:
+            writer.close()        # The helper ends the shell when its connection closes.
+            relay.cancel()
+            with suppress(asyncio.CancelledError, Exception):
+                await relay
+        return ws
 
     async def can_check(request):
         return web.json_response(cancheck.report(state), headers={'Cache-Control': 'no-store'})
@@ -777,7 +825,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),

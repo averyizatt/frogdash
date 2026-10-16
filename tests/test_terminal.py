@@ -1,15 +1,21 @@
 """The Terminal tab's helper (tools/frogdash_terminal.py): one command, as the screen user,
 so sudo works as at the keyboard. runuser is replaced by a stand-in that runs the command
 as the user running the tests; everything else is the helper's own code."""
+import asyncio
 import getpass
 import json
 import os
 from pathlib import Path
+import socket
 import sys
 import tempfile
+import threading
+import time
 import unittest
+from unittest import mock
 
 from aiohttp.test_utils import TestClient, TestServer
+from hardware.frogdash import server
 from hardware.frogdash.server import create_app
 from hardware.frogdash.state import State
 
@@ -55,7 +61,75 @@ class HelperTests(unittest.TestCase):
         self.assertIn('[stopped after 1 s]', text)
 
 
+    @unittest.skipUnless(os.name == 'posix', 'a pty is Unix only')
+    def test_a_session_waits_for_input_and_ends_with_the_shell(self):
+        me = getpass.getuser()
+        dash, helper = socket.socketpair()
+        worker = threading.Thread(target=self.t.session, args=(me, helper.fileno(), helper.fileno()), daemon=True)
+        worker.start()
+        seen = b''
+
+        def until(text, timeout=10):
+            nonlocal seen
+            dash.settimeout(timeout)
+            deadline = time.monotonic() + timeout
+            while text.encode() not in seen and time.monotonic() < deadline:
+                seen += dash.recv(4096)
+            return text.encode() in seen
+        # A prompt that waits for an answer, as nmcli --ask or sudo would.
+        dash.sendall(b'read -p "Password: " answer; echo "got-$answer"\n')
+        self.assertTrue(until('Password: '))
+        dash.sendall(b'hunter2\n')
+        self.assertTrue(until('got-hunter2'))
+        dash.sendall(b'exit\n')
+        self.assertTrue(until('[the shell has ended]'))
+        worker.join(10)
+        self.assertFalse(worker.is_alive())
+
+
 class EndpointTests(unittest.IsolatedAsyncioTestCase):
+    @unittest.skipUnless(os.name == 'posix', 'Unix sockets')
+    async def test_the_page_and_the_helper_are_joined_both_ways(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'terminal.sock'
+            received = []
+
+            async def fake_helper(reader, writer):
+                received.append(await reader.readline())         # {"mode": "session"}
+                writer.write('welcome é\r\n'.encode())
+                await writer.drain()
+                received.append(await reader.read(100))
+                writer.write(b'done\r\n')
+                await writer.drain()
+                writer.close()
+            helper = await asyncio.start_unix_server(fake_helper, path=str(path))
+            state = State()
+            state.terminal_enabled = True
+            with mock.patch.object(server, 'TERMINAL_SOCKET', path):
+                async with TestClient(TestServer(create_app(state))) as client:
+                    self.assertTrue((await (await client.get('/terminal')).json())['sudo'])
+                    ws = await client.ws_connect('/terminal/session')
+                    self.assertEqual(await ws.receive_str(timeout=5), 'welcome é\r\n')
+                    await ws.send_str('ls\n')
+                    self.assertEqual(await ws.receive_str(timeout=5), 'done\r\n')
+                    await ws.close()
+            helper.close()
+            self.assertEqual(json.loads(received[0]), {'mode': 'session'})
+            self.assertEqual(received[1], b'ls\n')
+
+    async def test_without_the_helper_there_is_no_live_session(self):
+        state = State()
+        state.terminal_enabled = True
+        async with TestClient(TestServer(create_app(state))) as client:
+            self.assertEqual((await client.get('/terminal/session')).status, 404)
+
+    async def test_health_says_whether_the_engine_is_running(self):
+        state = State()
+        async with TestClient(TestServer(create_app(state))) as client:
+            self.assertFalse((await (await client.get('/health')).json())['engine_running'])
+            state.ingest(0x5E8, bytes.fromhex('07080D7A080201F4'))      # MicroSquirt: 3450 RPM
+            self.assertTrue((await (await client.get('/health')).json())['engine_running'])
+
     async def test_off_by_default_and_input_is_validated(self):
         state = State()
         async with TestClient(TestServer(create_app(state))) as client:

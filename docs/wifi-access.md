@@ -1,5 +1,27 @@
 # The dash on your phone: logs, faults and updates over Wi-Fi
 
+## With the engine off, the Wi-Fi is yours
+
+The dash cam's Wi-Fi is only held while the engine runs. With no RPM for a minute (or
+the dash not answering), the Wi-Fi keeper (`tools/frogdash_netkeeper.sh`) lets the dash
+cam connection go and does not take the adapter back, so a saved home Wi-Fi or phone
+hotspot connects by itself: for **Update now**, the phone page or SSH. Join a new one
+under **Controls > Wi-Fi > Internet** (it is remembered). When the engine starts, the
+keeper brings the dash cam back within about half a minute, which drops that other
+network if the dash cam uses the same adapter. The setup turns the dash cam profile's
+own autoconnect off so only the keeper decides.
+
+## Terminal tab
+
+**Dash management > Terminal**, with `--terminal` in `FROGDASH_ARGS`
+(`/etc/default/frogdash`). After one **Update now** the helper is installed and the tab
+is a live shell as the screen user (`tools/frogdash_terminal.py`): `sudo` works, and a
+prompt (a Wi-Fi password from `nmcli --ask`, a yes/no) waits for the answer. Tick
+**Hide typing** before entering a password. **Ctrl+C** stops what is running; **New
+session** starts a fresh shell. Full-screen programs (nano, top) do not draw there.
+Only the dash's own screen can use it; the phone page has no terminal.
+
+
 The dash has its own Wi-Fi network. On the dash: **Controls → Wi-Fi → turn the hotspot
 on**. It stays on for 20 minutes and is off after every boot. The tab shows the network
 name, its password, the address to open and an eight-digit access code.

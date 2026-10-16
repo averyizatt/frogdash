@@ -41,6 +41,9 @@ SHIMS = {
     'git': '[ -f "$FAKE/internet" ] || exit 2\n',
     # Wi-Fi adapters as NetworkManager reports them: wlan0 built in, wlan1 on the dash cam.
     'nmcli': 'echo "$@" >> "$FAKE/nmcli.log"\ncase "$*" in\n'
+             '*"-t -f NAME con show"*) echo dashcam;;\n'
+             '*"connection.autoconnect con show dashcam"*) [ -f "$FAKE/dashcam-manual" ] && echo no || echo yes;;\n'
+             '*"con modify dashcam connection.autoconnect no"*) touch "$FAKE/dashcam-manual";;\n'
              '*"connection.interface-name con show dashcam"*) [ -f "$FAKE/no-dashcam" ] || echo wlan1;;\n'
              '*"DEVICE,TYPE dev"*) [ -f "$FAKE/one-adapter" ] || echo wlan0:wifi; echo wlan1:wifi; echo eth0:ethernet;;\n'
              '*"WIFI-PROPERTIES.AP device show"*) [ -f "$FAKE/no-ap" ] && echo no || echo yes;;\nesac\n',
@@ -140,6 +143,10 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn('enable --now frogdash-screen-boot.service', self.log('systemctl.log'))
         self.assertEqual(steps['Start-up: unused disk check'][0], 'done')
         self.assertIn('disable e2scrub_reap.service', self.log('systemctl.log'))
+        # The dash cam's Wi-Fi is the keeper's to bring up, only while the engine runs.
+        self.assertEqual(steps['Dash cam Wi-Fi'][0], 'done')
+        self.assertIn('con modify dashcam connection.autoconnect no', self.log('nmcli.log'))
+        self.assertIn('try-restart frogdash-netkeeper.service', self.log('systemctl.log'))
         self.assertFalse((self.units / 'frogdash-kiosk.service').exists())               # Only the listed services.
         # gpsd is pointed at the receiver alone, so it can never open the tuning cable.
         self.assertEqual(steps['GPS service'][0], 'done')
@@ -162,7 +169,7 @@ class SetupScriptTests(unittest.TestCase):
             self.assertEqual(steps[name][0], 'waiting', name)
             self.assertIn('press Update now', steps[name][1])
         self.assertEqual((self.log('apt.log'), list(self.fake.glob('home/*'))), ('', []))  # Nothing was fetched.
-        self.assertEqual(said, 'Set up: Dash helpers, GPS service, TunerStudio: serial port, Screen and start-up, Start-up: unused disk check, Phone hotspot')
+        self.assertEqual(said, 'Set up: Dash helpers, GPS service, TunerStudio: serial port, Screen and start-up, Start-up: unused disk check, Phone hotspot, Dash cam Wi-Fi')
 
     def publish_firmware(self, image=b'gateway firmware image', build='1a2b3c4d', name='gateway'):
         (self.fake / f'dl-{name}-firmware.bin').write_bytes(image)

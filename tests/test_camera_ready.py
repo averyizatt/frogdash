@@ -251,13 +251,15 @@ class HotspotPriorityTests(unittest.IsolatedAsyncioTestCase):
 @unittest.skipUnless(SHELL, 'needs sh')
 class KeeperTests(unittest.TestCase):
     """The Wi-Fi keeper run for a moment against a stand-in NetworkManager."""
-    def run_keeper(self, lock_age=None):
+    def run_keeper(self, lock_age=None, engine=True, active=False):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory)
             (base / 'bin').mkdir()
-            shims = {'nmcli': 'echo "$@" >> "$KEEPER_LOG"\ncase "$*" in *"-f NAME con show --active"*) ;; *"-f NAME con show"*) echo dashcam;; '
+            shims = {'nmcli': 'echo "$@" >> "$KEEPER_LOG"\ncase "$*" in *"-f NAME con show --active"*) ' + ('echo dashcam' if active else '') + ';; *"-f NAME con show"*) echo dashcam;; '
                               '*"connection.interface-name con show dashcam"*) echo wlan1;; esac\n',
-                     'sleep': '[ "$1" = 0 ] || exit 0\nexec /bin/sleep 0.2\n'}
+                     'sleep': '[ "$1" = 0 ] || exit 0\nexec /bin/sleep 0.2\n',
+                     # The dash's /health: whether the engine is running.
+                     'curl': 'echo \'{"mode": "socketcan", "ui_clients": 1, "engine_running": ' + ('true' if engine else 'false') + '}\'\n'}
             for name, body in shims.items():
                 (base / 'bin' / name).write_text('#!/bin/sh\n' + body, newline='\n')
                 (base / 'bin' / name).chmod(0o755)
@@ -269,11 +271,19 @@ class KeeperTests(unittest.TestCase):
             env = {**os.environ, 'PATH': str(base / 'bin') + os.pathsep + os.environ['PATH'], 'KEEPER_LOG': (base / 'log').as_posix(),
                    'FROGDASH_WIFI_LOCKS': f"{(base / 'none.lock').as_posix()} {lock.as_posix()}", 'FROGDASH_KEEPER_PERIOD': '0'}
             try:
-                subprocess.run([SHELL, (ROOT / 'tools/frogdash_netkeeper.sh').as_posix()], env=env, capture_output=True, timeout=2)
+                subprocess.run([SHELL, (ROOT / 'tools/frogdash_netkeeper.sh').as_posix()], env=env, capture_output=True, timeout=6)   # One turn of the loop on a slow Windows sh
             except subprocess.TimeoutExpired:
                 pass
             log = (base / 'log').read_text() if (base / 'log').exists() else ''
             return log, lock.exists()
+
+    def test_with_the_engine_off_the_dash_cam_is_let_go_and_not_taken_back(self):
+        log, _ = self.run_keeper(engine=False)
+        self.assertNotIn('rescan', log)                               # Free for home Wi-Fi or the phone hotspot
+        self.assertNotIn('con up dashcam', log)
+        log, _ = self.run_keeper(engine=False, active=True)
+        self.assertIn('con down dashcam', log)                         # Connected from before: let go
+        self.assertEqual(log.count('con down dashcam'), 1)             # Once, not every turn
 
     def test_reconnects_the_dash_cam_unless_the_hotspot_holds_the_adapter(self):
         log, _ = self.run_keeper()

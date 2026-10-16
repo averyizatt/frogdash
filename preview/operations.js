@@ -136,21 +136,57 @@
     undoArmed = true; $('update-undo').textContent = 'Press again';
     $('update-status').textContent = 'Undo returns to the version before the last update. Press again to confirm.';
   };
-  // Terminal (optional, --terminal): commands run as the dash's unprivileged service user.
+  // Terminal (optional, --terminal). With its helper installed it is a live shell as the
+  // screen user (sudo works, and a prompt such as a Wi-Fi password waits for the answer);
+  // without it, one command at a time as the dash's own restricted user.
   dialog.querySelector('[data-ops-panel="support"]').insertAdjacentHTML('afterend',
-    '<section class="driver-panel ops-panel control-section" data-ops-panel="terminal" hidden><div class="terminal-line"><input id="terminal-command" type="text" maxlength="2000" autocomplete="off" spellcheck="false" placeholder="Command, for example: ip -br addr">' +
-    '<button type="button" id="terminal-run">Run</button><button type="button" id="terminal-clear">Clear</button></div>' +
-    '<p id="terminal-note" class="control-note">Runs as the dash service user: no sudo and not interactive. Good for checking status (ip, nmcli, ping, ls, cat). Use a keyboard; press Enter to run.</p>' +
+    '<section class="driver-panel ops-panel control-section" data-ops-panel="terminal" hidden><div class="terminal-line"><input id="terminal-command" type="text" maxlength="2000" autocomplete="off" spellcheck="false" placeholder="Command, for example: nmcli device wifi list">' +
+    '<button type="button" id="terminal-run">Run</button><button type="button" id="terminal-ctrlc" hidden title="Stop what is running">Ctrl+C</button>' +
+    '<label class="terminal-secret" id="terminal-secret-label" hidden><input type="checkbox" id="terminal-secret"> Hide typing</label>' +
+    '<button type="button" id="terminal-clear">Clear</button><button type="button" id="terminal-restart" hidden>New session</button></div>' +
+    '<p id="terminal-note" class="control-note">Checking…</p>' +
     '<pre id="terminal-output" class="terminal-output" tabindex="0"></pre></section>');
   const terminalHistory = [];
-  let terminalIndex = 0;
+  let terminalIndex = 0, terminalLive = false, terminalSocket = null;
+  const out = $('terminal-output');
+  // What a terminal prints, as plain text: colour and cursor codes out, backspaces applied.
+  function terminalText(text) {
+    text = text.replace(/\x1b\[[0-?]*[ -\/]*[@-~]/g, '').replace(/\x1b\][^\x07\x1b]*(\x07|\x1b\\)/g, '').replace(/\x1b[()][A-Za-z0-9]/g, '')
+      .replace(/\r\n/g, '\n').replace(/\r/g, '').replace(/[\x07\x00]/g, '');
+    return text;
+  }
+  function terminalShow(text) {
+    let all = out.textContent + terminalText(text);
+    while (all.includes('\b')) all = all.replace(/[^\n]?\x08/, '');
+    out.textContent = all.length > 200000 ? all.slice(-200000) : all;
+    out.scrollTop = out.scrollHeight;
+  }
+  function terminalOpen() {
+    if (terminalSocket && terminalSocket.readyState <= 1) return;
+    const socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/terminal/session`);
+    terminalSocket = socket;
+    socket.onmessage = event => terminalShow(event.data);
+    socket.onclose = () => { if (terminalSocket === socket) { terminalShow('\n[session closed: press New session to start another]\n'); terminalSocket = null; } };
+    setTimeout(() => $('terminal-command').focus(), 0);
+  }
+  function terminalSend(text) {
+    if (!terminalSocket || terminalSocket.readyState !== 1) { terminalShow('\n[not connected: press New session]\n'); return; }
+    terminalSocket.send(text);
+  }
   async function terminalRun() {
-    const command = $('terminal-command').value.trim();
-    if (!command) return;
+    const input = $('terminal-command'), command = input.value, secret = $('terminal-secret').checked;
+    if (terminalLive) {
+      // Every line is typed into the shell, empty ones too (a prompt may want Enter).
+      terminalSend(command + '\n');
+      if (command.trim() && !secret) { terminalHistory.push(command); terminalIndex = terminalHistory.length; }
+      input.value = '';
+      if (secret) { $('terminal-secret').checked = false; input.type = 'text'; }   // A password is one line.
+      return;
+    }
+    if (!command.trim()) return;
     terminalHistory.push(command); terminalIndex = terminalHistory.length;
-    const out = $('terminal-output');
     out.textContent += `$ ${command}\n`;
-    $('terminal-command').value = ''; $('terminal-run').disabled = true;
+    input.value = ''; $('terminal-run').disabled = true;
     try {
       const response = await fetch('/terminal', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({command})});
       if (!response.ok) throw new Error(await response.text());
@@ -161,9 +197,15 @@
     out.scrollTop = out.scrollHeight;
   }
   $('terminal-run').onclick = terminalRun;
-  $('terminal-clear').onclick = () => { $('terminal-output').textContent = ''; };
+  $('terminal-ctrlc').onclick = () => { terminalSend('\x03'); $('terminal-command').focus(); };
+  $('terminal-clear').onclick = () => { out.textContent = ''; };
+  $('terminal-restart').onclick = () => { if (terminalSocket) { const old = terminalSocket; terminalSocket = null; old.close(); } out.textContent = ''; terminalOpen(); };
+  $('terminal-secret').onchange = () => { $('terminal-command').type = $('terminal-secret').checked ? 'password' : 'text'; $('terminal-command').focus(); };
   $('terminal-command').addEventListener('keydown', event => {
     if (event.key === 'Enter') { event.preventDefault(); terminalRun(); }
+    else if (terminalLive && event.ctrlKey && (event.key === 'c' || event.key === 'C') && !$('terminal-command').selectionEnd) { event.preventDefault(); terminalSend('\x03'); }
+    else if (terminalLive && event.ctrlKey && (event.key === 'd' || event.key === 'D')) { event.preventDefault(); terminalSend('\x04'); }
+    else if (terminalLive && event.key === 'Tab') { event.preventDefault(); }
     else if (event.key === 'ArrowUp' && terminalIndex > 0) { $('terminal-command').value = terminalHistory[--terminalIndex]; event.preventDefault(); }
     else if (event.key === 'ArrowDown' && terminalIndex < terminalHistory.length) { $('terminal-command').value = terminalHistory[++terminalIndex] || ''; event.preventDefault(); }
   });
@@ -172,13 +214,17 @@
     try {
       const response = await fetch('/terminal', {cache: 'no-store'});
       const info = response.ok ? await response.json() : null;
+      terminalLive = !!info?.sudo;
+      for (const id of ['terminal-ctrlc', 'terminal-secret-label', 'terminal-restart']) $(id).hidden = !terminalLive;
+      $('terminal-run').textContent = terminalLive ? 'Send' : 'Run';
       $('terminal-note').textContent = !info ? 'Terminal is off. Add --terminal to FROGDASH_ARGS in /etc/default/frogdash and restart frogdash.service to enable it.'
-        : info.sudo ? 'Runs as the screen user, so sudo works as at the keyboard. Not interactive: no editors or top; a command is stopped after 60 s. Use a keyboard; press Enter to run.'
-        : 'Runs as the dash service user: no sudo and not interactive. Press Update now once with --terminal set to install the helper that allows sudo.';
+        : terminalLive ? 'A live shell as the screen user: sudo works, and prompts (a Wi-Fi password, yes/no) wait for your answer. Tick Hide typing before entering a password. Full-screen programs like nano and top do not draw here.'
+        : 'Runs as the dash service user: no sudo and not interactive. Press Update now once with --terminal set to install the helper that makes this a live shell with sudo.';
+      if (terminalLive && !dialog.querySelector('[data-ops-panel="terminal"]').hidden) terminalOpen();
     } catch { /* The dash is restarting. */ }
   }
   terminalCheck();
-  document.querySelector('[data-ops-tab="terminal"]').addEventListener('click', terminalCheck);
+  document.querySelector('[data-ops-tab="terminal"]').addEventListener('click', () => setTimeout(terminalCheck, 0));
   const launch = el('button', 'Dash management', 'close-button'); launch.id = 'operations-launch'; launch.type = 'button';
   $('drive-close').before(launch);
   function tab(key) { document.querySelectorAll('[data-ops-panel]').forEach(n => n.hidden = n.dataset.opsPanel !== key); document.querySelectorAll('[data-ops-tab]').forEach(n => n.setAttribute('aria-selected', String(n.dataset.opsTab === key))); }
