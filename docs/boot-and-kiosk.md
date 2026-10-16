@@ -32,10 +32,11 @@ or the bootloader is too old for a trial start, nothing is changed and the dash 
 so. **Use the screen's own modes** undoes a kept setting (one restart).
 
 **Quicker start**, done by the updater (`tools/frogdash_setup.sh`, step "Screen and
-start-up"): `disable_splash=1` (no rainbow screen, one mode change less) and
-`boot_delay=0` in a marked block at the end of `config.txt`, and `e2scrub_reap`
-switched off (1.8 s of disk work at every start looking for LVM snapshots this Pi does
-not have). They take effect at the next start.
+start-up"): `e2scrub_reap` switched off (1.8 s of disk work at every start looking for
+LVM snapshots this Pi does not have). `disable_splash=1` and `boot_delay=0` were tried
+in October 2026 and taken back out: on the first start with them the panel showed a
+garbled red picture and then no signal, because without the delay the Pi looks for the
+panel before it has woken. Setup removes that block wherever it finds it.
 
 **What the Pi sees, after every start** (`frogdash-screen-boot.service`): its HDMI
 ports, whether each EDID can be read and has 1920 x 720, how many modes it offers, the

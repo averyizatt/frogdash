@@ -209,6 +209,10 @@ def plain_cmdline(cmdline):
 SCREEN_CONFIG = ['disable_fw_kms_setup=1',
                  'hdmi_edid_file:0=1', f'hdmi_edid_filename:0={EDID_NAME}',
                  'hdmi_edid_file:1=1', f'hdmi_edid_filename:1={EDID_NAME}']
+# Once written by setup to save a second at start-up (no rainbow screen, no boot delay).
+# On the first start with them the panel showed a garbled red picture and then no signal:
+# without the delay the Pi looks for the panel before it has woken. Setup now removes the
+# block wherever it finds it. Kept as an example of a block for the tests.
 BOOT_CONFIG = ['[all]', 'disable_splash=1', 'boot_delay=0']
 
 
@@ -320,10 +324,10 @@ def install():
             target.write_bytes(edid)
             changed.append(str(target))
     config = read(boot / 'config.txt')
-    wanted = with_block(config, 'boot', BOOT_CONFIG)
+    wanted = with_block(config, 'boot', None)
     if wanted != config:
         write_atomic(boot / 'config.txt', wanted)
-        changed.append('config.txt: no rainbow screen, no boot delay')
+        changed.append('config.txt: the boot delay and rainbow screen are back (the panel needs the delay)')
     applied = has_block(read(boot / 'config.txt'), 'screen')
     note = ('The screen gets exactly 1920 x 720' if applied else
             'Ready: try exact 1920 x 720 under Dash management, Support')

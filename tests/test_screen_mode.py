@@ -145,6 +145,14 @@ class TrialTests(unittest.TestCase):
         sys.argv[:] = self.saved[1]
         self.folder.cleanup()
 
+    def test_install_takes_out_the_boot_settings_that_turned_the_screen_red(self):
+        pi = Pi(self.folder.name, panel=panel_edid())
+        s = pi.load()
+        with_block = s.with_block(CONFIG, 'boot', s.BOOT_CONFIG)
+        (pi.boot / 'config.txt').write_text(with_block)
+        self.assertEqual(s.install()[0], 'done')
+        self.assertEqual(pi.config(), CONFIG)
+
     def test_install_puts_the_files_in_place_and_changes_no_screen_setting(self):
         pi = Pi(self.folder.name, panel=panel_edid())
         s = pi.load()
@@ -152,8 +160,7 @@ class TrialTests(unittest.TestCase):
         edid = (pi.firmware / 'edid/frogdash-1920x720.bin').read_bytes()
         self.assertEqual(edid, (pi.boot / 'frogdash-1920x720.bin').read_bytes())
         self.assertEqual(s.parse_dtd(edid[54:72])['clock_khz'], 87920)      # The panel's own timing
-        self.assertIn('disable_splash=1', pi.config())
-        self.assertIn('boot_delay=0', pi.config())
+        self.assertNotIn('boot_delay', pi.config())                     # The panel needs the boot delay
         self.assertNotIn('edid', pi.config())                                # The mode only through a trial
         self.assertEqual((pi.boot / 'cmdline.txt').read_text(), CMDLINE)
         self.assertEqual(s.install(), ('ok', 'Ready: try exact 1920 x 720 under Dash management, Support'))
