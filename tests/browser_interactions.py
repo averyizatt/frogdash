@@ -145,9 +145,9 @@ async def preview(browser):
         # The dashboard tile turns green exactly while the simulated pump relay is closed.
         await page.locator('[data-action="meth.arm"][data-value="1"]').click()
         await page.locator('#controls-close').click()
-        await page.wait_for_function('document.getElementById("meth-cell").dataset.pump === "on"', timeout=60000)
-        assert await page.locator('#meth-state-pill').inner_text() == 'PUMP ON'
-        assert await page.locator('#meth-cell').evaluate('el => getComputedStyle(el).boxShadow') != 'none'
+        # Pump on and the tile lit, seen together: the simulated pump pulses, so reading the
+        # glow a moment after the pump-on wait could catch the end of the pulse.
+        await page.wait_for_function('(() => { const el = document.getElementById("meth-cell"); return el.dataset.pump === "on" && getComputedStyle(el).boxShadow !== "none" && document.getElementById("meth-state-pill").textContent === "PUMP ON"; })()', timeout=60000)
         await page.wait_for_function('document.getElementById("meth-cell").dataset.pump !== "on"', timeout=60000)
         assert await page.locator('#meth-cell').evaluate('el => getComputedStyle(el).boxShadow') == 'none'
         await page.locator('#controls-launch').click()
