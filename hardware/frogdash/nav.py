@@ -202,6 +202,12 @@ class Navigator:
         if metres > 0:
             self.position = moved(self.position, self.track, metres)
 
+    # The owner's choice (October 2026): with the USB GPS fitted, the speed shown comes from
+    # it alone. Wheel speed from the sensor gateway still moves the dead-reckoned position,
+    # but it no longer stands in for the speed: with no wheel pulses it read 0 km/h, which
+    # hid the GPS speed whenever that dropped for a moment.
+    WHEEL_FILLS_SPEED = False
+
     def step(self, state, values):
         """Fuse this instant's GPS values and wheel speed; return the signals to publish."""
         now = self.clock()
@@ -248,7 +254,7 @@ class Navigator:
             self.speed_source = 'gps'
         elif wheel is not None:
             self.speed_source = 'wheel'
-            if state.gps:  # The GPS owns the speed signal; fill its gap, labelled, instead of blanking.
+            if state.gps and self.WHEEL_FILLS_SPEED:  # Fill the GPS's gap, labelled, instead of blanking.
                 out['vehicle.speed_kph'] = self.signal(wheel, 'Wheel speed (GPS lost)')
         elif coasting:
             self.speed_source = 'held'

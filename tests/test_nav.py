@@ -58,9 +58,20 @@ class NavigatorTests(unittest.TestCase):
             self.assertAlmostEqual(rig.state.nav.scale, 100 / 90, delta=.01)
             values = rig.run(1, wheel_kph=45)                                        # Fix lost.
             speed = values['vehicle.speed_kph']
-            self.assertEqual((speed['quality'], speed['source'], values['nav.speed_source']['value']), ('live', 'Wheel speed (GPS lost)', 'wheel'))
-            self.assertAlmostEqual(speed['value'], 50, delta=.6)
+            # Speed comes from the USB GPS only: the wheel does not stand in for it (owner's choice).
+            self.assertEqual((speed['quality'], speed['source'], values['nav.speed_source']['value']), ('unavailable', 'gpsd', 'wheel'))
             self.assertEqual(values['gps.latitude']['quality'], 'unavailable')       # Raw GPS stays honest.
+            rig.state.nav.WHEEL_FILLS_SPEED = True                                    # When wanted again:
+            speed = rig.run(1, wheel_kph=45)['vehicle.speed_kph']
+            self.assertEqual((speed['quality'], speed['source']), ('live', 'Wheel speed (GPS lost)'))
+            self.assertAlmostEqual(speed['value'], 50, delta=.6)
+
+    def test_no_wheel_pulses_never_show_as_zero_speed(self):
+        with tempfile.TemporaryDirectory() as folder:
+            rig = Rig(folder, roads=False)
+            rig.run(5, wheel_kph=30, fix=(39.0012, -108.5990, 30, 0))
+            values = rig.run(2, wheel_kph=0, wheel_valid=False)                       # Gateway: no pulses, GPS gone
+            self.assertNotEqual(values['vehicle.speed_kph']['value'], 0)
 
     def test_dead_reckoning_straight_without_a_map_and_snaps_back(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -92,7 +103,8 @@ class NavigatorTests(unittest.TestCase):
             rig = Rig(folder, roads=False)
             rig.run(2, wheel_kph=40, fix=(39.05, -108.55, 40, 0))
             values = rig.run(5, wheel_kph=0, wheel_valid=False)                      # No pulses: stopped.
-            self.assertEqual((values['vehicle.speed_kph']['value'], values['nav.latitude']['value']), (0, 39.05))
+            # The position holds; the speed is the USB GPS's alone, so with it gone there is none to show.
+            self.assertEqual((values['vehicle.speed_kph']['value'], values['nav.latitude']['value']), (None, 39.05))
             fresh = Rig(folder, roads=False)
             values = fresh.run(2, wheel_kph=0, wheel_valid=False)                    # Sensor never seen working.
             self.assertEqual((values['vehicle.speed_kph']['quality'], values['nav.source']['value']), ('unavailable', 'none'))
