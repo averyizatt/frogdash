@@ -71,8 +71,27 @@ class UploadTests(unittest.TestCase):
         self.assertEqual([f[0][14:29] for f in drive], ['20261015T120000', '20261015T123200'])   # Not yesterday's, not the open file
         self.assertEqual(up.newest_drive([]), [])
 
-    def test_not_set_up_uploads_nothing(self):
-        self.assertEqual(self.up.run(github=FakeGitHub(), wait=lambda s: None), 'Uploads not set up (phone page, Uploads)')
+    def test_not_set_up_keeps_the_report_on_the_pi_and_sends_it_later(self):
+        events = self.state / 'events'
+        events.mkdir()
+        (events / '2026-10-15.jsonl').write_text(
+            json.dumps({'t': 1792060000, 'level': 'warn', 'area': 'gps', 'text': 'GPS has a position but no speed', 'detail': {'status': 'GPS fix'}}) + '\n' +
+            'not json\n' + json.dumps({'t': 1792060100, 'level': 'info', 'area': 'engine', 'text': 'Engine stopped'}) + '\n')
+        said = self.up.run(now=1792065600, github=FakeGitHub(), wait=lambda s: None)
+        self.assertEqual(said, 'Uploads not set up; report kept on the Pi (1 waiting)')
+        kept = next((self.state / 'reports').iterdir())
+        self.assertEqual(sorted(p.name for p in kept.iterdir()), ['boot.txt', 'diagnostics.json', 'events.txt', 'journal.txt'])
+        self.assertEqual((kept / 'events.txt').read_text(),
+                         '2026-10-15 10:26:40 UTC  WARN   gps      GPS has a position but no speed  {"status":"GPS fix"}\n'
+                         '2026-10-15 10:28:20 UTC  INFO   engine   Engine stopped\n')
+        # Set up later: the kept report goes up first, and the new one does not repeat its events.
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
+        hub = FakeGitHub()
+        said = self.up.run(now=1792069200, github=hub, wait=lambda s: None)
+        self.assertEqual(said, 'Uploaded the diagnostics (no new drive to send), and 1 earlier report kept on the Pi')
+        self.assertIn(b'Engine stopped', hub.files['pi/2026-10-15/120000-events.txt'])
+        self.assertEqual(hub.files['pi/2026-10-15/130000-events.txt'], b'(no events since the last report)\n')
+        self.assertEqual(list((self.state / 'reports').iterdir()), [])
 
     def test_reports_and_the_newest_drive_go_up_once(self):
         (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
@@ -83,9 +102,12 @@ class UploadTests(unittest.TestCase):
         hub = FakeGitHub()
         said = self.up.run(now=1792065600, github=hub, wait=lambda s: None)
         self.assertEqual(said, 'Uploaded the diagnostics and 2 recordings of the newest drive')
-        self.assertEqual(sorted(p.rsplit('-', 1)[1] for p in hub.files), ['boot.txt', 'diagnostics.json', 'journal.txt'])
+        self.assertEqual(sorted(p.rsplit('-', 1)[1] for p in hub.files), ['boot.txt', 'diagnostics.json', 'events.txt', 'journal.txt'])
+        self.assertEqual(list(hub.files)[0].rsplit('-', 1)[1], 'events.txt')         # What went wrong, first
         diagnostics = json.loads(next(v for p, v in hub.files.items() if p.endswith('diagnostics.json')))
         self.assertEqual(diagnostics['helpers']['screen-status.json'], {'state': 'original'})
+        self.assertEqual(diagnostics['gps']['gpspipe'], '(output of timeout)\n')   # What gpsd hears, raw
+        self.assertIn('The start before this one', next(v for p, v in hub.files.items() if p.endswith('journal.txt')).decode())
         self.assertEqual(list(hub.releases), ['drive-20261015-1200'])
         self.assertEqual([(name, body[:14]) for _, name, body in hub.assets],
                          [(first + '.gz', b'drive part one'), (second + '.gz', b'drive part two')])
@@ -94,7 +116,7 @@ class UploadTests(unittest.TestCase):
         # The next update: the reports again, the same drive not again.
         hub2 = FakeGitHub()
         self.assertEqual(self.up.run(now=1792069200, github=hub2, wait=lambda s: None), 'Uploaded the diagnostics (no new drive to send)')
-        self.assertEqual((len(hub2.files), hub2.assets), (3, []))
+        self.assertEqual((len(hub2.files), hub2.assets), (4, []))
 
     def test_wifi_passwords_and_names_are_blanked_before_anything_goes_up(self):
         (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))

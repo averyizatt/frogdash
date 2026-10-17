@@ -64,7 +64,7 @@ class SetupScriptTests(unittest.TestCase):
         base = Path(self.folder.name)
         self.fake, self.state, self.units, self.etc, self.opt, self.serial = (base / n for n in ('fake', 'state', 'units', 'etc', 'opt', 'by-id'))
         bin_dir = base / 'bin'
-        for folder in (self.fake / 'home', self.state, self.units / 'multi-user.target.wants', self.etc / 'default', self.opt, self.serial, bin_dir, base / 'sys'):
+        for folder in (self.fake / 'home', self.state, self.units / 'multi-user.target.wants', self.etc / 'default', self.etc / 'systemd', self.opt, self.serial, bin_dir, base / 'sys'):
             folder.mkdir(parents=True)
         for name, body in SHIMS.items():
             (bin_dir / name).write_text('#!/bin/sh\n' + body, newline='\n')
@@ -169,7 +169,10 @@ class SetupScriptTests(unittest.TestCase):
             self.assertEqual(steps[name][0], 'waiting', name)
             self.assertIn('press Update now', steps[name][1])
         self.assertEqual((self.log('apt.log'), list(self.fake.glob('home/*'))), ('', []))  # Nothing was fetched.
-        self.assertEqual(said, 'Set up: Dash helpers, GPS service, TunerStudio: serial port, Screen and start-up, Start-up: unused disk check, Phone hotspot, Dash cam Wi-Fi')
+        self.assertEqual(said, 'Set up: Dash helpers, GPS service, TunerStudio: serial port, Screen and start-up, Start-up: unused disk check, Phone hotspot, System log kept, Dash cam Wi-Fi')
+        # The system log is kept across restarts, so the reports show how the Pi last stopped.
+        self.assertEqual((self.etc / 'systemd/journald.conf.d/frogdash.conf').read_bytes(), (ROOT / 'config/journald-frogdash.conf').read_bytes())
+        self.assertIn('restart systemd-journald', self.log('systemctl.log'))
 
     def publish_firmware(self, image=b'gateway firmware image', build='1a2b3c4d', name='gateway'):
         (self.fake / f'dl-{name}-firmware.bin').write_bytes(image)

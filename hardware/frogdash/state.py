@@ -46,6 +46,8 @@ class State:
         self.firmware = None  # Firmware: the modules' firmware over CAN (fwupdate.py).
         self.helpers = None  # Helpers: has the updater run this version's Pi setup (helpers.py).
         self.recorder = None
+        self.eventlog = None  # EventLog: what went wrong and when, kept on the Pi (eventlog.py).
+        self.github = None    # GitHubLink: reports to GitHub after updates, linked by a code (github_link.py).
         self.camera = None
         self.dashcam = None
         self.terminal_enabled = False

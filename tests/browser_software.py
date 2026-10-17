@@ -11,6 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from aiohttp import web
 from playwright.async_api import async_playwright
+from hardware.frogdash.github_link import GitHubLink
 from hardware.frogdash.paint import Paint
 from hardware.frogdash.server import create_app
 from hardware.frogdash.state import State
@@ -30,6 +31,15 @@ async def main(browser_path):
     status.write_text(json.dumps({'state': 'current', 'message': 'Already up to date', 'version': 'abc1234', 'previous': 'def5678'}))
     ups = {'available': True, 'state': 'external_power', 'input_present': True, 'remaining_seconds': None, 'battery_percent': 82.0,
            'battery_volts': 4.05, 'charging': True, 'auto_power_on': True, 'error': None, 'dry_run': False}
+    # GitHub stands in: a code, then 'pending' until the phone authorizes.
+    github = {'authorized': False}
+
+    def post(url, fields):
+        if url.endswith('/device/code'):
+            return {'device_code': 'dev123', 'user_code': 'WDJB-MJHT', 'verification_uri': 'https://github.com/login/device', 'expires_in': 900, 'interval': 1}
+        return {'access_token': 'gho_test'} if github['authorized'] else {'error': 'authorization_pending'}
+    state.github = GitHubLink(folder, client_id='Iv1.test', post=post, user=lambda token: {'login': 'averyizatt'}, sleep=lambda s: asyncio.sleep(.2))
+    (folder / 'reports' / '2026-10-15_120000').mkdir(parents=True)
     state.health = SimpleNamespace(status={'status': 'sampled', 'ups': ups, 'shutdown': {'previous': {'state': 'saved', 'ended_ms': 1792000000000}, 'tracking': True}})
     app = create_app(state)
     app.cleanup_ctx.clear()
@@ -65,8 +75,25 @@ async def main(browser_path):
             ups.update(input_present=False, remaining_seconds=4.2)
             await page.wait_for_function("document.getElementById('power-rows').textContent.includes('Shutting down in 5 s')", timeout=8000)
             assert await page.locator('#power-rows li').first.get_attribute('data-tone') == 'warn'
+            # Reports to GitHub: not connected, one report waiting; Connect shows a code to type on the phone.
+            await page.wait_for_function("document.getElementById('uploads-pill').textContent === 'Not connected'")
+            assert '1 report waiting on the Pi' in await page.locator('#uploads-status').inner_text()
+            await page.locator('#uploads-connect').click()
+            await page.wait_for_function("document.querySelector('#uploads-code strong').textContent === 'WDJB-MJHT'")
+            assert await page.locator('#uploads-code').is_visible() and await page.locator('#uploads-connect').is_hidden()
             await page.locator('#software-card').scroll_into_view_if_needed()
             await page.screenshot(path=str(ROOT / '.tmp/software-updating.png'))
+            github['authorized'] = True
+            await page.wait_for_function("document.getElementById('uploads-pill').textContent === 'Connected'", timeout=10000)
+            assert await page.locator('#uploads-where').inner_text() == 'To averyizatt/frogdash (branch pi-logs) · as averyizatt'
+            saved = json.loads((folder / 'log-upload.json').read_text())
+            assert (saved['repo'], saved['token']) == ('averyizatt/frogdash', 'gho_test'), saved
+            assert 'gho_test' not in await page.content()                            # Never shown
+            await page.locator('#uploads-disconnect').click()
+            assert await page.locator('#uploads-disconnect').inner_text() == 'Press again'
+            await page.locator('#uploads-disconnect').click()
+            await page.wait_for_function("document.getElementById('uploads-pill').textContent === 'Not connected'")
+            assert not (folder / 'log-upload.json').exists()
             # The new version did not start: it went back, and the step that failed says so.
             status.write_text(json.dumps({'state': 'rolledback', 'message': 'Update undone: version 9999999 did not start properly (the dash service did not stay up), so the dash went back to the version that worked', 'version': 'abc1234'}))
             await page.wait_for_function("document.getElementById('update-pill').textContent === 'Went back'", timeout=8000)
@@ -80,6 +107,10 @@ async def main(browser_path):
             ups.update(input_present=True, remaining_seconds=None)
             state.health.status['shutdown'] = {'previous': {'state': 'running'}, 'tracking': True}
             await page.wait_for_function("document.getElementById('power-rows').textContent.includes('Not confirmed')", timeout=8000)
+            # Wi-Fi… goes to Controls > Wi-Fi.
+            await page.locator('#update-wifi').click()
+            await page.wait_for_function("document.getElementById('controls-dialog').open && !document.getElementById('panel-wifi').hidden")
+            assert not await page.locator('#operations-dialog').evaluate('el => el.open')
             assert not errors, errors
             # The preview: no Pi to update, said plainly.
             preview = await browser.new_page(viewport={'width': 1920, 'height': 720})
@@ -95,7 +126,7 @@ async def main(browser_path):
             await browser.close()
     finally:
         await runner.cleanup()
-    print('Software card: update steps and colours for current, running, went back and failed; modules; power, countdown and last shutdown; preview; passed.')
+    print('Software card: update steps and colours for current, running, went back and failed; modules; power, countdown and last shutdown; GitHub link by code; Wi-Fi button; preview; passed.')
 
 
 if __name__ == '__main__':

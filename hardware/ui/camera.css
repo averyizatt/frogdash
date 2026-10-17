@@ -93,6 +93,9 @@
 
 /* Support > Software (operations.js): the dash's update, module firmware, power and shutdown. */
 .sw-column { display:flex; flex-direction:column; gap:14px; min-height:0; }
+.sw-code { display:flex; align-items:center; gap:16px; padding:10px 14px; border-radius:10px; background:color-mix(in srgb, var(--accent, #3566c9) 14%, transparent); }
+.sw-code strong { font-size:34px; letter-spacing:.12em; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.sw-code span { font-size:14px; line-height:1.35; }
 .software-card { border:1px solid var(--line); border-radius:12px; padding:14px 18px; background:var(--surface); display:flex; flex-direction:column; gap:9px; }
 .software-card .control-note { margin:0; font-size:13px; }
 .sw-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }

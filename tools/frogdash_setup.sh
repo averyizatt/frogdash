@@ -318,6 +318,18 @@ else
     fi
 fi
 
+# --- System log kept across restarts (for the reports uploaded after an update) ---
+if [ -d "$ETC/systemd" ]; then
+    if cmp -s "$REPO/config/journald-frogdash.conf" "$ETC/systemd/journald.conf.d/frogdash.conf"; then
+        step "System log kept" ok "Kept across restarts, at most 150 MB"
+    elif mkdir -p "$ETC/systemd/journald.conf.d" && cp "$REPO/config/journald-frogdash.conf" "$ETC/systemd/journald.conf.d/frogdash.conf"; then
+        systemctl restart systemd-journald >/dev/null 2>&1
+        step "System log kept" done "Kept across restarts from now on, at most 150 MB"
+    else
+        step "System log kept" failed "Could not install the journal setting"
+    fi
+fi
+
 # --- Dash cam Wi-Fi only while the engine runs ---
 # The Wi-Fi keeper (tools/frogdash_netkeeper.sh) brings the dash cam connection up when the
 # engine is running and lets it go when it is off, so a saved home Wi-Fi or phone hotspot

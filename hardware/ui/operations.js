@@ -38,11 +38,15 @@
     '<ol class="sw-steps" id="update-steps">' + [['internet', 'Internet'], ['download', 'Download'], ['restart', 'Restart &amp; check'], ['setup', 'Pi setup'], ['upload', 'Upload']]
       .map(([key, label]) => `<li data-step="${key}" data-state="todo"><i></i><span>${label}</span></li>`).join('') + '</ol>' +
     '<p class="sw-message" id="update-status">Uses a saved Wi-Fi network (home or phone hotspot) and returns to the dash cam afterwards.</p>' +
-    '<div class="sw-buttons"><button type="button" id="update-run">Update now</button><button type="button" id="update-undo" disabled>Undo update</button><button type="button" id="update-check">Refresh</button></div></div>' +
+    '<div class="sw-buttons"><button type="button" id="update-run">Update now</button><button type="button" id="update-undo" disabled>Undo update</button><button type="button" id="update-check">Refresh</button><button type="button" id="update-wifi">Wi-Fi…</button></div></div>' +
     '<div class="software-card" id="power-card"><span class="sw-title">Power and shutdown</span><ul class="sw-modules sw-power" id="power-rows"></ul></div></div>' +
     '<div class="sw-column"><div class="software-card" id="modules-card"><span class="sw-title">Modules on the CAN bus</span>' +
     '<ul class="sw-modules" id="firmware-modules"><li class="sw-empty">Waiting for the dash…</li></ul>' +
-    '<p class="control-note">New builds arrive with Update now. Install one with the car stopped: two presses.</p></div></div></div></section>');
+    '<p class="control-note">New builds arrive with Update now. Install one with the car stopped: two presses.</p></div>' +
+    '<div class="software-card" id="uploads-card"><div class="sw-head"><div><span class="sw-title">Reports to GitHub</span><small id="uploads-where">After every update</small></div><span class="sw-pill" id="uploads-pill" data-tone="idle">Checking…</span></div>' +
+    '<div class="sw-code" id="uploads-code" hidden><strong></strong><span>On your phone open <b>github.com/login/device</b>, type this code and press Authorize.</span></div>' +
+    '<p class="sw-message" id="uploads-status">What went wrong (GPS, CAN, modules, power), the diagnostics, the system log and the newest drive.</p>' +
+    '<div class="sw-buttons"><button type="button" id="uploads-connect">Connect GitHub</button><button type="button" id="uploads-disconnect" hidden>Disconnect</button></div></div></div></div></section>');
   // TunerStudio is a desktop program: the kiosk opens it over the dash (hardware/frogdash/tune.py).
   dialog.querySelector('[data-ops-panel="support"]').insertAdjacentHTML('afterend',
     '<section class="driver-panel ops-panel control-section" data-ops-panel="tune" hidden><div class="ops-columns">' +
@@ -219,9 +223,46 @@
       return row;
     }));
   }
-  $('update-check').onclick = () => updatePoll();
+  // Reports to GitHub (hardware/frogdash/github_link.py): linked once with a code typed on
+  // the phone; after that every update sends them. No token is copied anywhere.
+  let uploadsTimer = null, disconnectArmed = false;
+  function renderUploads(s) {
+    const link = s.link || {}, waiting = link.state === 'waiting';
+    const [tone, label] = waiting ? ['busy', 'Enter the code'] : s.configured ? (s.last?.state === 'failed' ? ['bad', 'Upload failed'] : ['good', 'Connected'])
+      : link.state === 'failed' ? ['bad', 'Not connected'] : ['warn', 'Not connected'];
+    $('uploads-pill').dataset.tone = tone; $('uploads-pill').textContent = label;
+    $('uploads-where').textContent = s.configured ? `To ${s.repo || 'GitHub'} (branch pi-logs)${s.account ? ' · as ' + s.account : ''}` : 'After every update';
+    $('uploads-code').hidden = !waiting;
+    $('uploads-code').querySelector('strong').textContent = waiting ? link.code : '';
+    const held = s.held ? ` ${s.held} report${s.held === 1 ? '' : 's'} waiting on the Pi${s.configured ? '' : ': they go up once connected'}.` : '';
+    $('uploads-status').textContent = waiting ? `Waiting for GitHub… the code works for ${Math.max(0, Math.round((link.expires_at - Date.now() / 1000) / 60))} more minutes.`
+      : link.state === 'failed' && !s.configured ? link.message + '.' + held
+      : s.configured ? `${s.last ? 'Last: ' + s.last.message + '.' : 'Nothing sent yet: it goes with the next update.'}${held}`
+      : !s.ready ? 'This dash does not have its GitHub app ID yet: it comes with an update.' + held
+      : 'Press Connect GitHub (with internet), then type the code it shows on your phone. Once, and done.' + held;
+    $('uploads-connect').hidden = s.configured || waiting; $('uploads-connect').disabled = !s.ready;
+    $('uploads-disconnect').hidden = !s.configured; $('uploads-disconnect').textContent = 'Disconnect'; disconnectArmed = false;
+    clearTimeout(uploadsTimer); uploadsTimer = waiting && dialog.open ? setTimeout(uploadsPoll, 3000) : null;
+  }
+  async function uploadsPoll(action) {
+    if (demo()) { renderUploads({ready: true, configured: false, held: 0, link: {state: 'idle'}}); return; }
+    try {
+      const response = await fetch('/uploads', action ? {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({action})} : {cache: 'no-store'});
+      if (!response.ok) { $('uploads-status').textContent = await response.text(); $('uploads-pill').dataset.tone = 'idle'; $('uploads-pill').textContent = 'Unavailable'; return; }
+      renderUploads(await response.json());
+    } catch { $('uploads-status').textContent = 'The dash did not answer'; }
+  }
+  $('uploads-connect').onclick = () => { $('uploads-status').textContent = 'Asking GitHub for a code…'; uploadsPoll('connect'); };
+  $('uploads-disconnect').onclick = () => {
+    if (disconnectArmed) return uploadsPoll('disconnect');
+    disconnectArmed = true; $('uploads-disconnect').textContent = 'Press again';
+    $('uploads-status').textContent = 'Reports stop going to GitHub until it is connected again. Press again to confirm.';
+  };
+  // Wi-Fi networks live in Controls > Wi-Fi: the button takes the driver there.
+  $('update-wifi').onclick = () => { dialog.close(); $('controls-launch')?.click(); $('tab-wifi')?.click(); };
+  $('update-check').onclick = () => { updatePoll(); uploadsPoll(); };
   // The software tab is read each time it opens, and follows an update while it runs.
-  document.querySelector('[data-ops-tab="software"]').addEventListener('click', () => { updatePoll(); renderFirmware(); renderPower(); });
+  document.querySelector('[data-ops-tab="software"]').addEventListener('click', () => { updatePoll(); renderFirmware(); renderPower(); uploadsPoll(); });
   $('update-run').onclick = () => updateRequest('update', 'Requesting update…');
   $('update-undo').onclick = () => {
     // Two presses, so a stray button press cannot send the dash back a version.

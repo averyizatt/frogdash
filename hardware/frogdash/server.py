@@ -20,6 +20,8 @@ from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
 from .connectivity import Connectivity, DEFAULT_SOCKET, require_local
 from .race import Race
 from .driving import Driving, atomic_write
+from .eventlog import EventLog, read as read_events, as_text as events_text
+from .github_link import GitHubLink
 from .health import Health
 from .shutdown import ShutdownHistory
 from .trip import Trip
@@ -82,6 +84,7 @@ def create_app(state, adapter=None, connectivity=None):
             tasks.append(asyncio.create_task(state.dashcam.run()))
         if state.firmware:
             tasks.append(asyncio.create_task(state.firmware.run()))
+        eventlog_task = asyncio.create_task(state.eventlog.run()) if state.eventlog else None
         if state.recorder:
             state.recorder.start()
         if connectivity:
@@ -114,6 +117,12 @@ def create_app(state, adapter=None, connectivity=None):
         await nav_task
         if health_task:
             await health_task
+        if eventlog_task:
+            state.eventlog.stopping = True
+            eventlog_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await eventlog_task
+            state.eventlog.write('info', 'dash', 'Dash stopping')
         if state.recorder:
             await state.recorder.close()
         await asyncio.gather(*(ws.close(code=1001, message=b"Service stopping") for ws in list(clients)))
@@ -185,6 +194,41 @@ def create_app(state, adapter=None, connectivity=None):
         rpm = state.runtime.rpm()
         return web.json_response({**{key: snapshot[key] for key in ('mode', 'transport', 'modules', 'gps', 'recording', 'system', 'can_errors')},
                                   'ui_clients': len(clients), 'engine_running': bool(rpm and rpm >= 300)})
+
+    async def events(request):
+        """The dash's record of what went wrong (eventlog.py): ?since=<unix time>, ?format=text."""
+        if not state.eventlog:
+            raise web.HTTPNotFound(text='No event log on this dash')
+        try:
+            since = float(request.query.get('since', 0))
+            limit = max(1, min(5000, int(request.query.get('limit', 500))))
+        except ValueError:
+            raise web.HTTPBadRequest(text='since and limit are numbers')
+        entries = await asyncio.to_thread(read_events, state.eventlog.folder, since, limit)
+        if request.query.get('format') == 'text':
+            return web.Response(text=events_text(entries), headers={'Cache-Control': 'no-store'})
+        return web.json_response({'entries': entries, 'error': state.eventlog.error}, headers={'Cache-Control': 'no-store'})
+
+    async def uploads(request):
+        """Reports to GitHub (github_link.py): how they stand, and Connect / Disconnect."""
+        require_local(request)
+        if not state.github:
+            raise web.HTTPNotFound(text='Uploads are only on the dash in the car')
+        if request.method == 'POST':
+            try:
+                action = (await request.json()).get('action')
+            except (ValueError, AttributeError):
+                raise web.HTTPBadRequest(text='Invalid request')
+            if action == 'connect':
+                try:
+                    await state.github.connect()
+                except ValueError as error:
+                    raise web.HTTPConflict(text=str(error))
+            elif action == 'disconnect':
+                await asyncio.to_thread(state.github.disconnect)
+            else:
+                raise web.HTTPBadRequest(text='connect or disconnect')
+        return web.json_response(await asyncio.to_thread(state.github.status), headers={'Cache-Control': 'no-store'})
 
     async def logs(request):
         files = await asyncio.to_thread(state.recorder.files) if state.recorder else []
@@ -825,7 +869,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/events', events), web.get('/uploads', uploads), web.post('/uploads', uploads), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),
@@ -902,6 +946,7 @@ def main():
     state.imports = Imports((args.data_dir / 'replay' if args.replay else args.data_dir) / 'import', Path(__file__).resolve().parents[1] / 'art')
     state.paint = Paint((args.data_dir / 'replay' if args.replay else args.data_dir) / 'appearance-paint.json')
     state.shutdown_history = ShutdownHistory((args.data_dir / 'replay' if args.replay else args.data_dir) / 'shutdown.json')
+    state.eventlog = EventLog(state, (args.data_dir / 'replay' if args.replay else args.data_dir) / 'events')
     if args.log_dir:
         try:
             config = LogConfig(args.log_dir.resolve(), args.log_hz, args.log_minutes * 60,
@@ -928,6 +973,7 @@ def main():
     if not args.replay:
         state.helpers = Helpers(args.data_dir)
         state.firmware = Firmware(state, args.data_dir / 'firmware')
+        state.github = GitHubLink(args.data_dir)
     if args.gpsd:
         state.gps = GPS(device=args.gps_device, transmit=not args.gps_no_transmit)
         # Watches for a missing position and works through the recovery steps (gpswatch.py).
