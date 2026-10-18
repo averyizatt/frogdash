@@ -56,7 +56,10 @@ async def inspect(page, selector, scroll_selector=None):
 
 async def inspect_dashboard(page):
     await page.wait_for_function("Math.abs(document.getElementById('display').getBoundingClientRect().width - (matchMedia('(max-aspect-ratio: 11/5)').matches ? document.documentElement.clientWidth : Math.min(innerWidth, innerHeight * 1920 / 720))) < 1")
-    assert await page.evaluate('document.documentElement.scrollWidth <= innerWidth'), page.viewport_size
+    # On failure, name what sticks out (fonts differ between machines).
+    wide = await page.evaluate("[...document.querySelectorAll('body *')].filter(n => n.getClientRects().length && n.getBoundingClientRect().right > innerWidth + 0.5)"
+                               ".slice(0, 8).map(n => (n.id || n.className || n.tagName) + ':' + Math.round(n.getBoundingClientRect().right))")
+    assert await page.evaluate('document.documentElement.scrollWidth <= innerWidth'), (page.viewport_size, wide)
     for selector in ('.topbar', '.primary-instruments', '.sensor-row', '.dashboard-footer'):
         bounds = await page.locator(selector).filter(visible=True).bounding_box()
         assert bounds['x'] >= -1 and bounds['x'] + bounds['width'] <= page.viewport_size['width'] + 1, (selector, bounds)

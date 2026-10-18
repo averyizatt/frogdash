@@ -179,7 +179,7 @@
   .turn-cluster svg { width:26px; }
   .header-status { gap:8px; }
   .connection-badge { font-size:11px; padding:8px; }
-  .drive-quick { gap:6px; flex-wrap:wrap; justify-content:center; }
+  .drive-quick { gap:6px; }
   .drive-quick button { font-size:12px; padding:8px; }
   #clock-time { font-size:22px; min-width:68px; }
   .primary-instruments,.tach,.speed { min-height:300px; }
@@ -205,4 +205,5 @@
 @media (max-aspect-ratio:11/5) and (max-width:600px) {
   .topbar { grid-template-columns:minmax(0,1fr); grid-template-areas:"indicators" "status" "actions"; }
   .topbar > .header-status,.topbar > .drive-quick { justify-self:center; justify-content:center; }
+  .topbar > .drive-quick { flex-wrap:wrap; max-width:100%; min-width:0; }   /* Four buttons do not fit 320 px with every font */
 }
