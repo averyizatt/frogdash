@@ -6,10 +6,14 @@ Two different problems need different remedies:
   look for the receiver on every USB port and point the service at it, then reset the
   receiver's USB connection. These need root, so the dash asks a small helper
   (tools/frogdash_gps.sh, started by frogdash-gps.path) by leaving a one-word request.
-- The receiver reports but has no position: restart its satellite search, then clear
-  its memory and start again. A u-blox receiver takes these commands through gpsd;
-  for other makes the USB reset stands in. After that nothing in software can help:
-  it is reception, and the dash says so.
+- The receiver reports and hears satellites but has no position yet: leave it alone.
+  It is collecting each satellite's data, which takes minutes with a weak sky view in
+  a car; a restart throws that away and starts it over. (Until October 2026 the dash
+  restarted it after 2 minutes and cleared its memory after 5, every quarter of an
+  hour: on the car it found satellites, got close to a fix, and was reset again.)
+- The receiver reports but hears no satellite at all for 10 minutes: restart its
+  satellite search once (a u-blox through gpsd; other makes get a USB reset), then at
+  most once an hour. Its memory is never cleared.
 
 Every step is announced so the driver sees what is being tried.
 """
@@ -17,16 +21,15 @@ import asyncio
 import json
 
 SILENT = ('no-gpsd', 'silent')
-NO_FIX = ('deaf', 'weak', 'searching')
+NO_FIX = ('deaf',)   # 'weak' and 'searching' hear satellites: never touched
 # (seconds to wait before this step, action, what the driver is told)
 SILENT_STEPS = [(15, 'restart', 'Restarting the GPS service'),
                 (25, 'repin', 'Looking for the receiver on the USB ports'),
                 (25, 'usb', 'Resetting the receiver USB connection')]
-NO_FIX_STEPS = [(120, 'warm', 'Restarting the receiver satellite search'),
-                (180, 'cold', 'Clearing the receiver memory and starting again')]
+NO_FIX_STEPS = [(600, 'warm', 'Restarting the receiver satellite search')]
 NO_SERVICE_S = 5        # The service not answering at all gets its restart sooner.
 SILENT_RETRY_S = 300    # Then go round again: a receiver plugged in later should be found.
-NO_FIX_RETRY_S = 900    # Clearing the memory again too soon only makes a weak signal worse.
+NO_FIX_RETRY_S = 3600   # A receiver that still hears nothing: try again at most once an hour.
 ANNOUNCE_S = 20
 HELPER_WAIT_S = 8       # A request still lying there after this long means no helper.
 
@@ -50,6 +53,9 @@ class GpsRecovery:
 
     def step(self):
         """One look at the receiver; takes the next recovery step when it is due."""
+        configure = getattr(self.gps, 'configure_receiver', None)
+        if configure:
+            configure()   # A u-blox heard for the first time is set up for a car (gps.py).
         now = self.clock()
         state = self.gps.diagnosis()['state']
         kind = 'silent' if state in SILENT else 'no-fix' if state in NO_FIX else None

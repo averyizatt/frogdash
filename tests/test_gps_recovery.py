@@ -10,7 +10,7 @@ import tempfile
 import threading
 import unittest
 
-from hardware.frogdash.gps import GPS, UBX_COLD_START, UBX_WARM_START, send_to_receiver, ubx
+from hardware.frogdash.gps import GPS, UBX_AUTOMOTIVE, UBX_COLD_START, UBX_WARM_START, send_to_receiver, ubx
 from hardware.frogdash.gpswatch import GpsRecovery, NO_FIX_RETRY_S, SILENT_RETRY_S
 from hardware.frogdash.state import State
 from hardware.frogdash import selftest
@@ -59,6 +59,38 @@ class ReceiverCommandTests(unittest.TestCase):
         self.assertTrue(gps.restart_receiver(send=lambda *a: sent.append(a)))
         self.assertTrue(gps.restart_receiver(cold=True, send=lambda *a: sent.append(a)))
         self.assertEqual(sent, [('/dev/ttyACM0', UBX_WARM_START), ('/dev/ttyACM0', UBX_COLD_START)])
+
+
+class ReceiverReportTests(unittest.TestCase):
+    def setUp(self):
+        self.now = 0.0
+        self.gps = GPS(clock=lambda: self.now, wall=lambda: 0)
+
+    def test_a_sky_report_without_a_satellite_list_does_not_read_as_none_heard(self):
+        self.gps.update({'class': 'SKY', 'device': '/dev/ttyACM0', 'satellites': [{'used': True, 'ss': 33}] * 9 + [{'used': False, 'ss': 20}] * 2})
+        self.gps.update({'class': 'SKY', 'device': '/dev/ttyACM0', 'hdop': 0.9})            # NAV-DOP: no list
+        values = self.gps.values()
+        self.assertEqual((values['gps.satellites']['value'], values['gps.satellites_in_view']['value']), (9, 11))
+        self.assertEqual(self.gps.sky['heard'], 11)
+        self.gps.update({'class': 'SKY', 'device': '/dev/ttyACM0', 'nSat': 12, 'uSat': 10})  # Counts only
+        self.assertEqual(self.gps.values()['gps.satellites']['value'], 10)
+
+    def test_a_report_without_a_device_name_is_from_the_receiver_in_use(self):
+        self.gps.update({'class': 'TPV', 'device': '/dev/ttyACM0', 'mode': 3, 'speed': 10})
+        self.now = 1
+        self.gps.update({'class': 'TPV', 'mode': 3, 'speed': 20})
+        self.assertAlmostEqual(self.gps.values()['vehicle.speed_kph']['value'], 72)
+
+    def test_a_u_blox_is_set_to_the_automotive_model_once_per_connection(self):
+        sent = []
+        self.gps.update({'class': 'DEVICE', 'path': '/dev/ttyACM0', 'driver': 'u-blox', 'activated': '2026-10-09T00:00:00Z'})
+        self.assertFalse(self.gps.configure_receiver(send=lambda *a: sent.append(a)))    # Not heard yet
+        self.gps.update({'class': 'TPV', 'device': '/dev/ttyACM0', 'mode': 1})
+        self.assertTrue(self.gps.configure_receiver(send=lambda *a: sent.append(a)))
+        self.assertFalse(self.gps.configure_receiver(send=lambda *a: sent.append(a)))    # Once
+        self.assertEqual(sent, [('/dev/ttyACM0', UBX_AUTOMOTIVE)])
+        self.assertEqual(UBX_AUTOMOTIVE[:9].hex(' '), 'b5 62 06 24 24 00 01 00 04')      # CFG-NAV5, dynamic model only: automotive
+        self.assertEqual(self.gps.configure_note, 'Receiver set to the automotive model (/dev/ttyACM0)')
 
 
 class ConnectionLoopDiagnosisTests(unittest.TestCase):
@@ -168,27 +200,29 @@ class WatchdogTests(unittest.TestCase):
         self.run_for(SILENT_RETRY_S)
         self.assertEqual(self.asked[3], 'restart')                                   # A receiver plugged in later is still found.
 
-    def test_receiver_with_no_position_gets_a_warm_then_a_cold_restart_and_then_is_left_alone(self):
-        self.receiver.state = 'weak'
-        self.run_for(119)
-        self.assertEqual(self.receiver.restarts, [])                                 # Two minutes to find satellites by itself.
+    def test_a_receiver_that_hears_satellites_is_never_restarted(self):
+        # On the car: satellites, close to a fix, then reset by the dash, over and over.
+        for state in ('searching', 'weak'):
+            self.receiver.state = state
+            self.run_for(1800)
+        self.assertEqual((self.receiver.restarts, self.asked, self.watch.snapshot()['kind']), ([], [], None))
+
+    def test_one_that_hears_nothing_for_ten_minutes_gets_one_warm_restart_an_hour_never_a_cold_one(self):
+        self.receiver.state = 'deaf'
+        self.run_for(599)
+        self.assertEqual(self.receiver.restarts, [])
         self.run_for(2)
         self.assertEqual(self.receiver.restarts, ['warm'])
-        self.receiver.state = 'deaf'                                                 # Still the same kind of problem.
-        self.run_for(181)
-        self.assertEqual(self.receiver.restarts, ['warm', 'cold'])
-        self.run_for(NO_FIX_RETRY_S - 10)
-        self.assertEqual(self.receiver.restarts, ['warm', 'cold'])                   # Then left alone for a quarter of an hour.
-        self.assertTrue(self.watch.snapshot()['exhausted'])
-        self.run_for(20 + 185)
-        self.assertEqual(self.receiver.restarts, ['warm', 'cold', 'warm', 'warm'])   # Its memory is cleared only once.
         self.assertEqual(self.watch.snapshot()['trying']['text'], 'Restarting the receiver satellite search')
+        self.run_for(NO_FIX_RETRY_S - 10)
+        self.assertEqual(self.receiver.restarts, ['warm'])
+        self.assertTrue(self.watch.snapshot()['exhausted'])
+        self.run_for(20)
+        self.assertEqual(self.receiver.restarts, ['warm', 'warm'])                    # Its memory is never cleared.
         self.assertEqual(self.asked, [])                                             # A u-blox needs no root helper for this.
-        self.receiver.state = 'fix'
-        self.run_for(5)
-        self.receiver.state = 'searching'                                            # Lost again later: a fresh start.
-        self.run_for(120 + 181)
-        self.assertEqual(self.receiver.restarts[-2:], ['warm', 'cold'])
+        self.receiver.state = 'searching'                                            # Hears satellites again: left alone.
+        self.run_for(NO_FIX_RETRY_S + 10)
+        self.assertEqual(self.receiver.restarts, ['warm', 'warm'])
 
     def test_a_service_that_is_not_answering_is_restarted_within_seconds(self):
         self.receiver.state = 'no-gpsd'
@@ -199,8 +233,8 @@ class WatchdogTests(unittest.TestCase):
 
     def test_other_makes_get_a_usb_reset_instead(self):
         self.receiver.ublox = False
-        self.receiver.state = 'searching'
-        self.run_for(125)
+        self.receiver.state = 'deaf'
+        self.run_for(605)
         self.assertEqual((self.receiver.restarts, self.asked), ([], ['usb']))
 
     def test_a_position_stops_everything_and_a_new_loss_starts_from_the_first_step(self):

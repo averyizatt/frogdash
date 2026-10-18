@@ -238,6 +238,7 @@ class State:
                 "runtime": self.runtime.snapshot(), "nav": self.nav.snapshot(), "tune": self.tune.snapshot(),
                 "gaps": list(self.gaps),
                 "gps": {"status": self.gps.status, "diagnosis": self.gps.diagnosis(), "brief_losses": self.gps.brief_losses,
+                        "receiver_setup": self.gps.configure_note,
                         "recovery": self.gps_recovery.snapshot() if self.gps_recovery else None, "tx_status": self.gps.tx_status,
                         "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
                 "controls": self.controls.status(), "taillight": self.taillight.snapshot(), "meth_tune": self.meth_tune.snapshot(), "knock_detail": self.knock_detail.snapshot(), "events": list(self.events), "race": race,

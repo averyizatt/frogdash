@@ -255,9 +255,17 @@ each one where the speed would be. A position at any point stops it.
 | | Look for the receiver on the USB ports and point gpsd at it | 25 s later |
 | | Reset the receiver's USB connection (as if unplugged and replugged) | 25 s later |
 | | Start again from the top | Every 5 minutes |
-| Receiver reports, no position | Restart its satellite search (u-blox command) | After 2 minutes |
-| | Clear its memory and search from nothing, once | 3 minutes later |
-| | Restart the search again | Every 15 minutes |
+| Receiver hears satellites, no position yet | Nothing: it is collecting each satellite's data, and a restart would throw that away | Never |
+| Receiver hears no satellite at all | Restart its satellite search (u-blox command; other makes get a USB reset) | After 10 minutes |
+| | Again | At most once an hour |
+
+Until October 2026 a receiver still working out its position was restarted after 2
+minutes and had its memory cleared after 5, every quarter of an hour. With the weak sky
+view in a car that kept it from ever settling: satellites, nearly a fix, reset.
+
+A u-blox receiver is also set to its automotive model (UBX-CFG-NAV5, dynamic model 4)
+each time the dash connects to it: u-blox's advice for a receiver in a car. It lasts
+until the receiver loses power, so the dash sends it again at every start.
 
 The first three steps need root, which the dash does not have. A small helper does
 them. The Pi setup installs it with the update that brings it (see **Pi setup** above);

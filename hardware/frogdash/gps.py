@@ -28,6 +28,10 @@ def ubx(message_class, message_id, payload=b''):
 # satellites; cold clears it and starts from nothing.
 UBX_WARM_START = ubx(0x06, 0x04, bytes([0x01, 0x00, 0x02, 0x00]))
 UBX_COLD_START = ubx(0x06, 0x04, bytes([0xFF, 0xFF, 0x02, 0x00]))
+# CFG-NAV5 with only the dynamic model applied (mask bit 0): 4 = automotive. u-blox's own
+# advice for a receiver in a car: its position and speed filter expects a vehicle on a
+# road, not a person walking ('portable', the default). Kept until the receiver loses power.
+UBX_AUTOMOTIVE = ubx(0x06, 0x24, bytes([0x01, 0x00, 0x04]) + bytes(33))
 
 
 def send_to_receiver(path, frame, host='127.0.0.1', port=2947, timeout=2):
@@ -70,6 +74,8 @@ class GPS:
         self.good_fix_at = float('-inf')   # Last report with a real fix
         self.good_mode = 0
         self.brief_losses = 0      # Lone 'no fix' reports ridden through (FIX_GRACE_S)
+        self.configured = None     # The receiver last set to the automotive model
+        self.configure_note = None
         self.fix_grace = FIX_GRACE_S
 
     def update(self, report):
@@ -83,7 +89,8 @@ class GPS:
             return
         if kind not in ("TPV", "SKY"):
             return
-        device = report.get("device")
+        # gpsd names the receiver in each report; one without the name is from the one in use.
+        device = report.get("device") or self.device
         self.report_seen = self.clock()
         if self.device and device != self.device:
             # A receiver that re-plugs can come back under another name (ttyACM0 -> ttyACM1).
@@ -134,7 +141,19 @@ class GPS:
             else:
                 self.fields.pop("gps.altitude_m", None)
         else:
-            satellites = report.get("satellites", [])
+            satellites = report.get("satellites")
+            if satellites is None:
+                # gpsd also sends SKY reports with only the dilution of precision (a u-blox's
+                # NAV-DOP), or only the counts. Without a satellite list they said "0 seen",
+                # which flickered the count and could read as a receiver that hears nothing.
+                used, seen = report.get("uSat"), report.get("nSat")
+                if isinstance(used, int) and isinstance(seen, int):
+                    put("gps.satellites", used)
+                    put("gps.satellites_in_view", seen)
+                    if self.sky:
+                        self.sky = {**self.sky, 'in_view': seen, 'used': used}
+                        self.sky_seen = now
+                return
             put("gps.satellites", sum(bool(s.get("used")) for s in satellites))
             put("gps.satellites_in_view", len(satellites))
             strengths = [s.get("ss") for s in satellites if isinstance(s.get("ss"), (int, float)) and s.get("ss") > 0]
@@ -176,6 +195,22 @@ class GPS:
     def driver(self):
         """gpsd's name for the receiver in use, such as 'u-blox'; None until it is identified."""
         return self.devices.get(self.device) or next((name for name in self.devices.values() if name), None)
+
+    def configure_receiver(self, send=send_to_receiver):
+        """Set a u-blox receiver to the automotive model, once each time it is (re)connected.
+        Blocking (it talks to gpsd): called from the recovery watchdog's thread."""
+        path = self.device
+        if not path or path == self.configured or 'u-blox' not in (self.driver() or '').lower():
+            return False
+        if self.clock() - self.device_seen > QUIET_S:
+            return False
+        try:
+            send(path, UBX_AUTOMOTIVE)
+            self.configure_note = f'Receiver set to the automotive model ({path})'
+        except OSError as error:
+            self.configure_note = f'Could not set the receiver to the automotive model: {error}'
+        self.configured = path
+        return True
 
     def restart_receiver(self, cold=False, send=send_to_receiver):
         """Ask a u-blox receiver to restart its satellite search. Returns False for other makes."""
@@ -238,7 +273,8 @@ async def gpsd(gps_state):
                                               mode=libgps.WATCH_ENABLE | libgps.WATCH_NEWSTYLE)
             session.sock.settimeout(1)
             gps_state.fields.clear()
-            gps_state.mode = 0
+            gps_state.mode = gps_state.good_mode = 0
+            gps_state.configured = None
             gps_state.fix_seen = float("-inf")
             gps_state.connected, gps_state.status = True, "gpsd connected; waiting for fix"
             gps_state.gpsd_ok, gps_state.gpsd_error = True, None
