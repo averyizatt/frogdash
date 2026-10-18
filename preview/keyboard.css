@@ -13,5 +13,5 @@
 .osk button[data-wide="done"] { flex-basis:150px; font-size:20px; background:var(--accent); color:#06120d; border-color:transparent; }
 
 /* Controls > Wi-Fi > Internet: the network list and the password big enough to hit with a mouse. */
-#panel-wifi .setting-card label { display:flex; flex-direction:column; gap:6px; }
-#panel-wifi .setting-card select, #panel-wifi .setting-card input { width:100%; box-sizing:border-box; min-height:48px; font-size:20px; padding:6px 10px; }
+#panel-wifi .setting-card label { display:flex; flex-direction:column; gap:3px; }
+#panel-wifi .setting-card select, #panel-wifi .setting-card input { width:100%; box-sizing:border-box; min-height:34px; font-size:18px; padding:2px 10px; }

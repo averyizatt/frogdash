@@ -3,7 +3,6 @@
   'use strict';
   const $ = id => document.getElementById(id), u = window.FrogdashUnits;
   const keys = ['frogdash.appearance.v1', 'frogdash.driving.v1', 'frogdash.units.v1', 'frogdash.cluster.v1', 'frogdash.camera.v1'];
-  const checks = {boot: 'Cold start: time until live gauges', crank: 'Cranking: power and display stay stable', gps_loss: 'Unplug GPS: speed becomes unavailable', can_loss: 'Disconnect CAN / modules: stale state visible', storage: 'Low storage: rotation and warnings verified', recording: 'Long drive: MLG opens in MegaLogViewer', display: 'Physical screen: touch, daylight and night', controls: 'Controller commands and readback checked'};
   let latest = {}, online = false, busy = false, pending = null, backlight = {};
   const simulated = {version: '0.4.0 preview', os: 'Simulated Raspberry Pi', maintenance: [], checks: {}, capabilities: []};
   const demo = () => latest.mode === 'demo';
@@ -16,11 +15,11 @@
     <div class="control-workspace"><nav class="control-tabs driver-tabs" aria-label="Management sections">
     ${[['setup','Setup checklist'],['service','Maintenance'],['backup','Backup & restore'],['display','Units & backlight'],['software','Software & power'],['support','Support & testing'],['tune','TunerStudio'],['terminal','Terminal']].map(([key,label]) => `<button type="button" data-ops-tab="${key}" aria-selected="false">${label}</button>`).join('')}</nav>
     <div class="driver-panels">
-      <section class="driver-panel ops-panel control-section" data-ops-panel="setup"><div class="ops-columns"><div class="setting-card"><h3>1 · Check connected hardware</h3><div id="setup-hardware"></div><p class="control-note">Live presence confirms data is arriving. Verify wiring, CAN oscillator/bitrate and sensor accuracy during commissioning.</p></div><div class="setting-card"><h3>2 · Complete calibration and display</h3><div id="setup-calibration"></div><p class="control-note">3 · Run the vehicle checks under Support & testing. Completion is recorded only when you mark a physical test passed.</p><button type="button" data-ops-go="support">Vehicle test checklist</button></div></div></section>
+      <section class="driver-panel ops-panel control-section" data-ops-panel="setup"><div class="ops-columns"><div class="setting-card"><h3>1 · Check connected hardware</h3><div id="setup-hardware"></div><p class="control-note">Live presence confirms data is arriving. Verify wiring, CAN oscillator/bitrate and sensor accuracy during commissioning.</p></div><div class="setting-card"><h3>2 · Complete calibration and display</h3><div id="setup-calibration"></div><p class="control-note">Problems the dash notices on the road are listed under Support &amp; testing.</p><button type="button" data-ops-go="support">What happened</button></div></div></section>
       <section class="driver-panel ops-panel control-section" data-ops-panel="service" hidden><div class="ops-columns"><form id="maintenance-form" class="setting-card ops-edit"><h3>Add a service reminder</h3><label>Service name<input id="maintenance-name" maxlength="60" required placeholder="Engine oil & filter"></label><div class="ops-fields"><label id="maintenance-distance-label">Distance · km<input id="maintenance-distance" type="number" min="0" max="100000" value="0" required></label><label>Engine hours<input id="maintenance-hours" type="number" min="0" max="10000" value="0" required></label><label>Days<input id="maintenance-days" type="number" min="0" max="3650" value="0" required></label></div><p class="control-note">Zero disables an interval. Due when any enabled interval is reached. Distance and engine hours count only while the dash receives live data; enter intervals remaining until your next service.</p><button type="submit">Add reminder</button></form><div class="setting-card ops-list" id="maintenance-list" aria-live="polite"></div></div></section>
       <section class="driver-panel ops-panel control-section" data-ops-panel="backup" hidden><div class="ops-columns"><div class="setting-card"><h3>One portable configuration file</h3><p class="control-note">Includes this display’s appearance, layouts and units, plus Pi alerts, fuel estimate settings, trip totals, economy history, race results and service records.</p><p class="control-note">Download recordings separately. Hotspot credentials and Linux configuration are not included.</p><button id="backup-download" type="button">Download backup</button><button id="profile-save" class="ops-edit" type="button">Save display profile to Pi</button><button id="profile-load" class="ops-edit" type="button">Use saved Pi display profile</button></div><div class="setting-card ops-edit"><h3>Review and restore</h3><label>Dash backup JSON<input id="backup-file" type="file" accept="application/json,.json"></label><p id="backup-review" class="control-note">Choose a file to review before replacing your settings.</p><button id="backup-restore" type="button" disabled>Restore reviewed backup</button><p class="control-note">Restore replaces counters and calibration. The display reloads. Manually entered fuel inventory must be reconfirmed afterward.</p></div></div></section>
       <section class="driver-panel ops-panel control-section" data-ops-panel="display" hidden><div class="ops-columns"><div class="setting-card ops-edit"><h3>Display units</h3><label>Road instruments<select id="units-system"><option value="us">US · MPH / °F / psi / US MPG</option><option value="metric">Metric · km/h / °C / kPa / L/100 km</option></select></label><p class="control-note">Changes gauges, trip, range and economy displays. Calibration, diagnostics and recorded channels retain their explicitly labelled engineering units.</p></div><form id="backlight-form" class="setting-card"><h3>Physical LCD backlight</h3><p id="backlight-status" class="control-note">Checking device support…</p><label>Brightness · %<input id="backlight-percent" type="number" min="10" max="100" value="80" required></label><button id="backlight-apply" type="submit" disabled>Apply to LCD</button><p class="control-note">Requires a selected, writable Linux backlight device. Day/night dimming under Drive remains a software display effect.</p></form></div></section>
-      <section class="driver-panel ops-panel control-section" data-ops-panel="support" hidden><div class="ops-columns"><div class="setting-card"><h3>Support report</h3><p id="support-version" class="control-note"></p><button id="diagnostic-download" type="button">Download diagnostics</button><p class="control-note">Includes connection quality, CAN errors, GPS status, recorder and Pi health, fuel level quality. Excludes GPS coordinates, raw logs, Wi-Fi secrets and artwork.</p><div id="controller-capabilities" class="ops-capabilities"></div></div><div class="setting-card ops-list"><h3>Vehicle acceptance checks</h3><p class="control-note">Mark passed only after performing each test on the car. These are records, not automatic hardware certification.</p><div id="acceptance-list"></div></div></div></section>
+      <section class="driver-panel ops-panel control-section" data-ops-panel="support" hidden><div class="ops-columns"><div class="setting-card"><h3>Support report</h3><p id="support-version" class="control-note"></p><button id="diagnostic-download" type="button">Download diagnostics</button><p class="control-note">Includes connection quality, CAN errors, GPS status, recorder and Pi health, fuel level quality. Excludes GPS coordinates, raw logs, Wi-Fi secrets and artwork.</p><div id="controller-capabilities" class="ops-capabilities"></div></div><div class="setting-card ops-list event-card"><div class="sw-head"><div><h3>What happened</h3><small id="event-summary">The dash's own record</small></div><button id="event-refresh" type="button">Refresh</button></div><p class="control-note">GPS, CAN and modules, power, alerts and restarts, as the dash noticed them. Kept 30 days on the Pi; it goes up with the report after each update.</p><ol id="event-list" class="event-list"><li class="sw-empty">Open this tab to read it.</li></ol></div></div></section>
     </div></div><footer class="command-result" id="operations-result" role="status">Connect to the dash service to save configuration.</footer>`;
   document.body.append(dialog);
   dialog.querySelector('[data-ops-panel="support"] .ops-columns').firstElementChild.insertAdjacentHTML('beforeend',
@@ -261,6 +260,7 @@
   // Wi-Fi networks live in Controls > Wi-Fi: the button takes the driver there.
   $('update-wifi').onclick = () => { dialog.close(); $('controls-launch')?.click(); $('tab-wifi')?.click(); };
   $('update-check').onclick = () => { updatePoll(); uploadsPoll(); };
+  $('event-refresh').onclick = () => loadEvents();
   // The software tab is read each time it opens, and follows an update while it runs.
   document.querySelector('[data-ops-tab="software"]').addEventListener('click', () => { updatePoll(); renderFirmware(); renderPower(); uploadsPoll(); });
   $('update-run').onclick = () => updateRequest('update', 'Requesting update…');
@@ -361,7 +361,35 @@
   document.querySelector('[data-ops-tab="terminal"]').addEventListener('click', () => setTimeout(terminalCheck, 0));
   const launch = el('button', 'Dash management', 'close-button'); launch.id = 'operations-launch'; launch.type = 'button';
   $('drive-close').before(launch);
-  function tab(key) { document.querySelectorAll('[data-ops-panel]').forEach(n => n.hidden = n.dataset.opsPanel !== key); document.querySelectorAll('[data-ops-tab]').forEach(n => n.setAttribute('aria-selected', String(n.dataset.opsTab === key))); }
+  function tab(key) { document.querySelectorAll('[data-ops-panel]').forEach(n => n.hidden = n.dataset.opsPanel !== key); document.querySelectorAll('[data-ops-tab]').forEach(n => n.setAttribute('aria-selected', String(n.dataset.opsTab === key))); if (key === 'support') loadEvents(); }
+  // What happened: the dash's event log (hardware/frogdash/eventlog.py), newest first.
+  const EVENT_SAMPLE = [[-60, 'warn', 'gps', 'GPS has a position but no speed'], [-3600, 'info', 'engine', 'Engine started'],
+    [-3700, 'warn', 'module', 'water/meth silent for 1.4 s (0x300), then back: a restart of the module, or a dropout'], [-7200, 'info', 'dash', 'Dash started']];
+  async function loadEvents() {
+    let entries;
+    if (demo()) entries = EVENT_SAMPLE.map(([ago, level, area, text]) => ({t: Date.now() / 1000 + ago, level, area, text}));
+    else {
+      try {
+        const response = await fetch('/events?limit=80', {cache: 'no-store'});
+        if (!response.ok) throw new Error(await response.text());
+        entries = (await response.json()).entries || [];
+      } catch (error) {
+        $('event-summary').textContent = 'Not available: ' + (error.message || 'the dash did not answer').slice(0, 80);
+        return;
+      }
+    }
+    const today = new Date().toDateString();
+    const shown = [...entries].reverse();
+    const problems = entries.filter(e => e.level !== 'info').length;
+    $('event-summary').textContent = entries.length ? `${entries.length} entries · ${problems} problem${problems === 1 ? '' : 's'}` : 'Nothing recorded yet';
+    $('event-list').replaceChildren(...(shown.length ? shown.map(e => {
+      const when = new Date(e.t * 1000), row = el('li');
+      row.dataset.tone = e.level === 'error' ? 'bad' : e.level === 'warn' ? 'warn' : 'idle';
+      row.append(el('time', (when.toDateString() === today ? '' : when.toLocaleDateString([], {month: 'short', day: 'numeric'}) + ' ') + when.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})),
+        el('b', e.area || ''), el('span', e.text || ''));
+      return row;
+    }) : [el('li', 'Nothing recorded yet.', 'sw-empty')]));
+  }
   document.querySelectorAll('[data-ops-tab], [data-ops-go]').forEach(n => n.onclick = () => tab(n.dataset.opsTab || n.dataset.opsGo));
   $('operations-close').onclick = () => dialog.close();
   launch.onclick = async () => { dialog.showModal(); render(); if (!demo()) await work(async () => { const data = await api('status'); backlight = data.backlight; render(); }); };
@@ -407,7 +435,7 @@
     const rows = (id, entries) => $(id).replaceChildren(...entries.map(([label, value]) => { const row = el('p', null, 'ops-status-row'); row.append(el('span', label), el('b', value)); return row; }));
     if (dialog.open) {
       rows('setup-hardware', [['Platform', [s.model, s.os].filter(Boolean).join(' / ') || 'Waiting'], ['CAN', latest.transport?.connected ? 'Connected' : 'No live bus'], ['GPS', latest.values?.['vehicle.speed_kph']?.quality === 'live' ? 'Live speed' : 'No fresh fix'], ['Screen', `${screen.width} × ${screen.height} · viewport ${innerWidth} × ${innerHeight}`], ...Object.entries(latest.modules || {})]);
-      rows('setup-calibration', [['CAN fuel level', !online ? 'Disconnected' : latest.values?.['vehicle.fuel_pct']?.quality === 'live' ? `${latest.values['vehicle.fuel_pct'].value.toFixed(1)}%` : latest.values?.['vehicle.fuel_pct']?.quality || 'unavailable'], ['Injector estimate', latest.trip?.settings?.enabled ? 'Enabled · verify calibration' : 'Needs dead-time / bank verification'], ['Tank', latest.trip?.settings?.capacity_l ? `${u.volume(latest.trip.settings.capacity_l).toFixed(2)} ${u.volumeUnit}` : demo() ? '15.4 US gal' : 'Waiting'], ['Display units', u.metric ? 'Metric' : 'US'], ['Vehicle checks', `${Object.keys(s.checks || {}).length} / ${Object.keys(checks).length} recorded`]]);
+      rows('setup-calibration', [['CAN fuel level', !online ? 'Disconnected' : latest.values?.['vehicle.fuel_pct']?.quality === 'live' ? `${latest.values['vehicle.fuel_pct'].value.toFixed(1)}%` : latest.values?.['vehicle.fuel_pct']?.quality || 'unavailable'], ['Injector estimate', latest.trip?.settings?.enabled ? 'Enabled · verify calibration' : 'Needs dead-time / bank verification'], ['Tank', latest.trip?.settings?.capacity_l ? `${u.volume(latest.trip.settings.capacity_l).toFixed(2)} ${u.volumeUnit}` : demo() ? '15.4 US gal' : 'Waiting'], ['Display units', u.metric ? 'Metric' : 'US']]);
     }
     $('maintenance-distance-label').firstChild.textContent = `Distance · ${u.distanceUnit}`;
     $('support-version').textContent = `Dash ${s.version || 'connecting'} · ${s.os || ''} · Python ${s.python || '—'}`;
@@ -432,7 +460,6 @@
         }
         $('maintenance-list').append(card);
       }
-      $('acceptance-list').replaceChildren(...Object.entries(checks).map(([key, label]) => { const b = el('button', `${s.checks?.[key] ? '✓ ' : ''}${label}`); b.type = 'button'; b.disabled = !canEdit; b.onclick = () => work(() => change({check: key})); return b; }));
       $('controller-capabilities').replaceChildren(...(s.capabilities || []).map(c => el('p', `${c.module}: ${c.command}. ${c.readback}. ${c.persistence}.`, 'control-note')));
     }
     // Local display preferences remain editable even without the backend.

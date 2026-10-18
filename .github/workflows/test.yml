@@ -43,3 +43,4 @@ jobs:
       - run: python tests/browser_screen.py
       - run: python tests/browser_software.py
       - run: python tests/browser_keyboard.py
+      - run: python tests/browser_camera_view.py

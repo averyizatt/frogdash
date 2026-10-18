@@ -9,6 +9,7 @@ import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from aiohttp import web
 from playwright.async_api import async_playwright
+from hardware.frogdash.eventlog import EventLog
 from hardware.frogdash.state import State
 from hardware.frogdash.server import create_app
 from hardware.frogdash.operations import Operations
@@ -57,6 +58,8 @@ async def live(browser):
     with tempfile.TemporaryDirectory() as directory:
         path = Path(directory)
         state = State(clock=lambda: 0)
+        state.eventlog = EventLog(state, path / 'events')
+        state.eventlog.write('warn', 'gps', 'GPS has a position but no speed')
         state.connected = True
         state.ingest(0x204, bytes.fromhex('01F401'))
         state.operations = Operations(state, path)
@@ -89,9 +92,11 @@ async def live(browser):
             await page.get_by_role('button', name='Record service', exact=True).click()
             await page.wait_for_function("document.getElementById('maintenance-list').textContent.includes('Last service')")
             assert len(state.operations.data['maintenance'][0]['history']) == 1
+            # What happened: the dash's event log, newest first, coloured by level.
             await page.locator('[data-ops-tab="support"]').click()
-            await page.locator('#acceptance-list button').first.click()
-            await page.wait_for_function("document.getElementById('acceptance-list').textContent.includes('✓')")
+            await page.wait_for_function("document.getElementById('event-list').textContent.includes('GPS has a position but no speed')")
+            assert await page.locator('#event-list li', has_text='GPS has a position').get_attribute('data-tone') == 'warn'
+            assert await page.locator('#acceptance-list').count() == 0
             async with page.expect_download() as event:
                 await page.locator('#diagnostic-download').click()
             await (await event.value).save_as(path / 'diagnostic.json')
