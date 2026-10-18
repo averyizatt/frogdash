@@ -23,8 +23,8 @@ EXPECTED = [
 ]
 METH_FAULTS = [
     (1, 'Tank low (float switch) or low-fluid failsafe', 'Fill the tank or check the float switch wiring'),
-    (2, 'No valid manifold pressure', "Relay board: check its MAP sensor wiring and vacuum line. "
-        "ESP32 board: the MicroSquirt's CAN broadcast is not reaching the controller"),
+    (2, 'No valid manifold pressure', "The controller takes boost from the MicroSquirt's CAN broadcast "
+        "(0x5E8 or 0x5F2), which is not reaching it: check the ECU's CAN broadcast is switched on"),
     (4, 'Overboost assist active', 'Information: extra injection for overboost'),
     (8, 'Overboost emergency or assist fault latched', 'Check boost control; clear faults once resolved'),
     (16, 'Invalid blend or boost configuration', 'Re-send the boost start setting from Controls'),

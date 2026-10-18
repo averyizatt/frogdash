@@ -86,8 +86,8 @@ LABELS = {
 # Water/meth controller fault bits (methFaultFlagsFor in its firmware), most actionable first.
 METH_FAULTS = [
     (1, 'the tank level sensor reads LOW. Fill the tank, or check the float switch wiring and polarity'),
-    (2, "the controller has no valid manifold pressure. Relay board: check its MAP sensor wiring and vacuum line. "
-        "ESP32 board: the MicroSquirt's CAN broadcast is not reaching it"),
+    (2, "the controller has no manifold pressure: it takes boost from the MicroSquirt's CAN broadcast "
+        "(0x5E8 or 0x5F2), which is not reaching it. Check the ECU's CAN broadcast is switched on"),
     (8, 'an overboost emergency is latched. Check boost control, then Clear faults'),
     (16, 'the blend or boost setting is invalid. Re-apply the boost start value'),
 ]

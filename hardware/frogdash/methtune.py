@@ -21,7 +21,7 @@ from .driving import atomic_write
 # key: (name, minimum, maximum, conservative default)
 SETTINGS = {
     1: ('period_ms', 1000, 10000, 4000), 2: ('min_on_ms', 500, 10000, 1000), 3: ('max_on_ms', 500, 10000, 2000),
-    4: ('start_psi_x10', 10, 300, 50), 5: ('full_psi_x10', 20, 350, 100), 6: ('min_rpm', 0, 8000, 2500),
+    4: ('start_psi_x10', 5, 300, 5), 5: ('full_psi_x10', 20, 350, 100), 6: ('min_rpm', 0, 8000, 2500),
     7: ('max_spray_s', 1, 120, 12), 8: ('rest_s', 0, 60, 6), 9: ('ramp_ms', 0, 5000, 500),
     10: ('min_pre_temp_c', 0, 120, 0), 11: ('overboost_assist', 0, 1, 0),
     12: ('meth_pct', 0, 100, 0), 13: ('nozzle_ml_min', 20, 1000, 60), 14: ('max_dose_pct', 0, 40, 10),

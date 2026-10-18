@@ -19,7 +19,7 @@
     ['max_on_ms', 3, 'Pump runs at full boost', 's', 1000, .5, 10, .1],
     ['min_duty_pct', 18, 'Pump duty at start boost', '%', 1, 10, 100, 1],
     ['max_duty_pct', 19, 'Pump duty at full boost', '%', 1, 10, 100, 1],
-    ['start_psi_x10', 4, 'Start boost', 'psi', 10, 1, 30, .5],
+    ['start_psi_x10', 4, 'Start boost', 'psi', 10, .5, 30, .5],
     ['full_psi_x10', 5, 'Full boost', 'psi', 10, 2, 35, .5],
     ['min_rpm', 6, 'Minimum engine RPM', '', 1, 0, 8000, 100],
     ['early_rpm', 15, 'Start above this RPM before boost (0 = off)', '', 1, 0, 8000, 100],
@@ -33,7 +33,7 @@
     ['min_pre_temp_c', 10, 'Only spray above intake temp (0 = off)', 'temp', 1, 0, 120, 1],
   ];
   // Raw limits and conservative defaults; the controller's are the authority (meth_tune.h).
-  const RULES = {period_ms: [1000, 10000, 4000], min_on_ms: [500, 10000, 1000], max_on_ms: [500, 10000, 2000], start_psi_x10: [10, 300, 50],
+  const RULES = {period_ms: [1000, 10000, 4000], min_on_ms: [500, 10000, 1000], max_on_ms: [500, 10000, 2000], start_psi_x10: [5, 300, 5],
     full_psi_x10: [20, 350, 100], min_rpm: [0, 8000, 2500], max_spray_s: [1, 120, 12], rest_s: [0, 60, 6], ramp_ms: [0, 5000, 500],
     min_pre_temp_c: [0, 120, 0], overboost_assist: [0, 1, 0], meth_pct: [0, 100, 0], nozzle_ml_min: [20, 1000, 60], max_dose_pct: [0, 40, 10],
     early_rpm: [0, 8000, 3500], hot_start_c: [0, 145, 0], hot_full_c: [20, 150, 70], min_duty_pct: [10, 100, 25], max_duty_pct: [10, 100, 50]};
