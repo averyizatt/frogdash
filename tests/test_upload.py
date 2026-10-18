@@ -79,6 +79,7 @@ class UploadTests(unittest.TestCase):
             'not json\n' + json.dumps({'t': 1792060100, 'level': 'info', 'area': 'engine', 'text': 'Engine stopped'}) + '\n')
         said = self.up.run(now=1792065600, github=FakeGitHub(), wait=lambda s: None)
         self.assertEqual(said, 'Uploads not set up; report kept on the Pi (1 waiting)')
+        self.assertEqual(json.loads((self.state / 'upload-status.json').read_text())['held'], 1)   # For the dash: it cannot read reports/
         kept = next((self.state / 'reports').iterdir())
         self.assertEqual(sorted(p.name for p in kept.iterdir()), ['boot.txt', 'diagnostics.json', 'events.txt', 'journal.txt'])
         self.assertEqual((kept / 'events.txt').read_text(),
@@ -92,6 +93,7 @@ class UploadTests(unittest.TestCase):
         self.assertIn(b'Engine stopped', hub.files['pi/2026-10-15/120000-events.txt'])
         self.assertEqual(hub.files['pi/2026-10-15/130000-events.txt'], b'(no events since the last report)\n')
         self.assertEqual(list((self.state / 'reports').iterdir()), [])
+        self.assertEqual(json.loads((self.state / 'upload-status.json').read_text())['held'], 0)
 
     def test_reports_and_the_newest_drive_go_up_once(self):
         (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))

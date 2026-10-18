@@ -348,7 +348,7 @@ def run(now=None, github=None, wait=time.sleep):
     files, until = make_report(now, config, since)
     if not repo or not token:
         keep(now, files)
-        save_status({**status, 'time': int(now), 'state': 'held', 'events_until': until,
+        save_status({**status, 'time': int(now), 'state': 'held', 'events_until': until, 'held': len(held()),
                      'message': 'Report kept on the Pi: uploads not set up'})
         return f'Uploads not set up; report kept on the Pi ({len(held())} waiting)'
     github = github or GitHub(repo, token, branch=config.get('branch') or BRANCH)
@@ -363,7 +363,7 @@ def run(now=None, github=None, wait=time.sleep):
         send_report(github, now, files)
     except Exception:
         keep(now, files)   # Sent next time, with its events.
-        save_status({**status, 'events_until': until})
+        save_status({**status, 'events_until': until, 'held': len(held())})
         raise
     status = {**status, 'events_until': until}
 
@@ -402,7 +402,8 @@ def run(now=None, github=None, wait=time.sleep):
         result += f', and {earlier} earlier report{"" if earlier == 1 else "s"} kept on the Pi'
     if skipped:
         result += f'; {skipped} more too large for one upload'
-    save_status({'time': int(now), 'state': 'done', 'message': result, 'repo': repo, 'sent': sent, 'events_until': until})
+    save_status({'time': int(now), 'state': 'done', 'message': result, 'repo': repo, 'sent': sent, 'events_until': until,
+                 'held': len(held())})
     return result
 
 

@@ -222,16 +222,22 @@ def create_app(state, adapter=None, connectivity=None):
                 action = (await request.json()).get('action')
             except (ValueError, AttributeError):
                 raise web.HTTPBadRequest(text='Invalid request')
-            if action == 'connect':
-                try:
-                    await state.github.connect()
-                except ValueError as error:
-                    raise web.HTTPConflict(text=str(error))
-            elif action == 'disconnect':
-                await asyncio.to_thread(state.github.disconnect)
-            else:
+            if action not in ('connect', 'disconnect'):
                 raise web.HTTPBadRequest(text='connect or disconnect')
-        return web.json_response(await asyncio.to_thread(state.github.status), headers={'Cache-Control': 'no-store'})
+            try:
+                if action == 'connect':
+                    await state.github.connect()
+                else:
+                    await asyncio.to_thread(state.github.disconnect)
+            except ValueError as error:
+                raise web.HTTPConflict(text=str(error))
+            except Exception as error:   # Said on the card, never a bare 500 page.
+                raise web.HTTPInternalServerError(text=f'GitHub link failed: {error}')
+        try:
+            body = await asyncio.to_thread(state.github.status)
+        except Exception as error:
+            raise web.HTTPInternalServerError(text=f'Upload status unreadable: {error}')
+        return web.json_response(body, headers={'Cache-Control': 'no-store'})
 
     async def logs(request):
         files = await asyncio.to_thread(state.recorder.files) if state.recorder else []

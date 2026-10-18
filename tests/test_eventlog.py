@@ -130,6 +130,23 @@ class GitHubLinkTests(unittest.IsolatedAsyncioTestCase):
             link.disconnect()
             self.assertFalse(link.status()['configured'])
 
+    def test_the_reports_waiting_come_from_the_uploaders_count_not_its_root_only_folder(self):
+        with tempfile.TemporaryDirectory() as folder:
+            (Path(folder) / 'upload-status.json').write_text(json.dumps({'state': 'held', 'held': 3, 'message': 'kept', 'sent': ['x']}))
+            link = GitHubLink(folder, client_id='Ov23test')
+            original = Path.iterdir
+            def refuse(path):
+                if path.name == 'reports':
+                    raise PermissionError(13, 'Permission denied')
+                return original(path)
+            Path.iterdir = refuse
+            try:
+                (Path(folder) / 'reports').mkdir()
+                status = link.status()
+            finally:
+                Path.iterdir = original
+            self.assertEqual((status['held'], status['last']), (3, {'state': 'held', 'message': 'kept'}))
+
     async def test_declined_or_no_app_id_says_so(self):
         with tempfile.TemporaryDirectory() as folder:
             link = GitHubLink(folder, client_id='')

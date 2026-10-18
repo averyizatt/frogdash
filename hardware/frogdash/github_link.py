@@ -64,10 +64,12 @@ class GitHubLink:
     def status(self):
         config = self.read('log-upload.json')
         config = config if isinstance(config, dict) else {}
-        last = self.read('upload-status.json')
-        last = {k: v for k, v in (last or {}).items() if k in ('time', 'state', 'message')} if isinstance(last, dict) else {}
-        reports = self.folder / 'reports'
-        held = sum(1 for p in reports.iterdir() if p.is_dir()) if reports.is_dir() else 0
+        status = self.read('upload-status.json')
+        status = status if isinstance(status, dict) else {}
+        last = {k: v for k, v in status.items() if k in ('time', 'state', 'message')}
+        # Reports kept on the Pi, as the uploader counted them: their folder is root's alone
+        # (the dash reading it was the 500 on the car, October 2026).
+        held = status.get('held') if isinstance(status.get('held'), int) else 0
         link = dict(self.link)
         if link.get('state') == 'waiting' and self.wall() > link.get('expires_at', 0):
             link = self.link = {'state': 'failed', 'message': 'The code ran out before it was entered. Press Connect GitHub for a new one'}

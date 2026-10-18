@@ -39,7 +39,9 @@ async def main(browser_path):
             return {'device_code': 'dev123', 'user_code': 'WDJB-MJHT', 'verification_uri': 'https://github.com/login/device', 'expires_in': 900, 'interval': 1}
         return {'access_token': 'gho_test'} if github['authorized'] else {'error': 'authorization_pending'}
     state.github = GitHubLink(folder, client_id='Iv1.test', post=post, user=lambda token: {'login': 'averyizatt'}, sleep=lambda s: asyncio.sleep(.2))
-    (folder / 'reports' / '2026-10-15_120000').mkdir(parents=True)
+    # The uploader counts the reports kept on the Pi (their folder is root's alone, as on the car).
+    (folder / 'upload-status.json').write_text(json.dumps({'time': 1792065600, 'state': 'held', 'held': 1, 'message': 'Report kept on the Pi: uploads not set up'}))
+    (folder / 'reports').mkdir(mode=0o700)
     state.health = SimpleNamespace(status={'status': 'sampled', 'ups': ups, 'shutdown': {'previous': {'state': 'saved', 'ended_ms': 1792000000000}, 'tracking': True}})
     app = create_app(state)
     app.cleanup_ctx.clear()
