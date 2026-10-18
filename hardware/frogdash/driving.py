@@ -21,7 +21,10 @@ LIMITS = {'oil_psi': (1, 100), 'oil_rpm': (500, 7000), 'lean_delta': (.2, 5),
           'lean_boost_kpa': (0, 250), 'lean_rpm': (500, 7000), 'coolant_c': (70, 140)}
 RULES = {'oil': ('LOW OIL PRESSURE', 1.), 'lean': ('LEAN UNDER BOOST', .8),
          'coolant': ('COOLANT HIGH', 2.), 'meth': ('WATER/METH FAULT', 1.),
-         'knock': ('KNOCK DETECTED', .2)}
+         'knock': ('KNOCK DETECTED', .2),
+         # The taillight controller can fail to start at power-on (owner, October 2026: frozen
+         # lamps, no brake, until its button is pressed). The driver has to know.
+         'taillights': ('TAILLIGHTS NOT RESPONDING', 10.)}
 
 
 def live(snapshot, key):
@@ -102,7 +105,18 @@ class Driving:
             'coolant': check(['engine.coolant_c'], lambda value: value >= p['coolant_c']) if p['coolant_enabled'] else False,
             'meth': self.meth_condition(snapshot) if p['meth_enabled'] else False,
             'knock': check(['knock.warning', 'knock.critical'], lambda warning, critical: warning or critical),
+            'taillights': self.taillight_condition(snapshot),
         }
+
+    @staticmethod
+    def taillight_condition(snapshot):
+        """The taillights silent while other modules are heard on the bus."""
+        modules = snapshot.get('modules') or {}
+        if snapshot.get('mode') != 'socketcan' or not (snapshot.get('transport') or {}).get('connected'):
+            return None
+        if not any(modules.get(name) == 'live' for name in ('comfort', 'watermeth')):
+            return None   # Nothing heard at all: the bus, not the taillights.
+        return modules.get('taillights') != 'live'
 
     @staticmethod
     def meth_condition(snapshot):

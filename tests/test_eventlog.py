@@ -68,6 +68,21 @@ class EventLogTests(unittest.TestCase):
         self.watch(10, modules={'watermeth': 'stale'})
         self.assertEqual(self.texts(), ['watermeth module not heard (stale)'])
 
+    def test_restarts_fault_blips_module_faults_and_alerts_are_all_written(self):
+        base = snapshot()
+        self.log.watch(base)
+        restart = {**base, 'gaps': [{'id': 0x300, 'module': 'water/meth', 'seconds': 2.4, 't': self.clock.now}],
+                   'values': {**base['values'], 'meth.fault_flags': {'value': 0, 'raw': 3, 'quality': 'live'}},
+                   'events': [{'id': 0x102, 'timestamp_ms': 5, 'data': '04020100', 'values': {'lighting.last_fault.code': 4}}],
+                   'drive': {'alerts': [{'key': 'meth', 'title': 'WATER/METH FAULT', 'active': True,
+                                         'context': {'meth.fault_flags': {'value': 3}, 'engine.rpm': {'value': 0}}}]}}
+        self.log.watch(restart)
+        self.log.watch(restart)                                               # Once each, not every look
+        self.assertEqual(self.texts(), ['water/meth silent for 2.4 s (0x300), then back: a restart of the module, or a dropout',
+                                        'meth faults reported: tank level low, no manifold pressure',
+                                        'taillights reported fault code 4', 'Alert shown: WATER/METH FAULT'])
+        self.assertEqual(read(self.log.folder)[-1]['detail'], {'meth.fault_flags': 3})
+
     def test_readable_text_and_reading_since(self):
         self.log.write('warn', 'gps', 'GPS has a position but no speed', {'status': 'GPS fix'})
         self.clock.now += 60

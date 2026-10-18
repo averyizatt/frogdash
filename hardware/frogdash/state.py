@@ -29,6 +29,12 @@ ALIASES = {
 UNAVAILABLE = ("vehicle.fuel_pct", "lighting.highbeam", "engine.oil_temp_c")
 
 
+# Modules whose frames come several times a second: a longer silence is worth recording.
+GAP_WATCH = {0x100: 'taillights', 0x300: 'water/meth', 0x500: 'sensor gateway'}
+HELD_FLAGS = ('meth.fault_flags', 'sensors.fault_flags')
+FLAG_HOLD_S = 1.5
+
+
 class State:
     def __init__(self, mode="socketcan", clock=time.monotonic, wall=time.time):
         self.clock, self.wall = clock, wall
@@ -40,6 +46,8 @@ class State:
         self.capture, self.capture_until = None, 0.0  # Timed raw capture for the CAN recorder tool.
         self.frames = {}  # Per standard ID: count, first/last time, last payload and decode error.
         self.events = deque(maxlen=100)
+        self.gaps = deque(maxlen=100)  # Modules that went quiet for a moment (a restart or a dropout)
+        self.flag_since = {}  # (fault value name, bit) -> when the module first reported it
         self.received = self.malformed = self.ignored = self.seq = 0
         self.gps = None
         self.gps_recovery = None  # GpsRecovery when the USB GPS is in use.
@@ -92,6 +100,9 @@ class State:
             return
         if can_id in self.frames or len(self.frames) < 512:
             entry = self.frames.setdefault(can_id, {'count': 0, 'first': now, 'error': None, 'error_at': None})
+            # A module that restarts goes quiet for a second or two, then reports from scratch.
+            if can_id in GAP_WATCH and 'seen' in entry and self.connected and now - entry['seen'] > max(1.0, 2 * TIMEOUTS[can_id]):
+                self.gaps.append({'id': can_id, 'module': GAP_WATCH[can_id], 'seconds': round(now - entry['seen'], 1), 't': self.wall()})
             entry.update(count=entry['count'] + 1, seen=now, data=data.hex().upper())
         try:
             signals = decode(can_id, data)
@@ -106,6 +117,13 @@ class State:
                 if source == can_id:
                     sample["quality"] = "fault"
             return
+        for name in HELD_FLAGS:
+            if name in signals and isinstance(signals[name].value, int):
+                for bit in range(16):
+                    if signals[name].value >> bit & 1:
+                        self.flag_since.setdefault((name, bit), now)
+                    else:
+                        self.flag_since.pop((name, bit), None)
         for name, signal in signals.items():
             self.samples[name, can_id] = {"value": signal.value, "quality": signal.quality,
                                          "source_id": can_id, "timestamp_ms": stamp,
@@ -141,6 +159,15 @@ class State:
             if previous is None or (value["quality"] == "live", value["timestamp_ms"]) > (previous["quality"] == "live", previous["timestamp_ms"]):
                 values[name] = value
         missing = {"value": None, "quality": "unavailable", "source_id": None, "timestamp_ms": None}
+        # A fault bit is shown once it has lasted FLAG_HOLD_S: a module restarting or a glitch
+        # on its sensor supply sets several for a moment, which flashed a row of warnings. The
+        # controller acts on its faults itself; every blip is still in the event log ('raw').
+        for name in HELD_FLAGS:
+            sample = values.get(name)
+            if sample and isinstance(sample.get("value"), int):
+                shown = sum(1 << bit for bit in range(16) if sample["value"] >> bit & 1
+                            and now - self.flag_since.get((name, bit), now) >= FLAG_HOLD_S)
+                values[name] = {**sample, "value": shown, "raw": sample["value"]}
         faults = values.get("sensors.fault_flags", missing)
         for name, bit in ANALOG_BITS.items():
             if name not in values or values[name]["quality"] != "live":
@@ -209,7 +236,8 @@ class State:
                 "transport": {"connected": self.connected, "status": self.status,
                               "received": self.received, "malformed": self.malformed, "ignored": self.ignored},
                 "runtime": self.runtime.snapshot(), "nav": self.nav.snapshot(), "tune": self.tune.snapshot(),
-                "gps": {"status": self.gps.status, "diagnosis": self.gps.diagnosis(),
+                "gaps": list(self.gaps),
+                "gps": {"status": self.gps.status, "diagnosis": self.gps.diagnosis(), "brief_losses": self.gps.brief_losses,
                         "recovery": self.gps_recovery.snapshot() if self.gps_recovery else None, "tx_status": self.gps.tx_status,
                         "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
                 "controls": self.controls.status(), "taillight": self.taillight.snapshot(), "meth_tune": self.meth_tune.snapshot(), "knock_detail": self.knock_detail.snapshot(), "events": list(self.events), "race": race,

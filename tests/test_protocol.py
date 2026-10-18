@@ -133,13 +133,29 @@ class FreshnessTests(unittest.TestCase):
         self.state.ingest(0x300, bytes.fromhex('0100640055505000'))
         self.assertEqual(self.values()['engine.iat_c']['quality'], 'unavailable')
         self.state.ingest(0x303, bytes.fromhex('7D4F00003C411100'))
+        # A fault bit is shown once it has lasted 1.5 s (a module restarting flashed a row of them).
+        self.assertEqual(self.values()['engine.iat_c']['quality'], 'live')
+        self.assertEqual(self.values()['sensors.fault_flags']['raw'], 0x11)
+        self.now = 1.6
+        self.state.ingest(0x300, bytes.fromhex('0100640055505000'))
+        self.state.ingest(0x303, bytes.fromhex('7D4F00003C411100'))
         self.assertEqual(self.values()['engine.iat_c']['quality'], 'fault')
         self.assertEqual(self.values()['engine.oil_pressure_psi']['quality'], 'fault')
         self.state.ingest(0x303, bytes.fromhex('7D4F00003C410000'))
-        self.assertEqual(self.values()['engine.iat_c']['quality'], 'live')
-        self.now = 2
+        self.assertEqual(self.values()['engine.iat_c']['quality'], 'live')            # Cleared at once
+        self.now = 3.6
         self.state.ingest(0x300, bytes.fromhex('0100640055505000'))
         self.assertEqual(self.values()['engine.iat_c']['quality'], 'stale')
+
+    def test_a_module_restart_shows_as_a_gap_not_a_row_of_faults(self):
+        self.state.connected = True
+        self.state.ingest(0x300, bytes.fromhex('0100640055505000'))
+        self.now = 2.5                                                                # The Nano restarts
+        self.state.ingest(0x300, bytes.fromhex('0100640055505003'))                    # and reports its start-up faults
+        self.assertEqual(self.values()['meth.fault_flags']['value'], 0)
+        self.now = 2.7
+        self.state.ingest(0x300, bytes.fromhex('0100640055505000'))
+        self.assertEqual(self.state.snapshot()['gaps'], [{'id': 0x300, 'module': 'water/meth', 'seconds': 2.5, 't': 102.5}])
 
     def test_disconnection_malformed_and_unsupported(self):
         self.state.ingest(0x202, bytes.fromhex('0D7A000001010000'))
@@ -229,7 +245,7 @@ class GPSTests(unittest.TestCase):
 
     def test_no_fix_stale_missing_speed_disconnect_and_nan(self):
         self.fix()
-        self.now = 2.1
+        self.now = 3.1
         self.assertNotEqual(self.gps.values()['vehicle.speed_kph']['quality'], 'live')
         self.assertEqual(self.gps.frame()[:2], b'\0\0')
         self.fix(mode=1)
@@ -247,8 +263,22 @@ class GPSTests(unittest.TestCase):
         self.assertAlmostEqual(self.gps.values()['vehicle.speed_kph']['value'], 75.6)
         self.now = 1
         self.gps.update({'class': 'TPV', 'device': '/dev/ttyACM0', 'mode': 3, 'lat': 40})
-        self.now = 2.1
+        self.now = 3.1
         self.assertEqual(self.gps.values()['vehicle.speed_kph']['quality'], 'stale')
+
+    def test_a_lone_no_fix_report_between_good_ones_keeps_the_fix(self):
+        # Seen on the car: 11 satellites and a fix, then 'error' for a moment. A receiver
+        # tracking several satellite systems can make gpsd send one 'no fix' report.
+        self.fix()
+        self.now = .5
+        self.fix(mode=1)
+        self.assertEqual((self.gps.values()['vehicle.speed_kph']['quality'], self.gps.brief_losses), ('live', 1))
+        self.now = 1
+        self.fix()
+        self.now = 4.5
+        self.fix(mode=1)                                                               # A real loss: lasts
+        self.assertEqual(self.gps.values()['vehicle.speed_kph']['quality'], 'unavailable')
+        self.assertEqual(self.gps.diagnosis()['state'] != 'fix', True)
 
     def test_usb_gps_survives_can_disconnect_and_has_no_can_fallback(self):
         self.fix()

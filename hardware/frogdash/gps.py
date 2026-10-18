@@ -6,6 +6,11 @@ import socket
 import time
 
 STALL_S = 10  # Reopen the gpsd connection after this long without any report.
+# gpsd can send one 'no fix' report between good ones: a receiver tracking several satellite
+# systems sends a fix-status sentence per system, and one with none of its satellites in use
+# says 'no fix'. A real loss lasts; the position and speed are kept through this long.
+FIX_GRACE_S = 3.0
+STALE_S = 3.0  # A speed or position older than this is not shown as live
 QUIET_S = 15  # No report from any receiver for this long: the receiver is not being heard.
 
 
@@ -62,6 +67,10 @@ class GPS:
         self.linked_at = float('-inf')
         self.first_fix_s = None    # Seconds from start to the first position.
         self.devices = {}          # What gpsd is watching: path -> driver name.
+        self.good_fix_at = float('-inf')   # Last report with a real fix
+        self.good_mode = 0
+        self.brief_losses = 0      # Lone 'no fix' reports ridden through (FIX_GRACE_S)
+        self.fix_grace = FIX_GRACE_S
 
     def update(self, report):
         kind = report.get("class")
@@ -98,15 +107,21 @@ class GPS:
                 self.fields[name] = (value, now, stamp)
 
         if kind == "TPV":
-            self.mode = report.get("mode", 0)
+            mode = report.get("mode", 0)
             self.fix_seen = now
-            self.status = "GPS fix" if self.mode in (2, 3) else "GPS searching"
-            if self.mode in (2, 3) and self.first_fix_s is None and self.started is not None:
-                self.first_fix_s = round(now - self.started, 1)
-            if self.mode not in (2, 3) or report.get("status") in (5, 6, 8):
-                self.mode = 0
+            if mode not in (2, 3) or report.get("status") in (5, 6, 8):
+                if self.good_mode and now - self.good_fix_at <= self.fix_grace:
+                    self.brief_losses += 1   # A lone 'no fix' between good reports: keep the fix.
+                    return
+                self.mode, self.good_mode = 0, 0
+                self.status = "GPS searching"
                 self.fields.clear()
                 return
+            self.mode = self.good_mode = mode
+            self.good_fix_at = now
+            self.status = "GPS fix"
+            if self.first_fix_s is None and self.started is not None:
+                self.first_fix_s = round(now - self.started, 1)
             speed = report.get("speed")
             if isinstance(speed, (float, int)) and 0 <= speed <= 6553.5 / 3.6:
                 put("vehicle.speed_kph", speed * 3.6)
@@ -177,9 +192,9 @@ class GPS:
             value, seen, stamp = self.fields.get(name, (None, float("-inf"), None))
             sky = name in ("gps.satellites", "gps.satellites_in_view")
             quality = "unavailable" if value is None else "live"
-            if value is not None and (not self.connected or now - seen > (5 if sky else 2)):
+            if value is not None and (not self.connected or now - seen > (5 if sky else STALE_S)):
                 quality = "stale"
-            elif not sky and (self.mode not in (2, 3) or now - self.fix_seen > 2):
+            elif not sky and (self.mode not in (2, 3) or now - self.fix_seen > STALE_S):
                 quality = "unavailable"
             result[name] = {"value": value, "quality": quality, "source": "gpsd", "source_id": None, "timestamp_ms": stamp}
         return result

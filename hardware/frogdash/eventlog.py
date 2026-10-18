@@ -21,6 +21,11 @@ HOLD_S = 4                 # A change has to last this long to be written (no on
 KEEP_DAYS = 30
 MAX_BYTES = 20 << 20
 ALWAYS = {'engine', 'ignition', 'gps-recovery'}   # Written even when first seen
+METH_BITS = {0: 'tank level low', 1: 'no manifold pressure', 2: 'overboost assist', 3: 'overboost emergency',
+             4: 'invalid setting', 5: 'dash commands timed out'}
+SENSOR_BITS = {0: 'oil pressure', 1: 'fuel pressure', 2: 'meth pressure', 3: 'boost reference', 4: 'intake air temp',
+               5: 'engine bay temp', 6: 'ambient temp', 7: 'cabin temp'}
+EVENT_SOURCES = {0x102: 'taillights', 0x302: 'water/meth', 0x308: 'knock'}
 GPS_LEVEL = {'fix': 'info', 'starting': 'info', 'searching': 'info', 'deaf': 'warn', 'weak': 'warn',
              'silent': 'error', 'no-gpsd': 'error'}
 
@@ -89,6 +94,9 @@ class EventLog:
         self.recent = deque(maxlen=200)
         self.stopping = False
         self.error = None
+        self.gaps_seen = 0.0       # Wall time of the last module gap written
+        self.events_seen = None    # Timestamp of the last module fault event written
+        self.brief = None          # (count at the start of this minute, when)
 
     def write(self, level, area, text, detail=None):
         entry = {'t': round(self.wall(), 1), 'level': level, 'area': area, 'text': text}
@@ -148,8 +156,54 @@ class EventLog:
                 self.note('module:' + name, here, 'info' if here else 'warn', 'module',
                           f'{name} module answering' if here else f'{name} module not heard ({quality})')
 
+        for gap in snapshot.get('gaps') or []:
+            if gap['t'] > self.gaps_seen:
+                self.gaps_seen = gap['t']
+                self.write('warn', 'module', f"{gap['module']} silent for {gap['seconds']} s (0x{gap['id']:03X}), then back: "
+                           'a restart of the module, or a dropout', {'id': f"0x{gap['id']:03X}"})
+        for name, key, bits, area in (('meth.fault_flags', 'meth-flags', METH_BITS, 'meth'),
+                                      ('sensors.fault_flags', 'sensor-flags', SENSOR_BITS, 'sensors')):
+            sample = values.get(name) or {}
+            if sample.get('quality') == 'live':
+                raw = sample.get('raw', sample.get('value')) or 0
+                names = ', '.join(bits.get(bit, f'bit {bit}') for bit in range(16) if raw >> bit & 1)
+                self.note(key, raw, 'warn' if raw else 'info', area,
+                          f'{area} faults reported: {names}' if raw else f'{area} faults cleared', hold=0)
+        # Fault reports the modules send themselves (a watchdog restart, a brown-out, a stuck input).
+        for event in snapshot.get('events') or []:
+            if event.get('id') not in EVENT_SOURCES:
+                continue
+            if self.events_seen is None or event['timestamp_ms'] > self.events_seen:
+                if self.events_seen is not None:
+                    self.write('warn', 'module', f"{EVENT_SOURCES[event['id']]} reported fault code {next((v for k, v in event['values'].items() if k.endswith('code')), '?')}",
+                               {'frame': f"0x{event['id']:03X}#{event['data']}", **event['values']})
+        stamps = [e['timestamp_ms'] for e in snapshot.get('events') or [] if e.get('id') in EVENT_SOURCES]
+        if stamps:
+            self.events_seen = max(stamps + [self.events_seen or 0])
+        elif self.events_seen is None:
+            self.events_seen = 0
+        for alert in (snapshot.get('drive') or {}).get('alerts') or []:
+            if isinstance(alert, dict) and alert.get('key'):
+                self.note('alert:' + alert['key'], bool(alert.get('active')), 'warn' if alert.get('active') else None, 'alert',
+                          f"Alert shown: {alert.get('title')}", {k: v.get('value') for k, v in (alert.get('context') or {}).items()
+                                                                  if isinstance(v, dict) and v.get('value') not in (None, 0, False)} or None, hold=0)
+        mode = (values.get('lighting.left_state') or {}).get('value')
+        if mode is not None:
+            unusual = mode in ('SHOW', 'CUSTOM')
+            self.note('tail-mode', mode if unusual else 'normal', 'warn' if unusual else 'info', 'lights',
+                      f'Taillights in {mode} mode (brake from the inputs is overridden)' if unusual else 'Taillights back to normal')
+
         gps = snapshot.get('gps')
         if gps:
+            count = gps.get('brief_losses') or 0
+            now = self.clock()
+            if self.brief is None:
+                self.brief = (count, now)
+            elif now - self.brief[1] >= 60:
+                if count > self.brief[0]:
+                    self.write('info', 'gps', f'GPS said "no fix" for a single report {count - self.brief[0]} times in the last minute '
+                               '(ridden through; a real loss lasts longer)')
+                self.brief = (count, now)
             diagnosis = gps.get('diagnosis') or {}
             kind = diagnosis.get('state')
             if kind:

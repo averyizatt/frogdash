@@ -26,6 +26,7 @@ class Rig:
         self.state = State(clock=self.clock)
         self.state.connected = True
         self.state.gps = GPS(clock=self.clock)
+        self.state.gps.fix_grace = 0   # The losses here are real ones, from their first report
         self.state.gps.connected = True
         maps = Path(folder) / 'maps'
         maps.mkdir(exist_ok=True)

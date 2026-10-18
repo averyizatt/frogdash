@@ -191,7 +191,7 @@
       lean: p.lean_enabled ? compare(['engine.rpm', 'engine.boost_kpa', 'engine.afr', 'ecu.afr_target'], (r, b, a, t) => r >= p.lean_rpm && b >= p.lean_boost_kpa && a > t + p.lean_delta) : false,
       meth: p.meth_enabled ? compare(['meth.fault_flags', 'meth.state', 'meth.flow'], (f, s, flow) => f !== 0 || s === 'FAULT' || s === 'SPRAYING' && ['LOW_FLOW', 'NO_FLOW'].includes(flow)) : false
     };
-    const titles = {oil: 'LOW OIL PRESSURE', lean: 'LEAN UNDER BOOST', coolant: 'COOLANT HIGH', meth: 'WATER/METH FAULT', knock: 'KNOCK DETECTED'};
+    const titles = {oil: 'LOW OIL PRESSURE', lean: 'LEAN UNDER BOOST', coolant: 'COOLANT HIGH', meth: 'WATER/METH FAULT', knock: 'KNOCK DETECTED', taillights: 'TAILLIGHTS NOT RESPONDING'};
     for (const [key, active] of Object.entries(conditions)) {
       let a = demo.alerts.find(a => a.key === key);
       if (active === null) { if (a) a.condition = 'unknown'; continue; }

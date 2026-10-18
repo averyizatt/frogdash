@@ -55,6 +55,21 @@ class DrivingTests(unittest.TestCase):
         self.assertEqual(self.drive.marker_seq, 2)
         self.assertFalse(self.drive.alerts['oil']['acknowledged'])
 
+    def test_taillights_silent_while_other_modules_answer_raise_an_alert(self):
+        def snapshot(t, tail, others='live', connected=True):
+            self.now = t
+            return {'timestamp_ms': int((1700000000 + t) * 1000), 'mode': 'socketcan', 'transport': {'connected': connected},
+                    'modules': {'taillights': tail, 'comfort': others, 'watermeth': others}, 'values': {}, 'recording': {'state': 'disabled'}}
+        self.drive.sample(snapshot(0, 'live'))
+        self.drive.sample(snapshot(1, 'stale'))
+        self.drive.sample(snapshot(10, 'stale'))
+        self.assertFalse(self.drive.alerts['taillights']['active'])
+        self.drive.sample(snapshot(11.1, 'unavailable'))
+        self.assertTrue(self.drive.alerts['taillights']['active'])
+        self.assertEqual(self.drive.alerts['taillights']['title'], 'TAILLIGHTS NOT RESPONDING')
+        # Nothing heard at all is the bus, not the taillights.
+        self.assertIsNone(self.drive.taillight_condition(snapshot(12, 'stale', others='stale')))
+
     def test_recovered_alert_stays_visible_until_ack(self):
         self.sample(0, **{'knock.warning': True}); self.sample(.3)
         self.sample(1, **{'knock.warning': False}); self.sample(2.1)

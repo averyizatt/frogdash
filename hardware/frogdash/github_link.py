@@ -21,7 +21,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-CLIENT_ID = ''
+CLIENT_ID = 'Ov23li7DGiineMBNPBYy'   # The owner's Frogdash OAuth app (device flow on); public, not a secret
 REPO = 'averyizatt/frogdash'
 SCOPE = 'public_repo'
 CODE_URL = 'https://github.com/login/device/code'
