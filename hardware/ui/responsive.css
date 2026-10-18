@@ -179,7 +179,7 @@
   .turn-cluster svg { width:26px; }
   .header-status { gap:8px; }
   .connection-badge { font-size:11px; padding:8px; }
-  .drive-quick { gap:6px; }
+  .drive-quick { gap:6px; flex-wrap:wrap; justify-content:center; }
   .drive-quick button { font-size:12px; padding:8px; }
   #clock-time { font-size:22px; min-width:68px; }
   .primary-instruments,.tach,.speed { min-height:300px; }
