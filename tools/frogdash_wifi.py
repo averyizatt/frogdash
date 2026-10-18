@@ -16,12 +16,20 @@ from pathlib import Path
 
 STATE = Path(os.path.realpath('/var/lib/frogdash'))
 REQUEST, STATUS = STATE / 'wifi-request.json', STATE / 'wifi-status.json'
-SSID = re.compile(r'[\x20-\x7E]{1,32}')
 PASSWORD = re.compile(r'[\x20-\x7E]{8,63}')
 
 
+def valid_ssid(name):
+    """A network name: 1 to 32 bytes, any printable characters. An iPhone names its
+    hotspot "Avery’s iPhone" with a curly apostrophe; plain ASCII only hid it from the list
+    and refused it on connect (October 2026)."""
+    return isinstance(name, str) and 0 < len(name.encode('utf-8')) <= 32 and name.isprintable()
+
+
 def nmcli(*args, timeout=45):
-    result = subprocess.run(['/usr/bin/nmcli', *args], capture_output=True, text=True, timeout=timeout, env={**os.environ, 'LC_ALL': 'C'})
+    # C.UTF-8: messages in English, and network names that are not plain ASCII come back intact.
+    result = subprocess.run(['/usr/bin/nmcli', *args], capture_output=True, text=True, encoding='utf-8', errors='replace',
+                            timeout=timeout, env={**os.environ, 'LC_ALL': 'C.UTF-8'})
     return result.returncode, result.stdout, result.stderr.strip()
 
 
@@ -65,7 +73,7 @@ def survey(device):
     networks = {}
     for line in nmcli('-t', '-f', 'IN-USE,SSID,SIGNAL,SECURITY', 'dev', 'wifi', 'list', 'ifname', device)[1].splitlines():
         used, ssid, signal, security = (split(line) + ['', '', '', ''])[:4]
-        if not SSID.fullmatch(ssid) or ssid.startswith('DC-'):
+        if not valid_ssid(ssid) or ssid.startswith('DC-'):
             continue  # Hidden networks and the dash cam's own access point.
         entry = {'ssid': ssid, 'signal': int(signal or 0), 'secure': bool(security and security != '--'),
                  'saved': ssid in saved or f'frogdash-{ssid}' in saved, 'connected': used == '*'}
@@ -108,7 +116,7 @@ def run(device, borrowing):
         REQUEST.unlink(missing_ok=True)
     action, ssid, password = request.get('action'), request.get('ssid'), request.get('password') or ''
     if action == 'connect':
-        if not isinstance(ssid, str) or not SSID.fullmatch(ssid) or (password and not PASSWORD.fullmatch(password)):
+        if not valid_ssid(ssid) or (password and not PASSWORD.fullmatch(password)):
             return write('failed', 'Invalid network name or password (8 to 63 characters)', device)
         name = f'frogdash-{ssid}'
         if password:

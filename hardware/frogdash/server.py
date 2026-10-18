@@ -38,7 +38,12 @@ from .parking import rolling
 
 TERMINAL_SOCKET = Path('/run/frogdash-terminal.sock')
 
-WIFI_SSID, WIFI_PASSWORD = re.compile(r"[\x20-\x7E]{1,32}"), re.compile(r"[\x20-\x7E]{8,63}")
+WIFI_PASSWORD = re.compile(r"[\x20-\x7E]{8,63}")
+
+
+def valid_ssid(name):
+    """1 to 32 bytes of printable characters: an iPhone's hotspot has a curly apostrophe."""
+    return isinstance(name, str) and 0 < len(name.encode('utf-8')) <= 32 and name.isprintable()
 IMAGE_DATA = re.compile(r"data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+")
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
@@ -416,7 +421,7 @@ def create_app(state, adapter=None, connectivity=None):
                 action, ssid, password = body.get('action'), body.get('ssid', ''), body.get('password', '')
                 if action not in ('scan', 'connect', 'disconnect') or not isinstance(ssid, str) or not isinstance(password, str):
                     raise ValueError()
-                if action == 'connect' and (not WIFI_SSID.fullmatch(ssid) or (password and not WIFI_PASSWORD.fullmatch(password))):
+                if action == 'connect' and (not valid_ssid(ssid) or (password and not WIFI_PASSWORD.fullmatch(password))):
                     raise ValueError()
             except (ValueError, AttributeError, TypeError):
                 raise web.HTTPBadRequest(text='Network name up to 32 characters; password 8 to 63 characters')
@@ -718,7 +723,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js", "knock.js", "knock.css", "screen.js"}:
+        if name not in {"index.html", "app.js", "style.css", "keyboard.js", "keyboard.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js", "knock.js", "knock.css", "screen.js"}:
             raise web.HTTPNotFound()
         if name == 'index.html' and state.paint and state.paint.value:
             page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')

@@ -19,7 +19,8 @@ class WifiHelperTests(unittest.TestCase):
     def test_survey_parses_escapes_and_hides_the_dash_cam(self):
         replies = {
             ('con',): 'frogdash-thefrogpit:802-11-wireless\nWired connection 1:802-3-ethernet\n',
-            ('dev', 'wifi'): '*:thefrogpit:82:WPA2\n:thefrogpit:40:WPA2\n:My\:Net:55:--\n:DC-37BB0BD3:90:WPA2\n::30:WPA2\n',
+            ('dev', 'wifi'): '*:thefrogpit:82:WPA2\n:thefrogpit:40:WPA2\n:My\:Net:55:--\n:DC-37BB0BD3:90:WPA2\n::30:WPA2\n'
+                             ':Avery’s iPhone:48:WPA2\n:bad\x07name:20:WPA2\n',
             ('dev', 'show'): '192.168.1.44/24\n',
             ('networking',): 'full\n',
         }
@@ -32,7 +33,8 @@ class WifiHelperTests(unittest.TestCase):
         with patch.object(helper, 'nmcli', nmcli):
             result = helper.survey('wlan0')
         self.assertEqual((result['connected'], result['address'], result['internet']), ('thefrogpit', '192.168.1.44', True))
-        self.assertEqual([n['ssid'] for n in result['networks']], ['thefrogpit', 'My:Net'])
+        # An iPhone's hotspot (curly apostrophe) is listed; a name with a control character is not.
+        self.assertEqual([n['ssid'] for n in result['networks']], ['thefrogpit', 'My:Net', 'Avery’s iPhone'])
         self.assertEqual(result['networks'][0], {'ssid': 'thefrogpit', 'signal': 82, 'secure': True, 'saved': True, 'connected': True})
         self.assertFalse(result['networks'][1]['secure'])
 
@@ -58,6 +60,9 @@ class WifiRouteTests(unittest.IsolatedAsyncioTestCase):
                 for bad in ({'action': 'run'}, {'action': 'connect', 'ssid': '', 'password': 'longenough'},
                             {'action': 'connect', 'ssid': 'home', 'password': 'short'}):
                     self.assertEqual((await client.post('/wifi-client', json=bad)).status, 400)
+                self.assertEqual((await client.post('/wifi-client', json={'action': 'connect', 'ssid': 'x' * 30 + '’', 'password': 'longenough'})).status, 400)   # 33 bytes
+                self.assertEqual((await client.post('/wifi-client', json={'action': 'connect', 'ssid': 'Avery’s iPhone', 'password': 'longenough'})).status, 200)
+                self.assertEqual(json.loads((Path(folder) / 'wifi-request.json').read_text())['ssid'], 'Avery’s iPhone')
                 self.assertEqual((await client.post('/wifi-client', json={'action': 'connect', 'ssid': 'home', 'password': 'longenough'})).status, 200)
                 request = json.loads((Path(folder) / 'wifi-request.json').read_text())
                 self.assertEqual(request, {'action': 'connect', 'ssid': 'home', 'password': 'longenough'})
