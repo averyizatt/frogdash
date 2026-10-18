@@ -7,9 +7,10 @@
 .camera-stage canvas.camera-view[hidden], .camera-stage[data-view="whole"] canvas.camera-view, .camera-stage[data-gl="no"] canvas.camera-view { display:none; }
 .camera-stage:not([data-view="whole"]) { aspect-ratio:auto; max-width:none; flex:1 1 0; min-width:0; }
 .camera-dialog:has(.camera-stage:not([data-view="whole"])) .camera-side { flex:0 0 380px; }
-.camera-stage:not([data-view="whole"])[data-gl="yes"] :is(#camera-feed, #dashcam-feed, #camera-demo) { opacity:0; }
+.camera-stage:not([data-view="whole"])[data-gl="yes"] :is(#camera-feed, #dashcam-feed, #camera-demo, #dashcam-demo) { opacity:0; }
 .camera-stage:not([data-view="whole"])[data-gl="no"] img { object-fit:cover; }
 .camera-dialog[data-mirror="true"] canvas.camera-view { transform:scaleX(-1); }
+.camera-side .camera-toggles.camera-view-modes { grid-template-columns:repeat(3, minmax(0, 1fr)); }
 .camera-view-modes button { flex:1; }
 /* What happened (Support & testing). */
 .event-card .sw-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
@@ -107,7 +108,10 @@
 .map-road { position:absolute; left:50%; top:14px; transform:translateX(-50%); padding:6px 18px; border-radius:999px; background:#0b1014d9; border:1px solid var(--line); color:var(--text); font-size:20px; font-weight:750; white-space:nowrap; }
 .map-credit { position:absolute; right:10px; bottom:6px; font-size:11px; color:#ffffff80; }
 .map-zoom { display:grid; grid-template-columns:1fr; gap:10px; }
-.dashcam-dialog[data-mirror="true"] #dashcam-feed { transform:scaleX(-1); }
+.dashcam-dialog[data-mirror="true"] :is(#dashcam-feed, #dashcam-demo) { transform:scaleX(-1); }
+#dashcam-demo { object-fit:contain; }
+.demo-clickable { cursor:pointer; }
+.demo-clickable:hover { border-color:var(--accent); }
 
 /* Support > Software (operations.js): the dash's update, module firmware, power and shutdown. */
 .sw-column { display:flex; flex-direction:column; gap:14px; min-height:0; }

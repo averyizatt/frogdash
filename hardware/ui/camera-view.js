@@ -80,7 +80,7 @@
       for (const b of buttons.children) b.setAttribute('aria-pressed', String(b.dataset.view === mode));
       if (mode !== 'whole' && ready && dialog.open) loop();
     }
-    const source = () => demo && !demo.hidden ? demo : img;
+    const source = () => { const d = typeof demo === 'function' ? demo() : demo; return d && !d.hidden ? d : img; };
     let frame = 0, last = 0;
     function draw() {
       const from = source();
@@ -118,5 +118,5 @@
   window.FrogdashCameraView = {attach, plan};
   const $ = id => document.getElementById(id);
   if ($('camera-feed')) attach({name: 'camera', dialog: $('camera-dialog'), img: $('camera-feed'), demo: $('camera-demo'), after: document.querySelector('#camera-dialog .camera-toggles')});
-  if ($('dashcam-feed')) attach({name: 'dashcam', dialog: $('dashcam-dialog'), img: $('dashcam-feed'), after: document.querySelector('#dashcam-dialog .camera-toggles')});
+  if ($('dashcam-feed')) attach({name: 'dashcam', dialog: $('dashcam-dialog'), img: $('dashcam-feed'), demo: () => $('dashcam-demo'), after: document.querySelector('#dashcam-dialog .camera-toggles')});
 })();

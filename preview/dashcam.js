@@ -61,9 +61,52 @@
     setLost(false); renderSide();
     $('dashcam-status').textContent = 'Starting live view…';
     dialog.showModal();
-    if (demo()) { feed.hidden = true; setLost(true, 'The preview has no dash cam'); $('dashcam-status').textContent = 'Not available in the preview'; return; }
+    if (demo()) { feed.hidden = true; setLost(false); $('dashcam-status').textContent = 'Simulated picture (preview)'; startDemo(); return; }
     connectFeed();
     clearInterval(pollTimer); pollTimer = setInterval(poll, 1000);
+  }
+  // The preview has no dash cam: a drawn 16:9 picture (front, the road ahead; rear, the road
+  // behind with a car following) so the view and its picture modes can be tried.
+  let demoFrame = 0;
+  function startDemo() {
+    let canvas = $('dashcam-demo');
+    if (!canvas) {
+      canvas = Object.assign(document.createElement('canvas'), {id: 'dashcam-demo', width: 1280, height: 720});
+      feed.after(canvas);
+    }
+    canvas.hidden = false;
+    if (!demoFrame) demoFrame = requestAnimationFrame(drawDemo);
+  }
+  function drawDemo(now) {
+    const canvas = $('dashcam-demo');
+    if (!canvas || !dialog.open) { demoFrame = 0; return; }
+    const g = canvas.getContext('2d'), w = canvas.width, h = canvas.height, t = now / 1000, rear = side === 'rear';
+    const horizon = h * .42, sky = g.createLinearGradient(0, 0, 0, horizon);
+    sky.addColorStop(0, rear ? '#33465c' : '#4f7eb0'); sky.addColorStop(1, rear ? '#7d8a96' : '#c4d7e8');
+    g.fillStyle = sky; g.fillRect(0, 0, w, horizon);
+    g.fillStyle = rear ? '#3a3f39' : '#4c5a3c'; g.fillRect(0, horizon, w, h - horizon);
+    for (let i = 0; i < 9; i++) {   // Buildings and trees along the horizon
+      const x = ((i * 173 + (rear ? -t : t) * 18) % (w + 200)) - 100;
+      g.fillStyle = i % 3 ? '#2b333a' : '#38452f'; g.fillRect(x, horizon - 40 - (i * 37) % 70, 90 + (i * 29) % 60, 40 + (i * 37) % 70);
+    }
+    g.fillStyle = '#2a2d31';
+    g.beginPath(); g.moveTo(w * .46, horizon); g.lineTo(w * .54, horizon); g.lineTo(w * .98, h); g.lineTo(w * .02, h); g.fill();
+    g.strokeStyle = '#d9d4c3'; g.lineWidth = 5;
+    for (const side of [-1, 1]) { g.beginPath(); g.moveTo(w / 2 + side * w * .035, horizon); g.lineTo(w / 2 + side * w * .45, h); g.stroke(); }
+    g.fillStyle = '#e9c45a';
+    for (let k = 0; k < 8; k++) {   // Centre dashes running toward or away from the camera
+      const s = ((k / 8 + (rear ? -t : t) * .35) % 1 + 1) % 1, y = horizon + (h - horizon) * s * s, half = 2 + 10 * s * s, len = 6 + 60 * s * s;
+      g.fillRect(w / 2 - half, y, half * 2, len);
+    }
+    if (rear) {   // A car following
+      const s = .45 + .05 * Math.sin(t * .8), y = horizon + (h - horizon) * s * s, cw = 40 + 360 * s * s;
+      g.fillStyle = '#7a1f1f'; g.fillRect(w / 2 - cw / 2, y - cw * .45, cw, cw * .45);
+      g.fillStyle = '#1b2a38'; g.fillRect(w / 2 - cw * .38, y - cw * .42, cw * .76, cw * .17);
+      g.fillStyle = '#fff6c8'; g.fillRect(w / 2 - cw * .46, y - cw * .16, cw * .14, cw * .07); g.fillRect(w / 2 + cw * .32, y - cw * .16, cw * .14, cw * .07);
+    }
+    g.fillStyle = '#ffffffcc'; g.font = '600 26px "DejaVu Sans Mono", monospace';
+    g.fillText(`SIMULATED ${rear ? 'REAR' : 'FRONT'} · ${new Date().toLocaleTimeString()}`, 28, h - 70);
+    demoFrame = requestAnimationFrame(drawDemo);
   }
   function close() {
     clearInterval(pollTimer); clearTimeout(retryTimer);
@@ -107,7 +150,7 @@
     } catch { warm = !warm; event.target.checked = warm; $('dashcam-status').textContent = 'Could not change the setting'; }
   };
   async function detect() {
-    if (demo()) return;
+    if (demo()) { $('dashcam-launch').hidden = false; return; }   // The preview's simulated dash cam
     try {
       const s = await (await fetch('/dashcam/status', {cache: 'no-store'})).json();
       $('dashcam-launch').hidden = !s.enabled;

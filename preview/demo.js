@@ -105,6 +105,19 @@
     else { paused = !paused; previous = performance.now(); playbackLabels(); }
   };
   park.onclick = () => setScenario(scenario === 'parked' ? 'drive' : 'parked');
+  // Try the lights by hand: click BRAKE or LIGHTS to hold them on, REV to put the car in
+  // reverse (the rear camera opens, as in the car) and again to drive on.
+  const held = {brake: false, running: false};
+  for (const [id, key, label] of [['icon-brake', 'brake', 'Hold the brake on or off'], ['icon-running', 'running', 'Switch the lights on or off'], ['icon-reverse', 'reverse', 'Reverse: open the rear camera']]) {
+    const indicator = document.getElementById(id);
+    if (!indicator) continue;
+    Object.assign(indicator, {tabIndex: 0, title: `Preview: ${label}`});
+    indicator.setAttribute('role', 'button');
+    indicator.classList.add('demo-clickable');
+    const toggle = () => { if (key === 'reverse') setScenario(scenario === 'reverse' ? 'drive' : 'reverse'); else held[key] = !held[key]; };
+    indicator.addEventListener('click', toggle);
+    indicator.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle(); } });
+  }
   playbackLabels();
   // Static scenarios remain available for repeatable design checks.
   // This entire transport is loaded only by the standalone preview.
@@ -140,6 +153,8 @@
         ...dynamic
       };
       if (scenario === 'reverse') Object.assign(current, {'engine.rpm': 950, 'engine.boost_kpa': -58});
+      if (held.brake) current['lighting.brake'] = true;
+      if (held.running) current['lighting.running'] = true;
       if (scenario === 'parked') Object.assign(current, {'engine.rpm': 900, 'engine.boost_kpa': -60, 'engine.afr': 14.7, 'ecu.afr_target': 14.7, 'vehicle.fuel_pct': drivingValues(elapsed)['vehicle.fuel_pct']});
       if (scenario === 'drive') for (const side of ['left', 'right']) current[`lighting.${side}_state`] = current[`lighting.turn_${side}`] ? 'TURN' : current['lighting.brake'] ? 'BRAKE' : 'OFF';
       const speed = current['vehicle.speed_kph'];
