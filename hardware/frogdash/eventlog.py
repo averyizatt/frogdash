@@ -26,6 +26,28 @@ METH_BITS = {0: 'tank level low', 1: 'no manifold pressure', 2: 'overboost assis
 SENSOR_BITS = {0: 'oil pressure', 1: 'fuel pressure', 2: 'meth pressure', 3: 'boost reference', 4: 'intake air temp',
                5: 'engine bay temp', 6: 'ambient temp', 7: 'cabin temp'}
 EVENT_SOURCES = {0x102: 'taillights', 0x302: 'water/meth', 0x308: 'knock'}
+# CustomTaillights src/faults.h
+TAILLIGHT_FAULTS = {1: 'running hot', 2: 'too hot: lights cut back', 3: 'CAN bus off', 4: 'a light input was on at start-up',
+                    5: 'restarted by a watchdog', 6: 'crashed and restarted', 7: 'restarted after a supply dip (brownout)'}
+RESET_REASONS = {1: 'power-on or reset button', 3: 'software restart', 4: 'crash', 5: 'watchdog', 6: 'watchdog',
+                 7: 'watchdog', 9: 'brownout (supply dip)', 14: 'power glitch', 15: 'processor lock-up'}
+
+
+def module_event(event):
+    """(level, text) for a fault report a module sent itself on 0x102/0x302/0x308."""
+    source = EVENT_SOURCES[event['id']]
+    values = event.get('values') or {}
+    pick = lambda end: next((v for k, v in values.items() if k.endswith(end)), None)
+    code, data0, data1 = pick('code'), pick('data0'), pick('data1')
+    if event['id'] == 0x102 and code == 8:   # Each start of the taillights (0x08, severity info)
+        flags = data1 or 0
+        notes = [text for bit, text in ((1, 'after its restart on settled power'), (2, 'after its restart following a brownout'),
+                                        (4, 'SAFE MODE: dimmed after repeated faults'), (8, 'new firmware on trial'),
+                                        (16, 'brake or reverse was on, so no restart on settled power')) if flags & bit]
+        return 'info', f"taillights started ({RESET_REASONS.get(data0, f'reset reason {data0}')}){': ' + ', '.join(notes) if notes else ''}"
+    if event['id'] == 0x102 and code in TAILLIGHT_FAULTS:
+        return ('info' if code == 1 else 'warn'), f'taillights: {TAILLIGHT_FAULTS[code]}'
+    return 'warn', f'{source} reported fault code {code}'
 GPS_LEVEL = {'fix': 'info', 'starting': 'info', 'searching': 'info', 'deaf': 'warn', 'weak': 'warn',
              'silent': 'error', 'no-gpsd': 'error'}
 
@@ -96,6 +118,7 @@ class EventLog:
         self.error = None
         self.gaps_seen = 0.0       # Wall time of the last module gap written
         self.events_seen = None    # Timestamp of the last module fault event written
+        self.last_event = None     # (payload, timestamp) of the last one, to skip a repeat
         self.brief = None          # (count at the start of this minute, when)
 
     def write(self, level, area, text, detail=None):
@@ -174,9 +197,12 @@ class EventLog:
             if event.get('id') not in EVENT_SOURCES:
                 continue
             if self.events_seen is None or event['timestamp_ms'] > self.events_seen:
-                if self.events_seen is not None:
-                    self.write('warn', 'module', f"{EVENT_SOURCES[event['id']]} reported fault code {next((v for k, v in event['values'].items() if k.endswith('code')), '?')}",
-                               {'frame': f"0x{event['id']:03X}#{event['data']}", **event['values']})
+                # The taillights send their start report twice (CAN up, then the dash heard): once is enough.
+                repeat = self.last_event and self.last_event[0] == event['data'] and event['timestamp_ms'] - self.last_event[1] < 30000
+                self.last_event = (event['data'], event['timestamp_ms'])
+                if self.events_seen is not None and not repeat:
+                    level, text = module_event(event)
+                    self.write(level, 'module', text, {'frame': f"0x{event['id']:03X}#{event['data']}"})
         stamps = [e['timestamp_ms'] for e in snapshot.get('events') or [] if e.get('id') in EVENT_SOURCES]
         if stamps:
             self.events_seen = max(stamps + [self.events_seen or 0])

@@ -80,8 +80,23 @@ class EventLogTests(unittest.TestCase):
         self.log.watch(restart)                                               # Once each, not every look
         self.assertEqual(self.texts(), ['water/meth silent for 2.4 s (0x300), then back: a restart of the module, or a dropout',
                                         'meth faults reported: tank level low, no manifold pressure',
-                                        'taillights reported fault code 4', 'Alert shown: WATER/METH FAULT'])
+                                        'taillights: a light input was on at start-up', 'Alert shown: WATER/METH FAULT'])
         self.assertEqual(read(self.log.folder)[-1]['detail'], {'meth.fault_flags': 3})
+
+    def test_each_taillight_start_is_written_once_in_words(self):
+        base = snapshot()
+        self.log.watch(base)
+        start = {'id': 0x102, 'timestamp_ms': 1000, 'data': '08000101',
+                 'values': {'lighting.last_fault.code': 8, 'lighting.last_fault.severity': 0,
+                            'lighting.last_fault.data0': 1, 'lighting.last_fault.data1': 1}}
+        again = {**start, 'timestamp_ms': 4000}                               # Sent again once the dash is heard
+        dip = {'id': 0x102, 'timestamp_ms': 90000, 'data': '07010300',
+               'values': {'lighting.last_fault.code': 7, 'lighting.last_fault.data0': 3}}
+        self.log.watch({**base, 'events': [start]})
+        self.log.watch({**base, 'events': [start, again]})
+        self.log.watch({**base, 'events': [start, again, dip]})
+        self.assertEqual(self.texts(), ['taillights started (power-on or reset button): after its restart on settled power',
+                                        'taillights: restarted after a supply dip (brownout)'])
 
     def test_readable_text_and_reading_since(self):
         self.log.write('warn', 'gps', 'GPS has a position but no speed', {'status': 'GPS fix'})
