@@ -51,6 +51,7 @@ class State:
         self.received = self.malformed = self.ignored = self.seq = 0
         self.gps = None
         self.gps_recovery = None  # GpsRecovery when the USB GPS is in use.
+        self.gps_aid = None       # GpsAid: the receiver's satellite data kept across power-offs (gpsaid.py).
         self.firmware = None  # Firmware: the modules' firmware over CAN (fwupdate.py).
         self.helpers = None  # Helpers: has the updater run this version's Pi setup (helpers.py).
         self.recorder = None
@@ -239,6 +240,7 @@ class State:
                 "gaps": list(self.gaps),
                 "gps": {"status": self.gps.status, "diagnosis": self.gps.diagnosis(), "brief_losses": self.gps.brief_losses,
                         "receiver_setup": self.gps.configure_note,
+                        "satellite_data": self.gps_aid.note if self.gps_aid else None,
                         "recovery": self.gps_recovery.snapshot() if self.gps_recovery else None, "tx_status": self.gps.tx_status,
                         "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
                 "controls": self.controls.status(), "taillight": self.taillight.snapshot(), "meth_tune": self.meth_tune.snapshot(), "knock_detail": self.knock_detail.snapshot(), "events": list(self.events), "race": race,

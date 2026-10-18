@@ -14,6 +14,7 @@ from .adapters import read_replay, replay, socketcan
 from .state import State
 from .gps import GPS, gpsd
 from .gpswatch import GpsRecovery
+from .gpsaid import GpsAid
 from .helpers import Helpers
 from .fwupdate import Firmware
 from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
@@ -78,6 +79,8 @@ def create_app(state, adapter=None, connectivity=None):
             tasks.append(asyncio.create_task(gpsd(state.gps)))
             if state.gps_recovery:
                 tasks.append(asyncio.create_task(state.gps_recovery.run()))
+            if state.gps_aid:
+                tasks.append(asyncio.create_task(state.gps_aid.run()))
         if state.helpers:
             tasks.append(asyncio.create_task(state.helpers.run()))
         if state.dashcam:
@@ -978,6 +981,8 @@ def main():
         state.gps = GPS(device=args.gps_device, transmit=not args.gps_no_transmit)
         # Watches for a missing position and works through the recovery steps (gpswatch.py).
         state.gps_recovery = GpsRecovery(state.gps, args.data_dir, state.clock)
+        # Satellite data kept across power-offs: the VK-162 has no backup battery (gpsaid.py).
+        state.gps_aid = GpsAid(state.gps, args.data_dir, state.nav)
     if args.replay:
         try:
             frames = read_replay(args.replay)

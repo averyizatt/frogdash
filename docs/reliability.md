@@ -263,6 +263,16 @@ Until October 2026 a receiver still working out its position was restarted after
 minutes and had its memory cleared after 5, every quarter of an hour. With the weak sky
 view in a car that kept it from ever settling: satellites, nearly a fix, reset.
 
+**Satellite data kept across power-offs** (`hardware/frogdash/gpsaid.py`). The VK-162
+(u-blox 7) has no backup battery, so every key-on is a cold start. While it has a
+position the dash asks it, through gpsd, for its satellite orbits (UBX-AID-EPH), almanac
+(AID-ALM) and ionosphere data (AID-HUI): 2 minutes after the first fix, then every 10
+minutes, into `gps-aid.json` in the data folder. At the next start, before it has a
+position, they go back to it with the last known position (AID-INI; the time too when
+the Pi's clock is synchronised). After a stop of an hour or two it starts almost like a
+hot start; the receiver drops orbits that are too old itself. The event log says when
+the data was saved and restored.
+
 A u-blox receiver is also set to its automotive model (UBX-CFG-NAV5, dynamic model 4)
 each time the dash connects to it: u-blox's advice for a receiver in a car. It lasts
 until the receiver loses power, so the dash sends it again at every start.

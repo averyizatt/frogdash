@@ -241,6 +241,8 @@ class EventLog:
             self.note('gps-speed', no_speed, 'warn' if no_speed else 'info' if kind == 'fix' else None, 'gps',
                       'GPS has a position but no speed' if no_speed else 'GPS speed back',
                       {'speed': speed, 'status': gps.get('status')} if no_speed else None)
+            aid = gps.get('satellite_data')
+            self.note('gps-aid', aid, 'info' if aid else None, 'gps', aid or '', hold=0)
             setup = gps.get('receiver_setup')
             self.note('gps-setup', setup, 'info' if setup else None, 'gps', setup or '', hold=0)
             trying = (gps.get('recovery') or {}).get('trying') if isinstance(gps.get('recovery'), dict) else None
