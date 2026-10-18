@@ -67,6 +67,8 @@ KNOCK_DETAIL = ('knock.amp_gain', 'knock.bore', 'knock.relearn')
 # Water/meth status bits that are information, not faults: overboost assist active (4)
 # and "no command master seen for 3 s" (32), which clears with the next frame from the dash.
 METH_INFO_FLAGS = 4 | 32
+METH_REARM_SETTLE_S = 3    # The controller is heard this long before it is armed again
+METH_REARM_RETRY_S = 10
 PARKED_LIGHTING = ('lighting.show', 'lighting.demo', 'lighting.override', 'lighting.custom')
 LABELS = {
     'meth.arm': 'water/meth mode', 'meth.test': 'pump test', 'meth.stop': 'pump test stop',
@@ -119,6 +121,12 @@ class Controls:
         self.interior = {1: [0, 0, 0, 0], 2: [0, 0, 0, 0]}  # channel: R, G, B, brightness
         self.interior_path = None
         self.interior_sent = float('-inf')
+        # Water/meth stays armed across power-offs: see keep_meth_armed().
+        self.meth_wanted = False
+        self.meth_path = None
+        self.meth_heard_since = None
+        self.meth_rearm_at = float('-inf')
+        self.meth_rearm_note = None
 
     def load_interior(self, path):
         """Restore the last interior colors so they come back after a restart."""
@@ -131,6 +139,22 @@ class Controls:
                     self.interior[channel] = values
         except (OSError, ValueError, KeyError, TypeError):
             pass
+
+    def load_meth(self, path):
+        """The driver's last Arm or Disarm, kept so the controller is armed again after a start."""
+        self.meth_path = path
+        try:
+            self.meth_wanted = json.loads(path.read_text(encoding='utf-8')).get('armed') is True
+        except (OSError, ValueError, AttributeError):
+            self.meth_wanted = False
+
+    async def remember_meth(self, armed):
+        self.meth_wanted = armed
+        if self.meth_path:
+            try:
+                await asyncio.to_thread(atomic_write, self.meth_path, {'armed': armed})
+            except OSError:
+                pass
 
     def attach(self, sender):
         self.sender = sender
@@ -209,7 +233,8 @@ class Controls:
                 'interior': {'upper': self.interior[1], 'lower': self.interior[2]},
                 'lighting_active': self.lighting_active,
                 'test_active': self.test_owner is not None, 'last_result': self.last,
-                'meth_config_conflict': self.conflict()}
+                'meth_config_conflict': self.conflict(), 'meth_remembered': self.meth_wanted,
+                'meth_rearm': self.meth_rearm_note}
 
     def observe(self, can_id, data):
         pending = self.pending
@@ -295,6 +320,8 @@ class Controls:
                 self.pending['future'].set_result(('unknown', 'Superseded by stop/disarm'))
             self.test_owner = None
             self.last_stop = now
+        if action == 'meth.arm' and owner != 'auto':
+            await self.remember_meth(value == 1)   # The driver's choice, kept across starts
         payload = self.payload(action, code, value)
         # Firmware with the settings extension acknowledges every 0x101 command on 0x103.
         ack = ack or (identifier == 0x101 and self.state.taillight.supported)
@@ -416,6 +443,34 @@ class Controls:
             await self.sync_meth_tune()
             await self.send_intake_temp()
             await self.refresh_interior()
+            await self.keep_meth_armed()
+
+    async def keep_meth_armed(self):
+        """Arm the water/meth controller again when it is heard disarmed and the driver last
+        chose Arm. The Nano always starts disarmed (fail safe) and nothing else on the bus
+        arms it: the comfort module's gateway build sends no 0x304. So after every key-on,
+        and after the Nano restarts, it sat disarmed until Arm was pressed again. Disarm is
+        remembered the same way, and every rule that applies to the Arm button applies here."""
+        mode = self.live('meth.state', 0x300)
+        now = self.state.clock()
+        if mode is None:
+            self.meth_heard_since = None
+            return
+        if self.meth_heard_since is None:
+            self.meth_heard_since = now
+        if (not self.meth_wanted or mode != 'OFF' or now - self.meth_heard_since < METH_REARM_SETTLE_S
+                or now - self.meth_rearm_at < METH_REARM_RETRY_S):
+            return
+        self.meth_rearm_at = now
+        reason = self.reason('meth.arm', 1)
+        if reason:
+            self.meth_rearm_note = f'Not armed again yet: {reason}'
+            return
+        try:
+            result = await self.execute('meth.arm', 1, owner='auto')
+            self.meth_rearm_note = 'Armed again after the controller started' if result['status'] != 'error' else result['message']
+        except ValueError as error:
+            self.meth_rearm_note = f'Not armed again yet: {error}'
 
     async def refresh_interior(self):
         """Keep lit interior channels alive; the gateway expires them after 5 s of silence."""

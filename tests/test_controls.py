@@ -50,6 +50,57 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(self.sent[-1], (identifier, payload), name)
             self.assertEqual(result['status'], 'acknowledged' if ack else 'sent', name)
 
+    async def test_arm_is_remembered_and_the_controller_is_armed_again_after_a_start(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'meth-arm.json'
+            self.controls.load_meth(path)
+            await self.controls.keep_meth_armed()
+            self.assertEqual(self.sent, [])                                         # Never armed: left alone
+            await self.controls.execute('meth.arm', 1)
+            self.assertTrue(self.controls.meth_wanted)
+            self.assertEqual(__import__('json').loads(path.read_text()), {'armed': True})
+            # Key off and on: a new dash run, the Nano starts disarmed (mode OFF).
+            restarted = State(clock=lambda: self.now)
+            restarted.connected = True
+            sent = []
+
+            async def sender(identifier, data):
+                sent.append((identifier, data))
+                restarted.ingest(0x30A, bytes([data[0], 0, data[1], 2]))
+            restarted.controls.attach(sender)
+            restarted.controls.ready_at = 0
+            restarted.controls.load_meth(path)
+            restarted.ingest(0x300, bytes([0, 0, 100, 0, 0, 40, 40, 0]))
+            await restarted.controls.keep_meth_armed()
+            self.assertEqual(sent, [])                                              # Heard for 3 s first
+            self.now += 3.5
+            restarted.ingest(0x300, bytes([0, 0, 100, 0, 0, 40, 40, 0]))
+            await restarted.controls.keep_meth_armed()
+            self.assertEqual(sent, [(0x301, bytes([1, 1]))])
+            self.assertEqual(restarted.controls.status()['meth_rearm'], 'Armed again after the controller started')
+            self.now += 2
+            restarted.ingest(0x300, bytes([0, 0, 100, 0, 0, 40, 40, 0]))           # Still reads OFF: retry waits 10 s
+            await restarted.controls.keep_meth_armed()
+            self.assertEqual(len(sent), 1)
+            # A low tank blocks it, as it blocks the button, and says why.
+            self.now += 11
+            restarted.ingest(0x300, bytes([0, 0, 5, 0, 0, 40, 40, 1]))
+            await restarted.controls.keep_meth_armed()
+            self.assertEqual(len(sent), 1)
+            self.assertIn('Not armed again yet', restarted.controls.status()['meth_rearm'])
+            # The driver's Disarm sticks too.
+            self.now += 11
+            restarted.ingest(0x300, bytes([0, 0, 100, 0, 0, 40, 40, 0]))
+            await restarted.controls.execute('meth.arm', 0)
+            self.now += 11
+            restarted.ingest(0x300, bytes([0, 0, 100, 0, 0, 40, 40, 0]))
+            await restarted.controls.keep_meth_armed()
+            self.assertEqual(sent[-1], (0x301, bytes([1, 0])))
+            self.assertFalse(restarted.controls.meth_wanted)
+            await restarted.controls.close()
+
     async def test_rejects_invalid_ranges_types_and_arbitrary_frames(self):
         for action, value in [('raw', 0), ('meth.test', 0), ('meth.boost', 251),
                               ('meth.arm', True), ('meth.arm', 1.0), ('meth.arm', '1'),
