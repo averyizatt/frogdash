@@ -134,10 +134,10 @@
   let firmwareArmed = '', firmwareTimer = null;
   const firmwareHold = {};   // A refusal stays readable for a few seconds: {name: {text, until}}
   function moduleView(m) {
-    const job = m.job;
-    if (job.state === 'running') return ['busy', `Installing ${Math.round(job.progress * 100)}%`, job.message, job.progress];
-    if (job.state === 'failed') return ['bad', 'Failed', job.message];
-    if (job.state === 'done') return ['good', 'Updated', job.message];
+    const job = m.job, restart = job.kind === 'restart';
+    if (job.state === 'running') return ['busy', restart ? 'Restarting…' : `Installing ${Math.round(job.progress * 100)}%`, job.message, restart ? undefined : job.progress];
+    if (job.state === 'failed') return ['bad', restart ? 'Restart failed' : 'Failed', job.message];
+    if (job.state === 'done') return ['good', restart ? 'Restarted' : 'Updated', job.message];
     if (m.installed == null) return /Nano/.test(m.short || '') ? ['idle', 'USB only', 'The Nano board is fitted: it is flashed by USB, not over CAN'] : ['warn', 'Not answering', m.note];
     if (m.on_trial) return ['warn', 'On trial', `Build ${m.installed} is confirming itself`];
     if (m.new) return ['new', 'New build ready', `Running ${m.installed} · ${m.available} is on the Pi`];
@@ -148,9 +148,11 @@
     if (row) return row;
     row = el('li'); row.id = `fw-row-${m.name}`;
     row.innerHTML = `<div class="sw-row-main"><strong></strong><small id="fw-detail-${m.name}"></small><div class="sw-bar" hidden><i></i></div></div>` +
-      `<span class="sw-pill" id="fw-state-${m.name}"></span><button type="button" id="fw-install-${m.name}" hidden></button>`;
+      `<span class="sw-pill" id="fw-state-${m.name}"></span><button type="button" id="fw-install-${m.name}" hidden></button>` +
+      `<button type="button" id="fw-restart-${m.name}" class="sw-restart" hidden>Restart</button>`;
     row.querySelector('strong').textContent = m.title.replace(/ firmware$/, '');
-    row.querySelector('button').onclick = () => installFirmware(m.name);
+    row.querySelector('button:not(.sw-restart)').onclick = () => installFirmware(m.name);
+    row.querySelector('.sw-restart').onclick = () => installFirmware(m.name, 'restart');
     $('firmware-modules').append(row);
     return row;
   }
@@ -170,23 +172,34 @@
       if (firmwareArmed !== m.name) $(`fw-detail-${m.name}`).textContent = hold && performance.now() < hold.until && m.job.state !== 'running' ? hold.text : detail;
       bar.hidden = progress === undefined;
       if (progress !== undefined) bar.firstElementChild.style.width = `${Math.round(progress * 100)}%`;
-      button.hidden = !(m.new || m.job.state === 'running');
+      const restarting = m.job.kind === 'restart';
+      button.hidden = !(m.new || (m.job.state === 'running' && !restarting));
       button.disabled = running || !m.can_install;
       if (firmwareArmed !== m.name) button.textContent = m.job.state === 'running' ? 'Installing…' : 'Install';
+      const restart = $(`fw-restart-${m.name}`);
+      restart.hidden = !(m.can_restart || (m.job.state === 'running' && restarting));
+      restart.disabled = running || !m.can_restart;
+      if (firmwareArmed !== m.name + ':restart') restart.textContent = m.job.state === 'running' && restarting ? 'Restarting…' : 'Restart';
     }
   }
-  async function installFirmware(name) {
+  // Install or restart: two presses each, like Undo, so a stray press does nothing.
+  async function installFirmware(name, action = 'install') {
     const m = (latest.firmware || {})[name];
     if (!m) return;
-    if (firmwareArmed !== name) {
-      firmwareArmed = name; $(`fw-install-${name}`).textContent = 'Press again';
-      $(`fw-detail-${name}`).textContent = `Stop the car first. ${m.warning} Press again to install.`;
+    const key = action === 'restart' ? `${name}:restart` : name;
+    if (firmwareArmed !== key) {
+      if (firmwareArmed) renderFirmware();
+      firmwareArmed = key;
+      $(action === 'restart' ? `fw-restart-${name}` : `fw-install-${name}`).textContent = 'Press again';
+      $(`fw-detail-${name}`).textContent = action === 'restart'
+        ? `Stop the car first. The ${m.label.toLowerCase()} is out of action for a moment while it restarts. Press again to restart.`
+        : `Stop the car first. ${m.warning} Press again to install.`;
       clearTimeout(firmwareTimer); firmwareTimer = setTimeout(() => { firmwareArmed = ''; renderFirmware(); }, 6000);
       return;
     }
     firmwareArmed = ''; clearTimeout(firmwareTimer);
     try {
-      const response = await fetch('/firmware', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({module: name, action: 'install'})});
+      const response = await fetch('/firmware', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({module: name, action})});
       if (!response.ok) firmwareHold[name] = {text: (await response.text()).slice(0, 200), until: performance.now() + 6000};
     } catch { firmwareHold[name] = {text: 'The dash did not answer', until: performance.now() + 6000}; }
     renderFirmware();

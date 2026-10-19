@@ -62,7 +62,7 @@ NAME = re.compile(r'frogdash-(?:live|replay)-(\d{8}T\d{6}Z)-[0-9a-f]{12}\.mlg')
 BRANCH = 'pi-logs'
 DRIVE_GAP_S = 10 * 60          # Recordings further apart than this belong to different drives
 MAX_DRIVE_BYTES = 400 << 20    # Compressed; GitHub takes up to 2 GB a file
-STATUS_FILES = ('update-status.json', 'setup-status.json', 'gps-status.json', 'wifi-status.json', 'screen-status.json')
+STATUS_FILES = ('update-status.json', 'setup-status.json', 'gps-status.json', 'can-status.json', 'wifi-status.json', 'screen-status.json')
 
 
 def port():

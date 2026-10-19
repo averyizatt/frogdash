@@ -1,0 +1,7 @@
+[Unit]
+Description=CAN recovery for Frogdash (take can0 down and up again)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /opt/frogdash/tools/frogdash_can.sh
+TimeoutStartSec=30

@@ -138,7 +138,7 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
         shown = self.firmware.snapshot()
         self.assertEqual((shown['installed'], shown['available'], shown['new'], shown['can_install']), (OLD, NEW, True, True))
         job = await self.install()
-        self.assertEqual((job['state'], job['message'], job['progress']), ('done', f'Gateway updated to build {NEW}', 1.0))
+        self.assertEqual((job['state'], job['message'].split(' (sent in')[0], job['progress']), ('done', f'Gateway updated to build {NEW}', 1.0))
         self.assertEqual((self.folder / 'received.bin').read_bytes(), self.image)   # Byte for byte what was published.
         self.assertEqual(self.module.restarts, 1)
         shown = self.firmware.snapshot()
@@ -162,6 +162,25 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(job['state'], 'done', job)
         self.assertEqual((self.folder / 'received.bin').read_bytes(), self.image)
         self.assertEqual((self.firmware.burst, self.firmware.gap > .001), (1, True))   # It slowed down after the misses.
+
+    async def test_the_pace_climbs_back_after_a_miss_and_the_speed_is_reported(self):
+        image = random.Random(8).randbytes(448 * 120)
+        self.publish(image, NEW)
+        self.module.lose_frames = {3}                         # One frame lost in the first block
+        paces = []
+        original = self.firmware.block
+        async def watched(number, chunk):
+            await original(number, chunk)
+            paces.append(self.firmware.pace)
+        self.firmware.block = watched
+        job = await self.install()
+        self.assertEqual(job['state'], 'done', job)
+        self.assertEqual((self.folder / 'received.bin').read_bytes(), image)
+        self.assertEqual(paces[0], fwupdate.START_PACE + 1)   # A step slower after the miss...
+        self.assertEqual(paces[-1], 0)                        # ...then back up, and on to the fastest
+        self.assertRegex(job['message'], r'updated to build 1a2b3c4d \(sent in .+, [\d.]+ KB/s\)')
+        self.assertEqual(fwupdate.pace_text(100 * 1024, 300 * 1024, 10), ' · 10.0 KB/s · about 20 s left')
+        self.assertEqual(fwupdate.pace_text(1024, 300 * 1024, 1), '')
 
     async def test_a_module_that_goes_back_to_its_old_firmware_is_reported(self):
         self.module.after_restart = OLD                       # The new image did not start: the bootloader went back.
@@ -242,7 +261,7 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
         shown = self.manager.snapshot()
         self.assertEqual((shown['taillights']['installed'], shown['taillights']['new'], shown['gateway']['installed']), (OLD, True, None))
         job = await self.install(name='taillights')
-        self.assertEqual((job['state'], job['message']), ('done', f'Taillight controller updated to build {NEW}'))
+        self.assertEqual((job['state'], job['message'].split(' (sent in')[0]), ('done', f'Taillight controller updated to build {NEW}'))
         self.assertEqual((self.folder / 'lamps.bin').read_bytes(), lamps)
         self.assertEqual({frame[1] for frame in self.module.sent if frame[0] & 0x80}, {1, 2})   # Each command names its module...
         self.assertEqual(self.firmware.job['state'], 'idle')                                  # ...and the gateway's state is untouched.
@@ -265,7 +284,7 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
         shown = self.manager.snapshot()['watermeth']
         self.assertEqual((shown['installed'], shown['new'], shown['can_install']), (OLD, True, True))
         job = await self.install(name='watermeth')
-        self.assertEqual((job['state'], job['message']), ('done', f'Water/meth controller updated to build {NEW}'))
+        self.assertEqual((job['state'], job['message'].split(' (sent in')[0]), ('done', f'Water/meth controller updated to build {NEW}'))
         self.assertEqual((self.folder / 'meth.bin').read_bytes(), image)
         # Boost is near: it will not start, and the dash passes on what to do.
         self.use(Module(self, target=3, busy_begin=True))
@@ -300,6 +319,62 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
         await asyncio.wait_for(self.firmware.task, 30)
         self.assertEqual(self.firmware.job['state'], 'done')
 
+    async def restart(self, name='gateway', timeout=30):
+        self.assertIsNone(self.manager.restart(name))
+        module = self.manager.modules[name]
+        await asyncio.wait_for(module.task, timeout)
+        return module.job
+
+    async def test_a_module_restarts_when_asked_and_answers_again(self):
+        self.state.ingest(fwupdate.ID_REPLY, bytes.fromhex('0101' + OLD + '0000'))
+        self.assertTrue(self.manager.snapshot()['gateway']['can_restart'])
+        self.module.after_restart = OLD
+        job = await self.restart()
+        self.assertEqual((job['state'], job['kind']), ('done', 'restart'))
+        self.assertIn('restarted and answering again', job['message'])
+        self.assertEqual(self.module.restarts, 1)
+        self.assertEqual(self.firmware.installed, OLD)
+        # Never while another module is being worked on.
+        self.firmware.job = {'state': 'running', 'message': '', 'progress': 0.0}
+        self.assertEqual(self.manager.restart('taillights'), 'A module is being updated or restarted')
+        self.firmware.job = {'state': 'idle', 'message': '', 'progress': 0.0}
+        self.assertEqual(self.manager.restart('nano'), 'Unknown module')
+
+    async def test_a_restart_is_refused_while_the_module_is_in_use_or_too_old(self):
+        self.use(Module(self, target=2, busy_begin=True))
+        job = await self.restart('taillights')
+        self.assertEqual(job['state'], 'failed')
+        self.assertIn('is in use and did not restart', job['message'])
+        self.assertEqual(self.module.restarts, 0)
+        # Firmware from before restarts over CAN does not answer the request.
+        silent = self.manager.modules['taillights']
+        async def nothing(identifier, data):
+            pass
+        self.state.controls.attach(nothing)
+        job = await self.restart('taillights')
+        self.assertEqual(job['state'], 'failed')
+        self.assertIn('Install the current one first', job['message'])
+        self.assertIs(silent, self.manager.modules['taillights'])
+
+    async def test_the_nano_restarts_through_its_own_command(self):
+        sent = []
+        controls = self.state.controls
+        async def bus(identifier, data):
+            sent.append((identifier, bytes(data)))
+            if identifier == 0x301:
+                controls.observe(0x30A, bytes([data[0], 0, 0, 2]))
+        self.assertNotIn('can_restart', {k for k, v in self.manager.snapshot_with_nano()['watermeth'].items() if v is True})
+        controls.attach(bus)
+        controls.ready_at = 0
+        self.state.ingest(0x300, bytes([0, 0, 80, 0, 0, 40, 40, 0]))   # Nano telemetry: off, tank 80 %
+        shown = self.manager.snapshot_with_nano()['watermeth']
+        self.assertEqual((shown['can_restart'], shown['nano']), (True, True))
+        self.assertIsNone(self.manager.restart('watermeth'))
+        meth = self.manager.modules['watermeth']
+        await asyncio.wait_for(meth.task, 5)
+        self.assertEqual(meth.job['state'], 'done', meth.job)
+        self.assertIn((0x301, bytes([0x07])), [(i, d[:1]) for i, d in sent])
+
     async def test_the_dash_asks_which_build_is_running_and_routes_serve_it(self):
         from aiohttp.test_utils import TestClient, TestServer
         from hardware.frogdash.server import create_app
@@ -320,6 +395,7 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(shown['taillights']['short'] == 'not answering', False)   # It answered above.
             self.assertEqual((await client.post('/firmware', json={'module': 'nano', 'action': 'install'})).status, 400)
             self.assertEqual((await client.post('/firmware', json={'module': 'gateway', 'action': 'erase'})).status, 400)
+            self.assertEqual((await client.post('/firmware', json={'module': 'nano', 'action': 'restart'})).status, 400)
             response = await client.post('/firmware', json={'module': 'gateway', 'action': 'install'})
             self.assertEqual(response.status, 200)
             await asyncio.wait_for(self.firmware.task, 30)

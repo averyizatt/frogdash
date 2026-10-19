@@ -121,12 +121,23 @@ async def main(browser_path):
                 assert (await page.locator('#fw-detail-gateway').inner_text()).startswith(f'Gateway updated to build {NEW}')
                 await page.wait_for_function("document.getElementById('fw-install-gateway').hidden")
                 assert gateway.blocks == -(-len(image) // fw.BLOCK_BYTES) and gateway.commands[-1] == fw.CONFIRM and not gateway.trial
+                # Restart: two presses too, and it says when the module is answering again.
+                restart = page.locator('#fw-restart-gateway')
+                await page.wait_for_function("!document.getElementById('fw-restart-gateway').hidden && !document.getElementById('fw-restart-gateway').disabled")
+                await restart.click()
+                assert await restart.inner_text() == 'Press again'
+                assert 'out of action for a moment while it restarts' in await page.locator('#fw-detail-gateway').inner_text()
+                assert fw.RESTART not in gateway.commands
+                await restart.click()
+                await page.wait_for_function("document.getElementById('fw-state-gateway').textContent === 'Restarted'", timeout=10000)
+                assert 'restarted and answering again' in await page.locator('#fw-detail-gateway').inner_text()
+                assert fw.RESTART in gateway.commands
                 assert not errors, errors
             finally:
                 await page.close()
                 await browser.close()
                 await runner.cleanup()
-    print('Gateway firmware: status line, two-press install, refusal while moving, progress and confirmed result passed.')
+    print('Gateway firmware: status line, two-press install, refusal while moving, progress, confirmed result and restart passed.')
 
 
 if __name__ == '__main__':

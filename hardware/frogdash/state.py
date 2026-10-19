@@ -58,6 +58,7 @@ class State:
         self.gps = None
         self.gps_recovery = None  # GpsRecovery when the USB GPS is in use.
         self.gps_aid = None       # GpsAid: the receiver's satellite data kept across power-offs (gpsaid.py).
+        self.can_watch = None     # CanWatch: can0 reset when it stops receiving with the key on (canwatch.py).
         self.firmware = None  # Firmware: the modules' firmware over CAN (fwupdate.py).
         self.helpers = None  # Helpers: has the updater run this version's Pi setup (helpers.py).
         self.recorder = None
@@ -281,7 +282,8 @@ class State:
                 "drive": self.guarded('drive alerts', self.driving.snapshot), "trip": self.guarded('trip', self.trip.snapshot),
                 "operations": self.guarded('dash management', self.operations.status), "system": dict(self.health.status) if self.health else None,
                 "can_errors": dict(self.can_errors),
-                "firmware": self.guarded('module firmware', self.firmware.snapshot) if self.firmware else None,
+                "can_watch": self.guarded('CAN watch', self.can_watch.snapshot) if self.can_watch else None,
+                "firmware": self.guarded('module firmware', self.firmware.snapshot_with_nano) if self.firmware else None,
                 "wheel": self.guarded('steering wheel', lambda: self.wheel.snapshot(self.connected and self.mode == "socketcan")),
                 "recording": dict(self.recorder.status) if self.recorder else {"enabled": False, "state": "disabled"}}
         result["faults"] = dict(self.faults)   # Last, so a part that failed just now is in it

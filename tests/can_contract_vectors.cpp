@@ -50,6 +50,11 @@ int main() {
   emit("meth.stop", packMethStopManualTest());
   emit("meth.boost", packMethSetBoostThreshold(40));
   emit("meth.clear_faults", packMethClearFaults());
+  {
+    CanFrame restart = packMethClearFaults();   // Same frame, the extension 7 command byte.
+    restart.data[0] = meth_command::RESTART;
+    emit("meth.restart", restart);
+  }
   emit("knock.enable", packEngineKnockCommand(knock_command::SET_ENABLE,1));
   emit("knock.threshold", packEngineKnockCommand(knock_command::SET_THRESHOLD_OFFSET,20));
   emit("knock.multiplier", packEngineKnockCommand(knock_command::SET_ADAPTIVE_MULTIPLIER,24));

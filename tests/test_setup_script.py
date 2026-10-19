@@ -129,8 +129,8 @@ class SetupScriptTests(unittest.TestCase):
     def test_first_run_without_internet_does_all_it_can_and_names_what_waits(self):
         said, status, steps = self.run_setup('offline')
         self.assertEqual((status['stamp'], status['running']), (stamp(SCRIPT), False))   # The dash recognises this run.
-        self.assertEqual(steps['Dash helpers'], ('done', 'Installed: gps screen wifi netkeeper screen-boot'))
-        for unit in ('frogdash-gps.path', 'frogdash-gps.service', 'frogdash-wifi.path', 'frogdash-wifi.service', 'frogdash-netkeeper.service',
+        self.assertEqual(steps['Dash helpers'], ('done', 'Installed: canreset gps screen wifi netkeeper screen-boot'))
+        for unit in ('frogdash-canreset.path', 'frogdash-canreset.service', 'frogdash-gps.path', 'frogdash-gps.service', 'frogdash-wifi.path', 'frogdash-wifi.service', 'frogdash-netkeeper.service',
                      'frogdash-screen.path', 'frogdash-screen.service', 'frogdash-screen-boot.service'):
             self.assertTrue((self.units / unit).is_file(), unit)
         self.assertIn('enable --now frogdash-gps.path', self.log('systemctl.log'))

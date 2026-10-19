@@ -62,8 +62,9 @@ int main(int argc, char** argv) {
       fw::Action action = fw::Action::NONE;
       ++now;
       const bool mine = frame.data[1] == target;
-      if (busyBegin && mine && frame.data[0] == fw::BEGIN) {
-        reply = fw::packAck(target, fw::BEGIN, fw::STATUS_BUSY);
+      // A light input on: the taillights refuse to start an update or to restart.
+      if (busyBegin && mine && (frame.data[0] == fw::BEGIN || frame.data[0] == fw::RESTART)) {
+        reply = fw::packAck(target, frame.data[0], fw::STATUS_BUSY);
         std::printf("R ");
         for (int i = 0; i < 8; ++i) std::printf("%02x", reply.data[i]);
         std::printf(" NONE\n");

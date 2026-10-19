@@ -14,6 +14,7 @@ from .adapters import read_replay, replay, socketcan
 from .state import State
 from .gps import GPS, gpsd
 from .gpswatch import GpsRecovery
+from .canwatch import CanWatch
 from .gpsaid import GpsAid
 from .helpers import Helpers
 from .fwupdate import Firmware
@@ -97,6 +98,8 @@ def create_app(state, adapter=None, connectivity=None):
         # Every loop below is supervised (supervision.py): if one fails it is recorded and
         # started again, instead of that feature stopping for the rest of the drive.
         tasks = [supervise(state, 'CAN reader', adapter)] if adapter else []
+        if state.can_watch:
+            tasks.append(supervise(state, 'CAN watch', state.can_watch.run, state.can_watch))
         race_task = supervise(state, 'race timer', state.race.run, state.race)
         drive_task = supervise(state, 'drive alerts', state.driving.run, state.driving)
         trip_task = supervise(state, 'trip', state.trip.run, state.trip)
@@ -353,15 +356,15 @@ def create_app(state, adapter=None, connectivity=None):
         if request.method == 'POST':
             try:
                 body = await request.json()
-                valid = isinstance(body, dict) and body.get('module') in state.firmware.modules and body.get('action') == 'install'
+                valid = isinstance(body, dict) and body.get('module') in state.firmware.modules and body.get('action') in ('install', 'restart')
             except (ValueError, TypeError):
                 valid = False
             if not valid:
-                raise web.HTTPBadRequest(text='Expected a known module and action: install')
-            error = state.firmware.start(body['module'])
+                raise web.HTTPBadRequest(text='Expected a known module and action: install or restart')
+            error = (state.firmware.restart if body['action'] == 'restart' else state.firmware.start)(body['module'])
             if error:
                 raise web.HTTPConflict(text=error)
-        return web.json_response(state.firmware.snapshot(), headers={'Cache-Control': 'no-store'})
+        return web.json_response(state.firmware.snapshot_with_nano(), headers={'Cache-Control': 'no-store'})
 
     async def tune(request):
         # TunerStudio over the dash: a request for the kiosk launcher to collect (tune.py).
@@ -1023,6 +1026,8 @@ def main():
         state.helpers = Helpers(args.data_dir)
         state.firmware = Firmware(state, args.data_dir / 'firmware')
         state.github = GitHubLink(args.data_dir)
+        # can0 taken down and up again when it stops receiving with the key on (canwatch.py).
+        state.can_watch = CanWatch(state, args.data_dir)
     if args.gpsd:
         state.gps = GPS(device=args.gps_device, transmit=not args.gps_no_transmit)
         # Watches for a missing position and works through the recovery steps (gpswatch.py).

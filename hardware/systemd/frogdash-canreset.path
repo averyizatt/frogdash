@@ -1,0 +1,9 @@
+[Unit]
+Description=Reset can0 when the Frogdash dash stops receiving CAN with the key on
+
+[Path]
+PathExists=/var/lib/private/frogdash/can-request
+Unit=frogdash-canreset.service
+
+[Install]
+WantedBy=multi-user.target

@@ -7,6 +7,7 @@
 .camera-stage :is(#camera-feed, #camera-demo, #dashcam-feed, #dashcam-demo) { object-fit:cover; object-position:50% 70%; }
 .camera-dialog[data-mirror="true"] :is(#camera-feed,#camera-demo) { transform:scaleX(-1); }
 .camera-info { flex:0 0 290px; justify-content:center; }
+.sw-modules .sw-restart { min-height:34px; padding:4px 12px; font-size:14px; }
 /* Drive summary at key-off (summary.js). */
 .summary-dialog[open] { display:flex; flex-direction:column; gap:18px; padding:26px 32px; }
 .summary-head { display:flex; align-items:flex-start; gap:24px; }

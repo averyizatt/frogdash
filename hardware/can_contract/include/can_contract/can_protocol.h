@@ -860,7 +860,7 @@ inline CanFrame packMethConfigAck(uint8_t acceptedVersion, uint8_t status, uint8
 
 // BEGIN FROGDASH ADDITIVE EXTENSION
 // Existing schema-2 IDs, layouts and ACK schema remain unchanged.
-constexpr uint8_t FROGDASH_EXTENSION_VERSION = 6;
+constexpr uint8_t FROGDASH_EXTENSION_VERSION = 7;
 constexpr uint16_t ID_FUEL_LEVEL_STATE = 0x204;
 constexpr uint8_t FUEL_LEVEL_DLC = 3;
 constexpr uint32_t FUEL_LEVEL_TX_MS = 500;
@@ -1386,6 +1386,17 @@ inline CanFrame packKnockSpectrum(uint8_t kind, uint8_t firstPoint, const uint8_
   for (uint8_t i = 0; i < knock_detail::SPECTRUM_PER_FRAME; ++i) frame.data[2 + i] = values[i];
   return frame;
 }
+// Extension 7 (October 2026): restart a module from the dash. The gateway, taillights and
+// ESP32 water/meth board take firmware::RESTART on 0x680 (firmware_update.h). The Nano
+// water/meth controller takes meth_command::RESTART on 0x301 (DLC 1): it turns the pump
+// off, acknowledges on 0x30A and restarts through its watchdog; while the pump is running
+// it answers config_ack_status::BUSY and stays as it is.
+namespace meth_command {
+constexpr uint8_t RESTART = 0x07;
+}  // namespace meth_command
+namespace config_ack_status {
+constexpr uint8_t BUSY = 0x04;
+}  // namespace config_ack_status
 // END FROGDASH ADDITIVE EXTENSION
 
 }  // namespace can_protocol

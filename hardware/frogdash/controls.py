@@ -19,6 +19,8 @@ COMMANDS = {
     "meth.stop": (0x301, 0x03, None, None, True),
     "meth.boost": (0x301, 0x04, 0, 250, True),
     "meth.clear_faults": (0x301, 0x06, None, None, True),
+    # The Nano restarts on this (can_protocol.h extension 7); busy (status 4) while pumping.
+    "meth.restart": (0x301, 0x07, None, None, True),
     # Pulse tuning (can_protocol.h extension 4), acknowledged on 0x30F. setting = key << 16 | value;
     # tune_action = 0 save, 1 revert, 2 defaults, 3 report.
     "meth.setting": (0x301, 0x10, 1 << 16, (19 << 16) | 0xFFFF, True),
@@ -71,7 +73,7 @@ METH_REARM_SETTLE_S = 3    # The controller is heard this long before it is arme
 METH_REARM_RETRY_S = 10
 PARKED_LIGHTING = ('lighting.show', 'lighting.demo', 'lighting.override', 'lighting.custom')
 LABELS = {
-    'meth.arm': 'water/meth mode', 'meth.test': 'pump test', 'meth.stop': 'pump test stop',
+    'meth.arm': 'water/meth mode', 'meth.restart': 'restart', 'meth.test': 'pump test', 'meth.stop': 'pump test stop',
     'meth.boost': 'boost start', 'meth.clear_faults': 'fault clear request',
     'meth.setting': 'water/meth setting', 'meth.tune_action': 'water/meth settings action',
     'knock.enable': 'knock monitor mode', 'knock.threshold': 'knock threshold offset',
@@ -201,6 +203,8 @@ class Controls:
                     return 'Injection disabled: the tank level sensor reads LOW. Fill the tank or check the float switch'
             if action in METH_TUNE and not self.state.meth_tune.supported:
                 return 'Water/meth firmware without pulse tuning: flash the current firmware'
+            if action == 'meth.restart' and rolling(self.state):
+                return 'Stop the car first'
             if action in ('meth.test', 'meth.boost') and mode != 'OFF':
                 return 'Disarm water/meth first'
             if action == 'meth.test':
@@ -276,6 +280,8 @@ class Controls:
                 pending['future'].set_result(('rejected' if rejected else 'adjusted', f'Controller applied value {applied}' + ('; test refused' if rejected else ' (clamped)')))
             elif status in (1, 2):
                 pending['future'].set_result(('rejected', 'Controller rejected command: ' + ('unsupported' if status == 1 else 'invalid length')))
+            elif status == 4:
+                pending['future'].set_result(('rejected', 'The water/meth controller is busy: the pump is running. Try again parked'))
             elif status != 0:
                 pending['future'].set_result(('unknown', f'Unknown acknowledgement status {status}'))
 

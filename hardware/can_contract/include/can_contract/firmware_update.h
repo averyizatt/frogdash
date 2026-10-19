@@ -25,6 +25,10 @@
 //   END        83 tt c3 c2 c1 c0 00 00     CRC-32 of the whole image
 //   ABORT      84 tt 00 00 00 00 00 00
 //   CONFIRM    85 tt b3 b2 b1 b0 00 00     the build the dash expects to be running
+//   RESTART    86 tt 00 00 00 00 00 00     restart the module (extension 7, October 2026):
+//                                          ACK OK, then it restarts 300 ms later, as after
+//                                          an update; BUSY while it is in use (a light input
+//                                          on, water/meth injecting) or a transfer is open
 //
 // 0x681, DLC 8:
 //   INFO       01 tt b3 b2 b1 b0 ff vv     build, flags, protocol version
@@ -57,6 +61,7 @@ constexpr uint8_t BLOCK_END = 0x82;
 constexpr uint8_t END = 0x83;
 constexpr uint8_t ABORT = 0x84;
 constexpr uint8_t CONFIRM = 0x85;
+constexpr uint8_t RESTART = 0x86;
 
 constexpr uint8_t INFO = 1;
 constexpr uint8_t ACK = 2;
@@ -247,6 +252,12 @@ class Receiver {
         reply = packAck(target_, END, STATUS_OK);
         return true;
       }
+      case RESTART:
+        // The module's own check (in use?) comes before this and answers BUSY itself.
+        if (active_) { reply = packAck(target_, RESTART, STATUS_BUSY); return true; }
+        action = Action::RESTART;
+        reply = packAck(target_, RESTART, STATUS_OK);
+        return true;
       case ABORT:
         if (active_) { stop(); action = Action::STOPPED; }
         reply = packAck(target_, ABORT, STATUS_OK);
