@@ -14,6 +14,8 @@
 <link rel="stylesheet" href="taillights.css?v=d1359011b47c">
 <link rel="stylesheet" href="knock.css?v=0c2fbd4e553a">
 <link rel="stylesheet" href="keyboard.css?v=254b6a8a85a9">
+<link rel="stylesheet" href="uPlot.min.css?v=df630c6a8d6f">
+<link rel="stylesheet" href="graphs.css?v=972a51403f2a">
 <script src="offline.js?v=c5796081ea94"></script>
 <script src="boot.js?v=447cd355bc91"></script>
 </head>
@@ -267,7 +269,7 @@
         <pre id="fault-history" data-wheel-scroll tabindex="0" aria-label="Event history"></pre>
       </section>
       <section id="sensor-panel-raw" class="sensor-panel" role="tabpanel" aria-labelledby="sensor-tab-raw" hidden>
-        <div class="control-row"><button id="capture-run" class="close-button" type="button">RECORD CAN FOR 20 S</button><a id="capture-download" class="close-button" href="/can/capture?download=1" hidden>Download recording</a></div>
+        <div class="control-row"><button id="capture-run" class="close-button" type="button">RECORD CAN FOR 20 S</button><a id="capture-download" class="close-button" href="/can/capture?download=1" hidden>Download recording</a><a class="close-button" href="/can/frogdash.dbc" download title="Every message the dash knows, for SavvyCAN or cantools (docs/savvycan.md)">DBC for SavvyCAN</a></div>
         <pre id="raw-frames" data-wheel-scroll tabindex="0" aria-label="Raw CAN traffic"></pre>
       </section>
       <section id="sensor-panel-connection" class="sensor-panel" role="tabpanel" aria-labelledby="sensor-tab-connection" hidden>
@@ -496,7 +498,7 @@
 <script src="driving.js?v=03a3600a0df6"></script>
 <script src="operations.js?v=99b56be499d7"></script>
 <script src="screen.js?v=d764dc9a10fb"></script>
-<script src="navigation.js?v=6012c7bfed39"></script>
+<script src="navigation.js?v=2409712e6378"></script>
 <script src="camera.js?v=ad18e6e6fd6f"></script>
 <script src="dashcam.js?v=59b85171a81e"></script>
 <script src="map.js?v=c563c41f37d5"></script>
@@ -506,7 +508,9 @@
 <script src="knock.js?v=78a86c754486"></script>
 <script src="keyboard.js?v=b4449fd4d760"></script>
 <script src="summary.js?v=10e9f3c08954"></script>
+<script src="uPlot.iife.min.js?v=2d27e8ad3d22"></script>
+<script src="graphs.js?v=4ddec132eab0"></script>
 <script src="demo.js?v=e9e8d4cc38a1"></script>
-<script src="app.js?v=9def179e452a"></script>
+<script src="app.js?v=93ce0e8652ca"></script>
 </body>
 </html>

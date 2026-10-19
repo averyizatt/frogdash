@@ -1,0 +1,24 @@
+/* Live graphs (graphs.js), drawn with uPlot (uPlot.min.css sets its own parts). */
+.graphs-dialog .dialog-header > div:first-child { min-width:0; }
+.graphs-tools { display:flex; align-items:center; gap:12px; flex:none; }
+.graphs-windows { display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+.graphs-windows button, #graphs-hold { min-height:44px; padding:8px 16px; background:var(--raised); color:var(--text); border:0; font-size:15px; font-weight:750; }
+.graphs-windows button + button { border-left:1px solid var(--line); }
+.graphs-windows button[aria-pressed="true"], #graphs-hold[aria-pressed="true"] { background:var(--accent); color:#06231a; }
+#graphs-hold { border:1px solid var(--line); border-radius:9px; }
+.graphs-grid { flex:1; min-height:0; overflow-y:auto; display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); grid-auto-rows:268px; gap:14px; padding:16px 22px 22px; }
+.graphs-card { display:flex; flex-direction:column; min-width:0; min-height:0; padding:10px 12px 6px; background:var(--surface); border:1px solid var(--line); border-radius:12px; }
+.graphs-card h3 { margin:0 0 2px; font-size:15px; letter-spacing:.4px; color:var(--muted); font-weight:800; text-transform:uppercase; }
+.graphs-plot { flex:1; min-height:0; min-width:0; }
+.graphs-missing { color:var(--warn); font-size:18px; }
+/* uPlot's legend under each chart, in the dash's colours. */
+.graphs-card .uplot { font-family:inherit; color:var(--text); }
+.graphs-card .u-legend { font-size:14px; text-align:left; margin-top:2px; }
+.graphs-card .u-legend .u-series > * { padding:2px 4px; }
+.graphs-card .u-legend .u-value { font-weight:800; font-variant-numeric:tabular-nums; }
+@media (max-width:600px) {
+  .graphs-grid { grid-template-columns:minmax(0, 1fr); padding:12px 16px 16px; }
+  .graphs-dialog .dialog-header { flex-wrap:wrap; }
+  .graphs-tools { flex:1 1 100%; flex-wrap:wrap; }
+  .graphs-windows button, #graphs-hold { padding:8px 12px; }
+}

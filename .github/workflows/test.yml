@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt -r requirements-tools.lock
       - run: g++ --version
       # An undefined name only fails when its line runs: on the Pi, at start-up (os in
       # server.py's main(), October 2026). Caught here before it can be installed.
@@ -46,3 +46,4 @@ jobs:
       - run: python tests/browser_camera_view.py
       - run: python tests/browser_summary.py
       - run: python tests/browser_firmware.py
+      - run: python tests/browser_graphs.py

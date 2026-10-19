@@ -29,7 +29,7 @@ def assets():
     demo = (ROOT / 'preview' / 'demo.js').read_text(encoding='utf-8')
     offline = (ROOT / 'preview' / 'offline.js').read_text(encoding='utf-8')
     personalize = (source / 'personalize.js').read_text(encoding='utf-8')
-    extra = {name: (source / name).read_text(encoding='utf-8') for name in ('viewport.js', 'responsive.css', 'instruments.js', 'instruments.css', 'navigation.js', 'driving.js', 'trip.js', 'operations.js', 'units.js', 'review.js', 'review.css', 'camera.js', 'camera.css', 'dashcam.js', 'map.js', 'boot.js', 'taillights.js', 'taillights.css', 'taillight-settings.js', 'meth-tune.js', 'knock.js', 'knock.css', 'screen.js', 'keyboard.js', 'keyboard.css', 'summary.js')}
+    extra = {name: (source / name).read_text(encoding='utf-8') for name in ('viewport.js', 'responsive.css', 'instruments.js', 'instruments.css', 'navigation.js', 'driving.js', 'trip.js', 'operations.js', 'units.js', 'review.js', 'review.css', 'camera.js', 'camera.css', 'dashcam.js', 'map.js', 'boot.js', 'taillights.js', 'taillights.css', 'taillight-settings.js', 'meth-tune.js', 'knock.js', 'knock.css', 'screen.js', 'keyboard.js', 'keyboard.css', 'summary.js', 'graphs.js', 'graphs.css', 'uPlot.iife.min.js', 'uPlot.min.css')}
     # A published HTML update must not reuse cached CSS/JS from the previous design.
     for name, content in [('style.css', css), ('app.js', js), ('demo.js', demo), ('offline.js', offline), ('personalize.js', personalize), *extra.items()]:
         version = sha256(content.encode('utf-8')).hexdigest()[:12]
