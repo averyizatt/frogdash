@@ -45,3 +45,4 @@ jobs:
       - run: python tests/browser_keyboard.py
       - run: python tests/browser_camera_view.py
       - run: python tests/browser_summary.py
+      - run: python tests/browser_firmware.py
