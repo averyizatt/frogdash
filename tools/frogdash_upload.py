@@ -24,6 +24,9 @@ What goes up, every time, whatever the connection:
   - pi/<date>/<time>-journal.txt: since the Pi started, the dash's, GPS, Wi-Fi and power
     services, warnings from everything, and the end of the start before (how it shut
     down; the setup keeps the journal across restarts);
+  - pi/<date>/<time>-can-<when>.log: CAN recordings made on the dash since the last
+    report (Sensors > Raw CAN > Record), in candump log format: open them in SavvyCAN or
+    cantools with hardware/can_contract/frogdash.dbc (docs/savvycan.md);
   - the newest drive's recordings, gzip-compressed, as files of a GitHub release named
     after the drive, so the repository's history does not grow with them.
 
@@ -50,6 +53,7 @@ import urllib.request
 
 STATE = Path(os.environ.get('FROGDASH_STATE') or os.path.realpath('/var/lib/frogdash'))
 REPO_DIR = Path(os.environ.get('FROGDASH_REPO', '/opt/frogdash'))
+RECORDINGS = STATE / 'can-recordings'   # Finished CAN recordings (server.py save_recording)
 CONFIG, STATUS = STATE / 'log-upload.json', STATE / 'upload-status.json'
 LOGS = STATE / 'logs'
 REPORTS, EVENTS = STATE / 'reports', STATE / 'events'
@@ -306,6 +310,14 @@ def make_report(now, config, since):
     boot = text_of(sys.executable, str(REPO_DIR / 'tools/boot_report.py'), *(['--user', user] if user else []), timeout=90)
     files['boot.txt'] = scrub(boot, hidden).encode(errors='replace')
     files['journal.txt'] = scrub(journal(), hidden).encode(errors='replace')[-3_000_000:]
+    for path in sorted(RECORDINGS.glob('*.log')) if RECORDINGS.is_dir() else []:
+        try:
+            written = path.stat().st_mtime
+            if written > since:
+                files[f'can-{path.stem}.log'] = path.read_bytes()[:8_000_000]
+                until = max(until, written)    # Sent once: the next report starts after it
+        except OSError:
+            pass
     return files, until
 
 

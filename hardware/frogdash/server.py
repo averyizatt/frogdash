@@ -5,6 +5,7 @@ import codecs
 import json
 import os
 import re
+import time
 from collections import deque
 from contextlib import suppress
 from pathlib import Path
@@ -49,6 +50,19 @@ def valid_ssid(name):
 IMAGE_DATA = re.compile(r"data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+")
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
+# Every CAN message the dash knows, for SavvyCAN and cantools (tools/make_dbc.py).
+DBC = Path(__file__).resolve().parents[1] / "can_contract" / "frogdash.dbc"
+RECORDINGS_KEPT = 5
+
+
+def save_recording(folder, lines, wall):
+    """A finished CAN recording, kept on the Pi in candump log format (the newest few) so
+    the next report takes it to GitHub, where SavvyCAN or cantools can open it."""
+    folder.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime('%Y%m%d-%H%M%S', time.gmtime(wall))
+    (folder / f'{stamp}.log').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    for old in sorted(folder.glob('*.log'))[:-RECORDINGS_KEPT]:
+        old.unlink(missing_ok=True)
 
 
 async def preset_pause():
@@ -459,6 +473,12 @@ def create_app(state, adapter=None, connectivity=None):
         status['pending'] = (folder / 'wifi-request.json').exists()
         return web.json_response(status, headers={'Cache-Control': 'no-store'})
 
+    async def can_dbc(request):
+        if not DBC.is_file():
+            raise web.HTTPNotFound(text='No DBC file in this release')
+        return web.FileResponse(DBC, headers={'Content-Disposition': 'attachment; filename="frogdash.dbc"',
+                                              'Content-Type': 'text/plain; charset=utf-8'})
+
     async def self_test(request):
         folder = state.paint.path.parent if state.paint else None
         return web.json_response(await asyncio.to_thread(selftest.report, state, folder), headers={'Cache-Control': 'no-store'})
@@ -472,7 +492,13 @@ def create_app(state, adapter=None, connectivity=None):
                 seconds = int((await request.json()).get('seconds', 10))
             except (ValueError, AttributeError, TypeError):
                 raise web.HTTPBadRequest(text='seconds must be a number')
-            state.capture, state.capture_until = [], now + max(1, min(120, seconds))
+            state.capture, state.capture_until, state.capture_saved = [], now + max(1, min(120, seconds)), False
+        if state.capture and now > state.capture_until and not state.capture_saved and state.recordings:
+            state.capture_saved = True
+            try:
+                await asyncio.to_thread(save_recording, state.recordings, list(state.capture), state.wall())
+            except OSError as exc:
+                state.fault('CAN recording save', exc)
         if request.query.get('download') and state.capture is not None:
             return web.Response(text='\n'.join(state.capture) + '\n', content_type='text/plain',
                                 headers={'Content-Disposition': 'attachment; filename="frogdash-can.log"', 'Cache-Control': 'no-store'})
@@ -748,7 +774,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "keyboard.js", "keyboard.css", "summary.js", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js", "knock.js", "knock.css", "screen.js"}:
+        if name not in {"index.html", "app.js", "style.css", "keyboard.js", "keyboard.css", "summary.js", "graphs.js", "graphs.css", "uPlot.iife.min.js", "uPlot.min.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js", "knock.js", "knock.css", "screen.js"}:
             raise web.HTTPNotFound()
         if name == 'index.html' and state.paint and state.paint.value:
             page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')
@@ -919,7 +945,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.post("/ui/error", screen_error), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/events', events), web.get('/uploads', uploads), web.post('/uploads', uploads), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.post("/ui/error", screen_error), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.get("/can/frogdash.dbc", can_dbc), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/events', events), web.get('/uploads', uploads), web.post('/uploads', uploads), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),
@@ -997,6 +1023,8 @@ def main():
     state.imports = Imports((args.data_dir / 'replay' if args.replay else args.data_dir) / 'import', Path(__file__).resolve().parents[1] / 'art')
     state.paint = Paint((args.data_dir / 'replay' if args.replay else args.data_dir) / 'appearance-paint.json')
     state.shutdown_history = ShutdownHistory((args.data_dir / 'replay' if args.replay else args.data_dir) / 'shutdown.json')
+    # Finished CAN recordings, sent with the next report (tools/frogdash_upload.py).
+    state.recordings = None if args.replay else args.data_dir / 'can-recordings'
     state.eventlog = EventLog(state, (args.data_dir / 'replay' if args.replay else args.data_dir) / 'events')
     state.summary = DriveSummary(state, args.data_dir / 'replay' if args.replay else args.data_dir)
     if args.log_dir:

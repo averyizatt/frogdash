@@ -1,0 +1,1098 @@
+VERSION "frogdash"
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: CCM ECU FROGDASH GATEWAY TAILLIGHTS WATERMETH
+
+
+BO_ 256 TAILLIGHT_STATE: 7 TAILLIGHTS
+ SG_ thermal_derate : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ die_c : 40|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ brightness : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ passenger_other : 28|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ passenger_reverse : 27|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ turn_right : 26|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ passenger_running : 25|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ passenger_brake : 24|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ driver_other : 20|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ driver_reverse : 19|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ turn_left : 18|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ driver_running : 17|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ driver_brake : 16|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ right_state : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ left_state : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 258 TAILLIGHT_FAULT: 4 TAILLIGHTS
+ SG_ data1 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ data0 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ severity : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ code : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 259 TAILLIGHT_REPORT: 8 TAILLIGHTS
+ SG_ phase_ms m5 : 47|16@0+ (16,0) [0|0] "ms" Vector__XXX
+ SG_ profiles m5 : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ show_anim m5 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ flags m5 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ack_status m1 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ revision m5 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ack_command m1 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ kind M : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 512 COMFORT_STATUS: 8 CCM
+ SG_ uptime_s_mod256 : 56|8@1+ (1,0) [0|0] "s" Vector__XXX
+ SG_ fault_flags : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ battery_v : 40|8@1+ (0.1,0) [0|0] "V" Vector__XXX
+ SG_ ambient_c : 32|8@1+ (1,-40) [0|0] "C" Vector__XXX
+ SG_ cabin_c : 24|8@1+ (1,-40) [0|0] "C" Vector__XXX
+ SG_ input_flags : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ page : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ state : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 514 TACH: 8 CCM
+ SG_ pulses_per_rev : 48|8@1+ (0.1,0) [0|0] "" Vector__XXX
+ SG_ status_flags : 40|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ source : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ generated_hz : 23|16@0+ (0.1,0) [0|0] "Hz" Vector__XXX
+ SG_ rpm : 7|16@0+ (1,0) [0|0] "rpm" Vector__XXX
+
+BO_ 515 GPS: 8 FROGDASH
+ SG_ satellites_in_view : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status_flags : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ fix_type : 40|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ satellites : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ altitude_m : 23|16@0- (1,0) [0|0] "m" Vector__XXX
+ SG_ speed_kph : 7|16@0+ (0.1,0) [0|0] "km/h" Vector__XXX
+
+BO_ 516 FUEL_LEVEL: 3 GATEWAY
+ SG_ level_status : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ fuel_pct : 7|16@0+ (0.1,0) [0|0] "%" Vector__XXX
+
+BO_ 517 WHEEL_BUTTONS: 3 GATEWAY
+ SG_ version : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ sequence : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ buttons_mask : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 769 METH_COMMAND: 8 FROGDASH
+ SG_ value_hi : 23|16@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ value : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ command : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 768 METH_STATE: 8 WATERMETH
+ SG_ fault_flags : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ bay_c : 48|8@1+ (1,-40) [0|0] "C" Vector__XXX
+ SG_ iat_c : 40|8@1+ (1,-40) [0|0] "C" Vector__XXX
+ SG_ boost_kpa : 32|8@1+ (1,0) [0|0] "kPa" Vector__XXX
+ SG_ flow : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ tank_pct : 16|8@1+ (1,0) [0|0] "%" Vector__XXX
+ SG_ duty_pct : 8|8@1+ (1,0) [0|0] "%" Vector__XXX
+ SG_ state : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 770 METH_FAULT: 4 WATERMETH
+ SG_ data1 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ data0 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ severity : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ code : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 771 ENGINE_SENSORS: 8 WATERMETH
+ SG_ fault_flags : 48|16@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ cabin_c : 40|8@1+ (1,-40) [0|0] "C" Vector__XXX
+ SG_ ambient_c : 32|8@1+ (1,-40) [0|0] "C" Vector__XXX
+ SG_ boost_ref_psi : 24|8@1+ (0.5,0) [0|0] "psi" Vector__XXX
+ SG_ meth_pressure_psi : 16|8@1+ (0.5,0) [0|0] "psi" Vector__XXX
+ SG_ fuel_pressure_psi : 8|8@1+ (0.5,0) [0|0] "psi" Vector__XXX
+ SG_ oil_pressure_psi : 0|8@1+ (0.5,0) [0|0] "psi" Vector__XXX
+
+BO_ 772 METH_CONFIG: 8 CCM
+ SG_ checksum : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ failsafe_flags : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ max_duty_pct : 40|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ iat_threshold_c : 32|8@1+ (1,-40) [0|0] "C" Vector__XXX
+ SG_ boost_trigger_kpa : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ratio_pct : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ desired_armed : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ version : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 773 CONFIG_REQUEST: 1 WATERMETH
+ SG_ request_reason : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 774 METH_CONFIG_ACK: 4 WATERMETH
+ SG_ ratio_pct : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ reject_reason : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ version : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 775 KNOCK: 8 WATERMETH
+ SG_ band_share : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ last_boost_kpa : 48|8@1+ (1,0) [0|0] "kPa" Vector__XXX
+ SG_ last_rpm : 40|8@1+ (100,0) [0|0] "rpm" Vector__XXX
+ SG_ event_count : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ threshold : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ baseline : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ energy : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status_bit7 : 7|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ clipping : 6|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ sensor_fault : 5|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ learned : 4|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ critical : 3|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ warning : 2|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ signal_valid : 1|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ enabled : 0|1@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 776 KNOCK_FAULT: 4 WATERMETH
+ SG_ data1 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ data0 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ severity : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ code : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 777 ENGINE_RUNTIME: 4 FROGDASH
+ SG_ valid_flags : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ map_kpa : 16|8@1+ (1,0) [0|0] "kPa" Vector__XXX
+ SG_ rpm : 0|16@1+ (1,0) [0|0] "rpm" Vector__XXX
+
+BO_ 778 ENGINE_ACK: 4 WATERMETH
+ SG_ schema : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ applied_value : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ command : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 779 KNOCK_HOOK: 8 WATERMETH
+ SG_ envelope : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ raw_adc : 48|8@1+ (16,0) [0|0] "" Vector__XXX
+ SG_ bias_adc : 40|8@1+ (16,0) [0|0] "" Vector__XXX
+ SG_ event_count : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ baseline : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ threshold : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ rms : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ flags : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 780 KNOCK_CONFIG_1: 8 WATERMETH
+ SG_ center_hz : 56|8@1+ (100,0) [0|0] "Hz" Vector__XXX
+ SG_ gain : 48|8@1+ (0.1,0) [0|0] "" Vector__XXX
+ SG_ debounce_ms : 40|8@1+ (10,0) [0|0] "ms" Vector__XXX
+ SG_ min_map_kpa : 32|8@1+ (1,0) [0|0] "kPa" Vector__XXX
+ SG_ min_rpm : 24|8@1+ (100,0) [0|0] "rpm" Vector__XXX
+ SG_ multiplier : 16|8@1+ (0.1,0) [0|0] "" Vector__XXX
+ SG_ threshold_offset : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ flags : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 781 KNOCK_CONFIG_2: 8 WATERMETH
+ SG_ reserved : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ bore_mm : 48|8@1+ (1,0) [0|0] "mm" Vector__XXX
+ SG_ envelope_alpha : 40|8@1+ (0.01,0) [0|0] "" Vector__XXX
+ SG_ rms_alpha : 32|8@1+ (0.01,0) [0|0] "" Vector__XXX
+ SG_ bias_alpha : 24|8@1+ (0.001,0) [0|0] "" Vector__XXX
+ SG_ samples_per_update : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ sample_rate_hz : 8|8@1+ (100,0) [0|0] "Hz" Vector__XXX
+ SG_ bandwidth_hz : 0|8@1+ (100,0) [0|0] "Hz" Vector__XXX
+
+BO_ 782 KNOCK_DETAIL: 8 WATERMETH
+ SG_ bin5 m5 : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ votes m2 : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ amp_room_mv m1 : 56|8@1+ (16,0) [0|0] "mV" Vector__XXX
+ SG_ bin4 m5 : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ agreement_pct m2 : 48|8@1+ (1,0) [0|0] "%" Vector__XXX
+ SG_ amp_swing_mv m1 : 48|8@1+ (8,0) [0|0] "mV" Vector__XXX
+ SG_ bin3 m5 : 40|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ crest m4 : 40|8@1+ (0.1,0) [0|0] "" Vector__XXX
+ SG_ knock_sample_rate_hz m3 : 47|16@0+ (1,0) [0|0] "Hz" Vector__XXX
+ SG_ amp_rest_mv m1 : 40|8@1+ (16,0) [0|0] "mV" Vector__XXX
+ SG_ bin2 m5 : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ background m4 : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ found_hz m2 : 39|16@0+ (1,0) [0|0] "Hz" Vector__XXX
+ SG_ amp_top_step m1 : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ bin1 m5 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ second_normal m4 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ tone_hz m3 : 31|16@0+ (1,0) [0|0] "Hz" Vector__XXX
+ SG_ amp_step m1 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ bin0 m5 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ second m4 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ filter_hz m2 : 23|16@0+ (1,0) [0|0] "Hz" Vector__XXX
+ SG_ amp_gain m1 : 16|8@1+ (0.1,0) [0|0] "" Vector__XXX
+ SG_ fixed m1 : 12|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ silent m1 : 11|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ second_active m2 : 10|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ overloaded m1 : 10|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ confirmed m4 : 9|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ learned m2 : 9|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ineffective m1 : 9|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ first_bin m5 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ notable m4 : 8|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ bore_hz m3 : 15|16@0+ (1,0) [0|0] "Hz" Vector__XXX
+ SG_ learning m2 : 8|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ automatic m1 : 8|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ kind M : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 783 METH_TUNING: 8 WATERMETH
+ SG_ period_ms m3 : 55|16@0+ (1,0) [0|0] "ms" Vector__XXX
+ SG_ temps_valid m4 : 40|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ on_ms m3 : 39|16@0+ (1,0) [0|0] "ms" Vector__XXX
+ SG_ ack_value m1 : 39|16@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ post_temp_c m4 : 31|16@0- (0.1,0) [0|0] "C" Vector__XXX
+ SG_ hold m3 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ack_setting m1 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ pump_on m3 : 20|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ack_status m1 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ pre_temp_c m4 : 15|16@0- (0.1,0) [0|0] "C" Vector__XXX
+ SG_ ack_command m1 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ kind M : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1280 GATEWAY_SENSORS: 8 GATEWAY
+ SG_ fuel_valid : 58|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ rpm_valid : 57|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ speed_valid : 56|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ fuel_pct : 48|8@1+ (1,0) [0|0] "%" Vector__XXX
+ SG_ fuel_raw : 39|16@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ rpm : 23|16@0+ (1,0) [0|0] "rpm" Vector__XXX
+ SG_ speed_kph : 7|16@0+ (0.1,0) [0|0] "km/h" Vector__XXX
+
+BO_ 1281 GATEWAY_BUTTONS: 4 GATEWAY
+ SG_ version : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ cruise_sequence : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ cruise_enabled : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ cruise_pressed : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1283 INTERIOR_LIGHT: 7 GATEWAY
+ SG_ commanded : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ version : 40|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ brightness : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ blue : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ green : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ red : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ channel : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1664 FIRMWARE_COMMAND: 8 FROGDASH
+ SG_ target : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ op : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1665 FIRMWARE_REPLY: 8 CCM
+ SG_ flags : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ build : 23|32@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ target : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ kind : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1512 MS_DASH_0: 8 ECU
+ SG_ throttle_pct : 55|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ coolant_c : 39|16@0- (0.05555555555555555,-17.77777777777778) [0|0] "C" Vector__XXX
+ SG_ rpm : 23|16@0+ (1,0) [0|0] "rpm" Vector__XXX
+ SG_ map_kpa : 7|16@0- (0.1,0) [0|0] "kPa" Vector__XXX
+
+BO_ 1513 MS_DASH_1: 8 ECU
+ SG_ spark_deg : 55|16@0- (0.1,0) [0|0] "deg" Vector__XXX
+ SG_ iat_c : 39|16@0- (0.05555555555555555,-17.77777777777778) [0|0] "C" Vector__XXX
+ SG_ pw2_ms : 23|16@0+ (0.001,0) [0|0] "ms" Vector__XXX
+ SG_ pw1_ms : 7|16@0+ (0.001,0) [0|0] "ms" Vector__XXX
+
+BO_ 1514 MS_DASH_2: 8 ECU
+ SG_ pwseq1_ms : 55|16@0- (0.001,0) [0|0] "ms" Vector__XXX
+ SG_ ego_correction_pct : 23|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ afr : 8|8@1+ (0.1,0) [0|0] "" Vector__XXX
+ SG_ afr_target : 0|8@1+ (0.1,0) [0|0] "" Vector__XXX
+
+BO_ 1515 MS_DASH_3: 8 ECU
+ SG_ knock_retard_deg : 48|8@1+ (0.1,0) [0|0] "deg" Vector__XXX
+ SG_ sensor2 : 39|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor1 : 23|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ battery_v : 7|16@0- (0.1,0) [0|0] "V" Vector__XXX
+
+BO_ 1520 MS_RT_00: 8 ECU
+ SG_ rpm : 55|16@0+ (1,0) [0|0] "rpm" Vector__XXX
+ SG_ pw2_ms : 39|16@0+ (0.001,0) [0|0] "ms" Vector__XXX
+ SG_ pw1_ms : 23|16@0+ (0.001,0) [0|0] "ms" Vector__XXX
+ SG_ seconds : 7|16@0+ (1,0) [0|0] "s" Vector__XXX
+
+BO_ 1521 MS_RT_01: 8 ECU
+ SG_ afr2_target : 40|8@1+ (0.1,0) [0|0] "" Vector__XXX
+ SG_ afr_target : 32|8@1+ (0.1,0) [0|0] "" Vector__XXX
+ SG_ engine_flags : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ injection_flags : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ spark_deg : 7|16@0- (0.1,0) [0|0] "deg" Vector__XXX
+
+BO_ 1522 MS_RT_02: 8 ECU
+ SG_ coolant_c : 55|16@0- (0.05555555555555555,-17.77777777777778) [0|0] "C" Vector__XXX
+ SG_ iat_c : 39|16@0- (0.05555555555555555,-17.77777777777778) [0|0] "C" Vector__XXX
+ SG_ map_kpa : 23|16@0- (0.1,0) [0|0] "kPa" Vector__XXX
+ SG_ baro_kpa : 7|16@0- (0.1,0) [0|0] "kPa" Vector__XXX
+
+BO_ 1523 MS_RT_03: 8 ECU
+ SG_ afr2 : 55|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ afr : 39|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ battery_v : 23|16@0- (0.1,0) [0|0] "V" Vector__XXX
+ SG_ throttle_pct : 7|16@0- (0.1,0) [0|0] "%" Vector__XXX
+
+BO_ 1524 MS_RT_04: 8 ECU
+ SG_ air_correction_pct : 55|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ ego2_correction_pct : 39|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ ego_correction_pct : 23|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ knock_pct : 7|16@0- (0.1,0) [0|0] "%" Vector__XXX
+
+BO_ 1525 MS_RT_05: 8 ECU
+ SG_ baro_correction_pct : 55|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ tps_fuel_cut_pct : 39|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ tps_accel_pct : 23|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ warmup_correction_pct : 7|16@0- (0.1,0) [0|0] "%" Vector__XXX
+
+BO_ 1526 MS_RT_06: 8 ECU
+ SG_ idle_output_raw : 55|16@0- (1,0) [0|0] "" Vector__XXX
+ SG_ ve2 : 39|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ ve1 : 23|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ total_correction_pct : 7|16@0- (0.1,0) [0|0] "%" Vector__XXX
+
+BO_ 1527 MS_RT_07: 8 ECU
+ SG_ rpm_rate_rpm_s : 55|16@0- (10,0) [0|0] "rpm/s" Vector__XXX
+ SG_ map_rate_kpa_s : 39|16@0- (1,0) [0|0] "kPa/s" Vector__XXX
+ SG_ tps_rate_pct_s : 23|16@0- (0.1,0) [0|0] "%/s" Vector__XXX
+ SG_ cold_advance_deg : 7|16@0- (0.1,0) [0|0] "deg" Vector__XXX
+
+BO_ 1528 MS_RT_08: 8 ECU
+ SG_ maf_g_s : 55|16@0- (0.01,0) [0|0] "g/s" Vector__XXX
+ SG_ flex_fuel_correction_pct : 39|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ fuel_load : 23|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ maf_load : 7|16@0- (0.1,0) [0|0] "" Vector__XXX
+
+BO_ 1529 MS_RT_09: 8 ECU
+ SG_ trailing_dwell_ms : 55|16@0+ (0.1,0) [0|0] "ms" Vector__XXX
+ SG_ dwell_ms : 39|16@0+ (0.1,0) [0|0] "ms" Vector__XXX
+ SG_ ego2_v : 23|16@0- (0.01,0) [0|0] "V" Vector__XXX
+ SG_ ego1_v : 7|16@0- (0.01,0) [0|0] "V" Vector__XXX
+
+BO_ 1530 MS_RT_10: 8 ECU
+ SG_ status7 : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status6 : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status5 : 39|16@0- (1,0) [0|0] "" Vector__XXX
+ SG_ status4 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status3 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status2 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status1 : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1531 MS_RT_11: 8 ECU
+ SG_ estimated_iat_c : 55|16@0- (0.05555555555555555,-17.77777777777778) [0|0] "C" Vector__XXX
+ SG_ ignition_load2 : 39|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ ignition_load : 23|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ fuel_load2 : 7|16@0- (0.1,0) [0|0] "" Vector__XXX
+
+BO_ 1532 MS_RT_12: 8 ECU
+ SG_ wall_fuel2_us : 39|32@0- (0.01,0) [0|0] "us" Vector__XXX
+ SG_ wall_fuel1_us : 7|32@0- (0.01,0) [0|0] "us" Vector__XXX
+
+BO_ 1533 MS_RT_13: 8 ECU
+ SG_ sensor4 : 55|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor3 : 39|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor2 : 23|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor1 : 7|16@0- (0.1,0) [0|0] "" Vector__XXX
+
+BO_ 1534 MS_RT_14: 8 ECU
+ SG_ sensor8 : 55|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor7 : 39|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor6 : 23|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor5 : 7|16@0- (0.1,0) [0|0] "" Vector__XXX
+
+BO_ 1535 MS_RT_15: 8 ECU
+ SG_ sensor10 : 23|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor9 : 7|16@0- (0.1,0) [0|0] "" Vector__XXX
+
+BO_ 1537 MS_RT_17: 8 ECU
+ SG_ maf_v : 55|16@0- (0.001,0) [0|0] "V" Vector__XXX
+ SG_ boost_duty_pct : 32|8@1+ (1,0) [0|0] "%" Vector__XXX
+ SG_ boost_target_kpa : 7|16@0- (0.1,0) [0|0] "kPa" Vector__XXX
+
+BO_ 1538 MS_RT_18: 8 ECU
+ SG_ pwseq4_ms : 55|16@0- (0.001,0) [0|0] "ms" Vector__XXX
+ SG_ pwseq3_ms : 39|16@0- (0.001,0) [0|0] "ms" Vector__XXX
+ SG_ pwseq2_ms : 23|16@0- (0.001,0) [0|0] "ms" Vector__XXX
+ SG_ pwseq1_ms : 7|16@0- (0.001,0) [0|0] "ms" Vector__XXX
+
+BO_ 1546 MS_RT_26: 8 ECU
+ SG_ nitrous_retard_deg : 55|16@0- (0.1,0) [0|0] "deg" Vector__XXX
+ SG_ nitrous_added_pw_ms : 39|16@0- (0.001,0) [0|0] "ms" Vector__XXX
+
+BO_ 1547 MS_RT_27: 8 ECU
+ SG_ can_pwm_period4 : 55|16@0- (1,0) [0|0] "" Vector__XXX
+ SG_ can_pwm_period3 : 39|16@0- (1,0) [0|0] "" Vector__XXX
+ SG_ can_pwm_period2 : 23|16@0- (1,0) [0|0] "" Vector__XXX
+ SG_ can_pwm_period1 : 7|16@0- (1,0) [0|0] "" Vector__XXX
+
+BO_ 1548 MS_RT_28: 8 ECU
+ SG_ afr_load : 55|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ eae_load : 39|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ tps_adc : 23|16@0- (1,0) [0|0] "" Vector__XXX
+ SG_ idle_target_rpm : 7|16@0+ (1,0) [0|0] "rpm" Vector__XXX
+
+BO_ 1549 MS_RT_29: 8 ECU
+ SG_ eae_correction2_pct : 23|16@0+ (0.1,0) [0|0] "%" Vector__XXX
+ SG_ eae_correction1_pct : 7|16@0+ (0.1,0) [0|0] "%" Vector__XXX
+
+BO_ 1563 MS_RT_43: 8 ECU
+ SG_ timing_error_pct : 56|8@1- (1,0) [0|0] "%" Vector__XXX
+ SG_ sync_loss_reason : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ sync_loss_count : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1792 MS_RT_ALT_00: 8 ECU
+ SG_ rpm : 55|16@0+ (1,0) [0|0] "rpm" Vector__XXX
+ SG_ pw2_ms : 39|16@0+ (0.001,0) [0|0] "ms" Vector__XXX
+ SG_ pw1_ms : 23|16@0+ (0.001,0) [0|0] "ms" Vector__XXX
+ SG_ seconds : 7|16@0+ (1,0) [0|0] "s" Vector__XXX
+
+BO_ 1793 MS_RT_ALT_01: 8 ECU
+ SG_ afr2_target : 40|8@1+ (0.1,0) [0|0] "" Vector__XXX
+ SG_ afr_target : 32|8@1+ (0.1,0) [0|0] "" Vector__XXX
+ SG_ engine_flags : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ injection_flags : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ spark_deg : 7|16@0- (0.1,0) [0|0] "deg" Vector__XXX
+
+BO_ 1794 MS_RT_ALT_02: 8 ECU
+ SG_ coolant_c : 55|16@0- (0.05555555555555555,-17.77777777777778) [0|0] "C" Vector__XXX
+ SG_ iat_c : 39|16@0- (0.05555555555555555,-17.77777777777778) [0|0] "C" Vector__XXX
+ SG_ map_kpa : 23|16@0- (0.1,0) [0|0] "kPa" Vector__XXX
+ SG_ baro_kpa : 7|16@0- (0.1,0) [0|0] "kPa" Vector__XXX
+
+BO_ 1795 MS_RT_ALT_03: 8 ECU
+ SG_ afr2 : 55|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ afr : 39|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ battery_v : 23|16@0- (0.1,0) [0|0] "V" Vector__XXX
+ SG_ throttle_pct : 7|16@0- (0.1,0) [0|0] "%" Vector__XXX
+
+BO_ 1796 MS_RT_ALT_04: 8 ECU
+ SG_ air_correction_pct : 55|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ ego2_correction_pct : 39|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ ego_correction_pct : 23|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ knock_pct : 7|16@0- (0.1,0) [0|0] "%" Vector__XXX
+
+BO_ 1797 MS_RT_ALT_05: 8 ECU
+ SG_ baro_correction_pct : 55|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ tps_fuel_cut_pct : 39|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ tps_accel_pct : 23|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ warmup_correction_pct : 7|16@0- (0.1,0) [0|0] "%" Vector__XXX
+
+BO_ 1798 MS_RT_ALT_06: 8 ECU
+ SG_ idle_output_raw : 55|16@0- (1,0) [0|0] "" Vector__XXX
+ SG_ ve2 : 39|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ ve1 : 23|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ total_correction_pct : 7|16@0- (0.1,0) [0|0] "%" Vector__XXX
+
+BO_ 1799 MS_RT_ALT_07: 8 ECU
+ SG_ rpm_rate_rpm_s : 55|16@0- (10,0) [0|0] "rpm/s" Vector__XXX
+ SG_ map_rate_kpa_s : 39|16@0- (1,0) [0|0] "kPa/s" Vector__XXX
+ SG_ tps_rate_pct_s : 23|16@0- (0.1,0) [0|0] "%/s" Vector__XXX
+ SG_ cold_advance_deg : 7|16@0- (0.1,0) [0|0] "deg" Vector__XXX
+
+BO_ 1800 MS_RT_ALT_08: 8 ECU
+ SG_ maf_g_s : 55|16@0- (0.01,0) [0|0] "g/s" Vector__XXX
+ SG_ flex_fuel_correction_pct : 39|16@0- (0.1,0) [0|0] "%" Vector__XXX
+ SG_ fuel_load : 23|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ maf_load : 7|16@0- (0.1,0) [0|0] "" Vector__XXX
+
+BO_ 1801 MS_RT_ALT_09: 8 ECU
+ SG_ trailing_dwell_ms : 55|16@0+ (0.1,0) [0|0] "ms" Vector__XXX
+ SG_ dwell_ms : 39|16@0+ (0.1,0) [0|0] "ms" Vector__XXX
+ SG_ ego2_v : 23|16@0- (0.01,0) [0|0] "V" Vector__XXX
+ SG_ ego1_v : 7|16@0- (0.01,0) [0|0] "V" Vector__XXX
+
+BO_ 1802 MS_RT_ALT_10: 8 ECU
+ SG_ status7 : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status6 : 48|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status5 : 39|16@0- (1,0) [0|0] "" Vector__XXX
+ SG_ status4 : 24|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status3 : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status2 : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ status1 : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1803 MS_RT_ALT_11: 8 ECU
+ SG_ estimated_iat_c : 55|16@0- (0.05555555555555555,-17.77777777777778) [0|0] "C" Vector__XXX
+ SG_ ignition_load2 : 39|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ ignition_load : 23|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ fuel_load2 : 7|16@0- (0.1,0) [0|0] "" Vector__XXX
+
+BO_ 1804 MS_RT_ALT_12: 8 ECU
+ SG_ wall_fuel2_us : 39|32@0- (0.01,0) [0|0] "us" Vector__XXX
+ SG_ wall_fuel1_us : 7|32@0- (0.01,0) [0|0] "us" Vector__XXX
+
+BO_ 1805 MS_RT_ALT_13: 8 ECU
+ SG_ sensor4 : 55|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor3 : 39|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor2 : 23|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor1 : 7|16@0- (0.1,0) [0|0] "" Vector__XXX
+
+BO_ 1806 MS_RT_ALT_14: 8 ECU
+ SG_ sensor8 : 55|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor7 : 39|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor6 : 23|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor5 : 7|16@0- (0.1,0) [0|0] "" Vector__XXX
+
+BO_ 1807 MS_RT_ALT_15: 8 ECU
+ SG_ sensor10 : 23|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ sensor9 : 7|16@0- (0.1,0) [0|0] "" Vector__XXX
+
+BO_ 1809 MS_RT_ALT_17: 8 ECU
+ SG_ maf_v : 55|16@0- (0.001,0) [0|0] "V" Vector__XXX
+ SG_ boost_duty_pct : 32|8@1+ (1,0) [0|0] "%" Vector__XXX
+ SG_ boost_target_kpa : 7|16@0- (0.1,0) [0|0] "kPa" Vector__XXX
+
+BO_ 1810 MS_RT_ALT_18: 8 ECU
+ SG_ pwseq4_ms : 55|16@0- (0.001,0) [0|0] "ms" Vector__XXX
+ SG_ pwseq3_ms : 39|16@0- (0.001,0) [0|0] "ms" Vector__XXX
+ SG_ pwseq2_ms : 23|16@0- (0.001,0) [0|0] "ms" Vector__XXX
+ SG_ pwseq1_ms : 7|16@0- (0.001,0) [0|0] "ms" Vector__XXX
+
+BO_ 1818 MS_RT_ALT_26: 8 ECU
+ SG_ nitrous_retard_deg : 55|16@0- (0.1,0) [0|0] "deg" Vector__XXX
+ SG_ nitrous_added_pw_ms : 39|16@0- (0.001,0) [0|0] "ms" Vector__XXX
+
+BO_ 1819 MS_RT_ALT_27: 8 ECU
+ SG_ can_pwm_period4 : 55|16@0- (1,0) [0|0] "" Vector__XXX
+ SG_ can_pwm_period3 : 39|16@0- (1,0) [0|0] "" Vector__XXX
+ SG_ can_pwm_period2 : 23|16@0- (1,0) [0|0] "" Vector__XXX
+ SG_ can_pwm_period1 : 7|16@0- (1,0) [0|0] "" Vector__XXX
+
+BO_ 1820 MS_RT_ALT_28: 8 ECU
+ SG_ afr_load : 55|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ eae_load : 39|16@0- (0.1,0) [0|0] "" Vector__XXX
+ SG_ tps_adc : 23|16@0- (1,0) [0|0] "" Vector__XXX
+ SG_ idle_target_rpm : 7|16@0+ (1,0) [0|0] "rpm" Vector__XXX
+
+BO_ 1821 MS_RT_ALT_29: 8 ECU
+ SG_ eae_correction2_pct : 23|16@0+ (0.1,0) [0|0] "%" Vector__XXX
+ SG_ eae_correction1_pct : 7|16@0+ (0.1,0) [0|0] "%" Vector__XXX
+
+BO_ 1835 MS_RT_ALT_43: 8 ECU
+ SG_ timing_error_pct : 56|8@1- (1,0) [0|0] "%" Vector__XXX
+ SG_ sync_loss_reason : 8|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ sync_loss_count : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+
+
+
+CM_ BO_ 256 "Taillight controller state, both sides";
+CM_ SG_ 256 thermal_derate "Dash: lighting.thermal_derate";
+CM_ SG_ 256 die_c "Dash: lighting.die_c";
+CM_ SG_ 256 brightness "Dash: lighting.brightness";
+CM_ SG_ 256 turn_right "Dash: lighting.turn_right";
+CM_ SG_ 256 turn_left "Dash: lighting.turn_left";
+CM_ SG_ 256 right_state "Dash: lighting.right_state";
+CM_ SG_ 256 left_state "Dash: lighting.left_state";
+CM_ BO_ 258 "Last taillight fault or start report";
+CM_ SG_ 258 data1 "Dash: lighting.last_fault.data1";
+CM_ SG_ 258 data0 "Dash: lighting.last_fault.data0";
+CM_ SG_ 258 severity "Dash: lighting.last_fault.severity";
+CM_ SG_ 258 code "Dash: lighting.last_fault.code";
+CM_ BO_ 259 "Taillight settings extension: acknowledgements and reports";
+CM_ SG_ 259 phase_ms "Dash: taillight.phase_ms";
+CM_ SG_ 259 profiles "Dash: taillight.profiles";
+CM_ SG_ 259 show_anim "Dash: taillight.show_anim";
+CM_ SG_ 259 flags "Dash: taillight.flags";
+CM_ SG_ 259 ack_status "Dash: taillight.ack_status";
+CM_ SG_ 259 revision "Dash: taillight.revision";
+CM_ SG_ 259 ack_command "Dash: taillight.ack_command";
+CM_ SG_ 259 kind "Dash: taillight.report_kind";
+CM_ BO_ 512 "Comfort control module heartbeat";
+CM_ SG_ 512 uptime_s_mod256 "Dash: comfort.uptime_s_mod256";
+CM_ SG_ 512 fault_flags "Dash: comfort.fault_flags";
+CM_ SG_ 512 battery_v "Dash: comfort.battery_v";
+CM_ SG_ 512 ambient_c "Dash: comfort.ambient_c";
+CM_ SG_ 512 cabin_c "Dash: comfort.cabin_c";
+CM_ SG_ 512 input_flags "Dash: comfort.input_flags";
+CM_ SG_ 512 page "Dash: comfort.page";
+CM_ SG_ 512 state "Dash: comfort.state";
+CM_ BO_ 514 "Tachometer output";
+CM_ SG_ 514 pulses_per_rev "Dash: tach.pulses_per_rev";
+CM_ SG_ 514 status_flags "Dash: tach.status_flags";
+CM_ SG_ 514 source "Dash: tach.source";
+CM_ SG_ 514 generated_hz "Dash: tach.generated_hz";
+CM_ SG_ 514 rpm "Dash: tach.rpm";
+CM_ BO_ 515 "GPS speed and fix, from the dash (or the CCM)";
+CM_ SG_ 515 satellites_in_view "Dash: gps.satellites_in_view";
+CM_ SG_ 515 status_flags "Dash: gps.status_flags";
+CM_ SG_ 515 fix_type "Dash: gps.fix_type";
+CM_ SG_ 515 satellites "Dash: gps.satellites";
+CM_ SG_ 515 altitude_m "Dash: gps.altitude_m";
+CM_ SG_ 515 speed_kph "Dash: vehicle.speed_kph";
+CM_ BO_ 516 "Fuel level (docs/fuel-can.md)";
+CM_ SG_ 516 level_status "Dash: fuel.level_status";
+CM_ SG_ 516 fuel_pct "Dash: vehicle.fuel_pct";
+CM_ BO_ 517 "Steering wheel buttons";
+CM_ SG_ 517 sequence "Dash: wheel.sequence";
+CM_ SG_ 517 buttons_mask "Dash: wheel.buttons_mask";
+CM_ BO_ 769 "Commands to the water/meth and knock controller, acknowledged on 0x30A or 0x30F";
+CM_ BO_ 768 "Water/meth controller state";
+CM_ SG_ 768 fault_flags "Dash: meth.fault_flags";
+CM_ SG_ 768 bay_c "Dash: engine.bay_c";
+CM_ SG_ 768 iat_c "Dash: engine.iat_c";
+CM_ SG_ 768 boost_kpa "Dash: engine.boost_kpa";
+CM_ SG_ 768 flow "Dash: meth.flow";
+CM_ SG_ 768 tank_pct "Dash: meth.tank_pct";
+CM_ SG_ 768 duty_pct "Dash: meth.duty_pct";
+CM_ SG_ 768 state "Dash: meth.state";
+CM_ BO_ 770 "Last water/meth fault";
+CM_ SG_ 770 data1 "Dash: meth.last_fault.data1";
+CM_ SG_ 770 data0 "Dash: meth.last_fault.data0";
+CM_ SG_ 770 severity "Dash: meth.last_fault.severity";
+CM_ SG_ 770 code "Dash: meth.last_fault.code";
+CM_ BO_ 771 "Engine sensors on the water/meth controller";
+CM_ SG_ 771 fault_flags "Dash: sensors.fault_flags";
+CM_ SG_ 771 cabin_c "Dash: environment.cabin_c";
+CM_ SG_ 771 ambient_c "Dash: environment.ambient_c";
+CM_ SG_ 771 boost_ref_psi "Dash: engine.boost_ref_psi";
+CM_ SG_ 771 meth_pressure_psi "Dash: meth.pressure_psi";
+CM_ SG_ 771 fuel_pressure_psi "Dash: engine.fuel_pressure_psi";
+CM_ SG_ 771 oil_pressure_psi "Dash: engine.oil_pressure_psi";
+CM_ BO_ 772 "Water/meth settings broadcast by the CCM (byte 7: XOR of bytes 0-6)";
+CM_ SG_ 772 checksum "Dash: meth.config.checksum";
+CM_ SG_ 772 failsafe_flags "Dash: meth.config.failsafe_flags";
+CM_ SG_ 772 max_duty_pct "Dash: meth.config.max_duty_pct";
+CM_ SG_ 772 iat_threshold_c "Dash: meth.config.iat_threshold_c";
+CM_ SG_ 772 boost_trigger_kpa "Dash: meth.config.boost_trigger_kpa";
+CM_ SG_ 772 ratio_pct "Dash: meth.config.ratio_pct";
+CM_ SG_ 772 desired_armed "Dash: meth.config.desired_armed";
+CM_ SG_ 772 version "Dash: meth.config.version";
+CM_ BO_ 773 "The controller asks for its settings";
+CM_ SG_ 773 request_reason "Dash: config.request_reason";
+CM_ BO_ 774 "Answer to 0x304";
+CM_ SG_ 774 ratio_pct "Dash: meth.ack.ratio_pct";
+CM_ SG_ 774 reject_reason "Dash: meth.ack.reject_reason";
+CM_ SG_ 774 status "Dash: meth.ack.status";
+CM_ SG_ 774 version "Dash: meth.ack.version";
+CM_ BO_ 775 "Knock detector";
+CM_ SG_ 775 band_share "Dash: knock.reserved";
+CM_ SG_ 775 last_boost_kpa "Dash: knock.last_boost_kpa";
+CM_ SG_ 775 last_rpm "Dash: knock.last_rpm";
+CM_ SG_ 775 event_count "Dash: knock.event_count";
+CM_ SG_ 775 threshold "Dash: knock.threshold";
+CM_ SG_ 775 baseline "Dash: knock.baseline";
+CM_ SG_ 775 energy "Dash: knock.energy";
+CM_ SG_ 775 clipping "Dash: knock.clipping";
+CM_ SG_ 775 sensor_fault "Dash: knock.sensor_fault";
+CM_ SG_ 775 learned "Dash: knock.learned";
+CM_ SG_ 775 critical "Dash: knock.critical";
+CM_ SG_ 775 warning "Dash: knock.warning";
+CM_ SG_ 775 signal_valid "Dash: knock.signal_valid";
+CM_ SG_ 775 enabled "Dash: knock.enabled";
+CM_ BO_ 776 "Last knock fault";
+CM_ SG_ 776 data1 "Dash: knock.last_fault.data1";
+CM_ SG_ 776 data0 "Dash: knock.last_fault.data0";
+CM_ SG_ 776 severity "Dash: knock.last_fault.severity";
+CM_ SG_ 776 code "Dash: knock.last_fault.code";
+CM_ BO_ 777 "Engine speed and MAP from the ECU, re-sent by the dash";
+CM_ SG_ 777 valid_flags "Dash: runtime.valid_flags";
+CM_ SG_ 777 map_kpa "Dash: runtime.map_kpa";
+CM_ SG_ 777 rpm "Dash: runtime.rpm";
+CM_ BO_ 778 "Answer to a 0x301 command (status 0 ok, 1 unsupported, 2 bad length, 3 clamped, 4 busy)";
+CM_ SG_ 778 schema "Dash: engine.ack.schema";
+CM_ SG_ 778 applied_value "Dash: engine.ack.applied_value";
+CM_ SG_ 778 status "Dash: engine.ack.status";
+CM_ SG_ 778 command "Dash: engine.ack.command";
+CM_ BO_ 779 "Knock detector inner values";
+CM_ SG_ 779 envelope "Dash: knock.hook.envelope";
+CM_ SG_ 779 raw_adc "Dash: knock.hook.raw_adc";
+CM_ SG_ 779 bias_adc "Dash: knock.hook.bias_adc";
+CM_ SG_ 779 event_count "Dash: knock.hook.event_count";
+CM_ SG_ 779 baseline "Dash: knock.hook.baseline";
+CM_ SG_ 779 threshold "Dash: knock.hook.threshold";
+CM_ SG_ 779 rms "Dash: knock.hook.rms";
+CM_ SG_ 779 flags "Dash: knock.hook.flags";
+CM_ BO_ 780 "Knock settings, part 1";
+CM_ SG_ 780 center_hz "Dash: knock.config.center_hz";
+CM_ SG_ 780 gain "Dash: knock.config.gain";
+CM_ SG_ 780 debounce_ms "Dash: knock.config.debounce_ms";
+CM_ SG_ 780 min_map_kpa "Dash: knock.config.min_map_kpa";
+CM_ SG_ 780 min_rpm "Dash: knock.config.min_rpm";
+CM_ SG_ 780 multiplier "Dash: knock.config.multiplier";
+CM_ SG_ 780 threshold_offset "Dash: knock.config.threshold_offset";
+CM_ SG_ 780 flags "Dash: knock.config.flags";
+CM_ BO_ 781 "Knock settings, part 2";
+CM_ SG_ 781 reserved "Dash: knock.config.reserved";
+CM_ SG_ 781 bore_mm "Dash: knock.config.bore_mm";
+CM_ SG_ 781 envelope_alpha "Dash: knock.config.envelope_alpha";
+CM_ SG_ 781 rms_alpha "Dash: knock.config.rms_alpha";
+CM_ SG_ 781 bias_alpha "Dash: knock.config.bias_alpha";
+CM_ SG_ 781 samples_per_update "Dash: knock.config.samples_per_update";
+CM_ SG_ 781 sample_rate_hz "Dash: knock.config.sample_rate_hz";
+CM_ SG_ 781 bandwidth_hz "Dash: knock.config.bandwidth_hz";
+CM_ BO_ 782 "ESP32 knock detail (extension 6): amplifier, frequency, last pass, spectra";
+CM_ SG_ 782 votes "Dash: knock.freq.votes";
+CM_ SG_ 782 amp_room_mv "Dash: knock.amp.room_mv";
+CM_ SG_ 782 agreement_pct "Dash: knock.freq.agreement_pct";
+CM_ SG_ 782 amp_swing_mv "Dash: knock.amp.swing_mv";
+CM_ SG_ 782 crest "Dash: knock.listen.crest";
+CM_ SG_ 782 knock_sample_rate_hz "Dash: knock.freq.sample_rate_hz";
+CM_ SG_ 782 amp_rest_mv "Dash: knock.amp.rest_mv";
+CM_ SG_ 782 background "Dash: knock.listen.background";
+CM_ SG_ 782 found_hz "Dash: knock.freq.found_hz";
+CM_ SG_ 782 amp_top_step "Dash: knock.amp.top_step";
+CM_ SG_ 782 second_normal "Dash: knock.listen.second_normal";
+CM_ SG_ 782 tone_hz "Dash: knock.freq.tone_hz";
+CM_ SG_ 782 amp_step "Dash: knock.amp.step";
+CM_ SG_ 782 second "Dash: knock.listen.second";
+CM_ SG_ 782 filter_hz "Dash: knock.freq.filter_hz";
+CM_ SG_ 782 amp_gain "Dash: knock.amp.gain";
+CM_ SG_ 782 fixed "Dash: knock.amp.fixed";
+CM_ SG_ 782 silent "Dash: knock.amp.silent";
+CM_ SG_ 782 second_active "Dash: knock.freq.second_active";
+CM_ SG_ 782 overloaded "Dash: knock.amp.overloaded";
+CM_ SG_ 782 confirmed "Dash: knock.listen.confirmed";
+CM_ SG_ 782 learned "Dash: knock.freq.learned";
+CM_ SG_ 782 ineffective "Dash: knock.amp.ineffective";
+CM_ SG_ 782 notable "Dash: knock.listen.notable";
+CM_ SG_ 782 bore_hz "Dash: knock.freq.bore_hz";
+CM_ SG_ 782 learning "Dash: knock.freq.learning";
+CM_ SG_ 782 automatic "Dash: knock.amp.automatic";
+CM_ BO_ 783 "Water/meth pulse tuning (extension 4): acknowledgements, settings, status, air temperatures";
+CM_ SG_ 783 period_ms "Dash: meth.period_ms";
+CM_ SG_ 783 on_ms "Dash: meth.on_ms";
+CM_ SG_ 783 post_temp_c "Dash: meth.post_temp_c";
+CM_ SG_ 783 hold "Dash: meth.hold";
+CM_ SG_ 783 pump_on "Dash: meth.pump_on";
+CM_ SG_ 783 pre_temp_c "Dash: meth.pre_temp_c";
+CM_ BO_ 1280 "Sensor gateway: speed, engine speed, fuel";
+CM_ SG_ 1280 fuel_pct "Dash: vehicle.fuel_pct";
+CM_ SG_ 1280 fuel_raw "Dash: gateway.fuel_raw";
+CM_ SG_ 1280 rpm "Dash: gateway.rpm";
+CM_ SG_ 1280 speed_kph "Dash: vehicle.speed_kph";
+CM_ BO_ 1281 "Cruise control buttons";
+CM_ SG_ 1281 cruise_sequence "Dash: wheel.cruise_sequence";
+CM_ SG_ 1281 cruise_enabled "Dash: wheel.cruise_enabled";
+CM_ SG_ 1281 cruise_pressed "Dash: wheel.cruise_pressed";
+CM_ BO_ 1283 "Interior light channel (1 upper, 2 lower)";
+CM_ BO_ 1664 "Firmware updates and restarts (firmware_update.h); ops below 0x80 are data frames";
+CM_ BO_ 1665 "Module answers to 0x680 (kind 1 INFO, 2 ACK)";
+CM_ BO_ 1512 "MegaSquirt simplified dash broadcast";
+CM_ SG_ 1512 throttle_pct "Dash: ecu.throttle_pct";
+CM_ SG_ 1512 coolant_c "Dash: ecu.coolant_c";
+CM_ SG_ 1512 rpm "Dash: ecu.rpm";
+CM_ SG_ 1512 map_kpa "Dash: ecu.map_kpa";
+CM_ BO_ 1513 "MegaSquirt simplified dash broadcast";
+CM_ SG_ 1513 spark_deg "Dash: ecu.spark_deg";
+CM_ SG_ 1513 iat_c "Dash: ecu.iat_c";
+CM_ SG_ 1513 pw2_ms "Dash: ecu.pw2_ms";
+CM_ SG_ 1513 pw1_ms "Dash: ecu.pw1_ms";
+CM_ BO_ 1514 "MegaSquirt simplified dash broadcast";
+CM_ SG_ 1514 pwseq1_ms "Dash: ecu.pwseq1_ms";
+CM_ SG_ 1514 ego_correction_pct "Dash: ecu.ego_correction_pct";
+CM_ SG_ 1514 afr "Dash: ecu.afr";
+CM_ SG_ 1514 afr_target "Dash: ecu.afr_target";
+CM_ BO_ 1515 "MegaSquirt simplified dash broadcast";
+CM_ SG_ 1515 knock_retard_deg "Dash: ecu.knock_retard_deg";
+CM_ SG_ 1515 sensor2 "Dash: ecu.sensor2";
+CM_ SG_ 1515 sensor1 "Dash: ecu.sensor1";
+CM_ SG_ 1515 battery_v "Dash: ecu.battery_v";
+CM_ BO_ 1520 "MegaSquirt real-time broadcast group 0 (base 0x5F0)";
+CM_ SG_ 1520 rpm "Dash: ecu.rpm";
+CM_ SG_ 1520 pw2_ms "Dash: ecu.pw2_ms";
+CM_ SG_ 1520 pw1_ms "Dash: ecu.pw1_ms";
+CM_ SG_ 1520 seconds "Dash: ecu.seconds";
+CM_ BO_ 1521 "MegaSquirt real-time broadcast group 1 (base 0x5F0)";
+CM_ SG_ 1521 afr2_target "Dash: ecu.afr2_target";
+CM_ SG_ 1521 afr_target "Dash: ecu.afr_target";
+CM_ SG_ 1521 engine_flags "Dash: ecu.engine_flags";
+CM_ SG_ 1521 injection_flags "Dash: ecu.injection_flags";
+CM_ SG_ 1521 spark_deg "Dash: ecu.spark_deg";
+CM_ BO_ 1522 "MegaSquirt real-time broadcast group 2 (base 0x5F0)";
+CM_ SG_ 1522 coolant_c "Dash: ecu.coolant_c";
+CM_ SG_ 1522 iat_c "Dash: ecu.iat_c";
+CM_ SG_ 1522 map_kpa "Dash: ecu.map_kpa";
+CM_ SG_ 1522 baro_kpa "Dash: ecu.baro_kpa";
+CM_ BO_ 1523 "MegaSquirt real-time broadcast group 3 (base 0x5F0)";
+CM_ SG_ 1523 afr2 "Dash: ecu.afr2";
+CM_ SG_ 1523 afr "Dash: ecu.afr";
+CM_ SG_ 1523 battery_v "Dash: ecu.battery_v";
+CM_ SG_ 1523 throttle_pct "Dash: ecu.throttle_pct";
+CM_ BO_ 1524 "MegaSquirt real-time broadcast group 4 (base 0x5F0)";
+CM_ SG_ 1524 air_correction_pct "Dash: ecu.air_correction_pct";
+CM_ SG_ 1524 ego2_correction_pct "Dash: ecu.ego2_correction_pct";
+CM_ SG_ 1524 ego_correction_pct "Dash: ecu.ego_correction_pct";
+CM_ SG_ 1524 knock_pct "Dash: ecu.knock_pct";
+CM_ BO_ 1525 "MegaSquirt real-time broadcast group 5 (base 0x5F0)";
+CM_ SG_ 1525 baro_correction_pct "Dash: ecu.baro_correction_pct";
+CM_ SG_ 1525 tps_fuel_cut_pct "Dash: ecu.tps_fuel_cut_pct";
+CM_ SG_ 1525 tps_accel_pct "Dash: ecu.tps_accel_pct";
+CM_ SG_ 1525 warmup_correction_pct "Dash: ecu.warmup_correction_pct";
+CM_ BO_ 1526 "MegaSquirt real-time broadcast group 6 (base 0x5F0)";
+CM_ SG_ 1526 idle_output_raw "Dash: ecu.idle_output_raw";
+CM_ SG_ 1526 ve2 "Dash: ecu.ve2";
+CM_ SG_ 1526 ve1 "Dash: ecu.ve1";
+CM_ SG_ 1526 total_correction_pct "Dash: ecu.total_correction_pct";
+CM_ BO_ 1527 "MegaSquirt real-time broadcast group 7 (base 0x5F0)";
+CM_ SG_ 1527 rpm_rate_rpm_s "Dash: ecu.rpm_rate_rpm_s";
+CM_ SG_ 1527 map_rate_kpa_s "Dash: ecu.map_rate_kpa_s";
+CM_ SG_ 1527 tps_rate_pct_s "Dash: ecu.tps_rate_pct_s";
+CM_ SG_ 1527 cold_advance_deg "Dash: ecu.cold_advance_deg";
+CM_ BO_ 1528 "MegaSquirt real-time broadcast group 8 (base 0x5F0)";
+CM_ SG_ 1528 maf_g_s "Dash: ecu.maf_g_s";
+CM_ SG_ 1528 flex_fuel_correction_pct "Dash: ecu.flex_fuel_correction_pct";
+CM_ SG_ 1528 fuel_load "Dash: ecu.fuel_load";
+CM_ SG_ 1528 maf_load "Dash: ecu.maf_load";
+CM_ BO_ 1529 "MegaSquirt real-time broadcast group 9 (base 0x5F0)";
+CM_ SG_ 1529 trailing_dwell_ms "Dash: ecu.trailing_dwell_ms";
+CM_ SG_ 1529 dwell_ms "Dash: ecu.dwell_ms";
+CM_ SG_ 1529 ego2_v "Dash: ecu.ego2_v";
+CM_ SG_ 1529 ego1_v "Dash: ecu.ego1_v";
+CM_ BO_ 1530 "MegaSquirt real-time broadcast group 10 (base 0x5F0)";
+CM_ SG_ 1530 status7 "Dash: ecu.status7";
+CM_ SG_ 1530 status6 "Dash: ecu.status6";
+CM_ SG_ 1530 status5 "Dash: ecu.status5";
+CM_ SG_ 1530 status4 "Dash: ecu.status4";
+CM_ SG_ 1530 status3 "Dash: ecu.status3";
+CM_ SG_ 1530 status2 "Dash: ecu.status2";
+CM_ SG_ 1530 status1 "Dash: ecu.status1";
+CM_ BO_ 1531 "MegaSquirt real-time broadcast group 11 (base 0x5F0)";
+CM_ SG_ 1531 estimated_iat_c "Dash: ecu.estimated_iat_c";
+CM_ SG_ 1531 ignition_load2 "Dash: ecu.ignition_load2";
+CM_ SG_ 1531 ignition_load "Dash: ecu.ignition_load";
+CM_ SG_ 1531 fuel_load2 "Dash: ecu.fuel_load2";
+CM_ BO_ 1532 "MegaSquirt real-time broadcast group 12 (base 0x5F0)";
+CM_ SG_ 1532 wall_fuel2_us "Dash: ecu.wall_fuel2_us";
+CM_ SG_ 1532 wall_fuel1_us "Dash: ecu.wall_fuel1_us";
+CM_ BO_ 1533 "MegaSquirt real-time broadcast group 13 (base 0x5F0)";
+CM_ SG_ 1533 sensor4 "Dash: ecu.sensor4";
+CM_ SG_ 1533 sensor3 "Dash: ecu.sensor3";
+CM_ SG_ 1533 sensor2 "Dash: ecu.sensor2";
+CM_ SG_ 1533 sensor1 "Dash: ecu.sensor1";
+CM_ BO_ 1534 "MegaSquirt real-time broadcast group 14 (base 0x5F0)";
+CM_ SG_ 1534 sensor8 "Dash: ecu.sensor8";
+CM_ SG_ 1534 sensor7 "Dash: ecu.sensor7";
+CM_ SG_ 1534 sensor6 "Dash: ecu.sensor6";
+CM_ SG_ 1534 sensor5 "Dash: ecu.sensor5";
+CM_ BO_ 1535 "MegaSquirt real-time broadcast group 15 (base 0x5F0)";
+CM_ SG_ 1535 sensor10 "Dash: ecu.sensor10";
+CM_ SG_ 1535 sensor9 "Dash: ecu.sensor9";
+CM_ BO_ 1537 "MegaSquirt real-time broadcast group 17 (base 0x5F0)";
+CM_ SG_ 1537 maf_v "Dash: ecu.maf_v";
+CM_ SG_ 1537 boost_duty_pct "Dash: ecu.boost_duty_pct";
+CM_ SG_ 1537 boost_target_kpa "Dash: ecu.boost_target_kpa";
+CM_ BO_ 1538 "MegaSquirt real-time broadcast group 18 (base 0x5F0)";
+CM_ SG_ 1538 pwseq4_ms "Dash: ecu.pwseq4_ms";
+CM_ SG_ 1538 pwseq3_ms "Dash: ecu.pwseq3_ms";
+CM_ SG_ 1538 pwseq2_ms "Dash: ecu.pwseq2_ms";
+CM_ SG_ 1538 pwseq1_ms "Dash: ecu.pwseq1_ms";
+CM_ BO_ 1546 "MegaSquirt real-time broadcast group 26 (base 0x5F0)";
+CM_ SG_ 1546 nitrous_retard_deg "Dash: ecu.nitrous_retard_deg";
+CM_ SG_ 1546 nitrous_added_pw_ms "Dash: ecu.nitrous_added_pw_ms";
+CM_ BO_ 1547 "MegaSquirt real-time broadcast group 27 (base 0x5F0)";
+CM_ SG_ 1547 can_pwm_period4 "Dash: ecu.can_pwm_period4";
+CM_ SG_ 1547 can_pwm_period3 "Dash: ecu.can_pwm_period3";
+CM_ SG_ 1547 can_pwm_period2 "Dash: ecu.can_pwm_period2";
+CM_ SG_ 1547 can_pwm_period1 "Dash: ecu.can_pwm_period1";
+CM_ BO_ 1548 "MegaSquirt real-time broadcast group 28 (base 0x5F0)";
+CM_ SG_ 1548 afr_load "Dash: ecu.afr_load";
+CM_ SG_ 1548 eae_load "Dash: ecu.eae_load";
+CM_ SG_ 1548 tps_adc "Dash: ecu.tps_adc";
+CM_ SG_ 1548 idle_target_rpm "Dash: ecu.idle_target_rpm";
+CM_ BO_ 1549 "MegaSquirt real-time broadcast group 29 (base 0x5F0)";
+CM_ SG_ 1549 eae_correction2_pct "Dash: ecu.eae_correction2_pct";
+CM_ SG_ 1549 eae_correction1_pct "Dash: ecu.eae_correction1_pct";
+CM_ BO_ 1563 "MegaSquirt real-time broadcast group 43 (base 0x5F0)";
+CM_ SG_ 1563 timing_error_pct "Dash: ecu.timing_error_pct";
+CM_ SG_ 1563 sync_loss_reason "Dash: ecu.sync_loss_reason";
+CM_ SG_ 1563 sync_loss_count "Dash: ecu.sync_loss_count";
+CM_ BO_ 1792 "MegaSquirt real-time broadcast group 0 (base 0x700)";
+CM_ SG_ 1792 rpm "Dash: ecu.rpm";
+CM_ SG_ 1792 pw2_ms "Dash: ecu.pw2_ms";
+CM_ SG_ 1792 pw1_ms "Dash: ecu.pw1_ms";
+CM_ SG_ 1792 seconds "Dash: ecu.seconds";
+CM_ BO_ 1793 "MegaSquirt real-time broadcast group 1 (base 0x700)";
+CM_ SG_ 1793 afr2_target "Dash: ecu.afr2_target";
+CM_ SG_ 1793 afr_target "Dash: ecu.afr_target";
+CM_ SG_ 1793 engine_flags "Dash: ecu.engine_flags";
+CM_ SG_ 1793 injection_flags "Dash: ecu.injection_flags";
+CM_ SG_ 1793 spark_deg "Dash: ecu.spark_deg";
+CM_ BO_ 1794 "MegaSquirt real-time broadcast group 2 (base 0x700)";
+CM_ SG_ 1794 coolant_c "Dash: ecu.coolant_c";
+CM_ SG_ 1794 iat_c "Dash: ecu.iat_c";
+CM_ SG_ 1794 map_kpa "Dash: ecu.map_kpa";
+CM_ SG_ 1794 baro_kpa "Dash: ecu.baro_kpa";
+CM_ BO_ 1795 "MegaSquirt real-time broadcast group 3 (base 0x700)";
+CM_ SG_ 1795 afr2 "Dash: ecu.afr2";
+CM_ SG_ 1795 afr "Dash: ecu.afr";
+CM_ SG_ 1795 battery_v "Dash: ecu.battery_v";
+CM_ SG_ 1795 throttle_pct "Dash: ecu.throttle_pct";
+CM_ BO_ 1796 "MegaSquirt real-time broadcast group 4 (base 0x700)";
+CM_ SG_ 1796 air_correction_pct "Dash: ecu.air_correction_pct";
+CM_ SG_ 1796 ego2_correction_pct "Dash: ecu.ego2_correction_pct";
+CM_ SG_ 1796 ego_correction_pct "Dash: ecu.ego_correction_pct";
+CM_ SG_ 1796 knock_pct "Dash: ecu.knock_pct";
+CM_ BO_ 1797 "MegaSquirt real-time broadcast group 5 (base 0x700)";
+CM_ SG_ 1797 baro_correction_pct "Dash: ecu.baro_correction_pct";
+CM_ SG_ 1797 tps_fuel_cut_pct "Dash: ecu.tps_fuel_cut_pct";
+CM_ SG_ 1797 tps_accel_pct "Dash: ecu.tps_accel_pct";
+CM_ SG_ 1797 warmup_correction_pct "Dash: ecu.warmup_correction_pct";
+CM_ BO_ 1798 "MegaSquirt real-time broadcast group 6 (base 0x700)";
+CM_ SG_ 1798 idle_output_raw "Dash: ecu.idle_output_raw";
+CM_ SG_ 1798 ve2 "Dash: ecu.ve2";
+CM_ SG_ 1798 ve1 "Dash: ecu.ve1";
+CM_ SG_ 1798 total_correction_pct "Dash: ecu.total_correction_pct";
+CM_ BO_ 1799 "MegaSquirt real-time broadcast group 7 (base 0x700)";
+CM_ SG_ 1799 rpm_rate_rpm_s "Dash: ecu.rpm_rate_rpm_s";
+CM_ SG_ 1799 map_rate_kpa_s "Dash: ecu.map_rate_kpa_s";
+CM_ SG_ 1799 tps_rate_pct_s "Dash: ecu.tps_rate_pct_s";
+CM_ SG_ 1799 cold_advance_deg "Dash: ecu.cold_advance_deg";
+CM_ BO_ 1800 "MegaSquirt real-time broadcast group 8 (base 0x700)";
+CM_ SG_ 1800 maf_g_s "Dash: ecu.maf_g_s";
+CM_ SG_ 1800 flex_fuel_correction_pct "Dash: ecu.flex_fuel_correction_pct";
+CM_ SG_ 1800 fuel_load "Dash: ecu.fuel_load";
+CM_ SG_ 1800 maf_load "Dash: ecu.maf_load";
+CM_ BO_ 1801 "MegaSquirt real-time broadcast group 9 (base 0x700)";
+CM_ SG_ 1801 trailing_dwell_ms "Dash: ecu.trailing_dwell_ms";
+CM_ SG_ 1801 dwell_ms "Dash: ecu.dwell_ms";
+CM_ SG_ 1801 ego2_v "Dash: ecu.ego2_v";
+CM_ SG_ 1801 ego1_v "Dash: ecu.ego1_v";
+CM_ BO_ 1802 "MegaSquirt real-time broadcast group 10 (base 0x700)";
+CM_ SG_ 1802 status7 "Dash: ecu.status7";
+CM_ SG_ 1802 status6 "Dash: ecu.status6";
+CM_ SG_ 1802 status5 "Dash: ecu.status5";
+CM_ SG_ 1802 status4 "Dash: ecu.status4";
+CM_ SG_ 1802 status3 "Dash: ecu.status3";
+CM_ SG_ 1802 status2 "Dash: ecu.status2";
+CM_ SG_ 1802 status1 "Dash: ecu.status1";
+CM_ BO_ 1803 "MegaSquirt real-time broadcast group 11 (base 0x700)";
+CM_ SG_ 1803 estimated_iat_c "Dash: ecu.estimated_iat_c";
+CM_ SG_ 1803 ignition_load2 "Dash: ecu.ignition_load2";
+CM_ SG_ 1803 ignition_load "Dash: ecu.ignition_load";
+CM_ SG_ 1803 fuel_load2 "Dash: ecu.fuel_load2";
+CM_ BO_ 1804 "MegaSquirt real-time broadcast group 12 (base 0x700)";
+CM_ SG_ 1804 wall_fuel2_us "Dash: ecu.wall_fuel2_us";
+CM_ SG_ 1804 wall_fuel1_us "Dash: ecu.wall_fuel1_us";
+CM_ BO_ 1805 "MegaSquirt real-time broadcast group 13 (base 0x700)";
+CM_ SG_ 1805 sensor4 "Dash: ecu.sensor4";
+CM_ SG_ 1805 sensor3 "Dash: ecu.sensor3";
+CM_ SG_ 1805 sensor2 "Dash: ecu.sensor2";
+CM_ SG_ 1805 sensor1 "Dash: ecu.sensor1";
+CM_ BO_ 1806 "MegaSquirt real-time broadcast group 14 (base 0x700)";
+CM_ SG_ 1806 sensor8 "Dash: ecu.sensor8";
+CM_ SG_ 1806 sensor7 "Dash: ecu.sensor7";
+CM_ SG_ 1806 sensor6 "Dash: ecu.sensor6";
+CM_ SG_ 1806 sensor5 "Dash: ecu.sensor5";
+CM_ BO_ 1807 "MegaSquirt real-time broadcast group 15 (base 0x700)";
+CM_ SG_ 1807 sensor10 "Dash: ecu.sensor10";
+CM_ SG_ 1807 sensor9 "Dash: ecu.sensor9";
+CM_ BO_ 1809 "MegaSquirt real-time broadcast group 17 (base 0x700)";
+CM_ SG_ 1809 maf_v "Dash: ecu.maf_v";
+CM_ SG_ 1809 boost_duty_pct "Dash: ecu.boost_duty_pct";
+CM_ SG_ 1809 boost_target_kpa "Dash: ecu.boost_target_kpa";
+CM_ BO_ 1810 "MegaSquirt real-time broadcast group 18 (base 0x700)";
+CM_ SG_ 1810 pwseq4_ms "Dash: ecu.pwseq4_ms";
+CM_ SG_ 1810 pwseq3_ms "Dash: ecu.pwseq3_ms";
+CM_ SG_ 1810 pwseq2_ms "Dash: ecu.pwseq2_ms";
+CM_ SG_ 1810 pwseq1_ms "Dash: ecu.pwseq1_ms";
+CM_ BO_ 1818 "MegaSquirt real-time broadcast group 26 (base 0x700)";
+CM_ SG_ 1818 nitrous_retard_deg "Dash: ecu.nitrous_retard_deg";
+CM_ SG_ 1818 nitrous_added_pw_ms "Dash: ecu.nitrous_added_pw_ms";
+CM_ BO_ 1819 "MegaSquirt real-time broadcast group 27 (base 0x700)";
+CM_ SG_ 1819 can_pwm_period4 "Dash: ecu.can_pwm_period4";
+CM_ SG_ 1819 can_pwm_period3 "Dash: ecu.can_pwm_period3";
+CM_ SG_ 1819 can_pwm_period2 "Dash: ecu.can_pwm_period2";
+CM_ SG_ 1819 can_pwm_period1 "Dash: ecu.can_pwm_period1";
+CM_ BO_ 1820 "MegaSquirt real-time broadcast group 28 (base 0x700)";
+CM_ SG_ 1820 afr_load "Dash: ecu.afr_load";
+CM_ SG_ 1820 eae_load "Dash: ecu.eae_load";
+CM_ SG_ 1820 tps_adc "Dash: ecu.tps_adc";
+CM_ SG_ 1820 idle_target_rpm "Dash: ecu.idle_target_rpm";
+CM_ BO_ 1821 "MegaSquirt real-time broadcast group 29 (base 0x700)";
+CM_ SG_ 1821 eae_correction2_pct "Dash: ecu.eae_correction2_pct";
+CM_ SG_ 1821 eae_correction1_pct "Dash: ecu.eae_correction1_pct";
+CM_ BO_ 1835 "MegaSquirt real-time broadcast group 43 (base 0x700)";
+CM_ SG_ 1835 timing_error_pct "Dash: ecu.timing_error_pct";
+CM_ SG_ 1835 sync_loss_reason "Dash: ecu.sync_loss_reason";
+CM_ SG_ 1835 sync_loss_count "Dash: ecu.sync_loss_count";
+
+
+
+VAL_ 256 right_state 0 "OFF" 1 "RUNNING" 2 "BRAKE" 3 "TURN" 4 "REVERSE" 5 "BRAKE_TURN" 6 "HAZARD" 7 "CUSTOM" 8 "SHOW" ;
+VAL_ 256 left_state 0 "OFF" 1 "RUNNING" 2 "BRAKE" 3 "TURN" 4 "REVERSE" 5 "BRAKE_TURN" 6 "HAZARD" 7 "CUSTOM" 8 "SHOW" ;
+VAL_ 259 kind 1 "ACK" 2 "SETTING" 3 "COLOR" 4 "TEXT" 5 "STATUS" ;
+VAL_ 512 state 0 "BOOT" 1 "RUN" 2 "WARN" 3 "FAULT" 4 "CONFIG" ;
+VAL_ 769 command 1 "ARM" 2 "PUMP_TEST" 3 "PUMP_STOP" 4 "BOOST_START" 6 "CLEAR_FAULTS" 7 "RESTART" 16 "SETTING" 17 "TUNE_ACTION" 64 "KNOCK_ENABLE" 65 "KNOCK_THRESHOLD" 66 "KNOCK_MULTIPLIER" 67 "KNOCK_MIN_RPM" 68 "KNOCK_MIN_MAP" 69 "KNOCK_HOLD" 70 "KNOCK_LEVEL_GAIN" 71 "KNOCK_CENTER" 72 "KNOCK_BANDWIDTH" 73 "KNOCK_AUTO_FREQUENCY" 74 "KNOCK_CLEAR_EVENTS" 75 "KNOCK_AMP_GAIN" ;
+VAL_ 768 flow 0 "UNKNOWN" 1 "OK" 2 "LOW_FLOW" 3 "NO_FLOW" ;
+VAL_ 768 state 0 "OFF" 1 "ARMED" 2 "SPRAYING" 3 "FAULT" 4 "TEST" ;
+VAL_ 778 status 0 "OK" 1 "UNSUPPORTED" 2 "BAD_LENGTH" 3 "CLAMPED" 4 "BUSY" ;
+VAL_ 778 command 1 "ARM" 2 "PUMP_TEST" 3 "PUMP_STOP" 4 "BOOST_START" 6 "CLEAR_FAULTS" 7 "RESTART" 16 "SETTING" 17 "TUNE_ACTION" 64 "KNOCK_ENABLE" 65 "KNOCK_THRESHOLD" 66 "KNOCK_MULTIPLIER" 67 "KNOCK_MIN_RPM" 68 "KNOCK_MIN_MAP" 69 "KNOCK_HOLD" 70 "KNOCK_LEVEL_GAIN" 71 "KNOCK_CENTER" 72 "KNOCK_BANDWIDTH" 73 "KNOCK_AUTO_FREQUENCY" 74 "KNOCK_CLEAR_EVENTS" 75 "KNOCK_AMP_GAIN" ;
+VAL_ 782 kind 1 "AMPLIFIER" 2 "FREQUENCY" 3 "TONES" 4 "LISTEN" 5 "SPECTRUM" 6 "SPECTRUM_NORMAL" ;
+VAL_ 783 hold 0 "NONE" 1 "DISARMED" 2 "BELOW_BOOST" 3 "RPM_LOW" 4 "RPM_MISSING" 5 "AIR_COLD" 6 "TEMP_SENSOR" 7 "RESTING" 8 "TANK_LOW" 9 "FAULT" 10 "DOSE_LIMIT" ;
+VAL_ 783 kind 1 "ACK" 2 "SETTING" 3 "STATUS" 4 "AIR_TEMPS" ;
+VAL_ 1283 channel 1 "UPPER" 2 "LOWER" ;
+VAL_ 1664 target 1 "GATEWAY" 2 "TAILLIGHTS" 3 "WATER_METH" ;
+VAL_ 1664 op 128 "QUERY" 129 "BEGIN" 130 "BLOCK_END" 131 "END" 132 "ABORT" 133 "CONFIRM" 134 "RESTART" ;
+VAL_ 1665 target 1 "GATEWAY" 2 "TAILLIGHTS" 3 "WATER_METH" ;
+VAL_ 1665 kind 1 "INFO" 2 "ACK" ;
+
+
+SG_MUL_VAL_ 259 ack_command kind 1-1;
+SG_MUL_VAL_ 259 revision kind 5-5;
+SG_MUL_VAL_ 259 ack_status kind 1-1;
+SG_MUL_VAL_ 259 flags kind 5-5;
+SG_MUL_VAL_ 259 show_anim kind 5-5;
+SG_MUL_VAL_ 259 profiles kind 5-5;
+SG_MUL_VAL_ 259 phase_ms kind 5-5;
+SG_MUL_VAL_ 782 automatic kind 1-1;
+SG_MUL_VAL_ 782 learning kind 2-2;
+SG_MUL_VAL_ 782 bore_hz kind 3-3;
+SG_MUL_VAL_ 782 notable kind 4-4;
+SG_MUL_VAL_ 782 first_bin kind 5-6;
+SG_MUL_VAL_ 782 ineffective kind 1-1;
+SG_MUL_VAL_ 782 learned kind 2-2;
+SG_MUL_VAL_ 782 confirmed kind 4-4;
+SG_MUL_VAL_ 782 overloaded kind 1-1;
+SG_MUL_VAL_ 782 second_active kind 2-2;
+SG_MUL_VAL_ 782 silent kind 1-1;
+SG_MUL_VAL_ 782 fixed kind 1-1;
+SG_MUL_VAL_ 782 amp_gain kind 1-1;
+SG_MUL_VAL_ 782 filter_hz kind 2-2;
+SG_MUL_VAL_ 782 second kind 4-4;
+SG_MUL_VAL_ 782 bin0 kind 5-6;
+SG_MUL_VAL_ 782 amp_step kind 1-1;
+SG_MUL_VAL_ 782 tone_hz kind 3-3;
+SG_MUL_VAL_ 782 second_normal kind 4-4;
+SG_MUL_VAL_ 782 bin1 kind 5-6;
+SG_MUL_VAL_ 782 amp_top_step kind 1-1;
+SG_MUL_VAL_ 782 found_hz kind 2-2;
+SG_MUL_VAL_ 782 background kind 4-4;
+SG_MUL_VAL_ 782 bin2 kind 5-6;
+SG_MUL_VAL_ 782 amp_rest_mv kind 1-1;
+SG_MUL_VAL_ 782 knock_sample_rate_hz kind 3-3;
+SG_MUL_VAL_ 782 crest kind 4-4;
+SG_MUL_VAL_ 782 bin3 kind 5-6;
+SG_MUL_VAL_ 782 amp_swing_mv kind 1-1;
+SG_MUL_VAL_ 782 agreement_pct kind 2-2;
+SG_MUL_VAL_ 782 bin4 kind 5-6;
+SG_MUL_VAL_ 782 amp_room_mv kind 1-1;
+SG_MUL_VAL_ 782 votes kind 2-2;
+SG_MUL_VAL_ 782 bin5 kind 5-6;
+SG_MUL_VAL_ 783 ack_command kind 1-1;
+SG_MUL_VAL_ 783 pre_temp_c kind 4-4;
+SG_MUL_VAL_ 783 ack_status kind 1-1;
+SG_MUL_VAL_ 783 pump_on kind 3-3;
+SG_MUL_VAL_ 783 ack_setting kind 1-1;
+SG_MUL_VAL_ 783 hold kind 3-3;
+SG_MUL_VAL_ 783 post_temp_c kind 4-4;
+SG_MUL_VAL_ 783 ack_value kind 1-1;
+SG_MUL_VAL_ 783 on_ms kind 3-3;
+SG_MUL_VAL_ 783 temps_valid kind 4-4;
+SG_MUL_VAL_ 783 period_ms kind 3-3;

@@ -101,9 +101,16 @@ class UploadTests(unittest.TestCase):
         self.log('20261014T170000Z', 30, b'yesterday')
         first = self.log('20261015T120000Z', 30, b'drive part one' * 100)
         second = self.log('20261015T123200Z', 10, b'drive part two' * 100)
+        # A CAN recording made on the dash: goes up with this report, once.
+        (self.state / 'can-recordings').mkdir()
+        recording = self.state / 'can-recordings/20261015-120500.log'
+        recording.write_text('(1792065000.000000) can0 300#0000550114 3C4600\n')
+        os.utime(recording, (1792065300, 1792065300))
         hub = FakeGitHub()
         said = self.up.run(now=1792065600, github=hub, wait=lambda s: None)
         self.assertEqual(said, 'Uploaded the diagnostics and 2 recordings of the newest drive')
+        self.assertIn(b'can0 300#', next(v for p, v in hub.files.items() if p.endswith('can-20261015-120500.log')))
+        hub.files = {p: v for p, v in hub.files.items() if not p.endswith('.log')}
         self.assertEqual(sorted(p.rsplit('-', 1)[1] for p in hub.files), ['boot.txt', 'diagnostics.json', 'events.txt', 'journal.txt'])
         self.assertEqual(list(hub.files)[0].rsplit('-', 1)[1], 'events.txt')         # What went wrong, first
         diagnostics = json.loads(next(v for p, v in hub.files.items() if p.endswith('diagnostics.json')))

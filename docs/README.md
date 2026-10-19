@@ -9,6 +9,7 @@ Phase 2 documentation lives here:
 - [UI design, gauge scales, and preview review](ui-design.md)
 - [Rotating MLG data logs and MegaLogViewer](data-logging.md)
 - [MCP2515 wiring and boot configuration](mcp2515.md)
+- [CAN recordings in SavvyCAN and cantools (the DBC file)](savvycan.md)
 - [Wi-Fi hotspot and log downloads](wifi-access.md)
 - [Race timing, appearance, and splash screens](race-and-appearance.md)
 - [Trip counters, fuel economy and range](trip-and-fuel.md)

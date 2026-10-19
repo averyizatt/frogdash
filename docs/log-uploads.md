@@ -10,6 +10,7 @@ uploads to this repository, on its own branch **`pi-logs`** (data only: nothing 
 | Diagnostics: self check, the dash's live state, every helper's status (update, setup, GPS, Wi-Fi, screen), module firmware, the last failed start, disk and power flags; raw GPS evidence (25 lines of `gpspipe`, gpsd's ports, USB devices) and CAN evidence (link counters, two seconds of traffic) | `pi/<date>/<time>-diagnostics.json` |
 | The boot report (`tools/boot_report.py`): boot timing, kiosk start, display modes | `pi/<date>/<time>-boot.txt` |
 | The system log: the dash, GPS, Wi-Fi and power services since the Pi started, warnings from everything, and the end of the start before (how it shut down) | `pi/<date>/<time>-journal.txt` |
+| CAN recordings made on the dash since the last report (Sensors > Raw CAN > Record), in candump log format, for SavvyCAN or cantools with `hardware/can_contract/frogdash.dbc` ([savvycan.md](savvycan.md)) | `pi/<date>/<time>-can-<when>.log` |
 | The newest drive's recordings, gzip-compressed MLG | a pre-release named `drive-<date>-<time>` |
 
 The dash writes its record of what went wrong all the time, a file a day in `events/` in

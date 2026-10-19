@@ -66,6 +66,18 @@ class CaptureTests(unittest.IsolatedAsyncioTestCase):
                 text = await (await client.get('/can/capture?download=1')).text()
                 self.assertRegex(text, r'\(\d+\.\d{6}\) can0 300#0000550114 ?3C4600')
                 self.assertIn('can0 18FF0001#0102', text)
+                # Finished: kept on the Pi once, for the next report to take to GitHub.
+                state.recordings = Path(folder) / 'can-recordings'
+                state.capture_until = state.clock() - 1
+                await client.get('/can/capture')
+                await client.get('/can/capture')
+                kept = list(state.recordings.glob('*.log'))
+                self.assertEqual(len(kept), 1)
+                self.assertIn('can0 300#', kept[0].read_text())
+                # The DBC for SavvyCAN, from the dash.
+                dbc = await client.get('/can/frogdash.dbc')
+                self.assertEqual(dbc.status, 200)
+                self.assertIn('BO_ 768 METH_STATE: 8 WATERMETH', await dbc.text())
                 self.assertEqual((await client.get('/selftest')).status, 200)
 
 
