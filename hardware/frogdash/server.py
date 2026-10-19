@@ -69,6 +69,8 @@ def create_app(state, adapter=None, connectivity=None):
     clients = set()
 
     async def lifecycle(app):
+        stopping_failed = []   # Steps that failed while stopping: the shutdown is then not clean
+
         async def step(name, work):
             """One step of starting or stopping. A failure is recorded and the next step still
             runs: at key-off, closing the drive recording must not depend on the steps before."""
@@ -80,6 +82,7 @@ def create_app(state, adapter=None, connectivity=None):
                 raise
             except Exception as error:
                 state.fault(name, error)
+                stopping_failed.append(f'{name}: {state.faults.get(name, error)}')
 
         async def finish(task):
             if task:
@@ -120,6 +123,7 @@ def create_app(state, adapter=None, connectivity=None):
         if connectivity:
             await step('phone page', connectivity.start)
         yield
+        stopping_failed.clear()   # Only what fails from here on counts against the shutdown
         if state.camera:
             await step('rear camera', state.camera.close)
         if state.dashcam:
@@ -152,7 +156,8 @@ def create_app(state, adapter=None, connectivity=None):
         await step('screens', lambda: asyncio.gather(*(ws.close(code=1001, message=b"Service stopping") for ws in list(clients)),
                                                      return_exceptions=True))
         if state.shutdown_history:
-            await step('shutdown history', lambda: asyncio.to_thread(state.shutdown_history.finish, state))
+            # A step that failed (a recording that did not close) makes this 'save failed', named.
+            await step('shutdown history', lambda: asyncio.to_thread(state.shutdown_history.finish, state, list(stopping_failed)))
 
     async def websocket(request):
         if request.url.host not in {'127.0.0.1', 'localhost', '::1'}:

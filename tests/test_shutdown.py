@@ -93,12 +93,13 @@ class CleanupTests(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(.2)
             self.assertEqual(json.loads((root / 'shutdown.json').read_text())['current']['state'], 'running')
             finish = state.shutdown_history.finish
-            def checked_finish(current):
+            def checked_finish(current, problems=()):
                 self.assertTrue(state.recorder.writer.closed)
                 self.assertTrue((root / 'trip.json').exists())
                 self.assertTrue((root / 'race.json').exists())
                 self.assertFalse(state.driving.storage_error)
-                finish(current)
+                self.assertEqual(problems, [])   # Every stopping step succeeded
+                finish(current, problems)
             with patch.object(state.shutdown_history, 'finish', side_effect=checked_finish):
                 await runner.cleanup()
             evidence = json.loads((root / 'shutdown.json').read_text())['current']
@@ -121,9 +122,11 @@ class CleanupTests(unittest.IsolatedAsyncioTestCase):
                 await close()
                 raise OSError('final fsync failed')
             with patch.object(state.recorder, 'close', side_effect=failed_close):
-                with self.assertRaises(OSError):
-                    await runner.cleanup()
-            self.assertEqual(json.loads((root / 'shutdown.json').read_text())['current']['state'], 'running')
+                await runner.cleanup()   # The other stopping steps still run
+            # Not a clean shutdown: recorded as failed, with the step and its error.
+            current = json.loads((root / 'shutdown.json').read_text())['current']
+            self.assertEqual(current['state'], 'save_failed')
+            self.assertTrue(any(e.startswith('recorder: OSError: final fsync failed') for e in current['errors']), current['errors'])
 
 
 class UPSDiagnosticsTests(unittest.TestCase):

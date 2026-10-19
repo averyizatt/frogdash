@@ -76,13 +76,14 @@ class ShutdownHistory:
             self.error = 'Cannot persist shutdown tracking: ' + str(exc)
             LOG.error('%s', self.error)
 
-    def finish(self, state):
+    def finish(self, state, problems=()):
+        """problems: the steps of stopping that failed (server.py), each makes it 'save_failed'."""
         if not self.started:
             return
         errors = [message for message in (
             state.trip.error, state.driving.storage_error, state.driving.settings_error,
             state.race.storage_error, state.operations.error,
-            state.recorder.status.get('error') if state.recorder else None) if message]
+            state.recorder.status.get('error') if state.recorder else None) if message] + list(problems)
         self.document['current'].update(
             state='save_failed' if errors else 'saved', ended_ms=int(time.time() * 1000),
             errors=errors, recording_enabled=state.recorder is not None,
