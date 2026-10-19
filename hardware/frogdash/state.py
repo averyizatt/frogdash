@@ -92,10 +92,15 @@ class State:
         """A part of the dash raised an unexpected error. It is kept (the event log and the
         diagnostics show it, with where it happened), printed once to the journal, and
         everything else carries on."""
-        where = traceback.extract_tb(error.__traceback__)[-1] if error.__traceback__ else None
-        text = f'{type(error).__name__}: {error}'[:200] + (f' ({file_name(where.filename)}:{where.lineno})' if where else '')
+        if isinstance(error, str):   # Already words (an error the screen reported)
+            text = error[:200]
+        else:
+            where = traceback.extract_tb(error.__traceback__)[-1] if error.__traceback__ else None
+            text = f'{type(error).__name__}: {error}'[:200] + (f' ({file_name(where.filename)}:{where.lineno})' if where else '')
         if self.faults.get(name) != text:
             print(f'frogdash: {name} failed: {text}', file=sys.stderr, flush=True)
+        if name not in self.faults and len(self.faults) >= 40:
+            self.faults.pop(next(iter(self.faults)))   # Bounded: the oldest goes
         self.faults[name] = text
 
     def guarded(self, name, function, default=None):

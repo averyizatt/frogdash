@@ -6,6 +6,7 @@
   let latest = {}, online = false, busy = false, pending = null, backlight = {};
   const simulated = {version: '0.4.0 preview', os: 'Simulated Raspberry Pi', maintenance: [], checks: {}, capabilities: []};
   const demo = () => latest.mode === 'demo';
+  const MODULE_NAMES = {taillights: 'Taillights', comfort: 'Sensor gateway', watermeth: 'Water / meth', knock: 'Knock sensing'};
   const status = () => demo() ? simulated : latest.operations || {};
   const parked = () => online && (demo() ? latest.values?.['vehicle.speed_kph']?.quality === 'live' && latest.values['vehicle.speed_kph'].value < 1 : status().parked === true);
   const canConfigure = () => online;
@@ -345,6 +346,7 @@
   });
   // Asked again each time the tab opens: the dash may have been restarted with --terminal since.
   async function terminalCheck() {
+    if (demo()) { $('terminal-note').textContent = 'The preview has no Pi to run commands on: this works on the dash in the car.'; return; }
     try {
       const response = await fetch('/terminal', {cache: 'no-store'});
       const info = response.ok ? await response.json() : null;
@@ -355,7 +357,7 @@
         : terminalLive ? 'A live shell as the screen user: sudo works, and prompts (a Wi-Fi password, yes/no) wait for your answer. Tick Hide typing before entering a password. Full-screen programs like nano and top do not draw here.'
         : 'Runs as the dash service user: no sudo and not interactive. Press Update now once with --terminal set to install the helper that makes this a live shell with sudo.';
       if (terminalLive && !dialog.querySelector('[data-ops-panel="terminal"]').hidden) terminalOpen();
-    } catch { /* The dash is restarting. */ }
+    } catch { $('terminal-note').textContent = 'The dash did not answer: it may be restarting. Open this tab again in a moment.'; }
   }
   terminalCheck();
   document.querySelector('[data-ops-tab="terminal"]').addEventListener('click', () => setTimeout(terminalCheck, 0));
@@ -434,7 +436,8 @@
     $('backup-restore').disabled = !pending || !canEdit;
     const rows = (id, entries) => $(id).replaceChildren(...entries.map(([label, value]) => { const row = el('p', null, 'ops-status-row'); row.append(el('span', label), el('b', value)); return row; }));
     if (dialog.open) {
-      rows('setup-hardware', [['Platform', [s.model, s.os].filter(Boolean).join(' / ') || 'Waiting'], ['CAN', latest.transport?.connected ? 'Connected' : 'No live bus'], ['GPS', latest.values?.['vehicle.speed_kph']?.quality === 'live' ? 'Live speed' : 'No fresh fix'], ['Screen', `${screen.width} × ${screen.height} · viewport ${innerWidth} × ${innerHeight}`], ...Object.entries(latest.modules || {})]);
+      rows('setup-hardware', [['Platform', [s.model, s.os].filter(Boolean).join(' / ') || 'Waiting'], ['CAN', latest.transport?.connected ? 'Connected' : 'No live bus'], ['GPS', latest.values?.['vehicle.speed_kph']?.quality === 'live' ? 'Live speed' : 'No fresh fix'], ['Screen', `${screen.width} × ${screen.height} · viewport ${innerWidth} × ${innerHeight}`],
+        ...Object.entries(latest.modules || {}).map(([name, quality]) => [MODULE_NAMES[name] || name, {live: 'Answering', stale: 'Gone quiet', unavailable: 'Not heard'}[quality] || quality])]);
       rows('setup-calibration', [['CAN fuel level', !online ? 'Disconnected' : latest.values?.['vehicle.fuel_pct']?.quality === 'live' ? `${latest.values['vehicle.fuel_pct'].value.toFixed(1)}%` : latest.values?.['vehicle.fuel_pct']?.quality || 'unavailable'], ['Injector estimate', latest.trip?.settings?.enabled ? 'Enabled · verify calibration' : 'Needs dead-time / bank verification'], ['Tank', latest.trip?.settings?.capacity_l ? `${u.volume(latest.trip.settings.capacity_l).toFixed(2)} ${u.volumeUnit}` : demo() ? '15.4 US gal' : 'Waiting'], ['Display units', u.metric ? 'Metric' : 'US']]);
     }
     $('maintenance-distance-label').firstChild.textContent = `Distance · ${u.distanceUnit}`;

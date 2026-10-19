@@ -55,6 +55,18 @@ class CanTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(state.samples['tach.rpm', 0x202]['value'], 3450)   # The next frame still arrived
 
 
+class ScreenErrorTests(unittest.IsolatedAsyncioTestCase):
+    async def test_an_error_in_the_screen_code_is_recorded(self):
+        from aiohttp.test_utils import TestClient, TestServer
+        from hardware.frogdash.server import create_app
+        state = State(clock=lambda: 10)
+        async with TestClient(TestServer(create_app(state))) as client:
+            response = await client.post('/ui/error', json={'message': "TypeError: Cannot read properties of null (reading 'alerts')", 'where': 'app.js:141'})
+            self.assertEqual(response.status, 200)
+            self.assertEqual((await client.post('/ui/error', data='not json')).status, 400)
+        self.assertEqual(state.faults['screen (app.js:141)'], "TypeError: Cannot read properties of null (reading 'alerts')")
+
+
 class SupervisorTests(unittest.IsolatedAsyncioTestCase):
     async def test_a_failed_loop_is_recorded_and_started_again_and_a_finished_one_is_not(self):
         state = State(clock=lambda: 10)

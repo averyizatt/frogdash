@@ -4,6 +4,21 @@
    fallback (and the only source in the standalone preview). */
 (() => {
   'use strict';
+  // An error in the screen's code is sent to the dash, which records it like any other
+  // fault (Support & testing > What happened, and the report): on the Pi there is no
+  // console to read. Each message at most once a minute.
+  const reported = new Map();
+  function report(message, where) {
+    const text = String(message || 'Unknown error').slice(0, 200), now = Date.now();
+    if (reported.size > 50 || now - (reported.get(text) || 0) < 60000) return;
+    reported.set(text, now);
+    try {
+      fetch('/ui/error', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: text, where: String(where || '').slice(0, 120)})}).catch(() => {});
+    } catch { /* The report is best effort. */ }
+  }
+  window.addEventListener('error', event => report(event.message, `${(event.filename || '').split('/').pop()}:${event.lineno || 0}`));
+  window.addEventListener('unhandledrejection', event => report(event.reason?.message || event.reason, 'promise'));
   const root = document.documentElement;
   try {
     if (!root.hasAttribute('style')) {
