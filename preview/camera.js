@@ -82,8 +82,18 @@
   // A failed stream hides the broken image and asks the service for the actual reason.
   feed.addEventListener('error', () => { if (dialog.open && !demo) { feed.hidden = true; setLost(true, 'Camera stream interrupted'); poll(); } });
 
+  // The preview's picture: a photo behind a parked car (preview/stock, CC0), moving a little
+  // so it reads as live; a drawn scene while it loads.
+  const stock = Object.assign(new Image(), {src: 'stock/rear.jpg'});
   function drawDemo(now) {
     const ctx = demoCanvas.getContext('2d'), w = demoCanvas.width, h = demoCanvas.height, t = now / 1000;
+    if (stock.complete && stock.naturalWidth) {
+      const zoom = 1.04 + .02 * Math.sin(t / 4), scale = Math.max(w / stock.naturalWidth, h / stock.naturalHeight) * zoom;
+      const pw = stock.naturalWidth * scale, ph = stock.naturalHeight * scale;
+      ctx.drawImage(stock, (w - pw) / 2 + 4 * Math.sin(t / 3), (h - ph) / 2, pw, ph);
+      animation = requestAnimationFrame(drawDemo);
+      return;
+    }
     const sky = ctx.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, '#39424d'); sky.addColorStop(.38, '#5b636b'); sky.addColorStop(.4, '#3a3d40'); sky.addColorStop(1, '#23262a');
     ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = '#1a1c1f'; ctx.fillRect(0, h * .3, w, h * .1);

@@ -1,12 +1,30 @@
-"""Camera picture modes (camera-view.js) on the preview's rear camera: Wide by default and
-filling the space beside the controls with a drawn picture; Fill; Whole back to the
-original 4:3 box; the choice remembered; the stretch curve's figures."""
+"""Camera views, in the preview: the picture in the middle filling its space at its true shape
+(cropped, never stretched), speed on the left, controls on the right; the preview draws its
+stock photos; the dash cam shows the speed too."""
 import argparse
 import asyncio
 from pathlib import Path
 from playwright.async_api import async_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+async def layout(page, dialog):
+    return await page.evaluate("""dialog => {
+      const box = s => document.querySelector(`${dialog} ${s}`).getBoundingClientRect();
+      const stage = box('.camera-stage'), info = box('.camera-info'), side = box('.camera-side:not(.camera-info)');
+      const shown = [...document.querySelectorAll(`${dialog} .camera-stage :is(img, canvas)`)].find(n => !n.hidden && n.id !== 'camera-guides');
+      return {stage: [stage.left, stage.right, stage.width, stage.height], info: [info.left, info.right], side: [side.left, side.right],
+              fit: getComputedStyle(shown).objectFit, position: getComputedStyle(shown).objectPosition};
+    }""", dialog)
+
+
+async def lit(page, canvas):
+    # Opened as a file, a canvas with the photo drawn on it cannot be read back (the photo
+    # 'taints' it): that refusal itself says the photo is there.
+    return await page.evaluate("""id => { const c = document.getElementById(id), g = c.getContext('2d');
+      let d; try { d = g.getImageData(c.width / 2, c.height / 2, 40, 40).data; } catch (e) { return e.name === 'SecurityError' ? 999 : 0; }
+      let s = 0, n = 0; for (let i = 0; i < d.length; i += 4) { s += d[i] + d[i + 1] + d[i + 2]; n++; } return s / n; }""", canvas)
 
 
 async def main(browser_path):
@@ -17,35 +35,34 @@ async def main(browser_path):
         page.on('pageerror', lambda error: errors.append(str(error)))
         await page.goto((ROOT / 'preview/index.html').as_uri())
         await page.wait_for_function('window.frogdashRendered > 2')
-        # The stretch: a 4:3 picture into a 2.1:1 stage keeps 82% of the height, cut mostly at
-        # the top, and the curve's centre slope is what is left to widen (1.29, under 1.45).
-        plan = await page.evaluate("FrogdashCameraView.plan('wide', 2.1, 4 / 3)")
-        assert abs(plan['a'] - 1.2915) < .01 and abs(plan['w'][0] - .117) < .001 and abs(plan['w'][1] - .82) < 1e-6, plan
-        assert await page.evaluate("FrogdashCameraView.plan('fill', 2.1, 4 / 3).a") == 1
-        await page.evaluate("frogdashDemo.scenario('reverse')")   # The preview's rear camera, in reverse
-        dialog = page.locator('#camera-dialog')
-        await dialog.wait_for(state='visible')
-        stage = page.locator('#camera-dialog .camera-stage')
-        assert await stage.get_attribute('data-view') == 'wide'
-        await page.wait_for_function("!document.querySelector('#camera-dialog canvas.camera-view').hidden")
-        await page.wait_for_timeout(400)
-        wide = await stage.bounding_box()
-        assert wide['width'] > 1300, wide                      # Beside the controls, not a 960-wide 4:3 box
-        lit = await page.evaluate("""(() => { const c = document.querySelector('#camera-dialog canvas.camera-view');
-            const g = c.getContext('webgl'); const px = new Uint8Array(4);
-            g.readPixels(c.width >> 1, c.height >> 1, 1, 1, g.RGBA, g.UNSIGNED_BYTE, px); return px[0] + px[1] + px[2]; })()""")
-        assert lit > 0, 'the picture is drawn'
-        await page.screenshot(path=str(ROOT / '.tmp/camera-wide.png'))
-        await page.locator('#camera-dialog .camera-view-modes button[data-view="whole"]').click()
-        await page.wait_for_timeout(200)
-        whole = await stage.bounding_box()
-        assert abs(whole['width'] / whole['height'] - 4 / 3) < .02, whole
-        assert await page.locator('#camera-dialog canvas.camera-view').is_hidden()
-        await page.locator('#camera-dialog .camera-view-modes button[data-view="fill"]').click()
-        assert await page.evaluate("JSON.parse(localStorage.getItem('frogdash.cameraview.v1')).camera") == 'fill'
+        await page.evaluate("frogdashDemo.scenario('reverse')")
+        await page.wait_for_selector('#camera-dialog[open]')
+        await page.wait_for_function("(() => { const s = document.querySelector('#camera-dialog .camera-stage').getBoundingClientRect(); return s.width > 1000; })()")
+        await page.wait_for_timeout(800)
+        found = await layout(page, '#camera-dialog')
+        left, right, width, height = found['stage']
+        assert found['info'][1] <= left + 1 and found['side'][0] >= right - 1, found      # Speed | picture | controls
+        assert width > 1100 and abs((left + right) / 2 - 960) < 60, found                  # In the middle of the screen
+        assert (found['fit'], found['position']) == ('cover', '50% 70%'), found            # Filled, true shape, ground kept
+        assert await page.locator('#camera-dialog .camera-info #camera-speed').count() == 1
+        assert await lit(page, 'camera-demo') > 30, 'the stock photo is drawn'
+        await page.screenshot(path=str(ROOT / '.tmp/camera-fill.png'))
+        await page.evaluate("frogdashDemo.scenario('drive')")
+        await page.wait_for_function("!document.getElementById('camera-dialog').open", timeout=8000)
+
+        await page.locator('#dashcam-launch').click()
+        await page.wait_for_selector('#dashcam-dialog[open]')
+        await page.locator('#dashcam-rear').click()
+        await page.wait_for_timeout(900)
+        found = await layout(page, '#dashcam-dialog')
+        assert found['info'][1] <= found['stage'][0] + 1 and found['side'][0] >= found['stage'][1] - 1, found
+        assert found['fit'] == 'cover', found
+        assert await page.locator('#dashcam-speed').inner_text() not in ('', '—')            # Speed beside the picture
+        assert await lit(page, 'dashcam-demo') > 30
+        await page.screenshot(path=str(ROOT / '.tmp/dashcam-fill.png'))
         assert not errors, errors
         await browser.close()
-    print('Camera picture: Wide by default filling the space, drawn; Fill; Whole back to 4:3; remembered; stretch figures; passed.')
+    print('Camera views: speed | filled picture | controls, centred, true shape, ground kept; stock photos; dash cam speed; passed.')
 
 
 if __name__ == '__main__':

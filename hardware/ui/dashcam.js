@@ -65,9 +65,11 @@
     connectFeed();
     clearInterval(pollTimer); pollTimer = setInterval(poll, 1000);
   }
-  // The preview has no dash cam: a drawn 16:9 picture (front, the road ahead; rear, the road
-  // behind with a car following) so the view and its picture modes can be tried.
+  // The preview has no dash cam: a photo for each side (preview/stock, CC0), moving a little
+  // so it reads as live, or a drawn road while the photo loads.
   let demoFrame = 0;
+  const photos = {};
+  const photo = name => photos[name] || (photos[name] = Object.assign(new Image(), {src: `stock/${name}.jpg`}));
   function startDemo() {
     let canvas = $('dashcam-demo');
     if (!canvas) {
@@ -81,6 +83,16 @@
     const canvas = $('dashcam-demo');
     if (!canvas || !dialog.open) { demoFrame = 0; return; }
     const g = canvas.getContext('2d'), w = canvas.width, h = canvas.height, t = now / 1000, rear = side === 'rear';
+    const picture = photo(rear ? 'rear' : 'front');
+    if (picture.complete && picture.naturalWidth) {
+      const zoom = 1.04 + .02 * Math.sin(t / 4), scale = Math.max(w / picture.naturalWidth, h / picture.naturalHeight) * zoom;
+      const pw = picture.naturalWidth * scale, ph = picture.naturalHeight * scale;
+      g.drawImage(picture, (w - pw) / 2 + 6 * Math.sin(t / 3), (h - ph) / 2, pw, ph);
+      g.fillStyle = '#ffffffcc'; g.font = '600 26px "DejaVu Sans Mono", monospace';
+      g.fillText(`${rear ? 'REAR' : 'FRONT'} · ${new Date().toLocaleTimeString()}`, 28, h - 70);
+      demoFrame = requestAnimationFrame(drawDemo);
+      return;
+    }
     const horizon = h * .42, sky = g.createLinearGradient(0, 0, 0, horizon);
     sky.addColorStop(0, rear ? '#33465c' : '#4f7eb0'); sky.addColorStop(1, rear ? '#7d8a96' : '#c4d7e8');
     g.fillStyle = sky; g.fillRect(0, 0, w, horizon);
@@ -164,6 +176,10 @@
   $('dashcam-mirror').onclick = () => { prefs.mirror = !prefs.mirror; savePrefs(); };
   $('dashcam-auto').onchange = event => { prefs.auto = event.target.checked; savePrefs(); };
   window.addEventListener('frogdash-state', ({detail}) => {
+    const speed = detail.snapshot.values?.['vehicle.speed_kph'];
+    const live = detail.connected && speed?.quality === 'live' ? speed.value : null;
+    $('dashcam-speed').textContent = live === null ? '—' : Math.round(window.FrogdashUnits.distance(live));
+    $('dashcam-speed-unit').textContent = window.FrogdashUnits.speedUnit;
     const value = detail.snapshot.values?.['lighting.reverse'];
     const now = detail.connected && value?.quality === 'live' && value.value === true;
     if (now === reversing) return;

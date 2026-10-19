@@ -1,17 +1,12 @@
-/* Rear camera: full-height 4:3 image with guide lines, speed and controls beside it. */
+/* Camera views (rear camera, dash cam): the picture in the middle at its true shape, filling
+   its space (cropped, more from the top than the bottom: the ground behind the bumper is
+   what matters); speed on the left, controls on the right. */
 .camera-dialog[open] { flex-direction:row; }
-.camera-stage { position:relative; height:100%; max-width:62%; aspect-ratio:4 / 3; flex:none; background:#000; overflow:hidden; }
-.camera-stage :is(img,canvas) { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; }
+.camera-stage { position:relative; height:100%; flex:1 1 0; min-width:0; background:#000; overflow:hidden; }
+.camera-stage :is(img,canvas) { position:absolute; inset:0; width:100%; height:100%; }
+.camera-stage :is(#camera-feed, #camera-demo, #dashcam-feed, #dashcam-demo) { object-fit:cover; object-position:50% 70%; }
 .camera-dialog[data-mirror="true"] :is(#camera-feed,#camera-demo) { transform:scaleX(-1); }
-/* Picture modes (camera-view.js): Fill and Wide take all the space beside the controls. */
-.camera-stage canvas.camera-view[hidden], .camera-stage[data-view="whole"] canvas.camera-view, .camera-stage[data-gl="no"] canvas.camera-view { display:none; }
-.camera-stage:not([data-view="whole"]) { aspect-ratio:auto; max-width:none; flex:1 1 0; min-width:0; }
-.camera-dialog:has(.camera-stage:not([data-view="whole"])) .camera-side { flex:0 0 380px; }
-.camera-stage:not([data-view="whole"])[data-gl="yes"] :is(#camera-feed, #dashcam-feed, #camera-demo, #dashcam-demo) { opacity:0; }
-.camera-stage:not([data-view="whole"])[data-gl="no"] img { object-fit:cover; }
-.camera-dialog[data-mirror="true"] canvas.camera-view { transform:scaleX(-1); }
-.camera-side .camera-toggles.camera-view-modes { grid-template-columns:repeat(3, minmax(0, 1fr)); }
-.camera-view-modes button { flex:1; }
+.camera-info { flex:0 0 290px; justify-content:center; }
 /* What happened (Support & testing). */
 .event-card .sw-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
 .event-card h3 { margin:0; }
@@ -30,7 +25,7 @@
 .camera-lost[hidden] { display:none; }
 .camera-lost strong { color:var(--danger); font-size:56px; font-weight:900; letter-spacing:2px; }
 .camera-lost span { color:#fff; font-size:20px; max-width:90%; }
-.camera-side { flex:1; min-width:0; display:flex; flex-direction:column; gap:16px; padding:24px 28px; overflow:auto; }
+.camera-side { flex:0 0 340px; min-width:0; display:flex; flex-direction:column; gap:16px; padding:24px 28px; overflow:auto; }
 .camera-speed { display:flex; align-items:baseline; gap:12px; }
 .camera-speed strong { font-family:var(--numeral-font); font-style:var(--numeral-style); color:var(--numeral,var(--text)); font-size:120px; line-height:1; font-weight:800; letter-spacing:-4px; }
 .camera-speed span { color:var(--muted); font-size:22px; font-weight:750; }
@@ -50,8 +45,9 @@
 .camera-side .close-button { margin-top:auto; min-height:56px; font-size:18px; }
 @media (max-aspect-ratio:11/5) and (max-width:1200px) {
   .camera-dialog[open] { flex-direction:column; }
-  .camera-stage { height:min(56%, calc(75vw - 24px)); width:auto; max-width:100%; align-self:center; }
+  .camera-stage { flex:none; height:min(52%, calc(75vw - 24px)); width:100%; }
   .camera-side { flex:1; min-height:0; overflow:auto; padding:16px; }
+  .camera-info { flex:none; flex-direction:row; align-items:center; gap:16px; padding:8px 16px; }
   .camera-speed strong { font-size:72px; }
   .camera-lost strong { font-size:36px; }
 }
@@ -96,20 +92,16 @@
 .screen-trial-buttons #screen-keep { background:var(--accent); border-color:var(--accent); color:#092318; }
 .speaker-test-buttons button { min-height:44px; padding:6px 14px; }
 @media (max-aspect-ratio:11/5) and (max-width:600px) { .speaker-test { flex-direction:column; align-items:stretch; } .speaker-test-buttons button { flex:1; } }
-/* Dash cam: wide 16:9 picture, narrow controls on the right (clear of the dash hump). */
-.dashcam-dialog .camera-stage { aspect-ratio:16 / 9; max-width:none; flex:1 1 auto; }
-.dashcam-dialog .camera-stage img { width:100%; height:100%; object-fit:contain; }
-.dashcam-dialog .camera-side { flex:0 0 330px; }
+/* Dash cam: two side buttons (Front / Rear). */
 .dashcam-dialog .camera-toggles { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 /* Offline map: wide map, narrow controls on the right. */
-.map-dialog .camera-stage { aspect-ratio:auto; max-width:none; flex:1 1 auto; }
+.map-dialog .camera-stage { flex:1 1 auto; }
 .map-dialog canvas { position:absolute; inset:0; width:100%; height:100%; }
 .map-dialog .camera-side { flex:0 0 300px; }
 .map-road { position:absolute; left:50%; top:14px; transform:translateX(-50%); padding:6px 18px; border-radius:999px; background:#0b1014d9; border:1px solid var(--line); color:var(--text); font-size:20px; font-weight:750; white-space:nowrap; }
 .map-credit { position:absolute; right:10px; bottom:6px; font-size:11px; color:#ffffff80; }
 .map-zoom { display:grid; grid-template-columns:1fr; gap:10px; }
 .dashcam-dialog[data-mirror="true"] :is(#dashcam-feed, #dashcam-demo) { transform:scaleX(-1); }
-#dashcam-demo { object-fit:contain; }
 .demo-clickable { cursor:pointer; }
 .demo-clickable:hover { border-color:var(--accent); }
 
