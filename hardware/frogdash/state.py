@@ -57,6 +57,7 @@ class State:
         self.recorder = None
         self.eventlog = None  # EventLog: what went wrong and when, kept on the Pi (eventlog.py).
         self.github = None    # GitHubLink: reports to GitHub after updates, linked by a code (github_link.py).
+        self.summary = None   # DriveSummary: this drive, shown at key-off during the shutdown countdown (summary.py).
         self.camera = None
         self.dashcam = None
         self.terminal_enabled = False
@@ -238,6 +239,7 @@ class State:
                               "received": self.received, "malformed": self.malformed, "ignored": self.ignored},
                 "runtime": self.runtime.snapshot(), "nav": self.nav.snapshot(), "tune": self.tune.snapshot(),
                 "gaps": list(self.gaps),
+                "summary": self.summary.snapshot() if self.summary else None,
                 "gps": {"status": self.gps.status, "diagnosis": self.gps.diagnosis(), "brief_losses": self.gps.brief_losses,
                         "receiver_setup": self.gps.configure_note,
                         "satellite_data": self.gps_aid.note if self.gps_aid else None,

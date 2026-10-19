@@ -86,7 +86,24 @@
   park.id = 'demo-driving'; park.type = 'button'; park.className = 'demo-control';
   const controls = document.createElement('div'); controls.className = 'demo-playback';
   controls.setAttribute('role', 'group'); controls.setAttribute('aria-label', 'Simulated drive playback');
-  controls.append(motion, park);
+  // Key off: the PiSugar's countdown with the drive summary, as in the car; Key on undoes it.
+  const ignition = document.createElement('button');
+  ignition.id = 'demo-key'; ignition.type = 'button'; ignition.className = 'demo-control';
+  let keyOffAt = null;
+  const KEY_OFF_S = 8;
+  const label = () => { ignition.textContent = keyOffAt === null ? 'Key off' : 'Key on'; ignition.setAttribute('aria-pressed', String(keyOffAt !== null)); };
+  ignition.onclick = () => { keyOffAt = keyOffAt === null ? performance.now() : null; label(); };
+  label();
+  const driveStarted = Date.now() / 1000 - 27 * 60;
+  function demoSummary(values) {
+    const ended = keyOffAt === null ? null : driveStarted + 27 * 60;
+    const drive = {started: driveStarted, ended, duration_s: 27 * 60, distance_km: 21.4, top_speed_kph: 104.6, peak_boost_kpa: 56.5,
+      max_rpm: 5240, max_coolant_c: 96.5, min_oil_psi: 31.5, meth_spray_s: 47.5, knock_events: 1, alerts: 0, problems: 2, ended_by: ended ? 'ignition off' : null};
+    const left = keyOffAt === null ? null : Math.max(0, KEY_OFF_S - (performance.now() - keyOffAt) / 1000);
+    return {current: keyOffAt === null ? {...drive, duration_s: Math.round(Date.now() / 1000 - driveStarted)} : null, last: drive,
+      shutting_down: keyOffAt !== null, remaining_s: left === null ? null : left};
+  }
+  controls.append(motion, park, ignition);
   document.getElementById('recording-badge').hidden = true;
   document.getElementById('recording-badge').before(controls);
   function playbackLabels() {
@@ -260,7 +277,8 @@
         taillight: {supported: scenario !== 'offline', complete: true, revision: tlRevision, unsaved: JSON.stringify(tlLive) !== JSON.stringify(tlSaved),
           show: false, demo: false, custom: false, override: false, show_anim: tlLive.settings.show_anim, phase_ms: 0,
           profiles: tlProfiles.map(Boolean), settings: tlLive.settings, colors: tlLive.colors, text: tlLive.text, last_ack: tlAck},
-        controls: {reasons, test_active: test, lighting_active: tl.show !== null || !!tl.override, ...(tlResult ? {last_result: tlResult} : {})}});
+        controls: {reasons, test_active: test, lighting_active: tl.show !== null || !!tl.override, ...(tlResult ? {last_result: tlResult} : {})},
+        summary: demoSummary(values)});
     }
     send(data) {
       const {request_id, action, value} = JSON.parse(data);

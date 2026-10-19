@@ -23,6 +23,7 @@ from .race import Race
 from .driving import Driving, atomic_write
 from .eventlog import EventLog, read as read_events, as_text as events_text
 from .github_link import GitHubLink
+from .summary import DriveSummary
 from .health import Health
 from .shutdown import ShutdownHistory
 from .trip import Trip
@@ -93,6 +94,7 @@ def create_app(state, adapter=None, connectivity=None):
         if state.firmware:
             tasks.append(asyncio.create_task(state.firmware.run()))
         eventlog_task = asyncio.create_task(state.eventlog.run()) if state.eventlog else None
+        summary_task = asyncio.create_task(state.summary.run()) if state.summary else None
         if state.recorder:
             state.recorder.start()
         if connectivity:
@@ -125,6 +127,12 @@ def create_app(state, adapter=None, connectivity=None):
         await nav_task
         if health_task:
             await health_task
+        if summary_task:
+            state.summary.stopping = True
+            summary_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await summary_task
+            await asyncio.to_thread(state.summary.finish, 'dash stopped')   # Written before the event log closes
         if eventlog_task:
             state.eventlog.stopping = True
             eventlog_task.cancel()
@@ -723,7 +731,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "keyboard.js", "keyboard.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js", "knock.js", "knock.css", "screen.js"}:
+        if name not in {"index.html", "app.js", "style.css", "keyboard.js", "keyboard.css", "summary.js", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js", "knock.js", "knock.css", "screen.js"}:
             raise web.HTTPNotFound()
         if name == 'index.html' and state.paint and state.paint.value:
             page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')
@@ -962,6 +970,7 @@ def main():
     state.paint = Paint((args.data_dir / 'replay' if args.replay else args.data_dir) / 'appearance-paint.json')
     state.shutdown_history = ShutdownHistory((args.data_dir / 'replay' if args.replay else args.data_dir) / 'shutdown.json')
     state.eventlog = EventLog(state, (args.data_dir / 'replay' if args.replay else args.data_dir) / 'events')
+    state.summary = DriveSummary(state, args.data_dir / 'replay' if args.replay else args.data_dir)
     if args.log_dir:
         try:
             config = LogConfig(args.log_dir.resolve(), args.log_hz, args.log_minutes * 60,

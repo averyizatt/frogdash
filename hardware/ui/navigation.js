@@ -294,6 +294,7 @@
       ['Water / meth', 'Arm, test and live injection status', launch('controls-launch', 'tab-meth'), true, 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z', '#1f9bc4'],
       ['Knock monitor', 'Live knock energy and events', launch('knock-launch'), true, 'M2 13h5l3-8 4 15 3-7h5', '#c2572b'],
       ['Drive & alerts', 'Display modes, trips, fuel and alerts', launch('drive-launch'), true, 'M3 15a9 9 0 0 1 18 0M12 15l4-5M3 19h18', '#22a37a'],
+      ['Last drive', 'Distance, speed, boost, water/meth and problems', () => window.FrogdashSummary?.open(), !!window.FrogdashSummary, 'M4 19V9M10 19V5M16 19v-7M2 19h20', '#2f86c9'],
       ['Race timer', 'Acceleration and lap timing', launch('race-launch'), true, 'M5 21V4M5 4h13l-3 4 3 4H5', '#8a4fd1'],
       ['Appearance', 'Looks, gauges, backgrounds and splash', launch('appearance-launch'), true, 'M12 3a9 9 0 1 0 0 18c1.7 0 2-1.3 1.3-2.4-.8-1.2 0-2.6 1.4-2.6H17a4 4 0 0 0 4-4c0-5-4-9-9-9zM7.5 11h.01M10 7h.01M15 7h.01', '#c2408f'],
       ['Sensors & system check', 'Every signal, CAN check and tests', launch('diagnostics-launch'), true, 'M5 20v-5M12 20V9M19 20V3', '#3f8fb5'],
