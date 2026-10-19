@@ -74,6 +74,8 @@ class GPS:
         self.good_fix_at = float('-inf')   # Last report with a real fix
         self.good_mode = 0
         self.brief_losses = 0      # Lone 'no fix' reports ridden through (FIX_GRACE_S)
+        self.bad_reports = 0       # Reports gpsd sent that could not be read (skipped)
+        self.last_bad = None
         self.configured = None     # The receiver last set to the automotive model
         self.configure_note = None
         self.fix_grace = FIX_GRACE_S
@@ -286,7 +288,11 @@ async def gpsd(gps_state):
                 if await asyncio.to_thread(session.waiting, .2):
                     report = await asyncio.to_thread(next_report, session)
                     if report is not None:
-                        gps_state.update(report)
+                        try:
+                            gps_state.update(report)
+                        except (AttributeError, TypeError, KeyError, IndexError, ValueError) as error:
+                            gps_state.bad_reports += 1   # Malformed report: skipped
+                            gps_state.last_bad = f'{type(error).__name__}: {error}'[:120]
                 else:
                     await asyncio.sleep(.05)
                 if gps_state.clock() - max(gps_state.report_seen, gps_state.linked_at) > STALL_S:

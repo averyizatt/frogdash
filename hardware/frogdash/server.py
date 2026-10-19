@@ -30,7 +30,7 @@ from .trip import Trip
 from .nav import Navigator
 from .operations import Operations
 from .backlight import Backlight
-from .supervision import watchdog
+from .supervision import supervise, watchdog
 from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
 from .paint import Paint, validate as validate_paint
 from .imports import Imports
@@ -69,81 +69,90 @@ def create_app(state, adapter=None, connectivity=None):
     clients = set()
 
     async def lifecycle(app):
+        async def step(name, work):
+            """One step of starting or stopping. A failure is recorded and the next step still
+            runs: at key-off, closing the drive recording must not depend on the steps before."""
+            try:
+                result = work()
+                if asyncio.iscoroutine(result) or isinstance(result, asyncio.Future):
+                    await result
+            except asyncio.CancelledError:
+                raise
+            except Exception as error:
+                state.fault(name, error)
+
+        async def finish(task):
+            if task:
+                task.cancel()
+                with suppress(asyncio.CancelledError, Exception):
+                    await task
+
         if state.shutdown_history:
-            await asyncio.to_thread(state.shutdown_history.start)
-        await state.operations.recover()
+            await step('shutdown history', lambda: asyncio.to_thread(state.shutdown_history.start))
+        await step('settings restore', state.operations.recover)
         notify_task = asyncio.create_task(watchdog())
-        tasks = [asyncio.create_task(adapter())] if adapter else []
-        race_task = asyncio.create_task(state.race.run())
-        drive_task = asyncio.create_task(state.driving.run())
-        trip_task = asyncio.create_task(state.trip.run())
-        nav_task = asyncio.create_task(state.nav.run())
-        health_task = asyncio.create_task(state.health.run()) if state.health else None
-        state.controls.start()
+        # Every loop below is supervised (supervision.py): if one fails it is recorded and
+        # started again, instead of that feature stopping for the rest of the drive.
+        tasks = [supervise(state, 'CAN reader', adapter)] if adapter else []
+        race_task = supervise(state, 'race timer', state.race.run, state.race)
+        drive_task = supervise(state, 'drive alerts', state.driving.run, state.driving)
+        trip_task = supervise(state, 'trip', state.trip.run, state.trip)
+        nav_task = supervise(state, 'navigation', state.nav.run, state.nav)
+        health_task = supervise(state, 'Pi health', state.health.run, state.health) if state.health else None
+        await step('controls', state.controls.start)
         if state.gps:
             state.gps.on_report = state.race.feed
-            tasks.append(asyncio.create_task(gpsd(state.gps)))
+            tasks.append(supervise(state, 'GPS reader', lambda: gpsd(state.gps)))
             if state.gps_recovery:
-                tasks.append(asyncio.create_task(state.gps_recovery.run()))
+                tasks.append(supervise(state, 'GPS recovery', state.gps_recovery.run, state.gps_recovery))
             if state.gps_aid:
-                tasks.append(asyncio.create_task(state.gps_aid.run()))
+                tasks.append(supervise(state, 'GPS satellite data', state.gps_aid.run, state.gps_aid))
         if state.helpers:
-            tasks.append(asyncio.create_task(state.helpers.run()))
+            tasks.append(supervise(state, 'Pi setup check', state.helpers.run))
         if state.dashcam:
-            tasks.append(asyncio.create_task(state.dashcam.run()))
+            tasks.append(supervise(state, 'dash cam', state.dashcam.run))
         if state.firmware:
-            tasks.append(asyncio.create_task(state.firmware.run()))
-        eventlog_task = asyncio.create_task(state.eventlog.run()) if state.eventlog else None
-        summary_task = asyncio.create_task(state.summary.run()) if state.summary else None
+            tasks.append(supervise(state, 'module firmware', state.firmware.run))
+        eventlog_task = supervise(state, 'event log', state.eventlog.run, state.eventlog) if state.eventlog else None
+        summary_task = supervise(state, 'drive summary', state.summary.run, state.summary) if state.summary else None
         if state.recorder:
-            state.recorder.start()
+            await step('recorder', state.recorder.start)
         if connectivity:
-            await connectivity.start()
+            await step('phone page', connectivity.start)
         yield
         if state.camera:
-            await state.camera.close()
+            await step('rear camera', state.camera.close)
         if state.dashcam:
-            await state.dashcam.close()
-        notify_task.cancel()
-        with suppress(asyncio.CancelledError):
-            await notify_task
-        await state.controls.close()
+            await step('dash cam', state.dashcam.close)
+        await finish(notify_task)
+        await step('controls', state.controls.close)
         if connectivity:
-            await connectivity.close()
+            await step('phone page', connectivity.close)
         if state.health:
             state.health.stopping = True
         for task in tasks:
-            task.cancel()
-        for task in tasks:
-            with suppress(asyncio.CancelledError):
-                await task
-        state.race.stopping = True
-        await race_task
-        state.driving.stopping = True
-        await drive_task
-        state.trip.stopping = True
-        await trip_task
-        state.nav.stopping = True
-        await nav_task
-        if health_task:
-            await health_task
+            await finish(task)
+        # These save their last state as they stop: they are let finish, not cancelled.
+        for owner, task, name in ((state.race, race_task, 'race timer'), (state.driving, drive_task, 'drive alerts'),
+                                  (state.trip, trip_task, 'trip'), (state.nav, nav_task, 'navigation'),
+                                  (state.health, health_task, 'Pi health')):
+            if task:
+                owner.stopping = True
+                await step(name, lambda task=task: asyncio.wait_for(task, 10))
         if summary_task:
             state.summary.stopping = True
-            summary_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await summary_task
-            await asyncio.to_thread(state.summary.finish, 'dash stopped')   # Written before the event log closes
+            await finish(summary_task)
+            await step('drive summary', lambda: asyncio.to_thread(state.summary.finish, 'dash stopped'))   # Before the event log closes
         if eventlog_task:
             state.eventlog.stopping = True
-            eventlog_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await eventlog_task
-            state.eventlog.write('info', 'dash', 'Dash stopping')
+            await finish(eventlog_task)
+            await step('event log', lambda: state.eventlog.write('info', 'dash', 'Dash stopping'))
         if state.recorder:
-            await state.recorder.close()
-        await asyncio.gather(*(ws.close(code=1001, message=b"Service stopping") for ws in list(clients)))
+            await step('recorder', state.recorder.close)
+        await step('screens', lambda: asyncio.gather(*(ws.close(code=1001, message=b"Service stopping") for ws in list(clients)),
+                                                     return_exceptions=True))
         if state.shutdown_history:
-            await asyncio.to_thread(state.shutdown_history.finish, state)
+            await step('shutdown history', lambda: asyncio.to_thread(state.shutdown_history.finish, state))
 
     async def websocket(request):
         if request.url.host not in {'127.0.0.1', 'localhost', '::1'}:

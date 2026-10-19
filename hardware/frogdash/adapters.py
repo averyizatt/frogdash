@@ -47,6 +47,8 @@ async def socketcan(state, interface):
                         # A full TX queue (no node ACKing) must not drop reception.
                         try:
                             await send_control(0x203, gps.frame())
+                        except (ValueError, TypeError, OverflowError) as exc:   # A value out of the frame's range
+                            state.fault('GPS frame 0x203', exc)
                         except OSError as exc:  # Includes TimeoutError and ENOBUFS.
                             gps.tx_status = f"0x203 not sent: {exc or 'TX timeout'} (no other node ACKing?)"
                         else:
@@ -56,6 +58,8 @@ async def socketcan(state, interface):
                     if runtime and runtime.due(now):
                         try:
                             await send_control(0x309, runtime.frame())
+                        except (ValueError, TypeError, OverflowError) as exc:
+                            state.fault('engine runtime frame 0x309', exc)
                         except OSError as exc:
                             runtime.sent(False, exc)
                         else:
@@ -74,6 +78,9 @@ async def socketcan(state, interface):
                         state.ingest(*frame)
                     except ValueError:
                         state.malformed += 1
+                    except Exception as exc:   # Never let one frame stop the reader: every gauge depends on it.
+                        state.malformed += 1
+                        state.fault(f'CAN frame 0x{packet[:4].hex()}', exc)
         except OSError as exc:
             state.connected, state.status = False, f"{interface}: {exc}"
             state.controls.detach()
@@ -121,7 +128,11 @@ async def replay(state, frames, repeat=False):
                 delay = start + stamp - frames[0][0] - asyncio.get_running_loop().time()
                 if delay > 0:
                     await asyncio.sleep(delay)
-                state.ingest(can_id, data, extended)
+                try:
+                    state.ingest(can_id, data, extended)
+                except Exception as exc:   # One odd recorded frame must not end the replay
+                    state.malformed += 1
+                    state.fault(f'replayed frame 0x{can_id:03X}', exc)
             if not repeat:
                 state.status = "replay complete"
                 return

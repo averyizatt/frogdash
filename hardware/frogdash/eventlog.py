@@ -179,6 +179,8 @@ class EventLog:
                 self.note('module:' + name, here, 'info' if here else 'warn', 'module',
                           f'{name} module answering' if here else f'{name} module not heard ({quality})')
 
+        for name, text in (snapshot.get('faults') or {}).items():
+            self.note('fault:' + name, text, 'error', 'dash', f'{name} failed: {text}', hold=0)
         for gap in snapshot.get('gaps') or []:
             if gap['t'] > self.gaps_seen:
                 self.gaps_seen = gap['t']

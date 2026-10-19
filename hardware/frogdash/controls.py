@@ -436,14 +436,19 @@ class Controls:
         Covers shows started here and from the taillights' own Wi-Fi page (reported as
         SHOW/CUSTOM). Brake and reverse are protected by the taillight firmware itself.
         """
+        jobs = (('taillight guard', self.check_lighting), ('taillight settings sync', self.sync_taillight),
+                ('water/meth settings sync', self.sync_meth_tune), ('intake temperature to water/meth', self.send_intake_temp),
+                ('interior lights refresh', self.refresh_interior), ('water/meth re-arm', self.keep_meth_armed))
         while not self.closing:
             await asyncio.sleep(.25)
-            await self.check_lighting()
-            await self.sync_taillight()
-            await self.sync_meth_tune()
-            await self.send_intake_temp()
-            await self.refresh_interior()
-            await self.keep_meth_armed()
+            for name, job in jobs:
+                # One job failing must not stop the others (the brake-safe taillight guard first).
+                try:
+                    await job()
+                except asyncio.CancelledError:
+                    raise
+                except Exception as error:
+                    self.state.fault(name, error)
 
     async def keep_meth_armed(self):
         """Arm the water/meth controller again when it is heard disarmed and the driver last

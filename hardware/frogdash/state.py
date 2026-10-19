@@ -1,6 +1,8 @@
 """Monotonic freshness, bounded diagnostics, and source arbitration."""
 from collections import OrderedDict, deque
+import sys
 import time
+import traceback
 
 from .protocol import ANALOG_BITS, ECU_TIMEOUT, EVENT_IDS, TIMEOUTS, decode
 from .controls import Controls
@@ -27,6 +29,10 @@ ALIASES = {
     "vehicle.battery_v": ("ecu.battery_v",),
 }
 UNAVAILABLE = ("vehicle.fuel_pct", "lighting.highbeam", "engine.oil_temp_c")
+
+
+def file_name(path):
+    return path.replace('\\', '/').rsplit('/', 1)[-1]
 
 
 # Modules whose frames come several times a second: a longer silence is worth recording.
@@ -58,6 +64,7 @@ class State:
         self.eventlog = None  # EventLog: what went wrong and when, kept on the Pi (eventlog.py).
         self.github = None    # GitHubLink: reports to GitHub after updates, linked by a code (github_link.py).
         self.summary = None   # DriveSummary: this drive, shown at key-off during the shutdown countdown (summary.py).
+        self.faults = {}      # Part of the dash -> the unexpected error it last raised (fault())
         self.camera = None
         self.dashcam = None
         self.terminal_enabled = False
@@ -80,6 +87,25 @@ class State:
         self.tune = Tune(self)
         self.nav = Navigator(clock, wall)
         self.controls = Controls(self)
+
+    def fault(self, name, error):
+        """A part of the dash raised an unexpected error. It is kept (the event log and the
+        diagnostics show it, with where it happened), printed once to the journal, and
+        everything else carries on."""
+        where = traceback.extract_tb(error.__traceback__)[-1] if error.__traceback__ else None
+        text = f'{type(error).__name__}: {error}'[:200] + (f' ({file_name(where.filename)}:{where.lineno})' if where else '')
+        if self.faults.get(name) != text:
+            print(f'frogdash: {name} failed: {text}', file=sys.stderr, flush=True)
+        self.faults[name] = text
+
+    def guarded(self, name, function, default=None):
+        """One part of the snapshot. If it fails, it is left out (default) and recorded, so the
+        screen, the recorder and the alerts, which all read the snapshot, keep going."""
+        try:
+            return function()
+        except Exception as error:
+            self.fault(name, error)
+            return default
 
     def ingest(self, can_id, data, extended=False, remote=False, error=False):
         now, stamp = self.clock(), int(self.wall() * 1000)
@@ -195,7 +221,7 @@ class State:
         # through brief dropouts (fuel.py). A separate fuel controller (0x204) filters its own.
         fuel = values.get('vehicle.fuel_pct')
         if fuel and fuel.get('source_id') == 0x500:
-            values.update(self.fuel_gauge.step(fuel, parked(self)))
+            values.update(self.guarded('fuel gauge', lambda: self.fuel_gauge.step(fuel, parked(self)), {}))
         boost = values.get("engine.boost_kpa")
         map_value, baro = values.get("ecu.map_kpa", missing), values.get("ecu.baro_kpa", missing)
         # Barometric pressure barely changes: keep the last reading so boost follows MAP alone.
@@ -212,13 +238,14 @@ class State:
         if self.gps:
             # USB GPS is authoritative when configured; do not silently switch
             # to a different receiver on CAN when the USB receiver loses fix.
-            values.update(self.gps.values())
+            values.update(self.guarded('GPS', self.gps.values, {}))
         # GPS when it has a fix; otherwise wheel speed and dead reckoning (nav.py).
-        values.update(self.nav.step(self, values))
+        values.update(self.guarded('navigation', lambda: self.nav.step(self, values), {}))
         # Water/meth flow now and its share of estimated fuel flow (methtune.py).
-        values.update(self.meth_tune.derived(values, int(self.wall() * 1000)))
-        race = self.race.snapshot()
-        values.update(self.trip.values())
+        values.update(self.guarded('water/meth figures', lambda: self.meth_tune.derived(values, int(self.wall() * 1000)), {}))
+        race = self.guarded('race timer', self.race.snapshot) or {'phase': 'idle', 'elapsed': None, 'distance_m': None,
+                                                                   'lap_count': 0, 'best_lap': None, 'splits': {}}
+        values.update(self.guarded('trip', self.trip.values, {}))
         values['dash.bookmark_id'] = {'value': self.driving.marker_seq, 'quality': 'live', 'source_id': None,
                                        'source': 'Drive review', 'timestamp_ms': int(self.wall() * 1000)}
         race_quality = 'fault' if race['phase'] == 'invalid' else 'unavailable' if race['phase'] == 'idle' else 'live'
@@ -233,22 +260,32 @@ class State:
                               ("watermeth", (0x300,)), ("knock", (0x307,))):
             matching = [v for v in values.values() if v["source_id"] in sources]
             modules[name] = "live" if any(v["quality"] == "live" for v in matching) else "stale" if matching else "unavailable"
-        return {"type": "state", "seq": self.seq, "timestamp_ms": int(self.wall() * 1000),
+        result = {"type": "state", "seq": self.seq, "timestamp_ms": int(self.wall() * 1000),
                 "mode": self.mode, "values": values, "modules": modules,
                 "transport": {"connected": self.connected, "status": self.status,
                               "received": self.received, "malformed": self.malformed, "ignored": self.ignored},
-                "runtime": self.runtime.snapshot(), "nav": self.nav.snapshot(), "tune": self.tune.snapshot(),
+                "runtime": self.guarded('engine runtime', self.runtime.snapshot), "nav": self.guarded('navigation', self.nav.snapshot),
+                "tune": self.guarded('TunerStudio', self.tune.snapshot),
                 "gaps": list(self.gaps),
-                "summary": self.summary.snapshot() if self.summary else None,
-                "gps": {"status": self.gps.status, "diagnosis": self.gps.diagnosis(), "brief_losses": self.gps.brief_losses,
-                        "receiver_setup": self.gps.configure_note,
-                        "satellite_data": self.gps_aid.note if self.gps_aid else None,
-                        "recovery": self.gps_recovery.snapshot() if self.gps_recovery else None, "tx_status": self.gps.tx_status,
-                        "tx_count": self.gps.tx_count, "conflict": self.gps.conflict} if self.gps else None,
-                "controls": self.controls.status(), "taillight": self.taillight.snapshot(), "meth_tune": self.meth_tune.snapshot(), "knock_detail": self.knock_detail.snapshot(), "events": list(self.events), "race": race,
-                "drive": self.driving.snapshot(), "trip": self.trip.snapshot(),
-                "operations": self.operations.status(), "system": dict(self.health.status) if self.health else None,
+                "summary": self.guarded('drive summary', self.summary.snapshot) if self.summary else None,
+                "gps": self.guarded('GPS', self.gps_snapshot) if self.gps else None,
+                "controls": self.guarded('controls', self.controls.status) or {'reasons': {}},
+                "taillight": self.guarded('taillight settings', self.taillight.snapshot),
+                "meth_tune": self.guarded('water/meth tuning', self.meth_tune.snapshot),
+                "knock_detail": self.guarded('knock detail', self.knock_detail.snapshot), "events": list(self.events), "race": race,
+                "drive": self.guarded('drive alerts', self.driving.snapshot), "trip": self.guarded('trip', self.trip.snapshot),
+                "operations": self.guarded('dash management', self.operations.status), "system": dict(self.health.status) if self.health else None,
                 "can_errors": dict(self.can_errors),
-                "firmware": self.firmware.snapshot() if self.firmware else None,
-                "wheel": self.wheel.snapshot(self.connected and self.mode == "socketcan"),
+                "firmware": self.guarded('module firmware', self.firmware.snapshot) if self.firmware else None,
+                "wheel": self.guarded('steering wheel', lambda: self.wheel.snapshot(self.connected and self.mode == "socketcan")),
                 "recording": dict(self.recorder.status) if self.recorder else {"enabled": False, "state": "disabled"}}
+        result["faults"] = dict(self.faults)   # Last, so a part that failed just now is in it
+        return result
+
+    def gps_snapshot(self):
+        return {"status": self.gps.status, "diagnosis": self.gps.diagnosis(), "brief_losses": self.gps.brief_losses,
+                "receiver_setup": self.gps.configure_note,
+                "satellite_data": self.gps_aid.note if self.gps_aid else None,
+                "recovery": self.gps_recovery.snapshot() if self.gps_recovery else None, "tx_status": self.gps.tx_status,
+                "tx_count": self.gps.tx_count, "conflict": self.gps.conflict,
+                "bad_reports": self.gps.bad_reports, "last_bad": self.gps.last_bad}
