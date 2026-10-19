@@ -49,7 +49,7 @@ def module_event(event):
         return ('info' if code == 1 else 'warn'), f'taillights: {TAILLIGHT_FAULTS[code]}'
     return 'warn', f'{source} reported fault code {code}'
 GPS_LEVEL = {'fix': 'info', 'starting': 'info', 'searching': 'info', 'deaf': 'warn', 'weak': 'warn',
-             'silent': 'error', 'no-gpsd': 'error'}
+             'silent': 'error', 'no-gpsd': 'error', 'jammed': 'warn', 'antenna': 'error'}
 
 
 def installed_version(repo=Path(__file__).resolve().parents[2]):
@@ -245,6 +245,11 @@ class EventLog:
             self.note('gps-speed', no_speed, 'warn' if no_speed else 'info' if kind == 'fix' else None, 'gps',
                       'GPS has a position but no speed' if no_speed else 'GPS speed back',
                       {'speed': speed, 'status': gps.get('status')} if no_speed else None)
+            radio = gps.get('hardware') or {}
+            jamming = radio.get('jamming') if radio.get('jamming') in ('warning', 'critical') else None
+            self.note('gps-jamming', jamming, 'warn' if jamming else 'info', 'gps',
+                      f"GPS receiver reports radio interference: {jamming} (level {radio.get('jam_ind')} of 255, noise {radio.get('noise')})"
+                      if jamming else 'GPS receiver: no radio interference now', dict(radio) if jamming else None)
             aid = gps.get('satellite_data')
             self.note('gps-aid', aid, 'info' if aid else None, 'gps', aid or '', hold=0)
             setup = gps.get('receiver_setup')

@@ -7,5 +7,8 @@ frozenlist==1.8.0
 idna==3.20
 multidict==6.9.1
 propcache==0.5.4
+pynmeagps==1.1.8
+pyrtcm==1.2.1
+pyubx2==1.3.9
 typing_extensions==4.16.0
 yarl==1.25.1

@@ -170,7 +170,8 @@
   // No speed: say why, right where the speed would be, and what the dash is trying.
   const SPEED_PROBLEMS = {
     'no-gpsd': 'GPS SERVICE NOT RUNNING', silent: 'GPS RECEIVER NOT FOUND', deaf: 'NO SATELLITES HEARD',
-    weak: 'GPS SIGNAL TOO WEAK', searching: 'FINDING POSITION', starting: 'GPS STARTING'};
+    weak: 'GPS SIGNAL TOO WEAK', searching: 'FINDING POSITION', starting: 'GPS STARTING',
+    jammed: 'GPS INTERFERENCE', antenna: 'GPS ANTENNA FAULT'};
   function renderSpeedProblem(gpsState) {
     const gps = snapshot.gps, missing = connected && live('vehicle.speed_kph') === null;
     let title = '', detail = '', trying = '';

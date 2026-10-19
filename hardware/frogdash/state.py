@@ -50,6 +50,8 @@ class State:
         self.samples = {}
         self.raw = OrderedDict()
         self.capture, self.capture_until = None, 0.0  # Timed raw capture for the CAN recorder tool.
+        self.capture_saved = False
+        self.recordings = None    # Folder the finished captures are kept in (server.py save_recording)
         self.frames = {}  # Per standard ID: count, first/last time, last payload and decode error.
         self.events = deque(maxlen=100)
         self.gaps = deque(maxlen=100)  # Modules that went quiet for a moment (a restart or a dropout)
@@ -291,7 +293,7 @@ class State:
 
     def gps_snapshot(self):
         return {"status": self.gps.status, "diagnosis": self.gps.diagnosis(), "brief_losses": self.gps.brief_losses,
-                "receiver_setup": self.gps.configure_note,
+                "receiver_setup": self.gps.configure_note, "hardware": self.gps.hardware,
                 "satellite_data": self.gps_aid.note if self.gps_aid else None,
                 "recovery": self.gps_recovery.snapshot() if self.gps_recovery else None, "tx_status": self.gps.tx_status,
                 "tx_count": self.gps.tx_count, "conflict": self.gps.conflict,

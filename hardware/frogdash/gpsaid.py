@@ -21,40 +21,47 @@ import json
 import os
 from pathlib import Path
 import socket
-import struct
 import subprocess
 import time
 
-from .gps import ubx
+from pyubx2 import GET, POLL, SET, UBXMessage, UBXReader, VALCKSUM
+from pyubx2.exceptions import UBXMessageError, UBXParseError, UBXTypeError
+from pyubx2.ubxhelpers import calc_checksum
+
+from .gps import ANTENNA, JAMMING, UBX_HARDWARE_POLL, ubx
 
 AID_INI, AID_HUI, AID_ALM, AID_EPH = (0x0B, 0x01), (0x0B, 0x02), (0x0B, 0x30), (0x0B, 0x31)
+HARDWARE_EVERY_S = 60      # How often the receiver is asked about its radio (MON-HW)
 FIRST_SAVE_S = 120         # After the first fix of a run
 SAVE_EVERY_S = 600
 MAX_AGE_S = 7 * 86400      # Older than this (by the Pi's clock) is not sent
 EPH_BYTES, ALM_BYTES, HUI_BYTES = 104, 40, 72   # Payload length of a message that carries data
 
 
+def packets_in(data):
+    """The UBX packets in `data` whose checksum is right: [(raw, message)], the message as
+    pyubx2 reads it, or None for one it has no layout for (kept: the satellite data is
+    sent back byte for byte). A damaged packet is skipped and the search goes on from
+    the next header, which pyubx2's own stream reader does not do."""
+    found, i = [], 0
+    while (i := data.find(b'\xb5\x62', i)) >= 0 and i + 8 <= len(data):
+        end = i + 8 + int.from_bytes(data[i + 4:i + 6], 'little')
+        if end <= len(data) and calc_checksum(data[i + 2:end - 2]) == data[end - 2:end]:
+            raw = data[i:end]
+            try:
+                message = UBXReader.parse(raw, validate=VALCKSUM, msgmode=GET)
+            except (UBXParseError, UBXMessageError, UBXTypeError, ValueError, KeyError, IndexError):
+                message = None
+            found.append((raw, message))
+            i = end
+            continue
+        i += 2
+    return found
+
+
 def frames_in(data):
     """The UBX packets in `data` whose checksum is right: [(class, id, payload)]."""
-    found, i = [], 0
-    while True:
-        i = data.find(b'\xb5\x62', i)
-        if i < 0 or i + 8 > len(data):
-            return found
-        length = int.from_bytes(data[i + 4:i + 6], 'little')
-        end = i + 6 + length + 2
-        if end > len(data):
-            return found
-        body = data[i + 2:i + 6 + length]
-        a = b = 0
-        for byte in body:
-            a = (a + byte) & 0xFF
-            b = (b + a) & 0xFF
-        if data[end - 2:end] == bytes([a, b]):
-            found.append((data[i + 2], data[i + 3], data[i + 6:i + 6 + length]))
-            i = end
-        else:
-            i += 2
+    return [(raw[2], raw[3], raw[6:-2]) for raw, _ in packets_in(data)]
 
 
 def exchange(path, frames, seconds=4.0, host='127.0.0.1', port=2947, pace=0.02):
@@ -108,9 +115,16 @@ def initial(lat, lon, alt_m=0.0, accuracy_m=50000, wall=None):
         gps_s = wall - 315964800 + 18         # Unix time to GPS time (18 leap seconds)
         week, tow_ms = int(gps_s // 604800), int((gps_s % 604800) * 1000)
         t_acc_ms, flags = 2000, flags | 0x02  # Time valid, to about 2 s
-    payload = struct.pack('<iiiIHHIiIIiII', round(lat * 1e7), round(lon * 1e7), round(alt_m * 100),
-                          round(accuracy_m * 100), 0, week, tow_ms, 0, t_acc_ms, 0, 0, 0, flags)
-    return ubx(*AID_INI, payload)
+    return UBXMessage('AID', 'AID-INI', SET, ecefXOrLat=round(lat * 1e7), ecefYOrLon=round(lon * 1e7),
+                      ecefZOrAlt=round(alt_m * 100), posAcc=round(accuracy_m * 100), wn=week, tow=tow_ms,
+                      tAccMs=t_acc_ms, flags=flags.to_bytes(4, 'little')).serialize()
+
+
+def hardware_report(message, seen):
+    """What MON-HW says about the receiver's radio, in words the dash shows."""
+    return {'antenna': ANTENNA.get(message.aStatus, 'unknown'), 'jamming': JAMMING.get(message.jammingState, 'unknown'),
+            'jam_ind': message.jamInd, 'noise': message.noisePerMS, 'agc_pct': round(message.agcCnt * 100 / 8191),
+            'seen': seen}
 
 
 class GpsAid:
@@ -123,6 +137,7 @@ class GpsAid:
         self.saved_at = None
         self.note = None             # Last thing done, for the event log and System check
         self.stopping = False
+        self.hardware_at = None      # When the receiver was last asked about its radio
 
     def usable(self):
         driver = (self.gps.driver() or '').lower()
@@ -136,7 +151,7 @@ class GpsAid:
             return None
 
     def save(self):
-        polls = [ubx(*AID_HUI), ubx(*AID_ALM), ubx(*AID_EPH)]
+        polls = [UBXMessage('AID', name, POLL).serialize() for name in ('AID-HUI', 'AID-ALM', 'AID-EPH')]
         packets = self.talk(self.gps.device, polls)
         keep = [(c, i, p) for c, i, p in packets
                 if (c, i) == AID_EPH and len(p) == EPH_BYTES or (c, i) == AID_ALM and len(p) == ALM_BYTES
@@ -178,10 +193,30 @@ class GpsAid:
         self.note = f'Satellite data restored: {eph} satellite orbits from {round(age / 60)} min ago' + (', with the time' if with_time else '')
         return True
 
+    def check_hardware(self):
+        """Ask the receiver about its radio (MON-HW): antenna, noise and jamming. Interference
+        from USB 3, a dash cam or LED drivers is a usual cause of a GPS that loses its fix
+        in a car, and the receiver can tell."""
+        now = self.clock()
+        if self.hardware_at is not None and now - self.hardware_at < HARDWARE_EVERY_S:
+            return
+        self.hardware_at = now
+        for c, i, payload in self.talk(self.gps.device, [UBX_HARDWARE_POLL], seconds=1.5):
+            if (c, i) == (0x0A, 0x09) and len(payload) >= 60:
+                self.gps.hardware = hardware_report(UBXMessage(b'\x0a', b'\x09', GET, payload=payload), now)
+                return
+
     def step(self):
         """One look; blocking (talks to gpsd), so it runs in a thread."""
         if not self.usable():
             return
+        self.keep_data()
+        try:
+            self.check_hardware()    # After the satellite data: that is what a cold start waits for
+        except (OSError, UBXParseError, UBXMessageError, UBXTypeError) as error:
+            self.note = f'Could not ask the receiver about its radio: {error}'
+
+    def keep_data(self):
         fixed = self.gps.mode in (2, 3)
         if self.restored_for != self.gps.device and not fixed:
             self.restored_for = self.gps.device
