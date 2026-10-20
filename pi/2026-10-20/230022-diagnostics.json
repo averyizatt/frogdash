@@ -1,0 +1,1835 @@
+{
+ "format": "pi-diagnostics",
+ "version": 1,
+ "created": "2026-10-20T23:00:22Z",
+ "version_installed": "6b4a99a CAN: only commands and firmware wait for queue room; the dash's own broadcasts never do",
+ "selftest": {
+  "lines": [
+   {
+    "group": "CAN bus",
+    "name": "CAN module (MCP2515)",
+    "status": "ok",
+    "detail": "spi0.0 \u00b7 can0 up at 500000 bit/s",
+    "fix": ""
+   },
+   {
+    "group": "CAN bus",
+    "name": "Bus health",
+    "status": "ok",
+    "detail": "ERROR-ACTIVE \u00b7 TX err ?, RX err ?",
+    "fix": ""
+   },
+   {
+    "group": "CAN bus",
+    "name": "Traffic",
+    "status": "ok",
+    "detail": "26504 frames received, 0 rejected",
+    "fix": ""
+   },
+   {
+    "group": "Modules",
+    "name": "Taillights",
+    "status": "fail",
+    "detail": "No messages received",
+    "fix": "Module off, not on the bus, or (MicroSquirt) broadcasting not enabled in TunerStudio"
+   },
+   {
+    "group": "Modules",
+    "name": "Comfort gateway",
+    "status": "ok",
+    "detail": "4 of 4 messages arriving",
+    "fix": ""
+   },
+   {
+    "group": "Modules",
+    "name": "Water/meth",
+    "status": "ok",
+    "detail": "4 of 4 messages arriving",
+    "fix": ""
+   },
+   {
+    "group": "Modules",
+    "name": "MicroSquirt",
+    "status": "fail",
+    "detail": "No messages received",
+    "fix": "Module off, not on the bus, or (MicroSquirt) broadcasting not enabled in TunerStudio"
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Engine RPM for water/meth (0x309)",
+    "status": "ok",
+    "detail": "publishing 0x309 engine RPM every 50 ms",
+    "fix": ""
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Taillight settings link",
+    "status": "warn",
+    "detail": "No settings status (0x103)",
+    "fix": "Flash the taillight PCB firmware with CAN settings (esp32-s3-pcb)"
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Steering wheel buttons",
+    "status": "ok",
+    "detail": "Receiving button reports",
+    "fix": ""
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Interior lights",
+    "status": "ok",
+    "detail": "Gateway reports both light zones",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "USB GPS",
+    "status": "ok",
+    "detail": "Fix with 11 satellites (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "Time to first position",
+    "status": "ok",
+    "detail": "2 s after the dash started",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "GPS recovery helper",
+    "status": "skip",
+    "detail": "Not needed yet",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "GPS broadcast to the bus (0x203)",
+    "status": "ok",
+    "detail": "broadcasting 0x203 at 2 Hz",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "Position without GPS",
+    "status": "warn",
+    "detail": "Now: gps \u00b7 wheel speed not calibrated yet",
+    "fix": "Drive above 20 mph with a GPS fix for a minute so wheel speed can be calibrated; needs the gateway speed sensor"
+   },
+   {
+    "group": "GPS and time",
+    "name": "Clock",
+    "status": "ok",
+    "detail": "2026-10-20 17:00",
+    "fix": ""
+   },
+   {
+    "group": "Cameras",
+    "name": "Reverse camera",
+    "status": "skip",
+    "detail": "Not enabled",
+    "fix": ""
+   },
+   {
+    "group": "Cameras",
+    "name": "Dash cam",
+    "status": "fail",
+    "detail": "URLError: <urlopen error timed out>",
+    "fix": "Check the dash cam is on and the USB Wi-Fi is joined to it"
+   },
+   {
+    "group": "Pi",
+    "name": "Power supply",
+    "status": "ok",
+    "detail": "No undervoltage",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Temperature",
+    "status": "ok",
+    "detail": "48 \u00b0C",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Storage",
+    "status": "ok",
+    "detail": "19.5 GiB free",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Data logging",
+    "status": "ok",
+    "detail": "recording",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Internet",
+    "status": "ok",
+    "detail": "(Wi-Fi network) \u00b7 internet OK",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Last update",
+    "status": "ok",
+    "detail": "Updated (2 changes). The dash restarted and passed its check. Uploaded the diagnostics and 5 recordings of the newest drive, and 2 earlier reports kept on the Pi \u00b7 version 6b4a99a",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Gateway firmware",
+    "status": "skip",
+    "detail": "The gateway is not answering. Firmware from before this feature must be replaced once by USB",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Taillight firmware",
+    "status": "warn",
+    "detail": "Sending: 584 of 1021 KB \u00b7 4.3 KB/s \u00b7 about 1 min 42 s left",
+    "fix": "Dash management > Software & power > Install taillight firmware, with the car stopped. Lights off and foot off the brake: the taillights stay dark for a few minutes, and any light switched on stops the update."
+   },
+   {
+    "group": "Updates",
+    "name": "Water/meth firmware",
+    "status": "skip",
+    "detail": "No answer. That is normal with the Nano board, which is updated by USB; the ESP32 board answers here once it is fitted",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Pi setup",
+    "status": "ok",
+    "detail": "Done for this version",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Recovery guard and rescue screen",
+    "status": "ok",
+    "detail": "Up to date",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Python packages",
+    "status": "ok",
+    "detail": "Installed: pynmeagps 1.1.8 pyrtcm 1.2.1 pyubx2 1.3.9",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Dash helpers",
+    "status": "ok",
+    "detail": "All installed",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "GPS service",
+    "status": "ok",
+    "detail": "Starts with the Pi and opens only the GPS receiver",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Clock from GPS",
+    "status": "ok",
+    "detail": "chrony sets the clock from the GPS",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "TunerStudio: Java and display",
+    "status": "ok",
+    "detail": "Installed",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "TunerStudio: program",
+    "status": "ok",
+    "detail": "In /(Wi-Fi network)/foxbody/TunerStudioMS",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "TunerStudio: serial port",
+    "status": "ok",
+    "detail": "foxbody can open the tuning cable",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Screen and start-up",
+    "status": "ok",
+    "detail": "The screen gets exactly 1920 x 720, from start-up on",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Start-up: unused disk check",
+    "status": "ok",
+    "detail": "Off",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Terminal with sudo",
+    "status": "ok",
+    "detail": "Commands from the Terminal tab run as foxbody, so sudo works",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Gateway firmware file",
+    "status": "ok",
+    "detail": "Downloaded build fcbb2a6f: install it under Dash management, Software and power",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Taillight firmware file",
+    "status": "ok",
+    "detail": "Downloaded build ab15a48e: install it under Dash management, Software and power",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Water/meth firmware file",
+    "status": "ok",
+    "detail": "Downloaded build 3a02a951: install it under Dash management, Software and power",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Phone hotspot",
+    "status": "ok",
+    "detail": "Ready: switch it on under Controls, Wi-Fi",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "System log kept",
+    "status": "ok",
+    "detail": "Kept across restarts, at most 150 MB",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Dash cam Wi-Fi",
+    "status": "ok",
+    "detail": "Joined only while the engine runs",
+    "fix": ""
+   }
+  ],
+  "counts": {
+   "ok": 36,
+   "warn": 3,
+   "fail": 3,
+   "skip": 4
+  },
+  "time_ms": 1792537224299
+ },
+ "health": {
+  "mode": "socketcan",
+  "transport": {
+   "connected": true,
+   "status": "listening on can0",
+   "received": 26505,
+   "malformed": 0,
+   "ignored": 4,
+   "tx_full": 0
+  },
+  "modules": {
+   "taillights": "stale",
+   "comfort": "live",
+   "watermeth": "live",
+   "knock": "live"
+  },
+  "gps": {
+   "status": "GPS fix",
+   "diagnosis": {
+    "state": "fix",
+    "text": "Fix with 11 satellites (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)",
+    "fix": ""
+   },
+   "brief_losses": 0,
+   "receiver_setup": "Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)",
+   "hardware": {
+    "antenna": "ok",
+    "jamming": "unknown",
+    "jam_ind": 17,
+    "noise": 105,
+    "agc_pct": 58,
+    "seen": 188.575039257
+   },
+   "satellite_data": "Satellite data saved: 16 satellite orbits, 32 almanac entries",
+   "recovery": {
+    "kind": null,
+    "trying": null,
+    "tried": 0,
+    "helper": "unknown",
+    "exhausted": false,
+    "next_in_s": null,
+    "last": "GPS service restarted",
+    "first_fix_s": 2.1
+   },
+   "tx_status": "broadcasting 0x203 at 2 Hz",
+   "tx_count": 321,
+   "conflict": false,
+   "bad_reports": 0,
+   "last_bad": null
+  },
+  "recording": {
+   "enabled": true,
+   "state": "recording",
+   "file": "frogdash-live-20261020T225951Z-2a4cc25c0095.mlg",
+   "rows": 3284,
+   "dropped": 0,
+   "error": null,
+   "hz": 20
+  },
+  "system": {
+   "status": "sampled",
+   "timestamp_ms": 1792537223045,
+   "cpu_c": 48.199,
+   "power": {
+    "raw": 0,
+    "undervoltage_now": false,
+    "throttled_now": false,
+    "undervoltage_since_boot": false,
+    "throttled_since_boot": false
+   },
+   "disk": {
+    "free_bytes": 20979286016,
+    "total_bytes": 29863247872
+   },
+   "can": {
+    "interface": "can0",
+    "state": "ERROR-ACTIVE",
+    "bitrate": 500000,
+    "error_counters": null,
+    "rx_errors": 4,
+    "tx_errors": 0,
+    "rx_dropped": 587,
+    "tx_dropped": 0,
+    "rx_packets": 35022,
+    "tx_packets": 90708
+   },
+   "notes": [],
+   "ups": {
+    "available": true,
+    "battery_percent": 100.0,
+    "battery_volts": 4.1434655,
+    "charging": true,
+    "auto_power_on": true,
+    "input_present": true,
+    "state": "external_power",
+    "error": null,
+    "dry_run": false,
+    "remaining_seconds": null
+   },
+   "shutdown": {
+    "previous": {
+     "boot_id": "0af87c2f-1c2a-48eb-ab1a-77bb9409b5b7",
+     "scope": "boot",
+     "run_id": "3789dd1b95df409e8bccec720f57d387",
+     "started_ms": 1792532855893,
+     "ended_ms": 1792533175559,
+     "state": "saved",
+     "interruptions": 0,
+     "errors": [],
+     "recording_enabled": true,
+     "log_rows": 5674,
+     "dropped_samples": 20
+    },
+    "tracking": true,
+    "error": "",
+    "scope": "boot"
+   },
+   "can_module": {
+    "present": true,
+    "driver": "mcp251x",
+    "spi": "spi0.0",
+    "up": true,
+    "interrupts": null
+   }
+  },
+  "can_errors": {
+   "frames": 4,
+   "bus_off": 0,
+   "restarts": 0
+  },
+  "ui_clients": 1,
+  "engine_running": false
+ },
+ "logs": {
+  "recording": {
+   "enabled": true,
+   "state": "recording",
+   "file": "frogdash-live-20261020T225951Z-2a4cc25c0095.mlg",
+   "rows": 3285,
+   "dropped": 0,
+   "error": null,
+   "hz": 20
+  },
+  "files": [
+   {
+    "name": "frogdash-live-20261020T225951Z-2a4cc25c0095.mlg",
+    "bytes": 1067845,
+    "modified_ms": 1792537224273,
+    "active": true
+   },
+   {
+    "name": "frogdash-live-20261020T215349Z-c4c0c39829b8.mlg",
+    "bytes": 4119682,
+    "modified_ms": 1792537191773,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261020T215303Z-195a8951b74d.mlg",
+    "bytes": 1357177,
+    "modified_ms": 1792533226400,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261020T214736Z-8d1a3bd3e5ed.mlg",
+    "bytes": 8799781,
+    "modified_ms": 1792533175547,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261020T214525Z-3d2abf7a56ac.mlg",
+    "bytes": 3828811,
+    "modified_ms": 1792532849078,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261020T214435Z-88d4ee5513dd.mlg",
+    "bytes": 1538779,
+    "modified_ms": 1792532723855,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261018T205626Z-a65f6ae26faa.mlg",
+    "bytes": 2769979,
+    "modified_ms": 1792527755012,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261018T204740Z-04f21de3a922.mlg",
+    "bytes": 16066939,
+    "modified_ms": 1792356980128,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261018T202932Z-d90604fa63d5.mlg",
+    "bytes": 33553057,
+    "modified_ms": 1792356460205,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261018T042554Z-7814c656aa00.mlg",
+    "bytes": 5349343,
+    "modified_ms": 1792355370370,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261017T215015Z-68197f9a79ed.mlg",
+    "bytes": 21000973,
+    "modified_ms": 1792297547614,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261017T212421Z-28327775fe1f.mlg",
+    "bytes": 11531506,
+    "modified_ms": 1792273808949,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261017T212204Z-212868a249e5.mlg",
+    "bytes": 4059661,
+    "modified_ms": 1792272255473,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261017T205620Z-334b596ff642.mlg",
+    "bytes": 2963893,
+    "modified_ms": 1792272122666,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261017T203914Z-c8784cafc3c3.mlg",
+    "bytes": 18824827,
+    "modified_ms": 1792270574438,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261017T192035Z-754a91ea20f3.mlg",
+    "bytes": 10348015,
+    "modified_ms": 1792269547476,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261017T184820Z-4158f01a7a14.mlg",
+    "bytes": 2576065,
+    "modified_ms": 1792264829818,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T184330Z-f159a8dfd478.mlg",
+    "bytes": 12354871,
+    "modified_ms": 1792262894126,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T183459Z-1340cd485855.mlg",
+    "bytes": 14537173,
+    "modified_ms": 1792176203886,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T182938Z-b502091a06da.mlg",
+    "bytes": 9672394,
+    "modified_ms": 1792175691537,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T182731Z-0cae0d08b9a0.mlg",
+    "bytes": 2226712,
+    "modified_ms": 1792175376416,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T181111Z-92e346985fc9.mlg",
+    "bytes": 30016435,
+    "modified_ms": 1792175245548,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T175303Z-53077344a3eb.mlg",
+    "bytes": 33553057,
+    "modified_ms": 1792174271597,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T175120Z-ead49c3c36e4.mlg",
+    "bytes": 2594533,
+    "modified_ms": 1792173181802,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T173623Z-7663e92987cf.mlg",
+    "bytes": 16505554,
+    "modified_ms": 1792173074415,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T173331Z-5f7af48294c4.mlg",
+    "bytes": 4582921,
+    "modified_ms": 1792172177414,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T171526Z-b3c4c2476cc6.mlg",
+    "bytes": 3444061,
+    "modified_ms": 1792172005382,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T170806Z-4c3ee3ef493f.mlg",
+    "bytes": 9301495,
+    "modified_ms": 1792170919987,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T010951Z-fcb44d86c46b.mlg",
+    "bytes": 4256653,
+    "modified_ms": 1792170479793,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T010422Z-b461908aee5f.mlg",
+    "bytes": 4679878,
+    "modified_ms": 1792112985686,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T005458Z-8bbcf9dff050.mlg",
+    "bytes": 2786908,
+    "modified_ms": 1792112655600,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T004754Z-381bda6f8d76.mlg",
+    "bytes": 12214822,
+    "modified_ms": 1792112092079,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T004416Z-c4794856ba23.mlg",
+    "bytes": 6015730,
+    "modified_ms": 1792111668581,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T004207Z-9ec93856c1ee.mlg",
+    "bytes": 3778024,
+    "modified_ms": 1792111449398,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T003754Z-02a8e38697b2.mlg",
+    "bytes": 7220767,
+    "modified_ms": 1792111326060,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T003702Z-f608c6805b0a.mlg",
+    "bytes": 1444900,
+    "modified_ms": 1792111067879,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261016T003504Z-e53fbcc89a3b.mlg",
+    "bytes": 3588727,
+    "modified_ms": 1792111020301,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T204409Z-ade860745abe.mlg",
+    "bytes": 2568558,
+    "modified_ms": 1792107267463,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T204158Z-c9548d5f650f.mlg",
+    "bytes": 3318358,
+    "modified_ms": 1791146643347,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T204006Z-da110af47e6e.mlg",
+    "bytes": 2833270,
+    "modified_ms": 1791146512908,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T203949Z-86260a6cd8fd.mlg",
+    "bytes": 351758,
+    "modified_ms": 1791146400628,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T203737Z-02f59a6fb720.mlg",
+    "bytes": 3349654,
+    "modified_ms": 1791146383639,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T203314Z-523f80ccfced.mlg",
+    "bytes": 6772654,
+    "modified_ms": 1791146251768,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T203242Z-59ca6fb92fc1.mlg",
+    "bytes": 746870,
+    "modified_ms": 1791145988772,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T203047Z-45c51cbe45af.mlg",
+    "bytes": 2894558,
+    "modified_ms": 1791145956076,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T202736Z-9de88604b03a.mlg",
+    "bytes": 4877942,
+    "modified_ms": 1791145841239,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T202248Z-6a6eef3390ec.mlg",
+    "bytes": 7411614,
+    "modified_ms": 1791145650340,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T201539Z-e6589759a04a.mlg",
+    "bytes": 11091502,
+    "modified_ms": 1791145362511,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T201126Z-99c7e85e9b89.mlg",
+    "bytes": 6505334,
+    "modified_ms": 1791144933363,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T201114Z-7aca285ec836.mlg",
+    "bytes": 222662,
+    "modified_ms": 1791144680688,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T201002Z-65f7fde362b5.mlg",
+    "bytes": 1778334,
+    "modified_ms": 1791144668320,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T200810Z-dec2089fd8c2.mlg",
+    "bytes": 2826750,
+    "modified_ms": 1791144596468,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T200758Z-4d7198e62eac.mlg",
+    "bytes": 225270,
+    "modified_ms": 1791144484684,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T200746Z-88e396d9703b.mlg",
+    "bytes": 222662,
+    "modified_ms": 1791144472604,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T200729Z-fb7d65b3e152.mlg",
+    "bytes": 337414,
+    "modified_ms": 1791144460080,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T200505Z-8d7e21ca50ab.mlg",
+    "bytes": 3654790,
+    "modified_ms": 1791144443152,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T194335Z-8d36c3c0da1b.mlg",
+    "bytes": 33518998,
+    "modified_ms": 1791144299903,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T192211Z-9864c54520e8.mlg",
+    "bytes": 33554206,
+    "modified_ms": 1791143015763,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T191529Z-54997548ac0f.mlg",
+    "bytes": 10386038,
+    "modified_ms": 1791141725231,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T191417Z-363cc238932b.mlg",
+    "bytes": 1788766,
+    "modified_ms": 1791141323668,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T191406Z-e1c373f1c3aa.mlg",
+    "bytes": 199190,
+    "modified_ms": 1791141251492,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T191008Z-571e3bf2c019.mlg",
+    "bytes": 6080230,
+    "modified_ms": 1791141239356,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T190925Z-1ccd52735bb1.mlg",
+    "bytes": 1035054,
+    "modified_ms": 1791141003004,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T190657Z-6160c153e188.mlg",
+    "bytes": 3773454,
+    "modified_ms": 1791140959888,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T190251Z-8947971586c4.mlg",
+    "bytes": 6330598,
+    "modified_ms": 1791140811820,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T190156Z-df0ba91b7b31.mlg",
+    "bytes": 1342798,
+    "modified_ms": 1791140565544,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T185633Z-66cf0cceb65e.mlg",
+    "bytes": 8337454,
+    "modified_ms": 1791140510718,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T185304Z-73cf7bc7fa40.mlg",
+    "bytes": 5466046,
+    "modified_ms": 1791140191805,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T183118Z-2eec8ae3df06.mlg",
+    "bytes": 33554206,
+    "modified_ms": 1791139984438,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T182850Z-5de8bb35d046.mlg",
+    "bytes": 3740854,
+    "modified_ms": 1791138672169,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T182111Z-a127220d139c.mlg",
+    "bytes": 11523126,
+    "modified_ms": 1791138529431,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T181132Z-5b2472403956.mlg",
+    "bytes": 14996982,
+    "modified_ms": 1791138065591,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T181109Z-bc91858ae6fd.mlg",
+    "bytes": 636030,
+    "modified_ms": 1791137491482,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T014310Z-e590d7acc418.mlg",
+    "bytes": 1945246,
+    "modified_ms": 1791137467934,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T013824Z-139cfd6a879b.mlg",
+    "bytes": 7371190,
+    "modified_ms": 1791078184708,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T013547Z-8f8be989d69f.mlg",
+    "bytes": 3999046,
+    "modified_ms": 1791077898531,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261004T013341Z-57c441dfc205.mlg",
+    "bytes": 3191870,
+    "modified_ms": 1791077741298,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T234253Z-23c36be1811b.mlg",
+    "bytes": 2001318,
+    "modified_ms": 1791077619802,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T233710Z-e8e970b6f9f6.mlg",
+    "bytes": 8859054,
+    "modified_ms": 1790898167763,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T233237Z-aca8539ed31a.mlg",
+    "bytes": 7030846,
+    "modified_ms": 1790897824571,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T232220Z-1651f22cd859.mlg",
+    "bytes": 15994542,
+    "modified_ms": 1790897551379,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T232154Z-bd5fb794873b.mlg",
+    "bytes": 591694,
+    "modified_ms": 1790896934956,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T232030Z-5269157bd0dc.mlg",
+    "bytes": 2093902,
+    "modified_ms": 1790896908448,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T231812Z-3e5f5e10f37a.mlg",
+    "bytes": 3489182,
+    "modified_ms": 1790896823896,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T231540Z-61cc81750439.mlg",
+    "bytes": 3863430,
+    "modified_ms": 1790896686215,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T231158Z-365730e2bef3.mlg",
+    "bytes": 5705982,
+    "modified_ms": 1790896534708,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T230452Z-fcf853495e8e.mlg",
+    "bytes": 11018478,
+    "modified_ms": 1790896312527,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T225617Z-026ed7ac5ea2.mlg",
+    "bytes": 13340902,
+    "modified_ms": 1790895886643,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T225429Z-960eddad912a.mlg",
+    "bytes": 2708086,
+    "modified_ms": 1790895371139,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T225214Z-eb329dc2fa87.mlg",
+    "bytes": 3443542,
+    "modified_ms": 1790895263879,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T225106Z-adfd9c59a0c3.mlg",
+    "bytes": 1698790,
+    "modified_ms": 1790895129272,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T224958Z-d5bb7ba8e22b.mlg",
+    "bytes": 1668798,
+    "modified_ms": 1790895060000,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T224845Z-62147fd820c6.mlg",
+    "bytes": 1816150,
+    "modified_ms": 1790894992680,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T224645Z-2d9ff175dd4e.mlg",
+    "bytes": 3040606,
+    "modified_ms": 1790894919572,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T224121Z-42d61c3921a7.mlg",
+    "bytes": 8373966,
+    "modified_ms": 1790894800176,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T223823Z-10b9114ba801.mlg",
+    "bytes": 4548030,
+    "modified_ms": 1790894475327,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T223508Z-8b5438166142.mlg",
+    "bytes": 4990086,
+    "modified_ms": 1790894297455,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T223456Z-76f6fa608653.mlg",
+    "bytes": 222662,
+    "modified_ms": 1790894102480,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T223006Z-0cb52ac8e3ba.mlg",
+    "bytes": 7474206,
+    "modified_ms": 1790894090587,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T222903Z-848fab9ea561.mlg",
+    "bytes": 1554046,
+    "modified_ms": 1790893800491,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T221949Z-9c9aa49e0d39.mlg",
+    "bytes": 14350198,
+    "modified_ms": 1790893737331,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T220942Z-6ddbf975bb4e.mlg",
+    "bytes": 15736350,
+    "modified_ms": 1790893183503,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T220554Z-059f1f5f1db6.mlg",
+    "bytes": 5861158,
+    "modified_ms": 1790892576943,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T215131Z-67b8bc697816.mlg",
+    "bytes": 22432390,
+    "modified_ms": 1790892349051,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T215039Z-dd1dc08bc0f3.mlg",
+    "bytes": 1274990,
+    "modified_ms": 1790891485848,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T214258Z-bfb0e0c73304.mlg",
+    "bytes": 3555686,
+    "modified_ms": 1790891434097,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T205611Z-8a21afa3ad74.mlg",
+    "bytes": 3674350,
+    "modified_ms": 1790890973074,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T204926Z-01bc62b7ac03.mlg",
+    "bytes": 10472102,
+    "modified_ms": 1790888165310,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T204622Z-a1e79f95f6a1.mlg",
+    "bytes": 4334174,
+    "modified_ms": 1790887764929,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T204453Z-3d703cfe1488.mlg",
+    "bytes": 2229518,
+    "modified_ms": 1790887577077,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T180347Z-5ab257f5115b.mlg",
+    "bytes": 9741862,
+    "modified_ms": 1790887492474,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T180151Z-4ca26ec4603f.mlg",
+    "bytes": 2247774,
+    "modified_ms": 1790877821379,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T180119Z-e954927b3ee3.mlg",
+    "bytes": 741654,
+    "modified_ms": 1790877705416,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T175829Z-cfb17bb90779.mlg",
+    "bytes": 4442406,
+    "modified_ms": 1790877677737,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T175533Z-cc21789d4471.mlg",
+    "bytes": 4545422,
+    "modified_ms": 1790877507558,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T173943Z-79f93c4a5085.mlg",
+    "bytes": 24788718,
+    "modified_ms": 1790877331819,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T171816Z-162b373af1ad.mlg",
+    "bytes": 33554206,
+    "modified_ms": 1790876383535,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T043305Z-fad07c236913.mlg",
+    "bytes": 33554206,
+    "modified_ms": 1790875096835,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T042719Z-57fc6fd89edb.mlg",
+    "bytes": 7895398,
+    "modified_ms": 1790829180905,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T042307Z-ab56482be475.mlg",
+    "bytes": 7004766,
+    "modified_ms": 1790828853779,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T032444Z-7d4c67985343.mlg",
+    "bytes": 1078086,
+    "modified_ms": 1790828586179,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T032244Z-1388b0268be8.mlg",
+    "bytes": 2968886,
+    "modified_ms": 1790825075896,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T031111Z-50dbf1babe80.mlg",
+    "bytes": 17980534,
+    "modified_ms": 1790824958965,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T024927Z-822aa3f8f553.mlg",
+    "bytes": 33554206,
+    "modified_ms": 1790824271669,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T024908Z-fea65f0794ec.mlg",
+    "bytes": 414350,
+    "modified_ms": 1790822961775,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T023856Z-10389c2f6ff2.mlg",
+    "bytes": 15967158,
+    "modified_ms": 1790822946752,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T021713Z-211ffa98a7f8.mlg",
+    "bytes": 33554206,
+    "modified_ms": 1790822336709,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T020438Z-2d499e2813d8.mlg",
+    "bytes": 9711870,
+    "modified_ms": 1790821027885,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T020100Z-f9c59cbd8a04.mlg",
+    "bytes": 5566454,
+    "modified_ms": 1790820273376,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261001T020028Z-a334a6de20ed.mlg",
+    "bytes": 862926,
+    "modified_ms": 1790820059401,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T234717Z-2434bc30203a.mlg",
+    "bytes": 6278438,
+    "modified_ms": 1790820027270,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T234645Z-51e3eac04021.mlg",
+    "bytes": 748174,
+    "modified_ms": 1790812031588,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T234306Z-a4ef34d9b06e.mlg",
+    "bytes": 5215241,
+    "modified_ms": 1790811999769,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T022746Z-179394d338ac.mlg",
+    "bytes": 2375300,
+    "modified_ms": 1790811785060,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T022310Z-115e1d5d4328.mlg",
+    "bytes": 6586247,
+    "modified_ms": 1790735260909,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T020003Z-975e463cfc77.mlg",
+    "bytes": 33554201,
+    "modified_ms": 1790734990749,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T014905Z-9a89ddb97bd7.mlg",
+    "bytes": 15936653,
+    "modified_ms": 1790733602490,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T013322Z-4b2d8727c011.mlg",
+    "bytes": 22391504,
+    "modified_ms": 1790732944290,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T012405Z-bcb0c57d54d0.mlg",
+    "bytes": 13369946,
+    "modified_ms": 1790731996298,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T010339Z-06507a57b32b.mlg",
+    "bytes": 29020451,
+    "modified_ms": 1790731444069,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T010027Z-db90bbe9d8dd.mlg",
+    "bytes": 3973598,
+    "modified_ms": 1790730213498,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T005620Z-25fc1ebe5b2b.mlg",
+    "bytes": 5244257,
+    "modified_ms": 1790730021710,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T004834Z-c00f96dc727e.mlg",
+    "bytes": 10781477,
+    "modified_ms": 1790729774871,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T003822Z-40be8c026f6f.mlg",
+    "bytes": 14552348,
+    "modified_ms": 1790729302608,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T003450Z-1e4e1d75b5a8.mlg",
+    "bytes": 5118521,
+    "modified_ms": 1790728700864,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T003152Z-e4ff8dce80b6.mlg",
+    "bytes": 4329044,
+    "modified_ms": 1790728489426,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T002526Z-090884fb947a.mlg",
+    "bytes": 9362111,
+    "modified_ms": 1790728311326,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260930T000153Z-2c57c964bf45.mlg",
+    "bytes": 33554201,
+    "modified_ms": 1790727926371,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T235337Z-38147c4b564f.mlg",
+    "bytes": 11931236,
+    "modified_ms": 1790726508914,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T233854Z-7bc3f9044669.mlg",
+    "bytes": 21378362,
+    "modified_ms": 1790726016444,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T231758Z-adebd8e8c273.mlg",
+    "bytes": 30392666,
+    "modified_ms": 1790725133302,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T225453Z-9af7c23c1f5a.mlg",
+    "bytes": 33554201,
+    "modified_ms": 1790723878585,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T223147Z-7901af31204d.mlg",
+    "bytes": 33554201,
+    "modified_ms": 1790722493086,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T223131Z-e0d6261c64a5.mlg",
+    "bytes": 408257,
+    "modified_ms": 1790721106397,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T222241Z-757e28257f3b.mlg",
+    "bytes": 12836777,
+    "modified_ms": 1790721090517,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T220026Z-71b2a5f082cb.mlg",
+    "bytes": 32321021,
+    "modified_ms": 1790720560655,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T215534Z-1e9604188391.mlg",
+    "bytes": 7083146,
+    "modified_ms": 1790719224944,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T215206Z-88fad42c0382.mlg",
+    "bytes": 4627667,
+    "modified_ms": 1790718933058,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T212737Z-bb36f067f601.mlg",
+    "bytes": 1166300,
+    "modified_ms": 1790718721763,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T212710Z-d88875f94d2a.mlg",
+    "bytes": 673028,
+    "modified_ms": 1790717256568,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T211232Z-200abb170549.mlg",
+    "bytes": 21155906,
+    "modified_ms": 1790717225068,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20260929T204926Z-99944fb12573.mlg",
+    "bytes": 33554201,
+    "modified_ms": 1790716352333,
+    "active": false
+   }
+  ]
+ },
+ "state": null,
+ "firmware": {
+  "gateway": {
+   "name": "gateway",
+   "label": "Gateway",
+   "title": "Gateway firmware",
+   "warning": "Speed, fuel, wheel buttons and interior lights pause for about a minute.",
+   "installed": null,
+   "can_restart": false,
+   "on_trial": false,
+   "available": "fcbb2a6f",
+   "can_install": false,
+   "new": false,
+   "note": "The gateway is not answering. Firmware from before this feature must be replaced once by USB",
+   "short": "not answering",
+   "job": {
+    "state": "idle",
+    "message": "",
+    "progress": 0.0
+   }
+  },
+  "taillights": {
+   "name": "taillights",
+   "label": "Taillight controller",
+   "title": "Taillight firmware",
+   "warning": "Lights off and foot off the brake: the taillights stay dark for a few minutes, and any light switched on stops the update.",
+   "installed": null,
+   "can_restart": false,
+   "on_trial": false,
+   "available": "ab15a48e",
+   "can_install": false,
+   "new": false,
+   "note": "The taillight controller is not answering. Firmware from before this feature must be replaced once by USB",
+   "short": "not answering",
+   "job": {
+    "state": "running",
+    "message": "Sending: 584 of 1021 KB \u00b7 4.3 KB/s \u00b7 about 1 min 42 s left",
+    "progress": 0.515
+   }
+  },
+  "watermeth": {
+   "name": "watermeth",
+   "label": "Water/meth controller",
+   "title": "Water/meth firmware",
+   "warning": "Engine off: injection is off for about a minute, and the controller stops the update if boost comes up.",
+   "installed": null,
+   "can_restart": false,
+   "on_trial": false,
+   "available": "3a02a951",
+   "can_install": false,
+   "new": false,
+   "note": "No answer. That is normal with the Nano board, which is updated by USB; the ESP32 board answers here once it is fitted",
+   "short": "no answer (normal with the Nano board)",
+   "job": {
+    "state": "idle",
+    "message": "",
+    "progress": 0.0
+   }
+  }
+ },
+ "gps": {
+  "services": [
+   "active",
+   "active"
+  ],
+  "gpsd_config": "START_DAEMON=\"true\"\nDEVICES=\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\"\nGPSD_OPTIONS=\"-n\"\nUSBAUTO=\"false\"\n",
+  "serial_ports": "total 0\nlrwxrwxrwx 1 root root 13 Oct 20 15:53 usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00 -> ../../ttyACM1\n",
+  "usb": "Bus 002 Device 003: ID 05e3:0626 Genesys Logic, Inc. Hub\nBus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub\nBus 001 Device 012: ID 0bda:c820 Realtek Semiconductor Corp. 802.11ac NIC\nBus 001 Device 011: ID 046d:c52f Logitech, Inc. Nano Receiver\nBus 001 Device 010: ID 1546:01a7 U-Blox AG [u-blox 7]\nBus 001 Device 009: ID 258a:002a SINO WEALTH Gaming KB \nBus 001 Device 008: ID 05e3:0610 Genesys Logic, Inc. Hub\nBus 001 Device 002: ID 2109:3431 VIA Labs, Inc. Hub\nBus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub\n",
+  "gpspipe": "{\"class\":\"VERSION\",\"release\":\"3.22\",\"rev\":\"3.22\",\"proto_major\":3,\"proto_minor\":14}\n{\"class\":\"DEVICES\",\"devices\":[{\"class\":\"DEVICE\",\"path\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"driver\":\"u-blox\",\"subtype\":\"SW 1.00 (59842),HW 00070000\",\"subtype1\":\"PROTVER 14.00,GPS;SBAS;GLO;QZSS\",\"activated\":\"2026-10-20T23:00:24.201Z\",\"flags\":1,\"native\":1,\"bps\":9600,\"parity\":\"N\",\"stopbits\":1,\"cycle\":1.00,\"mincycle\":0.02}]}\n{\"class\":\"WATCH\",\"enable\":true,\"json\":true,\"nmea\":false,\"raw\":0,\"scaled\":false,\"timing\":false,\"split24\":false,\"pps\":false}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-10-20T23:00:25.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.075919894,\"lon\":-108.563699785,\"altHAE\":1407.2096,\"altMSL\":1426.0872,\"alt\":1426.0872,\"epx\":7.411,\"epy\":8.292,\"epv\":24.106,\"track\":179.6655,\"magtrack\":189.2461,\"magvar\":9.6,\"speed\":0.012,\"climb\":0.031,\"eps\":0.19,\"epc\":48.21,\"ecefx\":-1578788.39,\"ecefy\":-4701070.69,\"ecefz\":3999757.17,\"ecefvx\":0.01,\"ecefvy\":0.02,\"ecefvz\":-0.01,\"ecefpAcc\":9.15,\"ecefvAcc\":0.19,\"velN\":-0.012,\"velE\":0.000,\"velD\":-0.031,\"geoidSep\":-18.878,\"eph\":14.050,\"sep\":24.371}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-10-20T23:00:25.000Z\",\"xdop\":0.49,\"ydop\":0.55,\"vdop\":1.08,\"tdop\":0.61,\"hdop\":0.74,\"gdop\":1.45,\"pdop\":1.31,\"nSat\":20,\"uSat\":11,\"satellites\":[{\"PRN\":1,\"el\":4.0,\"az\":124.0,\"ss\":13.0,\"used\":false,\"gnssid\":0,\"svid\":1,\"health\":1},{\"PRN\":2,\"el\":15.0,\"az\":103.0,\"ss\":24.0,\"used\":true,\"gnssid\":0,\"svid\":2,\"health\":1},{\"PRN\":4,\"el\":3.0,\"az\":158.0,\"ss\":20.0,\"used\":false,\"gnssid\":0,\"svid\":4,\"health\":1},{\"PRN\":5,\"el\":7.0,\"az\":294.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":5,\"health\":1},{\"PRN\":7,\"el\":72.0,\"az\":70.0,\"ss\":25.0,\"used\":true,\"gnssid\":0,\"svid\":7,\"health\":1},{\"PRN\":8,\"el\":44.0,\"az\":60.0,\"ss\":35.0,\"used\":true,\"gnssid\":0,\"svid\":8,\"health\":1},{\"PRN\":9,\"el\":31.0,\"az\":176.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":9,\"health\":1},{\"PRN\":14,\"el\":49.0,\"az\":263.0,\"ss\":20.0,\"used\":true,\"gnssid\":0,\"svid\":14,\"health\":1},{\"PRN\":17,\"el\":16.0,\"az\":194.0,\"ss\":40.0,\"used\":true,\"gnssid\":0,\"svid\":17,\"health\":1},{\"PRN\":20,\"el\":15.0,\"az\":320.0,\"ss\":28.0,\"used\":true,\"gnssid\":0,\"svid\":20,\"health\":1},{\"PRN\":21,\"el\":11.0,\"az\":263.0,\"ss\":8.0,\"used\":false,\"gnssid\":0,\"svid\":21,\"health\":1},{\"PRN\":22,\"el\":30.0,\"az\":251.0,\"ss\":25.0,\"used\":true,\"gnssid\":0,\"svid\":22,\"health\":1},{\"PRN\":27,\"el\":10.0,\"az\":39.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":27,\"health\":1},{\"PRN\":30,\"el\":62.0,\"az\":319.0,\"ss\":28.0,\"used\":true,\"gnssid\":0,\"svid\":30,\"health\":1},{\"PRN\":46,\"el\":43.0,\"az\":164.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":133,\"health\":1},{\"PRN\":48,\"el\":38.0,\"az\":216.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":135,\"health\":1},{\"PRN\":51,\"el\":45.0,\"az\":178.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":138,\"health\":1},{\"PRN\":193,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":1,\"health\":1},{\"PRN\":194,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":2,\"health\":1},{\"PRN\":195,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":3,\"health\":1}]}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-10-20T23:00:25.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.075919894,\"lon\":-108.563699785,\"altHAE\":1407.2096,\"altMSL\":1426.0872,\"alt\":1426.0872,\"epx\":7.411,\"epy\":8.292,\"epv\":24.106,\"track\":179.6655,\"magtrack\":189.2461,\"magvar\":9.6,\"speed\":0.012,\"climb\":0.031,\"eps\":16.58,\"epc\":48.21,\"ecefx\":-1578788.39,\"ecefy\":-4701070.69,\"ecefz\":3999757.17,\"ecefvx\":0.01,\"ecefvy\":0.02,\"ecefvz\":-0.01,\"ecefpAcc\":9.15,\"ecefvAcc\":0.19,\"velN\":-0.012,\"velE\":0.000,\"velD\":-0.031,\"geoidSep\":-18.878,\"eph\":14.050,\"sep\":24.371}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-10-20T23:00:26.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.075919894,\"lon\":-108.563699785,\"altHAE\":1407.2096,\"altMSL\":1426.0872,\"alt\":1426.0872,\"epx\":7.411,\"epy\":8.292,\"epv\":24.106,\"track\":179.6655,\"magtrack\":189.2461,\"magvar\":9.6,\"speed\":0.012,\"climb\":0.031,\"eps\":0.20,\"epc\":48.21,\"ecefx\":-1578788.41,\"ecefy\":-4701070.62,\"ecefz\":3999757.20,\"ecefvx\":0.00,\"ecefvy\":0.02,\"ecefvz\":-0.01,\"ecefpAcc\":9.15,\"ecefvAcc\":0.20,\"velN\":-0.012,\"velE\":0.000,\"velD\":-0.031,\"geoidSep\":-18.878,\"eph\":14.050,\"sep\":24.371}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-10-20T23:00:26.000Z\",\"xdop\":0.49,\"ydop\":0.55,\"vdop\":1.08,\"tdop\":0.61,\"hdop\":0.74,\"gdop\":1.45,\"pdop\":1.31,\"nSat\":20,\"uSat\":11,\"satellites\":[{\"PRN\":1,\"el\":4.0,\"az\":124.0,\"ss\":12.0,\"used\":false,\"gnssid\":0,\"svid\":1,\"health\":1},{\"PRN\":2,\"el\":15.0,\"az\":103.0,\"ss\":25.0,\"used\":true,\"gnssid\":0,\"svid\":2,\"health\":1},{\"PRN\":4,\"el\":3.0,\"az\":158.0,\"ss\":20.0,\"used\":false,\"gnssid\":0,\"svid\":4,\"health\":1},{\"PRN\":5,\"el\":7.0,\"az\":294.0,\"ss\":24.0,\"used\":true,\"gnssid\":0,\"svid\":5,\"health\":1},{\"PRN\":7,\"el\":72.0,\"az\":70.0,\"ss\":26.0,\"used\":true,\"gnssid\":0,\"svid\":7,\"health\":1},{\"PRN\":8,\"el\":44.0,\"az\":60.0,\"ss\":35.0,\"used\":true,\"gnssid\":0,\"svid\":8,\"health\":1},{\"PRN\":9,\"el\":31.0,\"az\":176.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":9,\"health\":1},{\"PRN\":14,\"el\":49.0,\"az\":263.0,\"ss\":19.0,\"used\":true,\"gnssid\":0,\"svid\":14,\"health\":1},{\"PRN\":17,\"el\":16.0,\"az\":194.0,\"ss\":40.0,\"used\":true,\"gnssid\":0,\"svid\":17,\"health\":1},{\"PRN\":20,\"el\":15.0,\"az\":320.0,\"ss\":28.0,\"used\":true,\"gnssid\":0,\"svid\":20,\"health\":1},{\"PRN\":21,\"el\":11.0,\"az\":263.0,\"ss\":7.0,\"used\":false,\"gnssid\":0,\"svid\":21,\"health\":1},{\"PRN\":22,\"el\":30.0,\"az\":251.0,\"ss\":24.0,\"used\":true,\"gnssid\":0,\"svid\":22,\"health\":1},{\"PRN\":27,\"el\":10.0,\"az\":39.0,\"ss\":22.0,\"used\":true,\"gnssid\":0,\"svid\":27,\"health\":1},{\"PRN\":30,\"el\":62.0,\"az\":319.0,\"ss\":28.0,\"used\":true,\"gnssid\":0,\"svid\":30,\"health\":1},{\"PRN\":46,\"el\":43.0,\"az\":164.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":133,\"health\":1},{\"PRN\":48,\"el\":38.0,\"az\":216.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":135,\"health\":1},{\"PRN\":51,\"el\":45.0,\"az\":178.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":138,\"health\":1},{\"PRN\":193,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":1,\"health\":1},{\"PRN\":194,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":2,\"health\":1},{\"PRN\":195,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":3,\"health\":1}]}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-10-20T23:00:27.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.075919894,\"lon\":-108.563699785,\"altHAE\":1407.2096,\"altMSL\":1426.0872,\"alt\":1426.0872,\"epx\":7.411,\"epy\":8.292,\"epv\":24.106,\"track\":179.6655,\"magtrack\":189.2461,\"magvar\":9.6,\"speed\":0.012,\"climb\":0.031,\"eps\":0.26,\"epc\":48.21,\"ecefx\":-1578788.43,\"ecefy\":-4701070.46,\"ecefz\":3999757.19,\"ecefvx\":-0.01,\"ecefvy\":0.02,\"ecefvz\":-0.01,\"ecefpAcc\":9.15,\"ecefvAcc\":0.26,\"velN\":-0.012,\"velE\":0.000,\"velD\":-0.031,\"geoidSep\":-18.878,\"eph\":14.050,\"sep\":24.371}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-10-20T23:00:27.000Z\",\"xdop\":0.50,\"ydop\":0.65,\"vdop\":1.08,\"tdop\":0.61,\"hdop\":0.74,\"gdop\":1.45,\"pdop\":1.31,\"nSat\":20,\"uSat\":10,\"satellites\":[{\"PRN\":1,\"el\":4.0,\"az\":124.0,\"ss\":12.0,\"used\":false,\"gnssid\":0,\"svid\":1,\"health\":1},{\"PRN\":2,\"el\":15.0,\"az\":103.0,\"ss\":26.0,\"used\":true,\"gnssid\":0,\"svid\":2,\"health\":1},{\"PRN\":4,\"el\":3.0,\"az\":158.0,\"ss\":20.0,\"used\":false,\"gnssid\":0,\"svid\":4,\"health\":1},{\"PRN\":5,\"el\":7.0,\"az\":294.0,\"ss\":24.0,\"used\":true,\"gnssid\":0,\"svid\":5,\"health\":1},{\"PRN\":7,\"el\":72.0,\"az\":70.0,\"ss\":26.0,\"used\":true,\"gnssid\":0,\"svid\":7,\"health\":1},{\"PRN\":8,\"el\":44.0,\"az\":60.0,\"ss\":35.0,\"used\":true,\"gnssid\":0,\"svid\":8,\"health\":1},{\"PRN\":9,\"el\":31.0,\"az\":176.0,\"ss\":23.0,\"used\":false,\"gnssid\":0,\"svid\":9,\"health\":1},{\"PRN\":14,\"el\":49.0,\"az\":263.0,\"ss\":19.0,\"used\":true,\"gnssid\":0,\"svid\":14,\"health\":1},{\"PRN\":17,\"el\":16.0,\"az\":194.0,\"ss\":40.0,\"used\":true,\"gnssid\":0,\"svid\":17,\"health\":1},{\"PRN\":20,\"el\":15.0,\"az\":320.0,\"ss\":27.0,\"used\":true,\"gnssid\":0,\"svid\":20,\"health\":1},{\"PRN\":21,\"el\":11.0,\"az\":263.0,\"ss\":7.0,\"used\":false,\"gnssid\":0,\"svid\":21,\"health\":1},{\"PRN\":22,\"el\":30.0,\"az\":251.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":22,\"health\":1},{\"PRN\":27,\"el\":10.0,\"az\":39.0,\"ss\":22.0,\"used\":true,\"gnssid\":0,\"svid\":27,\"health\":1},{\"PRN\":30,\"el\":62.0,\"az\":319.0,\"ss\":28.0,\"used\":true,\"gnssid\":0,\"svid\":30,\"health\":1},{\"PRN\":46,\"el\":43.0,\"az\":164.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":133,\"health\":1},{\"PRN\":48,\"el\":38.0,\"az\":216.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":135,\"health\":1},{\"PRN\":51,\"el\":45.0,\"az\":178.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":138,\"health\":1},{\"PRN\":193,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":1,\"health\":1},{\"PRN\":194,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":2,\"health\":1},{\"PRN\":195,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":3,\"health\":1}]}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-10-20T23:00:27.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.075919894,\"lon\":-108.563699785,\"altHAE\":1407.2096,\"altMSL\":1426.0872,\"alt\":1426.0872,\"epx\":7.450,\"epy\":9.684,\"epv\":24.106,\"track\":179.6655,\"magtrack\":189.2461,\"magvar\":9.6,\"speed\":0.012,\"climb\":0.031,\"eps\":17.98,\"epc\":48.21,\"ecefx\":-1578788.43,\"ecefy\":-4701070.46,\"ecefz\":3999757.19,\"ecefvx\":-0.01,\"ecefvy\":0.02,\"ecefvz\":-0.01,\"ecefpAcc\":9.15,\"ecefvAcc\":0.26,\"velN\":-0.012,\"velE\":0.000,\"velD\":-0.031,\"geoidSep\":-18.878,\"eph\":14.050,\"sep\":24.371}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-10-20T23:00:28.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.075919894,\"lon\":-108.563699785,\"altHAE\":1407.2096,\"altMSL\":1426.0872,\"alt\":1426.0872,\"epx\":7.450,\"epy\":9.684,\"epv\":24.106,\"track\":179.6655,\"magtrack\":189.2461,\"magvar\":9.6,\"speed\":0.012,\"climb\":0.031,\"eps\":0.25,\"epc\":48.21,\"ecefx\":-1578788.44,\"ecefy\":-4701070.32,\"ecefz\":3999757.20,\"ecefvx\":0.01,\"ecefvy\":0.04,\"ecefvz\":0.01,\"ecefpAcc\":9.15,\"ecefvAcc\":0.25,\"velN\":-0.012,\"velE\":0.000,\"velD\":-0.031,\"geoidSep\":-18.878,\"eph\":14.050,\"sep\":24.371}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-10-20T23:00:28.000Z\",\"xdop\":0.50,\"ydop\":0.65,\"vdop\":1.08,\"tdop\":0.63,\"hdop\":0.81,\"gdop\":1.49,\"pdop\":1.35,\"nSat\":20,\"uSat\":10,\"satellites\":[{\"PRN\":1,\"el\":4.0,\"az\":124.0,\"ss\":12.0,\"used\":false,\"gnssid\":0,\"svid\":1,\"health\":1},{\"PRN\":2,\"el\":15.0,\"az\":103.0,\"ss\":26.0,\"used\":true,\"gnssid\":0,\"svid\":2,\"health\":1},{\"PRN\":4,\"el\":3.0,\"az\":158.0,\"ss\":20.0,\"used\":false,\"gnssid\":0,\"svid\":4,\"health\":1},{\"PRN\":5,\"el\":7.0,\"az\":294.0,\"ss\":25.0,\"used\":true,\"gnssid\":0,\"svid\":5,\"health\":1},{\"PRN\":7,\"el\":72.0,\"az\":70.0,\"ss\":26.0,\"used\":true,\"gnssid\":0,\"svid\":7,\"health\":1},{\"PRN\":8,\"el\":44.0,\"az\":60.0,\"ss\":36.0,\"used\":true,\"gnssid\":0,\"svid\":8,\"health\":1},{\"PRN\":9,\"el\":31.0,\"az\":176.0,\"ss\":22.0,\"used\":false,\"gnssid\":0,\"svid\":9,\"health\":1},{\"PRN\":14,\"el\":49.0,\"az\":263.0,\"ss\":18.0,\"used\":true,\"gnssid\":0,\"svid\":14,\"health\":1},{\"PRN\":17,\"el\":16.0,\"az\":194.0,\"ss\":40.0,\"used\":true,\"gnssid\":0,\"svid\":17,\"health\":1},{\"PRN\":20,\"el\":15.0,\"az\":320.0,\"ss\":27.0,\"used\":true,\"gnssid\":0,\"svid\":20,\"health\":1},{\"PRN\":21,\"el\":11.0,\"az\":263.0,\"ss\":7.0,\"used\":false,\"gnssid\":0,\"svid\":21,\"health\":1},{\"PRN\":22,\"el\":30.0,\"az\":251.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":22,\"health\":1},{\"PRN\":27,\"el\":10.0,\"az\":39.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":27,\"health\":1},{\"PRN\":30,\"el\":62.0,\"az\":319.0,\"ss\":29.0,\"used\":true,\"gnssid\":0,\"svid\":30,\"health\":1},{\"PRN\":46,\"el\":43.0,\"az\":164.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":133,\"health\":1},{\"PRN\":48,\"el\":38.0,\"az\":216.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":135,\"health\":1},{\"PRN\":51,\"el\":45.0,\"az\":178.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":138,\"health\":1},{\"PRN\":193,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":1,\"health\":1},{\"PRN\":194,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":2,\"health\":1},{\"PRN\":195,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":3,\"health\":1}]}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-10-20T23:00:29.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.075919894,\"lon\":-108.563699785,\"altHAE\":1407.2096,\"altMSL\":1426.0872,\"alt\":1426.0872,\"epx\":7.450,\"epy\":9.684,\"epv\":24.106,\"track\":179.6655,\"magtrack\":189.2461,\"magvar\":9.6,\"speed\":0.012,\"climb\":0.031,\"eps\":0.30,\"epc\":48.21,\"ecefx\":-1578788.46,\"ecefy\":-4701070.16,\"ecefz\":3999757.19,\"ecefvx\":-0.02,\"ecefvy\":0.04,\"ecefvz\":0.00,\"ecefpAcc\":9.15,\"ecefvAcc\":0.30,\"velN\":-0.012,\"velE\":0.000,\"velD\":-0.031,\"geoidSep\":-18.878,\"eph\":14.050,\"sep\":24.371}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-10-20T23:00:29.000Z\",\"xdop\":0.50,\"ydop\":0.65,\"vdop\":1.08,\"tdop\":0.63,\"hdop\":0.81,\"gdop\":1.49,\"pdop\":1.35,\"nSat\":20,\"uSat\":10,\"satellites\":[{\"PRN\":1,\"el\":4.0,\"az\":124.0,\"ss\":12.0,\"used\":false,\"gnssid\":0,\"svid\":1,\"health\":1},{\"PRN\":2,\"el\":15.0,\"az\":103.0,\"ss\":26.0,\"used\":true,\"gnssid\":0,\"svid\":2,\"health\":1},{\"PRN\":4,\"el\":3.0,\"az\":158.0,\"ss\":20.0,\"used\":false,\"gnssid\":0,\"svid\":4,\"health\":1},{\"PRN\":5,\"el\":7.0,\"az\":294.0,\"ss\":24.0,\"used\":true,\"gnssid\":0,\"svid\":5,\"health\":1},{\"PRN\":7,\"el\":72.0,\"az\":70.0,\"ss\":26.0,\"used\":true,\"gnssid\":0,\"svid\":7,\"health\":1},{\"PRN\":8,\"el\":44.0,\"az\":60.0,\"ss\":36.0,\"used\":true,\"gnssid\":0,\"svid\":8,\"health\":1},{\"PRN\":9,\"el\":31.0,\"az\":176.0,\"ss\":21.0,\"used\":false,\"gnssid\":0,\"svid\":9,\"health\":1},{\"PRN\":14,\"el\":49.0,\"az\":263.0,\"ss\":19.0,\"used\":true,\"gnssid\":0,\"svid\":14,\"health\":1},{\"PRN\":17,\"el\":16.0,\"az\":194.0,\"ss\":40.0,\"used\":true,\"gnssid\":0,\"svid\":17,\"health\":1},{\"PRN\":20,\"el\":15.0,\"az\":320.0,\"ss\":27.0,\"used\":true,\"gnssid\":0,\"svid\":20,\"health\":1},{\"PRN\":21,\"el\":11.0,\"az\":263.0,\"ss\":7.0,\"used\":false,\"gnssid\":0,\"svid\":21,\"health\":1},{\"PRN\":22,\"el\":30.0,\"az\":251.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":22,\"health\":1},{\"PRN\":27,\"el\":10.0,\"az\":39.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":27,\"health\":1},{\"PRN\":30,\"el\":62.0,\"az\":319.0,\"ss\":29.0,\"used\":true,\"gnssid\":0,\"svid\":30,\"health\":1},{\"PRN\":46,\"el\":43.0,\"az\":164.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":133,\"health\":1},{\"PRN\":48,\"el\":38.0,\"az\":216.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":135,\"health\":1},{\"PRN\":51,\"el\":45.0,\"az\":178.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":138,\"health\":1},{\"PRN\":193,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":1,\"health\":1},{\"PRN\":194,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":2,\"health\":1},{\"PRN\":195,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":3,\"health\":1}]}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-10-20T23:00:29.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.075919894,\"lon\":-108.563699785,\"altHAE\":1407.2096,\"altMSL\":1426.0872,\"alt\":1426.0872,\"epx\":7.450,\"epy\":9.684,\"epv\":24.106,\"track\":179.6655,\"magtrack\":189.2461,\"magvar\":9.6,\"speed\":0.012,\"climb\":0.031,\"eps\":19.37,\"epc\":48.21,\"ecefx\":-1578788.46,\"ecefy\":-4701070.16,\"ecefz\":3999757.19,\"ecefvx\":-0.02,\"ecefvy\":0.04,\"ecefvz\":0.00,\"ecefpAcc\":9.15,\"ecefvAcc\":0.30,\"velN\":-0.012,\"velE\":0.000,\"velD\":-0.031,\"geoidSep\":-18.878,\"eph\":14.050,\"sep\":24.371}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-10-20T23:00:30.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.075919894,\"lon\":-108.563699785,\"altHAE\":1407.2096,\"altMSL\":1426.0872,\"alt\":1426.0872,\"epx\":7.450,\"epy\":9.684,\"epv\":24.106,\"track\":179.6655,\"magtrack\":189.2461,\"magvar\":9.6,\"speed\":0.012,\"climb\":0.031,\"eps\":0.22,\"epc\":48.21,\"ecefx\":-1578788.49,\"ecefy\":-4701070.14,\"ecefz\":3999757.23,\"ecefvx\":0.02,\"ecefvy\":0.02,\"ecefvz\":-0.01,\"ecefpAcc\":9.15,\"ecefvAcc\":0.22,\"velN\":-0.012,\"velE\":0.000,\"velD\":-0.031,\"geoidSep\":-18.878,\"eph\":14.050,\"sep\":24.371}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-10-20T23:00:30.000Z\",\"xdop\":0.49,\"ydop\":0.55,\"vdop\":1.08,\"tdop\":0.63,\"hdop\":0.81,\"gdop\":1.49,\"pdop\":1.35,\"nSat\":20,\"uSat\":11,\"satellites\":[{\"PRN\":1,\"el\":4.0,\"az\":124.0,\"ss\":12.0,\"used\":false,\"gnssid\":0,\"svid\":1,\"health\":1},{\"PRN\":2,\"el\":15.0,\"az\":103.0,\"ss\":26.0,\"used\":true,\"gnssid\":0,\"svid\":2,\"health\":1},{\"PRN\":4,\"el\":3.0,\"az\":158.0,\"ss\":21.0,\"used\":false,\"gnssid\":0,\"svid\":4,\"health\":1},{\"PRN\":5,\"el\":7.0,\"az\":294.0,\"ss\":24.0,\"used\":true,\"gnssid\":0,\"svid\":5,\"health\":1},{\"PRN\":7,\"el\":72.0,\"az\":70.0,\"ss\":26.0,\"used\":true,\"gnssid\":0,\"svid\":7,\"health\":1},{\"PRN\":8,\"el\":44.0,\"az\":60.0,\"ss\":36.0,\"used\":true,\"gnssid\":0,\"svid\":8,\"health\":1},{\"PRN\":9,\"el\":31.0,\"az\":176.0,\"ss\":22.0,\"used\":true,\"gnssid\":0,\"svid\":9,\"health\":1},{\"PRN\":14,\"el\":49.0,\"az\":263.0,\"ss\":18.0,\"used\":true,\"gnssid\":0,\"svid\":14,\"health\":1},{\"PRN\":17,\"el\":16.0,\"az\":194.0,\"ss\":40.0,\"used\":true,\"gnssid\":0,\"svid\":17,\"health\":1},{\"PRN\":20,\"el\":15.0,\"az\":320.0,\"ss\":27.0,\"used\":true,\"gnssid\":0,\"svid\":20,\"health\":1},{\"PRN\":21,\"el\":11.0,\"az\":263.0,\"ss\":7.0,\"used\":false,\"gnssid\":0,\"svid\":21,\"health\":1},{\"PRN\":22,\"el\":30.0,\"az\":251.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":22,\"health\":1},{\"PRN\":27,\"el\":10.0,\"az\":39.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":27,\"health\":1},{\"PRN\":30,\"el\":62.0,\"az\":319.0,\"ss\":29.0,\"used\":true,\"gnssid\":0,\"svid\":30,\"health\":1},{\"PRN\":46,\"el\":43.0,\"az\":164.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":133,\"health\":1},{\"PRN\":48,\"el\":38.0,\"az\":216.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":135,\"health\":1},{\"PRN\":51,\"el\":45.0,\"az\":178.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":138,\"health\":1},{\"PRN\":193,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":1,\"health\":1},{\"PRN\":194,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":2,\"health\":1},{\"PRN\":195,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":3,\"health\":1}]}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-10-20T23:00:31.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.075919894,\"lon\":-108.563699785,\"altHAE\":1407.2096,\"altMSL\":1426.0872,\"alt\":1426.0872,\"epx\":7.411,\"epy\":8.292,\"epv\":24.106,\"track\":179.6655,\"magtrack\":189.2461,\"magvar\":9.6,\"speed\":0.012,\"climb\":0.031,\"eps\":0.31,\"epc\":48.21,\"ecefx\":-1578788.47,\"ecefy\":-4701070.07,\"ecefz\":3999757.18,\"ecefvx\":0.03,\"ecefvy\":-0.01,\"ecefvz\":-0.03,\"ecefpAcc\":9.15,\"ecefvAcc\":0.31,\"velN\":-0.012,\"velE\":0.000,\"velD\":-0.031,\"geoidSep\":-18.878,\"eph\":14.050,\"sep\":24.371}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-10-20T23:00:31.000Z\",\"xdop\":0.49,\"ydop\":0.55,\"vdop\":1.08,\"tdop\":0.61,\"hdop\":0.74,\"gdop\":1.45,\"pdop\":1.31,\"nSat\":20,\"uSat\":11,\"satellites\":[{\"PRN\":1,\"el\":4.0,\"az\":124.0,\"ss\":12.0,\"used\":false,\"gnssid\":0,\"svid\":1,\"health\":1},{\"PRN\":2,\"el\":15.0,\"az\":103.0,\"ss\":25.0,\"used\":true,\"gnssid\":0,\"svid\":2,\"health\":1},{\"PRN\":4,\"el\":3.0,\"az\":158.0,\"ss\":21.0,\"used\":false,\"gnssid\":0,\"svid\":4,\"health\":1},{\"PRN\":5,\"el\":7.0,\"az\":294.0,\"ss\":25.0,\"used\":true,\"gnssid\":0,\"svid\":5,\"health\":1},{\"PRN\":7,\"el\":72.0,\"az\":70.0,\"ss\":26.0,\"used\":true,\"gnssid\":0,\"svid\":7,\"health\":1},{\"PRN\":8,\"el\":44.0,\"az\":60.0,\"ss\":36.0,\"used\":true,\"gnssid\":0,\"svid\":8,\"health\":1},{\"PRN\":9,\"el\":31.0,\"az\":176.0,\"ss\":21.0,\"used\":true,\"gnssid\":0,\"svid\":9,\"health\":1},{\"PRN\":14,\"el\":49.0,\"az\":263.0,\"ss\":18.0,\"used\":true,\"gnssid\":0,\"svid\":14,\"health\":1},{\"PRN\":17,\"el\":16.0,\"az\":194.0,\"ss\":40.0,\"used\":true,\"gnssid\":0,\"svid\":17,\"health\":1},{\"PRN\":20,\"el\":15.0,\"az\":320.0,\"ss\":27.0,\"used\":true,\"gnssid\":0,\"svid\":20,\"health\":1},{\"PRN\":21,\"el\":11.0,\"az\":263.0,\"ss\":7.0,\"used\":false,\"gnssid\":0,\"svid\":21,\"health\":1},{\"PRN\":22,\"el\":30.0,\"az\":251.0,\"ss\":22.0,\"used\":true,\"gnssid\":0,\"svid\":22,\"health\":1},{\"PRN\":27,\"el\":10.0,\"az\":39.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":27,\"health\":1},{\"PRN\":30,\"el\":62.0,\"az\":319.0,\"ss\":29.0,\"used\":true,\"gnssid\":0,\"svid\":30,\"health\":1},{\"PRN\":46,\"el\":43.0,\"az\":164.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":133,\"health\":1},{\"PRN\":48,\"el\":38.0,\"az\":216.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":135,\"health\":1},{\"PRN\":51,\"el\":45.0,\"az\":178.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":138,\"health\":1},{\"PRN\":193,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":1,\"health\":1},{\"PRN\":194,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":2,\"health\":1},{\"PRN\":195,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":3,\"health\":1}]}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-10-20T23:00:31.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.075919894,\"lon\":-108.563699785,\"altHAE\":1407.2096,\"altMSL\":1426.0872,\"alt\":1426.0872,\"epx\":7.411,\"epy\":8.292,\"epv\":24.106,\"track\":179.6655,\"magtrack\":189.2461,\"magvar\":9.6,\"speed\":0.012,\"climb\":0.031,\"eps\":16.58,\"epc\":48.21,\"ecefx\":-1578788.47,\"ecefy\":-4701070.07,\"ecefz\":3999757.18,\"ecefvx\":0.03,\"ecefvy\":-0.01,\"ecefvz\":-0.03,\"ecefpAcc\":9.15,\"ecefvAcc\":0.31,\"velN\":-0.012,\"velE\":0.000,\"velD\":-0.031,\"geoidSep\":-18.878,\"eph\":14.050,\"sep\":24.371}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-10-20T23:00:32.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.075919894,\"lon\":-108.563699785,\"altHAE\":1407.2096,\"altMSL\":1426.0872,\"alt\":1426.0872,\"epx\":7.411,\"epy\":8.292,\"epv\":24.106,\"track\":179.6655,\"magtrack\":189.2461,\"magvar\":9.6,\"speed\":0.012,\"climb\":0.031,\"eps\":0.31,\"epc\":48.21,\"ecefx\":-1578788.49,\"ecefy\":-4701069.98,\"ecefz\":3999757.17,\"ecefvx\":0.00,\"ecefvy\":0.04,\"ecefvz\":0.01,\"ecefpAcc\":9.16,\"ecefvAcc\":0.31,\"velN\":-0.012,\"velE\":0.000,\"velD\":-0.031,\"geoidSep\":-18.878,\"eph\":14.050,\"sep\":24.371}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-10-20T23:00:32.000Z\",\"xdop\":0.49,\"ydop\":0.55,\"vdop\":1.08,\"tdop\":0.61,\"hdop\":0.74,\"gdop\":1.45,\"pdop\":1.31,\"nSat\":20,\"uSat\":11,\"satellites\":[{\"PRN\":1,\"el\":4.0,\"az\":124.0,\"ss\":8.0,\"used\":false,\"gnssid\":0,\"svid\":1,\"health\":1},{\"PRN\":2,\"el\":15.0,\"az\":103.0,\"ss\":27.0,\"used\":true,\"gnssid\":0,\"svid\":2,\"health\":1},{\"PRN\":4,\"el\":3.0,\"az\":158.0,\"ss\":22.0,\"used\":false,\"gnssid\":0,\"svid\":4,\"health\":1},{\"PRN\":5,\"el\":7.0,\"az\":294.0,\"ss\":25.0,\"used\":true,\"gnssid\":0,\"svid\":5,\"health\":1},{\"PRN\":7,\"el\":72.0,\"az\":70.0,\"ss\":26.0,\"used\":true,\"gnssid\":0,\"svid\":7,\"health\":1},{\"PRN\":8,\"el\":44.0,\"az\":60.0,\"ss\":36.0,\"used\":true,\"gnssid\":0,\"svid\":8,\"health\":1},{\"PRN\":9,\"el\":31.0,\"az\":176.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":9,\"health\":1},{\"PRN\":14,\"el\":49.0,\"az\":263.0,\"ss\":17.0,\"used\":true,\"gnssid\":0,\"svid\":14,\"health\":1},{\"PRN\":17,\"el\":16.0,\"az\":194.0,\"ss\":39.0,\"used\":true,\"gnssid\":0,\"svid\":17,\"health\":1},{\"PRN\":20,\"el\":15.0,\"az\":320.0,\"ss\":25.0,\"used\":true,\"gnssid\":0,\"svid\":20,\"health\":1},{\"PRN\":21,\"el\":11.0,\"az\":263.0,\"ss\":14.0,\"used\":false,\"gnssid\":0,\"svid\":21,\"health\":1},{\"PRN\":22,\"el\":30.0,\"az\":251.0,\"ss\":23.0,\"used\":true,\"gnssid\":0,\"svid\":22,\"health\":1},{\"PRN\":27,\"el\":10.0,\"az\":39.0,\"ss\":25.0,\"used\":true,\"gnssid\":0,\"svid\":27,\"health\":1},{\"PRN\":30,\"el\":62.0,\"az\":319.0,\"ss\":30.0,\"used\":true,\"gnssid\":0,\"svid\":30,\"health\":1},{\"PRN\":46,\"el\":43.0,\"az\":164.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":133,\"health\":1},{\"PRN\":48,\"el\":38.0,\"az\":216.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":135,\"health\":1},{\"PRN\":51,\"el\":45.0,\"az\":178.0,\"ss\":0.0,\"used\":false,\"gnssid\":1,\"svid\":138,\"health\":1},{\"PRN\":193,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":1,\"health\":1},{\"PRN\":194,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":2,\"health\":1},{\"PRN\":195,\"az\":0.0,\"ss\":0.0,\"used\":false,\"gnssid\":5,\"svid\":3,\"health\":1}]}\n"
+ },
+ "can": {
+  "link": "3: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 16 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10\n    link/can  promiscuity 0  allmulti 0 minmtu 0 maxmtu 0 \n    can state ERROR-ACTIVE restart-ms 100 \n\t  bitrate 500000 sample-point 0.750\n\t  tq 250 prop-seg 2 phase-seg1 3 phase-seg2 2 sjw 1 brp 1\n\t  mcp251x: tseg1 3..16 tseg2 2..8 sjw 1..4 brp 1..64 brp_inc 1\n\t  clock 4000000 \n\t  re-started bus-errors arbit-lost error-warn error-pass bus-off\n\t  0          0          0          0          0          0         numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 parentbus spi parentdev spi0.0 \n    RX:  bytes packets errors dropped  missed   mcast           \n        274241   36238      4     587       0       0 \n    TX:  bytes packets errors dropped carrier collsns           \n        772120   98417      0       0       0       0 \n",
+  "traffic_2s": " (1792537232.430193)  can0  303   [8]  00 00 00 00 28 28 FE 00\n (1792537232.458385)  can0  681   [8]  02 02 82 00 05 A4 00 00\n (1792537232.461429)  can0  680   [8]  00 AD 02 E5 AF FF 56 CA\n (1792537232.461925)  can0  680   [8]  01 FE 0C 3C BD 06 AD 05\n (1792537232.462627)  can0  680   [8]  02 E5 B7 05 56 0A FE BD\n (1792537232.470869)  can0  680   [8]  03 05 AD 02 E5 DA FF 56\n (1792537232.471182)  can0  300   [8]  00 00 64 00 00 28 28 00\n (1792537232.471613)  can0  307   [8]  11 00 00 08 00 00 00 00\n (1792537232.472034)  can0  30B   [8]  81 00 08 00 00 21 21 00\n (1792537232.473981)  can0  309   [4]  00 00 00 00\n (1792537232.474345)  can0  680   [8]  04 6A FD CB 32 0C 0B AD\n (1792537232.475048)  can0  680   [8]  05 03 A5 4F FD 16 DA EE\n (1792537232.475630)  can0  680   [8]  06 C2 C4 10 DD 0C BD 06\n (1792537232.476225)  can0  680   [8]  07 AD 02 E5 AC FF 56 BA\n (1792537232.477854)  can0  680   [8]  08 FB 22 C5 10 DD 06 CD\n (1792537232.478241)  can0  680   [8]  09 06 BD 02 AD 07 A5 AB\n (1792537232.478562)  can0  680   [8]  0A FF 56 AA FA DD 03 CD\n (1792537232.479953)  can0  680   [8]  0B 02 BD 06 AD 07 E5 AA\n (1792537232.480311)  can0  680   [8]  0C FF 56 CA F9 DD 06 CD\n (1792537232.480637)  can0  680   [8]  0D 05 BD 05 70 A7 20 25\n (1792537232.480965)  can0  680   [8]  0E D3 FF 46 AB FF 00 36\n (1792537232.481981)  can0  680   [8]  0F 41 00 C1 01 8D 21 01\n (1792537232.482332)  can0  680   [8]  10 8D 88 0C DC 18 A1 FD\n (1792537232.484023)  can0  680   [8]  11 8C BD 02 98 0A CC A9\n (1792537232.484378)  can0  680   [8]  12 20 88 A0 99 08 0C 18\n (1792537232.484711)  can0  680   [8]  13 82 6C 00 1D F0 99 0B\n (1792537232.486011)  can0  680   [8]  14 1B 88 CB AA 4B BB 06\n (1792537232.486393)  can0  680   [8]  15 F9 FF 00 00 00 36 41\n (1792537232.486725)  can0  680   [8]  16 00 20 A2 20 25 AD 48\n (1792537232.487040)  can0  680   [8]  17 A2 C2 08 A5 AC 48 A2\n (1792537232.488265)  can0  680   [8]  18 C2 10 65 AC 48 1D F0\n (1792537232.488612)  can0  680   [8]  19 00 36 41 00 0C 07 4B\n (1792537232.490219)  can0  680   [8]  1A A2 79 02 65 AB 48 CB\n (1792537232.490567)  can0  680   [8]  1B A2 25 AB 48 A2 C2 14\n (1792537232.490908)  can0  680   [8]  1C A5 AA 48 A2 C2 1C E5\n (1792537232.492263)  can0  680   [8]  1D FC FF A2 C2 34 E5 A9\n (1792537232.492592)  can0  680   [8]  1E 48 79 F2 72 62 10 72\n (1792537232.492904)  can0  680   [8]  1F 62 11 72 62 12 72 62\n (1792537232.493202)  can0  680   [8]  20 13 72 62 14 72 62 15\n (1792537232.494161)  can0  680   [8]  21 72 62 16 72 62 17 1D\n (1792537232.494500)  can0  680   [8]  22 F0 00 36 41 00 20 A2\n (1792537232.496013)  can0  680   [8]  23 20 A5 FB FF A2 C2 60\n (1792537232.496332)  can0  680   [8]  24 25 A7 48 A2 C2 68 65\n (1792537232.496657)  can0  680   [8]  25 F9 FF 90 00 00 36 41\n (1792537232.496966)  can0  680   [8]  26 00 AD 02 8C 12 65 CE\n (1792537232.497686)  can0  680   [8]  27 FF 1D F0 36 41 00 16\n (1792537232.497999)  can0  680   [8]  28 32 03 82 22 11 26 18\n (1792537232.498287)  can0  680   [8]  29 1B CB A2 65 FE FC A2\n (1792537232.498575)  can0  680   [8]  2A C2 14 E5 FD FC A2 C2\n (1792537232.498870)  can0  680   [8]  2B 1C A5 FD FF A2 C2 34\n (1792537232.499193)  can0  680   [8]  2C 25 FD FC 4B A2 E5 FC\n (1792537232.499513)  can0  680   [8]  2D FC 82 22 16 72 A0 00\n (1792537232.499818)  can0  680   [8]  2E 56 58 01 B2 A0 60 20\n (1792537232.500117)  can0  680   [8]  2F A2 20 A5 FF 02 1D F0\n (1792537232.500407)  can0  680   [8]  30 70 87 90 A0 A8 B0 25\n (1792537232.500697)  can0  680   [8]  31 FB FF 1B 77 82 22 17\n (1792537232.500996)  can0  680   [8]  32 A2 22 16 87 37 EB E5\n (1792537232.501294)  can0  680   [8]  33 FC 02 86 F6 FF 00 00\n (1792537232.501590)  can0  680   [8]  34 36 41 00 16 02 01 AD\n (1792537232.501888)  can0  680   [8]  35 02 E5 F9 FF A2 C2 60\n (1792537232.502173)  can0  680   [8]  36 E5 F8 FC A2 C2 68 65\n (1792537232.502476)  can0  680   [8]  37 F8 FF 1D F0 00 00 00\n (1792537232.502778)  can0  680   [8]  38 36 41 00 30 B3 20 20\n (1792537232.503065)  can0  680   [8]  39 A2 20 A5 17 FD DC 0A\n (1792537232.503349)  can0  680   [8]  3A 8B B3 8B A2 25 17 FD\n (1792537232.503627)  can0  680   [8]  3B CC 7A B2 C3 10 A2 C2\n (1792537232.504161)  can0  680   [8]  3C 10 65 16 FD 2D 0A 1D\n (1792537232.504459)  can0  680   [8]  3D F0 36 41 00 B2 23 00\n (1792537232.504752)  can0  680   [8]  3E 20 A2 20 E5 AC 01 A0\n (1792537232.505048)  can0  680   [8]  3F 2A 20 1D F0 00 00 00\n (1792537232.505765)  can0  680   [8]  82 02 05 A5 75 4F 40 00\n (1792537232.507575)  can0  681   [8]  02 02 82 00 05 A5 00 00\n (1792537232.509800)  can0  680   [8]  00 36 41 00 B2 A0 01 AD\n (1792537232.510147)  can0  680   [8]  01 02 25 1C FD CC FA 0C\n (1792537232.510463)  can0  680   [8]  02 1B 8B A2 A5 1B FD CC\n (1792537232.510750)  can0  680   [8]  03 6A 0C 0B A2 C2 10 25\n (1792537232.511634)  can0  680   [8]  04 1B FD 2D 0A 1D F0 00\n (1792537232.512064)  can0  680   [8]  05 00 36 61 00 91 A4 8C\n (1792537232.512391)  can0  680   [8]  06 7D 02 88 09 1B 88 89\n (1792537232.512706)  can0  680   [8]  07 09 82 25 04 56 C8 00\n (1792537232.513514)  can0  680   [8]  08 A2 A0 80 A2 DA B0 2D\n (1792537232.513829)  can0  680   [8]  09 0A 1D F0 00 00 00 82\n (1792537232.514149)  can0  680   [8]  0A C4 10 B2 A0 00 80 A8\n (1792537232.514434)  can0  680   [8]  0B 20 89 21 E5 30 FD BD\n (1792537232.515163)  can0  680   [8]  0C 05 8C CA 22 C5 10 0C\n (1792537232.515457)  can0  680   [8]  0D 0B AD 02 25 30 FD CC\n (1792537232.515746)  can0  680   [8]  0E BA BD 04 AD 03 25 F6\n (1792537232.516041)  can0  680   [8]  0F FF 06 F4 FF 00 00 00\n (1792537232.520427)  can0  680   [8]  10 0C 1B AD 02 A5 2E FD\n (1792537232.520850)  can0  680   [8]  11 56 DA FB D2 C4 10 CD\n (1792537232.521147)  can0  680   [8]  12 0D BD 06 AD 07 E5 8B\n (1792537232.521438)  can0  680   [8]  13 FF 56 4A FB 8B 26 D2\n (1792537232.522378)  can0  680   [8]  14 C4 10 CD 06 BD 02 AD\n (1792537232.522674)  can0  680   [8]  15 07 A5 8A FF 56 3A FA\n (1792537232.522964)  can0  680   [8]  16 DD 05 CD 06 BD 06 AD\n (1792537232.523255)  can0  680   [8]  17 07 E5 89 FF 56 5A F9\n (1792537232.523978)  can0  680   [8]  18 8B D5 CD 02 BD 02 AD\n (1792537232.524272)  can0  680   [8]  19 07 E5 88 FF 56 7A F8\n (1792537232.524561)  can0  680   [8]  1A DD 04 CD 06 BD 06 AD\n (1792537232.524844)  can0  680   [8]  1B 07 65 84 FF 56 9A F7\n (1792537232.525554)  can0  680   [8]  1C 8B 84 DD 08 CD 02 20\n (1792537232.525848)  can0  680   [8]  1D B2 20 AD 07 82 61 03\n (1792537232.526161)  can0  680   [8]  1E 25 83 FF 56 5A F6 0C\n (1792537232.526450)  can0  680   [8]  1F 0B AD 06 25 28 FD DC\n (1792537232.527146)  can0  680   [8]  20 DA 0C 0B AD 02 A5 27\n (1792537232.527437)  can0  680   [8]  21 FD CC CA DD 06 CD 04\n (1792537232.527691)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.527923)  can0  680   [8]  22 BD 03 AD 07 A5 BF FF\n (1792537232.528225)  can0  680   [8]  23 46 D1 FF AD 03 65 F0\n (1792537232.528458)  can0  309   [4]  00 00 00 00\n (1792537232.528787)  can0  680   [8]  24 FF 46 CF FF DD 06 C2\n (1792537232.529079)  can0  680   [8]  25 C4 10 B2 C3 10 AD 07\n (1792537232.529370)  can0  680   [8]  26 65 83 FF 56 DA F2 52\n (1792537232.529656)  can0  680   [8]  27 C6 10 DD 06 CD 06 BD\n (1792537232.530398)  can0  680   [8]  28 05 AD 07 65 82 FF 56\n (1792537232.530686)  can0  680   [8]  29 CA F1 82 C6 18 DD 06\n (1792537232.530941)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1792537232.531171)  can0  680   [8]  2A CD 05 BD 08 AD 07 89\n (1792537232.531430)  can0  307   [8]  13 00 00 08 00 00 00 00\n (1792537232.531652)  can0  680   [8]  2B 21 25 81 FF 56 9A F0\n (1792537232.531900)  can0  30B   [8]  83 00 08 00 00 21 21 00\n (1792537232.532259)  can0  680   [8]  2C DD 04 CD 05 BD 05 AD\n (1792537232.532513)  can0  30F   [8]  04 00 00 07 00 02 00 00\n (1792537232.532742)  can0  680   [8]  2D 07 25 80 FF 56 BA EF\n (1792537232.533047)  can0  680   [8]  2E BD 05 AD 06 65 00 FD\n (1792537232.533346)  can0  680   [8]  2F 56 1A EF BD 06 AD 07\n (1792537232.534696)  can0  680   [8]  30 A5 AF FF 56 7A EE DD\n (1792537232.535001)  can0  680   [8]  31 02 CD 02 BD 03 AD 07\n (1792537232.535295)  can0  680   [8]  32 25 7E FF 56 9A ED DD\n (1792537232.535585)  can0  680   [8]  33 06 CD 03 BD 03 AD 07\n (1792537232.536335)  can0  680   [8]  34 65 79 FF 56 BA EC D8\n (1792537232.536628)  can0  680   [8]  35 21 CD 03 BD 03 AD 07\n (1792537232.536916)  can0  680   [8]  36 A5 78 FF 56 DA EB DD\n (1792537232.537206)  can0  680   [8]  37 03 CD 05 BD 05 AD 07\n (1792537232.538511)  can0  501   [4]  00 1F 00 01\n (1792537232.540954)  can0  680   [8]  38 A5 77 FF 56 FA EA DD\n (1792537232.541384)  can0  680   [8]  39 02 CD 05 50 B5 20 AD\n (1792537232.544545)  can0  680   [8]  3A 07 A5 7A FF 56 0A EA\n (1792537232.544852)  can0  680   [8]  3B C8 21 D8 31 BD 0C AD\n (1792537232.546403)  can0  680   [8]  3C 07 A5 79 FF 56 2A E9\n (1792537232.546695)  can0  680   [8]  3D D8 21 CD 05 B2 C3 08\n (1792537232.546982)  can0  680   [8]  3E 70 A7 20 E5 74 FF 86\n (1792537232.547280)  can0  680   [8]  3F A0 FF 00 36 41 03 92\n (1792537232.547592)  can0  680   [8]  82 02 05 A6 DE DD 40 00\n (1792537232.548842)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.549390)  can0  681   [8]  02 02 82 00 05 A6 00 00\n (1792537232.551503)  can0  680   [8]  00 21 69 70 87 20 80 80\n (1792537232.551810)  can0  680   [8]  01 74 99 61 89 71 92 21\n (1792537232.552111)  can0  680   [8]  02 6A 81 51 88 99 81 C0\n (1792537232.552398)  can0  680   [8]  03 20 00 98 08 82 A1 4C\n (1792537232.553162)  can0  680   [8]  04 82 C8 30 1A 88 69 51\n (1792537232.553461)  can0  680   [8]  05 62 C1 3C C0 20 00 99\n (1792537232.553751)  can0  680   [8]  06 08 AD 06 52 61 04 E5\n (1792537232.554035)  can0  680   [8]  07 7B 48 52 C1 54 AD 05\n (1792537232.554827)  can0  680   [8]  08 65 7B 48 82 C2 34 0C\n (1792537232.555121)  can0  680   [8]  09 0B AD 08 7D 02 82 61\n (1792537232.555412)  can0  680   [8]  0A 03 22 A0 80 65 7B 48\n (1792537232.555696)  can0  680   [8]  0B 22 D2 B0 26 1A 02 46\n (1792537232.556414)  can0  680   [8]  0C 6A 00 0C 0B AD 04 65\n (1792537232.556707)  can0  680   [8]  0D 7A 48 80 FA 40 80 85\n (1792537232.556997)  can0  680   [8]  0E 41 BD 04 AD 06 89 31\n (1792537232.557285)  can0  680   [8]  0F 25 F2 FC 2D 0A 56 FA\n (1792537232.558007)  can0  680   [8]  10 0A CD 04 B2 C7 34 AD\n (1792537232.558298)  can0  680   [8]  11 05 65 31 FD 2D 0A 56\n (1792537232.558591)  can0  680   [8]  12 0A 0A C8 31 BD 05 AD\n (1792537232.558859)  can0  503   [7]  01 00 00 00 00 01 00\n (1792537232.559098)  can0  680   [8]  13 06 25 D7 FC 2D 0A 56\n (1792537232.559810)  can0  680   [8]  14 2A 09 82 21 68 52 C1\n (1792537232.560121)  can0  680   [8]  15 76 1B C8 0C 0B AD 05\n (1792537232.560416)  can0  680   [8]  16 81 04 88 E0 08 00 8D\n (1792537232.560699)  can0  680   [8]  17 05 0C 09 A2 21 68 97\n (1792537232.561428)  can0  680   [8]  18 9A 02 06 5C 00 BD 09\n (1792537232.561724)  can0  680   [8]  19 0C 04 A2 C1 3C 82 61\n (1792537232.562011)  can0  680   [8]  1A 0B 92 61 0A B2 61 09\n (1792537232.562295)  can0  680   [8]  1B 25 74 48 88 B1 00 14\n (1792537232.563030)  can0  680   [8]  1C 40 00 AA A1 C2 08 00\n (1792537232.563323)  can0  680   [8]  1D 92 21 68 C0 AA 20 B8\n (1792537232.563616)  can0  680   [8]  1E 91 A2 48 00 A8 71 1B\n (1792537232.563897)  can0  680   [8]  1F 44 9A BB 98 A1 A7 34\n (1792537232.564607)  can0  680   [8]  20 CF 1B 99 1B 88 C6 EE\n (1792537232.564913)  can0  680   [8]  21 FF E2 05 01 7C F8 A0\n (1792537232.565199)  can0  680   [8]  22 9E 30 80 89 30 C2 05\n (1792537232.565493)  can0  680   [8]  23 00 80 80 04 80 D0 60\n (1792537232.568611)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.569510)  can0  680   [8]  24 C0 DD 10 90 88 11 A0\n (1792537232.569944)  can0  680   [8]  25 EE 10 80 8C 20 D0 A9\n (1792537232.570867)  can0  680   [8]  26 10 D0 99 30 92 45 01\n (1792537232.574613)  can0  680   [8]  27 82 45 00 A0 AE 20 1B\n (1792537232.578617)  can0  503   [7]  02 00 00 00 00 01 00\n (1792537232.583769)  can0  680   [8]  28 BB 1B 55 82 21 68 B7\n (1792537232.584753)  can0  309   [4]  00 00 00 00\n (1792537232.585321)  can0  680   [8]  29 B8 C6 62 C1 54 AD 06\n (1792537232.586352)  can0  680   [8]  2A 25 C6 FC 52 C1 3C AD\n (1792537232.587984)  can0  680   [8]  2B 05 A5 C5 FC 56 B2 0C\n (1792537232.589281)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.591872)  can0  680   [8]  2C AD 05 25 BE FF 0C 4B\n (1792537232.592237)  can0  680   [8]  2D AD 06 65 53 FF 92 21\n (1792537232.592590)  can0  680   [8]  2E 68 82 C1 76 9A 88 E2\n (1792537232.593007)  can0  680   [8]  2F 08 00 D8 51 C8 41 BD\n (1792537232.593437)  can0  680   [8]  30 03 AD 07 25 59 FF 2D\n (1792537232.593809)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1792537232.594028)  can0  680   [8]  31 0A 56 CA 07 88 61 16\n (1792537232.594283)  can0  307   [8]  13 00 00 08 00 00 00 00\n (1792537232.594512)  can0  680   [8]  32 F8 10 62 C1 34 AD 06\n (1792537232.594756)  can0  30B   [8]  83 00 08 00 00 21 21 00\n (1792537232.594987)  can0  680   [8]  33 A5 68 48 E8 81 D8 61\n (1792537232.595539)  can0  30C   [8]  03 08 19 00 64 19 0A 3C\n (1792537232.595958)  can0  30D   [8]  12 C0 40 02 0C 14 60 00\n (1792537232.596380)  can0  30F   [8]  03 00 08 01 00 00 0F A0\n (1792537232.597409)  can0  680   [8]  34 4B C7 0C 2B AD 06 A5\n (1792537232.598238)  can0  680   [8]  35 AC FD 4D 0A 56 DA 04\n (1792537232.599022)  can0  680   [8]  36 B2 C3 10 DD 06 CD 0B\n (1792537232.599272)  can0  500   [8]  00 00 00 00 06 A8 2A 04\n (1792537232.599622)  can0  680   [8]  37 AD 07 E5 5F FF 4D 0A\n (1792537232.602195)  can0  680   [8]  38 56 CA 03 8B 53 DD 06\n (1792537232.602576)  can0  680   [8]  39 CD 05 BD 05 AD 07 A5\n (1792537232.602928)  can0  680   [8]  3A 5E FF 4D 0A EC AA DD\n (1792537232.603277)  can0  680   [8]  3B 06 CD 06 BD 06 AD 07\n (1792537232.604763)  can0  680   [8]  3C A5 5D FF 4D 0A DC BA\n (1792537232.605141)  can0  680   [8]  3D DD 06 CD 03 BD 03 AD\n (1792537232.605513)  can0  680   [8]  3E 07 E5 5C FF 4D 0A CC\n (1792537232.606094)  can0  680   [8]  3F CA DD 06 CD 05 BD 05\n (1792537232.607105)  can0  680   [8]  82 02 05 A7 7F 21 40 00\n (1792537232.608984)  can0  681   [8]  02 02 82 00 05 A7 00 00\n (1792537232.609629)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.612322)  can0  680   [8]  00 AD 07 E5 5B FF A0 4A\n (1792537232.613061)  can0  680   [8]  01 20 A2 C1 34 E5 BB FC\n (1792537232.613458)  can0  680   [8]  02 7C 28 87 94 51 0C 02\n (1792537232.613801)  can0  680   [8]  03 22 D2 B3 A2 C1 3C A5\n (1792537232.615345)  can0  680   [8]  04 89 FF 0C 4B A2 C1 54\n (1792537232.615980)  can0  680   [8]  05 E5 4A FF DC 62 C8 31\n (1792537232.619606)  can0  501   [4]  00 1F 00 01\n (1792537232.619953)  can0  680   [8]  06 BD 03 AD 07 E5 4B FF\n (1792537232.626486)  can0  680   [8]  07 2D 0A CC 9A 30 B3 20\n (1792537232.629565)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.629799)  can0  680   [8]  08 70 A7 20 25 63 FF 2D\n (1792537232.630184)  can0  680   [8]  09 0A 82 A1 4C 82 C8 30\n (1792537232.630557)  can0  680   [8]  0A 1A 88 C0 20 00 98 08\n (1792537232.630938)  can0  680   [8]  0B 81 D1 87 C0 20 00 88\n (1792537232.632400)  can0  680   [8]  0C 08 87 19 65 81 D2 87\n (1792537232.633440)  can0  680   [8]  0D E0 08 00 0C 0A 0C 1B\n (1792537232.634416)  can0  680   [8]  0E 46 BD FF 16 74 04 2D\n (1792537232.635352)  can0  680   [8]  0F 04 86 EA FF 82 21 68\n (1792537232.637587)  can0  680   [8]  10 62 C1 54 82 C8 FF DD\n (1792537232.638322)  can0  680   [8]  11 06 CD 03 BD 03 AD 07\n (1792537232.638974)  can0  680   [8]  12 82 61 68 A5 8E FF FC\n (1792537232.639592)  can0  680   [8]  13 1A 92 21 68 82 C1 76\n (1792537232.641243)  can0  503   [7]  01 00 00 00 00 01 00\n (1792537232.650275)  can0  680   [8]  14 9A 88 42 C1 3C E2 08\n (1792537232.650616)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.651114)  can0  680   [8]  15 00 D8 51 C8 41 BD 04\n (1792537232.651983)  can0  309   [4]  00 00 00 00\n (1792537232.652743)  can0  680   [8]  16 AD 07 65 48 FF DC 6A\n (1792537232.653652)  can0  680   [8]  17 ED 06 DD 04 CD 03 BD\n (1792537232.656175)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1792537232.656425)  can0  680   [8]  18 03 AD 07 A5 BF FF CC\n (1792537232.656688)  can0  307   [8]  13 00 00 08 00 00 00 00\n (1792537232.657136)  can0  30B   [8]  83 00 08 00 00 21 21 00\n (1792537232.657533)  can0  680   [8]  19 7A 82 21 68 56 68 FB\n (1792537232.658833)  can0  680   [8]  1A 86 D7 FF 2D 0A 46 D6\n (1792537232.660062)  can0  680   [8]  1B FF 1D F0 36 41 00 0C\n (1792537232.661950)  can0  503   [7]  02 00 00 00 00 01 00\n (1792537232.664222)  can0  680   [8]  1C 0B A2 C2 10 65 F1 FC\n (1792537232.665755)  can0  680   [8]  1D 20 FA 40 20 25 41 1D\n (1792537232.671084)  can0  680   [8]  1E F0 00 36 41 00 30 B3\n (1792537232.671605)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.672400)  can0  680   [8]  1F 20 20 A2 20 A5 63 48\n (1792537232.675477)  can0  680   [8]  20 56 8A 00 8B B3 8B A2\n (1792537232.675962)  can0  680   [8]  21 25 63 48 8C 6A 22 A0\n (1792537232.676464)  can0  680   [8]  22 80 22 D2 B0 1D F0 A2\n (1792537232.676948)  can0  680   [8]  23 C2 10 B2 C3 10 E5 61\n (1792537232.678630)  can0  680   [8]  24 48 2D 0A 16 FA FE 86\n (1792537232.679164)  can0  680   [8]  25 F9 FF 00 00 00 36 81\n (1792537232.679669)  can0  680   [8]  26 00 20 72 20 CC 85 22\n (1792537232.681659)  can0  500   [8]  00 00 00 00 06 97 2B 04\n (1792537232.684609)  can0  680   [8]  27 A0 80 22 D2 B0 1D F0\n (1792537232.687460)  can0  680   [8]  28 00 00 4B 82 AD 08 89\n (1792537232.688022)  can0  680   [8]  29 01 65 DC FC 6D 0A AD\n (1792537232.688622)  can0  680   [8]  2A 02 25 B2 48 21 84 8B\n (1792537232.691645)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.692740)  can0  680   [8]  2B 66 2A 29 67 95 DC CD\n (1792537232.695757)  can0  303   [8]  00 00 00 00 28 28 FE 00\n (1792537232.700264)  can0  680   [8]  2C 05 BD 04 AD 03 E5 DB\n (1792537232.701505)  can0  680   [8]  2D FC 2D 0A 56 4A FD 8B\n (1792537232.701813)  can0  501   [4]  00 1F 00 01\n (1792537232.702421)  can0  680   [8]  2E A3 65 A8 FC 98 07 0C\n (1792537232.703308)  can0  680   [8]  2F 98 87 19 2B 0C 1B A2\n (1792537232.704579)  can0  309   [4]  00 00 00 00\n (1792537232.705943)  can0  680   [8]  30 C3 10 A5 CF FC 2D 0A\n (1792537232.706757)  can0  680   [8]  31 56 BA FB AD 07 A5 AE\n (1792537232.707502)  can0  680   [8]  32 48 A2 61 02 66 1A B0\n (1792537232.708096)  can0  680   [8]  33 82 04 00 EC 48 66 15\n (1792537232.709951)  can0  680   [8]  34 A2 AD 03 25 B1 FF 2D\n (1792537232.710825)  can0  680   [8]  35 0A 86 E7 FF 00 00 D0\n (1792537232.711669)  can0  680   [8]  36 B5 11 C2 A0 00 B2 CB\n (1792537232.712406)  can0  680   [8]  37 FF 30 A3 20 A5 CF FC\n (1792537232.713620)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.714879)  can0  680   [8]  38 2D 0A 16 FA FB 46 E1\n (1792537232.716816)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1792537232.717040)  can0  680   [8]  39 FF 92 C6 01 99 31 97\n (1792537232.717288)  can0  307   [8]  13 00 00 08 00 00 00 02\n (1792537232.717731)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1792537232.722629)  can0  503   [7]  01 00 00 00 00 01 00\n (1792537232.723996)  can0  680   [8]  3A B5 02 06 DD FF CD 06\n (1792537232.727093)  can0  680   [8]  3B 1B B4 AD 03 65 D8 FC\n (1792537232.729752)  can0  680   [8]  3C 2D 0A 56 CA F6 0C 1B\n (1792537232.730546)  can0  680   [8]  3D A2 C3 10 E5 C9 FC 2D\n (1792537232.731133)  can0  680   [8]  3E 0A 56 FA F5 82 04 00\n (1792537232.731636)  can0  680   [8]  3F 98 31 89 11 66 48 19\n (1792537232.733554)  can0  680   [8]  82 02 05 A8 56 7F 40 00\n (1792537232.733797)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.735441)  can0  681   [8]  02 02 82 00 05 A8 00 00\n (1792537232.735764)  can0  30F   [8]  04 00 00 06 FE 02 00 00\n (1792537232.742584)  can0  503   [7]  02 00 00 00 00 01 00\n (1792537232.745415)  can0  680   [8]  00 6A 86 1B 88 57 18 02\n (1792537232.750210)  can0  680   [8]  01 46 D1 FF CD 06 9A B4\n (1792537232.753622)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.755093)  can0  680   [8]  02 A2 C3 08 65 D5 FC 86\n (1792537232.756627)  can0  680   [8]  03 E6 FF 00 00 00 88 11\n (1792537232.756916)  can0  309   [4]  00 00 00 00\n (1792537232.759602)  can0  680   [8]  04 A8 21 82 C8 FE 80 80\n (1792537232.760345)  can0  680   [8]  05 74 87 BA 02 46 C9 FF\n (1792537232.761049)  can0  680   [8]  06 57 19 02 C6 C7 FF 0C\n (1792537232.761957)  can0  680   [8]  07 0B 4B A7 8B 63 A5 44\n (1792537232.764431)  can0  680   [8]  08 48 26 1A 05 21 50 8B\n (1792537232.764672)  can0  500   [8]  00 00 00 00 06 A7 2A 04\n (1792537232.764920)  can0  680   [8]  09 C6 C4 FF 0C 1B 4B A7\n (1792537232.765322)  can0  680   [8]  0A A5 43 48 66 1A EF A2\n (1792537232.765693)  can0  680   [8]  0B C1 18 25 42 48 CD 03\n (1792537232.767081)  can0  680   [8]  0C BD 06 AD 07 25 6D FF\n (1792537232.774670)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.777459)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1792537232.777676)  can0  680   [8]  0D 2D 0A 56 7A 04 B8 01\n (1792537232.777945)  can0  307   [8]  13 00 00 08 00 00 00 00\n (1792537232.778397)  can0  30B   [8]  83 00 08 00 00 21 21 00\n (1792537232.779080)  can0  680   [8]  0E 0C 1C A2 C1 18 25 FC\n (1792537232.780366)  can0  680   [8]  0F FC 2D 0A 56 8A 03 0C\n (1792537232.783758)  can0  680   [8]  10 2B A2 C1 18 25 D9 FC\n (1792537232.784639)  can0  680   [8]  11 2D 0A EC BA D8 01 0C\n (1792537232.784804)  can0  501   [4]  00 1F 00 01\n (1792537232.787692)  can0  680   [8]  12 0E C2 C1 18 BD 06 AD\n (1792537232.788414)  can0  680   [8]  13 06 65 0A 05 2D 0A DC\n (1792537232.794658)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.797509)  can0  680   [8]  14 9A 0C 0B 60 A6 20 E5\n (1792537232.798128)  can0  680   [8]  15 3E 48 88 11 80 90 04\n (1792537232.798666)  can0  680   [8]  16 A7 19 0A B8 01 CD 06\n (1792537232.799233)  can0  680   [8]  17 AD 06 E5 F6 FC 2D 0A\n (1792537232.804588)  can0  503   [7]  01 00 00 00 00 01 00\n (1792537232.806253)  can0  680   [8]  18 A2 C1 18 E5 95 FC 06\n (1792537232.810910)  can0  680   [8]  19 A9 FF 00 00 00 36 61\n (1792537232.811794)  can0  309   [4]  00 00 00 00\n (1792537232.812612)  can0  680   [8]  1A 00 0C 1B A2 C3 10 20\n (1792537232.813549)  can0  680   [8]  1B 72 20 25 D6 FC 16 4A\n (1792537232.815939)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.820002)  can0  680   [8]  1C 00 21 2E 8B 1D F0 20\n (1792537232.821538)  can0  680   [8]  1D A2 20 A5 9B 48 26 2A\n (1792537232.823855)  can0  680   [8]  1E 02 86 29 00 30 A3 20\n (1792537232.824200)  can0  680   [8]  1F E5 C4 FC 82 22 10 82\n (1792537232.826099)  can0  680   [8]  20 C8 07 80 83 41 A7 38\n (1792537232.826577)  can0  503   [7]  02 00 00 00 00 01 00\n (1792537232.826801)  can0  680   [8]  21 DC 0C 0B AD 03 25 D3\n (1792537232.827656)  can0  680   [8]  22 FC 96 2A FD 8B A1 68\n (1792537232.829127)  can0  680   [8]  23 02 A5 37 48 BD 03 8B\n (1792537232.831055)  can0  680   [8]  24 A1 E5 B0 FC 2D 0A EC\n (1792537232.831477)  can0  680   [8]  25 BA 4B 77 70 B7 20 A2\n (1792537232.832454)  can0  680   [8]  26 C1 08 A5 44 48 D6 FA\n (1792537232.832943)  can0  680   [8]  27 00 0C 1B 8B A1 A5 D0\n (1792537232.835251)  can0  680   [8]  28 FC E6 1A 1F 21 19 8B\n (1792537232.835865)  can0  680   [8]  29 86 03 00 8B B1 CD 07\n (1792537232.836370)  can0  680   [8]  2A B0 AB 20 65 EE FC 2D\n (1792537232.837006)  can0  680   [8]  2B 0A 16 4A FD 8B A1 65\n (1792537232.837983)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.838101)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1792537232.838582)  can0  307   [8]  13 00 00 08 00 00 00 00\n (1792537232.838923)  can0  680   [8]  2C 8D FC 86 E3 FF 00 00\n (1792537232.839167)  can0  30B   [8]  83 00 08 00 00 21 21 00\n (1792537232.840277)  can0  680   [8]  2D 00 0C 98 87 16 1F B2\n (1792537232.840704)  can0  203   [8]  00 00 05 92 0B 03 1B 14\n (1792537232.841239)  can0  680   [8]  2E C1 08 C2 A0 01 AD 0B\n (1792537232.842861)  can0  680   [8]  2F E5 ED FC 2D 0A 56 FA\n (1792537232.845175)  can0  680   [8]  30 FD BD 07 8B A1 25 40\n (1792537232.845735)  can0  680   [8]  31 48 56 5A FD 46 EF FF\n (1792537232.847217)  can0  680   [8]  32 00 00 00 B1 08 8B A2\n (1792537232.847458)  can0  500   [8]  00 00 00 00 06 91 2A 04\n (1792537232.847715)  can0  680   [8]  33 C1 08 25 3F 48 16 EA\n (1792537232.849454)  can0  680   [8]  34 FA B1 06 8B A2 C1 08\n (1792537232.850276)  can0  680   [8]  35 65 3E 48 56 7A FC C6\n (1792537232.855724)  can0  680   [8]  36 E7 FF 00 22 A0 80 22\n (1792537232.856982)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1792537232.860534)  can0  680   [8]  37 D2 B0 26 1A 02 86 CF\n (1792537232.863187)  can0  680   [8]  38 FF 0C 0B AD 03 25 C9\n (1792537232.863667)  can0  680   [8]  39 FC 96 1A F3 8B 23 B2\n (1792537232.864159)  can0  680   [8]  3A A0 00 20 A2 20 65 C8\n (1792537232.864494)  can0  680   [8]  3B FC 96 3A F2 4B 67 BD\n (1792537232.866577)  can0  501   [4]  00 1F 00 01\n (1792537232.869748)  can0  680   [8]  3C 06 AD 03 25 3B 48 D6\n (1792537232.872379)  can0  680   [8]  3D 7A F1 BD 06 AD 02 65\n (1792537232.874165)  can0  309   [4]  00 00 00 00\n (1792537232.874542)  can0  680   [8]  3E 3A 48 D6 DA F0 AD 01\n (1792537232.876195)  can0  680   [8]  3F 65 2B 48 8B A1 25 2B\n"
+ },
+ "helpers": {
+  "update-status.json": {
+   "state": "updated",
+   "message": "Updated (2 changes). The dash restarted and passed its check. Uploaded the diagnostics and 5 recordings of the newest drive, and 2 earlier reports kept on the Pi",
+   "version": "6b4a99a",
+   "previous": "e251f78",
+   "time": 1792537221
+  },
+  "setup-status.json": {
+   "stamp": "e0f43ff208ac",
+   "running": false,
+   "time": 1792537083,
+   "steps": [
+    {
+     "name": "Recovery guard and rescue screen",
+     "result": "ok",
+     "detail": "Up to date"
+    },
+    {
+     "name": "Python packages",
+     "result": "ok",
+     "detail": "All installed"
+    },
+    {
+     "name": "Dash helpers",
+     "result": "ok",
+     "detail": "All installed"
+    },
+    {
+     "name": "GPS service",
+     "result": "ok",
+     "detail": "Starts with the Pi and opens only the GPS receiver"
+    },
+    {
+     "name": "Clock from GPS",
+     "result": "ok",
+     "detail": "chrony sets the clock from the GPS"
+    },
+    {
+     "name": "TunerStudio: Java and display",
+     "result": "ok",
+     "detail": "Installed"
+    },
+    {
+     "name": "TunerStudio: program",
+     "result": "ok",
+     "detail": "In /(Wi-Fi network)/foxbody/TunerStudioMS"
+    },
+    {
+     "name": "TunerStudio: serial port",
+     "result": "ok",
+     "detail": "foxbody can open the tuning cable"
+    },
+    {
+     "name": "Screen and start-up",
+     "result": "ok",
+     "detail": "The screen gets exactly 1920 x 720, from start-up on"
+    },
+    {
+     "name": "Start-up: unused disk check",
+     "result": "ok",
+     "detail": "Off"
+    },
+    {
+     "name": "Terminal with sudo",
+     "result": "ok",
+     "detail": "Commands from the Terminal tab run as foxbody, so sudo works"
+    },
+    {
+     "name": "Gateway firmware file",
+     "result": "ok",
+     "detail": "Build fcbb2a6f is the newest"
+    },
+    {
+     "name": "Taillight firmware file",
+     "result": "ok",
+     "detail": "Build ab15a48e is the newest"
+    },
+    {
+     "name": "Water/meth firmware file",
+     "result": "ok",
+     "detail": "Build 3a02a951 is the newest"
+    },
+    {
+     "name": "Phone hotspot",
+     "result": "ok",
+     "detail": "Ready: switch it on under Controls, Wi-Fi"
+    },
+    {
+     "name": "System log kept",
+     "result": "ok",
+     "detail": "Kept across restarts, at most 150 MB"
+    },
+    {
+     "name": "Dash cam Wi-Fi",
+     "result": "ok",
+     "detail": "Joined only while the engine runs"
+    }
+   ]
+  },
+  "gps-status.json": {
+   "action": "restart",
+   "result": "ok",
+   "message": "GPS service restarted",
+   "time": 1792533227
+  },
+  "can-status.json": null,
+  "wifi-status.json": {
+   "state": "connected",
+   "message": "Saved (Wi-Fi network) for updates (internet checked). Returning to the dash cam",
+   "time": 1792356785,
+   "interface": "wlan1",
+   "connected": "(Wi-Fi network)",
+   "address": "192.168.0.71",
+   "internet": true,
+   "networks": [
+    {
+     "ssid": "(Wi-Fi network)",
+     "signal": 100,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "Poodytang",
+     "signal": 64,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "KEANE",
+     "signal": 64,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "WagonWheelie",
+     "signal": 64,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "fiber",
+     "signal": 60,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "SpectrumSetup-F73E",
+     "signal": 54,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "ElkRange",
+     "signal": 54,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "MySpectrumWiFi48-2G",
+     "signal": 54,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "Spectrum Mobile",
+     "signal": 45,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "WagonWheel",
+     "signal": 44,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "PuddleJumper2",
+     "signal": 40,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "PB PALACE",
+     "signal": 35,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "(Wi-Fi network)",
+     "signal": 33,
+     "secure": true,
+     "saved": true,
+     "connected": true
+    },
+    {
+     "ssid": "MySpectrumWiFi48-5G",
+     "signal": 32,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "Ba Sing Se",
+     "signal": 30,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "CHQ25",
+     "signal": 27,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "AuntiesCrib381",
+     "signal": 12,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    }
+   ]
+  },
+  "screen-status.json": {
+   "connectors": [
+    {
+     "name": "HDMI-A-1",
+     "status": "connected",
+     "edid_bytes": 256,
+     "edid_ok": true,
+     "panel_1920x720": true,
+     "modes": [
+      "1920x720"
+     ],
+     "mode_count": 1
+    },
+    {
+     "name": "HDMI-A-2",
+     "status": "disconnected",
+     "edid_bytes": 0,
+     "edid_ok": false,
+     "panel_1920x720": false,
+     "modes": [],
+     "mode_count": 0
+    }
+   ],
+   "cmdline": "coherent_pool=1M 8250.nr_uarts=0 snd_bcm2835.enable_head(Wi-Fi network)s=0 cgroup_disable=memory numa_policy=interleave nvme.max_host_mem_size_mb=0 snd_bcm2835.enable_head(Wi-Fi network)s=1 snd_bcm2835.enable_hdmi=1 snd_bcm2835.enable_hdmi=0  numa=fake=2 system_heap.max_order=0 smsc95xx.macaddr=(hidden) vc_mem.mem_base=0x3ec00000 vc_mem.mem_size=0x40000000  console=tty1 root=PARTUUID=672ec752-02 rootfstype=ext4 rootwait loglevel=3 quiet systemd.show_status=0 vt.global_cursor_default=0 logo.nologo consoleblank=0 fsck.mode=skip cfg80211.ieee80211_regdom=US drm.edid_firmware=edid/frogdash-1920x720.bin video=HDMI-A-2:1920x720@60",
+   "config": [
+    "display_auto_detect=1",
+    "dtoverlay=vc4-kms-v3d",
+    "max_framebuffers=2",
+    "disable_fw_kms_setup=1",
+    "disable_overscan=1",
+    "[cm4]",
+    "[cm5]",
+    "[all]",
+    "disable_splash=1",
+    "boot_delay=0",
+    "[all]",
+    "disable_fw_kms_setup=1",
+    "hdmi_edid_file:0=1",
+    "hdmi_edid_filename:0=frogdash-1920x720.bin",
+    "hdmi_edid_file:1=1",
+    "hdmi_edid_filename:1=frogdash-1920x720.bin",
+    "[all]"
+   ],
+   "applied": true,
+   "boot_speedups": false,
+   "edid_installed": true,
+   "tryboot_now": false,
+   "boot_time": [
+    "Startup finished in 2.188s (kernel) + 6.657s (userspace) = 8.846s "
+   ],
+   "first_render": [
+    "[   24.956059] pi dbus-run-session[1301]: Frogdash kiosk: first render heartbeat observed (boot+24.95s; 11.49s after browser launch)"
+   ],
+   "bootloader": [
+    "2025/05/08 16:21:35"
+   ],
+   "state": "original",
+   "message": "The screen uses its own modes",
+   "time": 1792533224,
+   "deadline_s": 90,
+   "started": 1792111453
+  }
+ },
+ "update_failure_log": null,
+ "uptime_s": 227.99,
+ "throttled": "throttled=0x0",
+ "disk": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/mmcblk0p2   28G  6.9G   20G  26% /\n/dev/mmcblk0p2   28G  6.9G   20G  26% /"
+}
