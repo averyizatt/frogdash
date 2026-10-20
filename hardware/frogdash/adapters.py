@@ -53,11 +53,17 @@ async def socketcan(state, interface):
                 bus.bind((interface,))
                 state.connected, state.status = True, f"listening on {interface}"
                 tx_lock = asyncio.Lock()
-                async def send_control(identifier, data):
+                async def send_control(identifier, data, wait=True):
+                    """Commands and firmware frames wait for room in the queue (wait); the
+                    dash's own broadcasts, sent from this reading loop, never do: a bus with
+                    nobody acknowledging keeps the queue full, and reading must go on."""
+                    packet = CAN_FRAME.pack(identifier, len(data), data)
                     async def transmit():
                         async with tx_lock:
-                            await send_frame(lambda packet: loop.sock_sendall(bus, packet),
-                                             CAN_FRAME.pack(identifier, len(data), data), state)
+                            if wait:
+                                await send_frame(lambda frame: loop.sock_sendall(bus, frame), packet, state)
+                            else:
+                                await loop.sock_sendall(bus, packet)
                     await asyncio.wait_for(transmit(), .5)
                 state.controls.attach(send_control)
                 # Listen before transmitting to detect the CCM's existing GPS
@@ -69,7 +75,7 @@ async def socketcan(state, interface):
                         next_tx = now + .5
                         # A full TX queue (no node ACKing) must not drop reception.
                         try:
-                            await send_control(0x203, gps.frame())
+                            await send_control(0x203, gps.frame(), wait=False)
                         except (ValueError, TypeError, OverflowError) as exc:   # A value out of the frame's range
                             state.fault('GPS frame 0x203', exc)
                         except OSError as exc:  # Includes TimeoutError and ENOBUFS.
@@ -80,7 +86,7 @@ async def socketcan(state, interface):
                     runtime = state.runtime
                     if runtime and runtime.due(now):
                         try:
-                            await send_control(0x309, runtime.frame())
+                            await send_control(0x309, runtime.frame(), wait=False)
                         except (ValueError, TypeError, OverflowError) as exc:
                             state.fault('engine runtime frame 0x309', exc)
                         except OSError as exc:
