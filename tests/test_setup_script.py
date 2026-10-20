@@ -50,8 +50,8 @@ SHIMS = {
     # Stands in for tools/setup_hotspot.py, which only runs as root on the Pi.
     # The screen helper (tools/frogdash_screen.py) has its own tests; here it answers as on a Pi.
     'python3': 'echo "$@" >> "$FAKE/python.log"\ncase "$*" in *setup_hotspot.py*) mkdir -p "$FROGDASH_ETC/frogdash" && echo "{}" > "$FROGDASH_ETC/frogdash/hotspot.json";;\n'
-               '*frogdash_screen.py*install*) if [ -f "$FAKE/screen-done" ]; then echo "ok: Ready: try exact 1920 x 720 under Dash management, Support"; '
-               'else touch "$FAKE/screen-done"; echo "done: Ready: try exact 1920 x 720 under Dash management, Support"; fi;; esac\n',
+               '*frogdash_screen.py*install*) if [ -f "$FAKE/screen-done" ]; then echo "ok: The screen gets exactly 1920 x 720, from start-up on"; '
+               'else touch "$FAKE/screen-done"; echo "done: The screen gets exactly 1920 x 720, from start-up on. Takes effect at the next start"; fi;; esac\n',
     'sleep': 'exit 0\n',
     'groupadd': 'echo "$@" >> "$FAKE/groupadd.log"\n',
 }
@@ -153,7 +153,7 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn('enable --now frogdash-gps.path', self.log('systemctl.log'))
         self.assertIn('enable --now frogdash-netkeeper.service', self.log('systemctl.log'))
         self.assertFalse((self.units / 'frogdash-netkeeper.path').exists())
-        # The screen: the EDID file and boot settings, but the mode itself only through a trial from the dash.
+        # Updates install the fixed mode and explain that it takes effect on reboot.
         self.assertEqual(steps['Screen and start-up'][0], 'done')
         self.assertIn('Takes effect at the next start', steps['Screen and start-up'][1])
         self.assertIn('frogdash_screen.py install', self.log('python.log'))
@@ -186,7 +186,7 @@ class SetupScriptTests(unittest.TestCase):
             self.assertEqual(steps[name][0], 'waiting', name)
             self.assertIn('press Update now', steps[name][1])
         self.assertEqual((self.log('apt.log'), list(self.fake.glob('home/*'))), ('', []))  # Nothing was fetched.
-        self.assertEqual(said, 'Set up: Recovery guard and rescue screen, Dash helpers, GPS service, TunerStudio: serial port, Screen and start-up, Start-up: unused disk check, Phone hotspot, System log kept, Dash cam Wi-Fi')
+        self.assertEqual(said, 'Set up: Recovery guard and rescue screen, Dash helpers, GPS service, TunerStudio: serial port, Screen and start-up, Start-up: unused disk check, Phone hotspot, System log kept, Dash cam Wi-Fi. Restart the Pi to apply the screen boot settings')
         # The guard and the rescue screen run from copies outside the dash's own files.
         for name in ('frogdash_guard.sh', 'frogdash_rescue.py'):
             self.assertEqual((Path(self.env['FROGDASH_LIB']) / name).read_bytes(), (ROOT / 'tools' / name).read_bytes())

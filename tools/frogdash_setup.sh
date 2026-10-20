@@ -31,7 +31,7 @@ TS_SHA=${FROGDASH_TS_SHA:-4f4781a6ff90127ef36672cc43d3edc78c4f61ef682dca38a02f9e
 STAMP=$(sha256sum "$0" 2>/dev/null | cut -c1-12)
 online=${1:-}   # 'online' from the updater, which has just reached GitHub; else found out when needed
 
-steps=""; did=""; restart_screen=""; restart_dash=""; apt_ready=""
+steps=""; did=""; restart_screen=""; restart_dash=""; apt_ready=""; reboot_note=""
 write_status() {  # running: true or false
     printf '{"stamp":"%s","running":%s,"time":%s,"steps":[%s]}\n' "$STAMP" "$1" "$(date +%s)" "$steps" > "$STATUS.tmp"
     chmod 644 "$STATUS.tmp"; mv "$STATUS.tmp" "$STATUS"
@@ -234,16 +234,15 @@ else
     step "TunerStudio: serial port" failed "Could not add $user to the dialout group"
 fi
 
-# --- Screen and start-up: exactly 1920 x 720 ready to try, and a quicker start ---
-# The 1920 x 720 EDID file and two boot settings (no rainbow screen, no 1 s boot delay).
-# The screen mode itself only ever changes through a trial started from the dash
-# (Dash management, Support), because a mode the panel refuses leaves it dark.
+# --- Screen and start-up: fixed 1920 x 720 ---
+# The fixed 1920 x 720 EDID and matching early firmware mode, applied on updates.
+# Keep the panel's normal boot delay; removing it caused signal trouble.
 if [ ! -f "$REPO/tools/frogdash_screen.py" ]; then
     step "Screen and start-up" skipped "No screen helper in this version"
 else
     said=$(FROGDASH_STATE=$STATE python3 "$REPO/tools/frogdash_screen.py" install 2>/dev/null | tail -n 1)
     case "$said" in
-        done:*) step "Screen and start-up" done "${said#done: }. Takes effect at the next start";;
+        done:*) step "Screen and start-up" done "${said#done: }"; reboot_note=". Restart the Pi to apply the screen boot settings";;
         ok:*) step "Screen and start-up" ok "${said#ok: }";;
         skipped:*) step "Screen and start-up" skipped "${said#skipped: }";;
         *) step "Screen and start-up" failed "The screen helper did not finish";;
@@ -413,5 +412,5 @@ fi
 write_status false
 # The dash picks up its new permission on a restart. Last, so the status above is what it reads.
 [ -n "$restart_dash" ] && systemctl restart frogdash.service >/dev/null 2>&1
-[ -n "$did" ] && echo "Set up: $did"
+[ -n "$did" ] && echo "Set up: $did$reboot_note"
 exit 0

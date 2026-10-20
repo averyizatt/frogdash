@@ -2,6 +2,19 @@
 
 ## Exact 1920 x 720, and a quicker start
 
+**Explicit early boot mode (October 20, 2026).** Setup now also selects custom
+firmware mode 87 on both HDMI ports, with `hdmi_timings` decoded from the installed
+1920 x 720 EDID. This targets the low-resolution firmware picture before Linux
+takes over: an EDID file alone did not explicitly replace an existing mode selection.
+The firmware and Linux use the same pixel clock, porches and sync polarity, including
+any panel timing already saved. Hotplug is not forced on unused ports, and the panel's
+normal boot delay is retained. Apply through the normal software update/setup, then
+restart the Pi. These firmware settings target the project's Pi 4 early display;
+Linux KMS continues using `drm.edid_firmware`. See Raspberry Pi's
+[legacy firmware timing reference](https://www.raspberrypi.com/documentation/computers/legacy_config_txt.html#hdmi_timings).
+The generated files are covered by tests; the removal of the low-resolution flash
+and any time saved still need a physical cold-boot check on the car.
+
 **What the September 29 report showed.** The Pi had two HDMI outputs active: HDMI-A-1
 forced on by the Pi's firmware (`video=HDMI-A-1:1920x1080M@60D`) with a description
 (EDID) that could not be read (Cage: "Failed to parse EDID"), and HDMI-A-2 offering 26
@@ -17,7 +30,7 @@ always writes `drm.edid_firmware=edid/frogdash-1920x720.bin` into `cmdline.txt` 
 rest of the line, the owner's own `video=` included, is kept; the first original is
 saved as `cmdline.txt.frogdash-before`) and a `# frogdash-screen` block into
 `config.txt` that gives the firmware the same file for both ports. The panel then offers
-exactly one mode, 1920 x 720, from power-on. The trial buttons are gone; the Screen mode
+exactly one mode, 1920 x 720, to Linux. The trial buttons are gone; the Screen mode
 row only reports what the Pi sees. To undo by hand: put `cmdline.txt.frogdash-before`
 back and delete the block (from the SD card in a PC if need be).
 

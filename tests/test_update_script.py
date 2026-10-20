@@ -213,6 +213,33 @@ class UpdateScriptTests(unittest.TestCase):
         (self.origin / 'tools').mkdir(exist_ok=True)
         (self.origin / 'tools/frogdash_setup.sh').write_bytes((ROOT / 'tools/frogdash_setup.sh').read_bytes())
 
+    def test_update_installs_fixed_boot_mode_and_repeated_update_keeps_it(self):
+        self.ship_setup()
+        (self.origin / 'tools/frogdash_screen.py').write_bytes((ROOT / 'tools/frogdash_screen.py').read_bytes())
+        base = self.state.parent
+        for name, key in (('boot', 'BOOT'), ('firmware', 'FIRMWARE'), ('proc', 'PROC'), ('drm', 'DRM'), ('lib', 'LIB')):
+            folder = base / name
+            folder.mkdir()
+            self.env[f'FROGDASH_{key}'] = folder.as_posix()
+        boot = base / 'boot'
+        (boot / 'config.txt').write_text('dtoverlay=vc4-kms-v3d\n')
+        (boot / 'cmdline.txt').write_text('root=PARTUUID=test rootwait\n')
+        (base / 'bin/python3').write_text(f'#!/bin/sh\nexec "{Path(sys.executable).as_posix()}" "$@"\n', newline='\n')
+        (base / 'bin/python3').chmod(0o755)
+        self.publish('dash.txt', 'fixed screen boot')
+        result = self.run_script()
+        self.assertEqual(result['state'], 'updated')
+        self.assertIn('Restart the Pi to apply the screen boot settings', result['message'])
+        self.assertIn('hdmi_mode:1=87', (boot / 'config.txt').read_text())
+        self.assertIn('drm.edid_firmware=edid/frogdash-1920x720.bin', (boot / 'cmdline.txt').read_text())
+        self.assertEqual((boot / 'frogdash-1920x720.bin').read_bytes(),
+                         (base / 'firmware/edid/frogdash-1920x720.bin').read_bytes())
+        before = (boot / 'config.txt').read_bytes()
+        self.assertEqual(self.run_script()['state'], 'current')
+        self.assertEqual((boot / 'config.txt').read_bytes(), before)
+        steps = json.loads((self.state / 'setup-status.json').read_text())['steps']
+        self.assertEqual(next(s['result'] for s in steps if s['name'] == 'Screen and start-up'), 'ok')
+
     def test_what_a_new_version_needs_on_the_pi_is_set_up_by_the_update_that_brings_it(self):
         units = Path(self.env['FROGDASH_UNITS'])
         log = self.state / 'systemctl.log'

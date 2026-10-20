@@ -209,6 +209,32 @@ def plain_cmdline(cmdline):
 SCREEN_CONFIG = ['disable_fw_kms_setup=1',
                  'hdmi_edid_file:0=1', f'hdmi_edid_filename:0={EDID_NAME}',
                  'hdmi_edid_file:1=1', f'hdmi_edid_filename:1={EDID_NAME}']
+
+
+def firmware_mode(boot):
+    """Select the Pi 4 firmware's custom mode, with exactly the Linux EDID timing.
+
+    Supplying an EDID alone does not override an existing firmware mode selection.
+    These legacy settings cover the early firmware display; KMS still uses the EDID.
+    Do not force hotplug on both ports (that creates a phantom second display).
+    """
+    edid = read(boot / EDID_NAME, True)
+    d = native_1920x720(edid) if edid_ok(edid) else None
+    d = d or cvt_rb_1920x720()
+    t = parse_dtd(d)
+    hfp = d[8] | ((d[11] >> 6) & 3) << 8
+    hsync = d[9] | ((d[11] >> 4) & 3) << 8
+    vfp = (d[10] >> 4) | ((d[11] >> 2) & 3) << 4
+    vsync = (d[10] & 15) | (d[11] & 3) << 4
+    hz = round(t['clock_khz'] * 1000 / ((t['h'] + t['hblank']) * (t['v'] + t['vblank'])))
+    timing = ' '.join(map(str, [t['h'], int(bool(d[17] & 2)), hfp, hsync,
+                               t['hblank'] - hfp - hsync, t['v'], int(bool(d[17] & 4)),
+                               vfp, vsync, t['vblank'] - vfp - vsync,
+                               0, 0, 0, hz, 0, t['clock_khz'] * 1000, 8]))
+    return [line for port in (0, 1) for line in
+            (f'hdmi_group:{port}=2', f'hdmi_mode:{port}=87', f'hdmi_timings:{port}={timing}')]
+
+
 # Once written by setup to save a second at start-up (no rainbow screen, no boot delay).
 # On the first start with them the panel showed a garbled red picture and then no signal:
 # without the delay the Pi looks for the panel before it has woken. Setup now removes the
@@ -343,7 +369,8 @@ def force(boot, changed):
     config = read(boot / 'config.txt')
     # The boot speed-ups are taken back out (the panel needs the boot delay), a trial left
     # behind is dropped, and the 1920 x 720 block is put in.
-    wanted = with_block(with_block(with_block(config, 'boot', None), 'screen-trial', None), 'screen', ['[all]', *SCREEN_CONFIG])
+    wanted = with_block(with_block(with_block(config, 'boot', None), 'screen-trial', None), 'screen',
+                        ['[all]', *SCREEN_CONFIG, *firmware_mode(boot)])
     if wanted != config:
         write_atomic(boot / 'config.txt', wanted)
         changed.append('config.txt: the firmware uses 1920 x 720 too')

@@ -191,6 +191,28 @@ class TrialTests(unittest.TestCase):
         pi.new_boot(tryboot=True, cmdline=trial)
         return pi.load()
 
+    def test_firmware_selects_custom_mode_using_the_installed_edid(self):
+        pi = Pi(self.folder.name, panel=panel_edid())
+        s = pi.load()
+        (pi.boot / 'config.txt').write_text(CONFIG + 'hdmi_group:1=1\nhdmi_mode:1=1\n')
+        s.install()
+        for port in (0, 1):
+            self.assertIn(f'hdmi_group:{port}=2\nhdmi_mode:{port}=87\n', pi.config())
+            self.assertIn(f'hdmi_timings:{port}=1920 1 48 32 80 720 0 3 5 22 0 0 0 56 0 87920000 8', pi.config())
+        self.assertGreater(pi.config().index('hdmi_mode:1=87'), pi.config().index('hdmi_mode:1=1'))
+        self.assertNotIn('hdmi_force_hotplug', pi.config())
+        before = pi.config()
+        self.assertEqual(s.install()[0], 'ok')
+        self.assertEqual(pi.config(), before)
+
+    def test_unreadable_panel_uses_same_fallback_timing_at_both_boot_stages(self):
+        pi = Pi(self.folder.name)
+        s = pi.load()
+        s.install()
+        self.assertIn('hdmi_timings:1=1920 1 48 32 80 720 0 3 10 8 0 0 0 60 0 92250000 8', pi.config())
+        edid = (pi.boot / s.EDID_NAME).read_bytes()
+        self.assertEqual(edid[54:72], s.cvt_rb_1920x720())
+
     def test_a_trial_that_is_kept_becomes_the_normal_start(self):
         pi = Pi(self.folder.name)
         s = self.run_trial(pi, pi.load())
