@@ -93,6 +93,11 @@ class SetupScriptTests(unittest.TestCase):
                     'FROGDASH_ETC': self.etc.as_posix(), 'FROGDASH_OPT': self.opt.as_posix(), 'FROGDASH_SERIAL_DIR': self.serial.as_posix(),
                     'FROGDASH_SYS': (base / 'sys').as_posix(), 'FROGDASH_TS_URL': 'https://example.invalid/ts.tar.gz',
                     'FROGDASH_TS_SHA': hashlib.sha256(self.archive).hexdigest()}
+        # The dash's Python environment, with every package already there (one test makes one missing).
+        venv = self.fake / 'venv-python'
+        venv.write_text('#!/bin/sh\necho "$@" >> "$FAKE/venv.log"\n', newline='\n')
+        venv.chmod(0o755)
+        self.env['FROGDASH_VENV_PY'] = venv.as_posix()
 
     def tearDown(self):
         self.folder.cleanup()
@@ -108,11 +113,8 @@ class SetupScriptTests(unittest.TestCase):
 
     def test_a_python_package_the_new_version_adds_is_installed_and_the_dash_restarted(self):
         # The dash's environment, missing the package until pip has run.
-        venv = self.fake / 'venv-python'
-        venv.write_text('#!/bin/sh\necho "$@" >> "$FAKE/venv.log"\n'
+        (self.fake / 'venv-python').write_text('#!/bin/sh\necho "$@" >> "$FAKE/venv.log"\n'
                         'case "$1" in -c) [ -f "$FAKE/installed" ] || echo "pyubx2==1.3.9";; -m) touch "$FAKE/installed";; esac\n', newline='\n')
-        venv.chmod(0o755)
-        self.env['FROGDASH_VENV_PY'] = venv.as_posix()
         said, status, steps = self.run_setup('offline')
         self.assertEqual(steps['Python packages'], ('waiting', 'Needs the internet (next Update now): pyubx2 1.3.9'))
         said, status, steps = self.run_setup('online')
