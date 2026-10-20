@@ -115,6 +115,7 @@ class Rescue:
         except ValueError:
             update = {}
         busy = run_busy(self.run)
+        active = active if active.replace('-', '').isalpha() else 'unknown'   # One word from systemctl, or it did not answer
         return {'answering': answering(self.port), 'service': active or 'unknown', 'version': head if code == 0 else 'unknown',
                 'good': self.short(read(STATE / 'last-good')), 'previous': self.short(read(STATE / 'update-previous')),
                 'bad': self.short(read(STATE / 'update-bad')), 'update': update if isinstance(update, dict) else {},
@@ -255,7 +256,9 @@ function render(s) {
   if (s.answering) { pill.className = 'pill good'; pill.textContent = 'Dash running'; $('why').textContent = 'The dash is answering again: going back to it.'; }
   else if (s.busy) { pill.className = 'pill warn'; pill.textContent = 'Working…'; $('why').textContent = 'An update or a recovery is running. Leave the key on; this page follows it.'; }
   else { pill.className = 'pill bad'; pill.textContent = s.service === 'activating' ? 'Starting' : 'Not running';
-    $('why').textContent = 'The dash program is ' + (s.service === 'activating' ? 'starting again and again (it stops during start-up)' : s.service) + '. Pick what to do below; the end of its log is on the right.'; }
+    const said = {activating: 'starting again and again: it stops during start-up', failed: 'stopped with an error', inactive: 'stopped',
+      active: 'running but not answering', unknown: 'in a state that could not be read'}[s.service] || s.service;
+    $('why').textContent = 'The dash program is ' + said + '. Pick what to do below; the end of its log is on the right.'; }
   $('facts').replaceChildren(...fact('Running version', s.version), ...fact('Last version that ran', s.good), ...fact('Before the last update', s.previous),
     ...fact('Internet', s.internet === null ? 'checking' : s.internet ? 'yes' : 'no: updates need a saved Wi-Fi or your phone hotspot in range'),
     ...fact('Last update', s.update && s.update.message));
