@@ -213,6 +213,8 @@
     const rows = [];
     if (!ups) rows.push(['Ignition power', 'idle', 'Not reporting', online ? 'The PiSugar watcher is not answering' : 'Not connected to the dash']);
     else if (ups.state === 'shutdown_requested') rows.push(['Ignition power', 'bad', 'Shutting down', 'The key is off: Linux is shutting down, then the battery cuts power']);
+    else if (ups.state === 'waiting_for_update') rows.push(['Ignition power', 'warn', 'Key off · finishing update',
+      `Shutting down once the update or recovery is done (waiting ${Math.round(ups.held_seconds || 0)} s, at most 15 min)`]);
     else if (ups.input_present === false) rows.push(['Ignition power', 'warn', ups.remaining_seconds != null ? `Off · ${Math.ceil(ups.remaining_seconds)} s` : 'On battery',
       ups.remaining_seconds != null ? `Shutting down in ${Math.ceil(ups.remaining_seconds)} s unless the key comes back on` : 'Running on the battery']);
     else if (ups.input_present === true) rows.push(['Ignition power', 'good', 'On', ups.dry_run ? 'Watching only: shutdown is switched off' : 'Shuts down by itself a few seconds after the key goes off']);

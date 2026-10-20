@@ -64,6 +64,19 @@ clock follows within a minute. Pick your own zone with `timedatectl list-timezon
 GitHub and restarts the dash. It only fast-forwards; a failed download or local
 changes leave the running version untouched, and the result is shown next to the button.
 
+**A new version is tried before it is used.** The updater first starts it from a
+scratch copy, on a port of its own and with no CAN, GPS or helpers, while the running
+dash carries on. One that does not answer within a minute is never switched to: the
+dash stays as it is and the result says why ("would not start (ModuleNotFoundError: …),
+nothing was changed"). Packages the new version adds to `requirements.lock` are
+installed into the dash's environment before the trial, and the dash starts without
+them anyway (`tests/test_starts_without_new_packages.py`).
+
+**The key going off does not cut an update short.** While an update, a setup or a
+recovery runs, `/run/frogdash-busy` holds off the PiSugar shutdown (at most 15 minutes;
+the PiSugar's own 10 % low-battery shutdown still applies). Software & power shows
+"Key off · finishing update".
+
 **A bad update undoes itself.** After the restart the new version has to prove itself:
 the service must come up, answer on its health page and stay up for 15 s, and the
 screen must reconnect if it was connected before. If it does not, the updater puts the
@@ -90,6 +103,35 @@ sudo systemctl enable --now frogdash-update.path
 
 That is the only thing that ever needs a keyboard or SSH. Everything else a version
 needs on the Pi is done for it, as root, by the updater.
+
+### When the dash does not start anyway
+
+October 2026: a version imported a package the Pi did not have, the dash could not
+start, and the key went off while the updater was putting the old version back. The
+screen stayed black until the Pi was reached with a keyboard. Three things now cover
+that, all installed by the Pi setup:
+
+- **The recovery guard** (`tools/frogdash_guard.sh`, `frogdash-guard.service`)
+  remembers the version that has answered for two minutes (`last-good`). If the dash
+  then does not answer for two and a half minutes, with no update running, it puts that
+  version back, restarts the dash, marks the failing version so it is not installed
+  again, and says so in Software & power and in What happened. With nothing to go back
+  to, it restarts the dash once.
+- **The rescue screen** (`tools/frogdash_rescue.py`, `frogdash-rescue.service`, on
+  127.0.0.1:8090). When the dash has not answered for half a minute, the screen shows
+  this instead of black: what state the dash is in and the end of its log, with large
+  buttons for the mouse or a touch: **Restart the dash**, **Go back to the version that
+  last ran**, **Undo the last update**, **Update to the newest version**, **Finish the Pi
+  setup** (installs what is missing) and **Restart the Pi**. Each needs two presses. As
+  soon as the dash answers, the screen goes back to it.
+- **The dash starts whatever state its files are in**: damaged, empty or unreadable
+  saved files, a missing `VERSION` file, or a data folder that cannot be written to
+  (`tests/test_starts_with_damaged_files.py`). And the tests also run on the Pi's
+  Python 3.11.
+
+The guard and the rescue screen run from copies in `/usr/local/lib/frogdash`. The setup
+puts them there only from a version that has started, so a broken version cannot take
+them down with it.
 
 ### Pi setup: nothing to type after an update
 

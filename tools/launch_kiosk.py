@@ -1,4 +1,11 @@
-"""Launch the local kiosk as soon as HTTP is ready, without waiting for sensors."""
+"""Launch the local kiosk as soon as HTTP is ready, without waiting for sensors.
+
+When the dash has not answered within half a minute, the rescue screen is shown instead
+of a black one (tools/frogdash_rescue.py, a separate root helper on port 8090): it says
+why and has buttons to restart the dash, go back to the version that last ran, update or
+restart the Pi. As soon as the dash answers, the browser is closed and the launcher ends;
+its service starts it again, and that time it opens the dash.
+"""
 import argparse
 import json
 import os
@@ -49,6 +56,45 @@ def browser_args(binary, port=8080, wayland=False, profile=None, allow_audio=Fal
     if allow_audio:
         args.append('--autoplay-policy=no-user-gesture-required')
     return args + [f'http://127.0.0.1:{port}/']
+
+
+RESCUE_PORT = 8090
+
+
+def rescue_probe(port=RESCUE_PORT):
+    """The rescue helper answers (it is installed by the Pi setup)."""
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    try:
+        with opener.open(f'http://127.0.0.1:{port}/health', timeout=1) as response:
+            return response.status == 200
+    except (OSError, urllib.error.URLError):
+        return False
+
+
+def rescue(command, dash_ready, popen=subprocess.Popen, sleep=time.sleep, stop=None):
+    """Show the rescue page (command opens it) until the dash answers; then close it."""
+    process = popen(command, start_new_session=True)
+    try:
+        while process.poll() is None:
+            if dash_ready():
+                print('Frogdash kiosk: the dash answers again; leaving the rescue screen', flush=True)
+                return 0
+            sleep(2)
+        return process.returncode
+    finally:
+        if process.poll() is None:
+            (stop or stop_browser)(process)
+
+
+def stop_browser(process):
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+        process.wait(timeout=5)
+    except (OSError, subprocess.TimeoutExpired):
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except OSError:
+            pass
 
 
 def boot_stamp():
@@ -255,7 +301,12 @@ def main():
     try:
         wait_ready(http_probe(args.port))
     except TimeoutError as exc:
-        parser.exit(1, f'{exc}; systemd will retry. Check journalctl -u frogdash.\n')
+        if not rescue_probe():
+            parser.exit(1, f'{exc}; systemd will retry. Check journalctl -u frogdash.\n')
+        print(f'Frogdash kiosk: {exc}; showing the rescue screen ({boot_stamp()})', flush=True)
+        command = browser_args(binary, args.port, args.wayland, profile, args.allow_audio)
+        command[-1] = f'http://127.0.0.1:{RESCUE_PORT}/'
+        raise SystemExit(rescue(command, http_probe(args.port)))
     print(f'Frogdash kiosk: HTTP ready; launching Chromium ({boot_stamp()})', flush=True)
     token = uuid4().hex
     command = browser_args(binary, args.port, args.wayland, profile, args.allow_audio)

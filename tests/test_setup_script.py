@@ -98,6 +98,7 @@ class SetupScriptTests(unittest.TestCase):
         venv.write_text('#!/bin/sh\necho "$@" >> "$FAKE/venv.log"\n', newline='\n')
         venv.chmod(0o755)
         self.env['FROGDASH_VENV_PY'] = venv.as_posix()
+        self.env['FROGDASH_LIB'] = (base / 'lib').as_posix()
 
     def tearDown(self):
         self.folder.cleanup()
@@ -145,7 +146,7 @@ class SetupScriptTests(unittest.TestCase):
     def test_first_run_without_internet_does_all_it_can_and_names_what_waits(self):
         said, status, steps = self.run_setup('offline')
         self.assertEqual((status['stamp'], status['running']), (stamp(SCRIPT), False))   # The dash recognises this run.
-        self.assertEqual(steps['Dash helpers'], ('done', 'Installed: canreset gps screen wifi netkeeper screen-boot'))
+        self.assertEqual(steps['Dash helpers'], ('done', 'Installed: canreset gps screen wifi netkeeper screen-boot guard rescue'))
         for unit in ('frogdash-canreset.path', 'frogdash-canreset.service', 'frogdash-gps.path', 'frogdash-gps.service', 'frogdash-wifi.path', 'frogdash-wifi.service', 'frogdash-netkeeper.service',
                      'frogdash-screen.path', 'frogdash-screen.service', 'frogdash-screen-boot.service'):
             self.assertTrue((self.units / unit).is_file(), unit)
@@ -185,7 +186,12 @@ class SetupScriptTests(unittest.TestCase):
             self.assertEqual(steps[name][0], 'waiting', name)
             self.assertIn('press Update now', steps[name][1])
         self.assertEqual((self.log('apt.log'), list(self.fake.glob('home/*'))), ('', []))  # Nothing was fetched.
-        self.assertEqual(said, 'Set up: Dash helpers, GPS service, TunerStudio: serial port, Screen and start-up, Start-up: unused disk check, Phone hotspot, System log kept, Dash cam Wi-Fi')
+        self.assertEqual(said, 'Set up: Recovery guard and rescue screen, Dash helpers, GPS service, TunerStudio: serial port, Screen and start-up, Start-up: unused disk check, Phone hotspot, System log kept, Dash cam Wi-Fi')
+        # The guard and the rescue screen run from copies outside the dash's own files.
+        for name in ('frogdash_guard.sh', 'frogdash_rescue.py'):
+            self.assertEqual((Path(self.env['FROGDASH_LIB']) / name).read_bytes(), (ROOT / 'tools' / name).read_bytes())
+        self.assertIn('enable --now frogdash-guard.service', self.log('systemctl.log'))
+        self.assertIn('enable --now frogdash-rescue.service', self.log('systemctl.log'))
         # The system log is kept across restarts, so the reports show how the Pi last stopped.
         self.assertEqual((self.etc / 'systemd/journald.conf.d/frogdash.conf').read_bytes(), (ROOT / 'config/journald-frogdash.conf').read_bytes())
         self.assertIn('restart systemd-journald', self.log('systemctl.log'))

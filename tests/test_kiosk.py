@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, Mock
 
-from tools.launch_kiosk import browser_args, http_probe, wait_ready, supervise
+from tools.launch_kiosk import browser_args, http_probe, rescue, wait_ready, supervise
 
 
 class KioskTests(unittest.TestCase):
@@ -14,6 +14,25 @@ class KioskTests(unittest.TestCase):
         self.assertAlmostEqual(now[0], .2)
         # Already-ready service introduces no sleep.
         wait_ready(lambda: True, sleep=lambda _: self.fail('Unnecessary startup delay'))
+
+    def test_the_rescue_screen_shows_until_the_dash_answers_then_closes(self):
+        class Browser:
+            def __init__(self, command, start_new_session):
+                self.command, self.code, self.stopped = command, None, False
+            def poll(self):
+                return self.code
+        opened, answers, waits = [], iter([False, False, True]), []
+        def popen(command, start_new_session):
+            opened.append(Browser(command, start_new_session))
+            return opened[-1]
+        def stop(browser):
+            browser.stopped = True
+            browser.code = 0
+        code = rescue(['chromium', 'http://127.0.0.1:8090/'], lambda: next(answers), popen=popen, sleep=waits.append, stop=stop)
+        self.assertEqual(code, 0)
+        self.assertEqual(opened[0].command[-1], 'http://127.0.0.1:8090/')
+        self.assertTrue(opened[0].stopped)            # Closed, so the launcher starts again on the dash
+        self.assertEqual(waits, [2, 2])
 
     def test_unavailable_service_times_out_for_supervisor_retry(self):
         now = [0.]

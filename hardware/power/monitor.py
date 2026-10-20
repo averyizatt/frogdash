@@ -19,6 +19,26 @@ import threading
 
 LOG = logging.getLogger('frogdash-power')
 DEFAULT_SOCKET = '/tmp/pisugar-server.sock'
+# Work that must not be cut off by the key going off: an update (it may be part way
+# through going back to the previous version) or a recovery (tools/frogdash_guard.sh,
+# the rescue screen). The shutdown waits for it, at most HOLD_MAX_S; the PiSugar's own
+# low-battery shutdown (10 %) still applies.
+BUSY_FILE = Path('/run/frogdash-busy')
+HOLD_MAX_S = 15 * 60
+
+
+def work_running():
+    """Whether an update or a recovery is running right now."""
+    try:
+        if time.time() - BUSY_FILE.stat().st_mtime < HOLD_MAX_S:
+            return True
+    except OSError:
+        pass
+    try:
+        return subprocess.run(['/usr/bin/systemctl', 'is-active', '--quiet', 'frogdash-update.service'],
+                              timeout=3).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
 
 
 class ProtocolError(ValueError):
@@ -161,10 +181,12 @@ def request_poweroff():
 
 
 class Monitor:
-    def __init__(self, client, delay=8, execute=False, shutdown=request_poweroff):
-        self.client, self.execute, self.shutdown = client, execute, shutdown
+    def __init__(self, client, delay=8, execute=False, shutdown=request_poweroff, busy=work_running):
+        self.client, self.execute, self.shutdown, self.busy = client, execute, shutdown, busy
         self.timer = LossTimer(delay)
         self.next_attempt = 0.0
+        self.held_since = None     # When the shutdown started waiting for an update to finish
+        self.busy_checked = (None, False)
 
     def tick(self):
         error = None
@@ -175,6 +197,14 @@ class Monitor:
         now = time.monotonic()
         status = self.timer.update(present, now)
         status.update(input_present=present, timestamp=time.time(), monotonic=now, dry_run=not self.execute, error=error)
+        if status['state'] != 'shutdown_due':
+            self.held_since = None
+        elif self.working(now):
+            # The key is off, but an update or a recovery is part way: finish it first.
+            self.held_since = self.held_since or now
+            status['state'] = 'waiting_for_update'
+            status['held_seconds'] = round(now - self.held_since)
+            return status
         if status['state'] == 'shutdown_due':
             if not self.execute:
                 status['state'] = 'would_shutdown'
@@ -187,6 +217,20 @@ class Monitor:
                     status['state'], status['error'] = 'shutdown_failed', str(exc)
                     self.next_attempt = now + 2.0
         return status
+
+
+    def working(self, now):
+        """busy(), asked at most once a second; never longer than HOLD_MAX_S in all."""
+        if self.held_since is not None and now - self.held_since >= HOLD_MAX_S:
+            return False
+        at, answer = self.busy_checked
+        if at is None or now - at >= 1.0 or now < at:
+            try:
+                answer = bool(self.busy())
+            except Exception:   # Never let the check stop a shutdown
+                answer = False
+            self.busy_checked = (now, answer)
+        return answer
 
 
 def write_status(path, status):

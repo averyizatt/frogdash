@@ -9,7 +9,9 @@ import json
 import os
 from pathlib import Path
 import shutil
+import socket
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -33,6 +35,28 @@ SHIMS = {
 }
 
 
+# A stand-in dash for the trial start: answers /health on --port, unless its tree has
+# TRIALFAIL, where it fails at import as the version that needed pyubx2 did.
+STAND_IN = """import pathlib, sys
+from http.server import BaseHTTPRequestHandler, HTTPServer
+if (pathlib.Path(__file__).resolve().parents[2] / 'hardware/TRIALFAIL').exists():
+    raise ModuleNotFoundError("No module named 'pyubx2'")
+port = int(sys.argv[sys.argv.index('--port') + 1])
+class Health(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200); self.end_headers(); self.wfile.write(b'{}')
+    def log_message(self, *args):
+        pass
+HTTPServer(('127.0.0.1', port), Health).serve_forever()
+"""
+
+
+def free_port():
+    with socket.socket() as s:
+        s.bind(('127.0.0.1', 0))
+        return s.getsockname()[1]
+
+
 @unittest.skipUnless(SHELL and shutil.which('git'), 'needs sh and git')
 class UpdateScriptTests(unittest.TestCase):
     def setUp(self):
@@ -50,7 +74,9 @@ class UpdateScriptTests(unittest.TestCase):
                     'FROGDASH_REPO': self.repo.as_posix(), 'FROGDASH_STATE': self.state.as_posix(),
                     'FROGDASH_UNITS': units.as_posix(), 'FROGDASH_ETC': (base / 'etc').as_posix(), 'FROGDASH_OPT': (base / 'opt').as_posix(),
                     'FROGDASH_TS_URL': 'https://example.invalid/none', 'GIT_CONFIG_GLOBAL': os.devnull, 'GIT_CONFIG_SYSTEM': os.devnull,
-                    'GIT_AUTHOR_NAME': 't', 'GIT_AUTHOR_EMAIL': 't@t', 'GIT_COMMITTER_NAME': 't', 'GIT_COMMITTER_EMAIL': 't@t'}
+                    'GIT_AUTHOR_NAME': 't', 'GIT_AUTHOR_EMAIL': 't@t', 'GIT_COMMITTER_NAME': 't', 'GIT_COMMITTER_EMAIL': 't@t',
+                    'FROGDASH_BUSY': (self.state / 'busy').as_posix(), 'FROGDASH_VENV_PY': Path(sys.executable).as_posix(),
+                    'FROGDASH_TRIAL_PORT': str(free_port()), 'FROGDASH_TRIAL_WAIT': '30', 'TMPDIR': base.as_posix()}
         self.git(self.origin, 'init', '--quiet', '--initial-branch=main')
         self.first = self.publish('dash.txt', 'version one')
         subprocess.run(['git', 'clone', '--quiet', self.origin.as_posix(), self.repo.as_posix()], check=True, env=self.env, capture_output=True)
@@ -75,6 +101,38 @@ class UpdateScriptTests(unittest.TestCase):
 
     def head(self):
         return self.git(self.repo, 'rev-parse', 'HEAD')
+
+    def publish_dash(self, broken):
+        """A version that is a dash: the trial start runs it."""
+        for name, text in (('hardware/__init__.py', ''), ('hardware/frogdash/__init__.py', ''), ('hardware/frogdash/server.py', STAND_IN)):
+            (self.origin / name).parent.mkdir(parents=True, exist_ok=True)
+            (self.origin / name).write_text(text)
+        flag = self.origin / 'hardware/TRIALFAIL'
+        if broken:
+            flag.write_text('')
+        elif flag.exists():
+            flag.unlink()
+        return self.publish('dash.txt', 'broken dash' if broken else 'working dash')
+
+    def test_a_version_that_cannot_start_is_tried_first_and_never_switched_to(self):
+        bad = self.publish_dash(broken=True)
+        status = self.run_script()
+        self.assertEqual((status['state'], self.head()), ('failed', self.first))      # Nothing changed
+        self.assertIn("would not start (ModuleNotFoundError: No module named pyubx2)", status['message'])
+        self.assertIn('nothing was changed', status['message'])
+        self.assertNotIn('restart frogdash.service', self.log('systemctl.log'))      # The running dash was never touched
+        self.assertEqual((self.state / 'update-bad').read_text().strip(), bad)
+        self.assertIn('Trial start of', (self.state / 'update-failure.log').read_text())
+        self.assertFalse((self.state / 'busy').exists())                             # The shutdown hold is let go
+        self.assertEqual(self.run_script()['state'], 'held')                         # Not tried again
+        # A version that starts goes through the trial and is installed.
+        good = self.publish_dash(broken=False)
+        status = self.run_script()
+        self.assertEqual((status['state'], self.head()), ('updated', good))
+
+    def log(self, name):
+        path = self.state / name
+        return path.read_text() if path.exists() else ''
 
     def test_good_update_is_kept_and_can_be_undone_by_hand(self):
         second = self.publish('dash.txt', 'version two')

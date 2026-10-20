@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 import threading
 import unittest
+
+from hardware.power import monitor as monitor_module
 from unittest.mock import Mock, patch
 
 from hardware.power.monitor import LossTimer, Monitor, PiSugar, ProtocolError, request_poweroff, write_status
@@ -57,6 +59,29 @@ class PowerTimerTests(unittest.TestCase):
             shutdown.assert_not_called()
             client.input_present.return_value = True
             self.assertEqual(monitor.tick()['state'], 'external_power')
+
+    def test_the_shutdown_waits_for_an_update_to_finish_but_not_for_ever(self):
+        client, shutdown = Mock(), Mock()
+        client.input_present.return_value = False
+        busy = [True]
+        monitor = Monitor(client, execute=True, shutdown=shutdown, busy=lambda: busy[0])
+        with patch('hardware.power.monitor.time.monotonic') as clock:
+            for moment in range(30):
+                clock.return_value = moment
+                status = monitor.tick()
+            self.assertEqual((status['state'], status['held_seconds']), ('waiting_for_update', 21))   # Due at 8 s, held since
+            shutdown.assert_not_called()
+            busy[0] = False                       # The update finished: the shutdown goes ahead
+            clock.return_value = 31
+            self.assertEqual(monitor.tick()['state'], 'shutdown_requested')
+            shutdown.assert_called_once_with()
+        # An update that never ends is waited for HOLD_MAX_S at most.
+        monitor, shutdown = Monitor(client, execute=True, shutdown=Mock(), busy=lambda: True), None
+        with patch('hardware.power.monitor.time.monotonic') as clock:
+            for moment in range(0, 8 + monitor_module.HOLD_MAX_S + 4):
+                clock.return_value = moment
+                status = monitor.tick()
+            self.assertEqual(status['state'], 'shutdown_requested')
 
     def test_shutdown_commits_once_even_if_input_returns(self):
         client, shutdown = Mock(), Mock()

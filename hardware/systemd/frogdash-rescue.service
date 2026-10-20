@@ -1,0 +1,12 @@
+[Unit]
+Description=Frogdash rescue screen (shown on the screen when the dash is not running)
+StartLimitIntervalSec=0
+
+[Service]
+# A copy outside the dash's files, put there by the Pi setup from a version that started.
+ExecStart=/usr/bin/python3 /usr/local/lib/frogdash/frogdash_rescue.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

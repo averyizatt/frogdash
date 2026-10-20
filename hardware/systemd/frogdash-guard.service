@@ -1,0 +1,13 @@
+[Unit]
+Description=Frogdash recovery guard (puts back the last version that ran if the dash stops starting)
+After=frogdash.service
+StartLimitIntervalSec=0
+
+[Service]
+# A copy outside the dash's files, put there by the Pi setup from a version that started.
+ExecStart=/bin/sh /usr/local/lib/frogdash/frogdash_guard.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

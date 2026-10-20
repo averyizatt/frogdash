@@ -16,7 +16,10 @@ ETC=${FROGDASH_ETC:-/etc}
 OPT=${FROGDASH_OPT:-/opt}
 STATUS=$STATE/setup-status.json
 # Services that are not started by a request file but belong to every install.
-SERVICES="frogdash-netkeeper frogdash-screen-boot"
+SERVICES="frogdash-netkeeper frogdash-screen-boot frogdash-guard frogdash-rescue"
+# Where the recovery guard and the rescue screen run from: outside the dash's own files,
+# and copied there only by this script, which runs after a version has started.
+LIB=${FROGDASH_LIB:-/usr/local/lib/frogdash}
 # Module firmware, built and published by each module's repository on every change.
 GATEWAY_FW_URL=${FROGDASH_GATEWAY_FW_URL:-https://github.com/averyizatt/DIYComfortControlModule/releases/download/gateway-latest}
 TAILLIGHT_FW_URL=${FROGDASH_TAILLIGHT_FW_URL:-https://github.com/averyizatt/CustomTaillights/releases/download/taillights-latest}
@@ -69,6 +72,25 @@ kiosk_user() {  # The user the dash screen runs as: the name after frogdash-cons
 NEEDS_NET="needs the internet: press Update now with Wi-Fi connected"
 
 write_status true
+
+# --- Recovery: the guard and the rescue screen ---
+# The guard puts back the last version that ran if the dash stops starting; the rescue
+# screen replaces a black screen with what went wrong and buttons to put it right
+# (tools/frogdash_guard.sh, tools/frogdash_rescue.py). They are copied out of the dash's
+# files, so a later version that does not start cannot take them down with it.
+copied=""; broken_copy=""
+mkdir -p "$LIB" 2>/dev/null
+for file in frogdash_guard.sh frogdash_rescue.py; do
+    [ -f "$REPO/tools/$file" ] || continue
+    cmp -s "$REPO/tools/$file" "$LIB/$file" && continue
+    if cp "$REPO/tools/$file" "$LIB/$file.new" && mv "$LIB/$file.new" "$LIB/$file"; then copied="$copied $file"; else broken_copy="$broken_copy $file"; fi
+done
+if [ -n "$broken_copy" ]; then step "Recovery guard and rescue screen" failed "Could not copy:$broken_copy"
+elif [ -n "$copied" ]; then
+    systemctl try-restart frogdash-guard.service frogdash-rescue.service >/dev/null 2>&1
+    step "Recovery guard and rescue screen" done "Updated:$copied"
+else step "Recovery guard and rescue screen" ok "Up to date"
+fi
 
 # --- Helpers: update, Wi-Fi and GPS recovery (request-file units), and the Wi-Fi keeper ---
 added=""; broken=""

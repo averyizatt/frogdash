@@ -7,6 +7,20 @@ on:
 permissions:
   contents: read
 jobs:
+  # The Pi runs Raspberry Pi OS Bookworm's Python 3.11, older than the one below. Syntax or
+  # a library call that only newer Pythons have would pass there and stop the dash on the
+  # Pi (October 2026: a start-up failure left the screen black). The unit tests, the start
+  # with damaged files and the start without new packages run on 3.11 too.
+  pi-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt -r requirements-tools.lock
+      - run: python -m compileall -q hardware tools tests
+      - run: python -m unittest discover -s tests
   test:
     runs-on: ubuntu-latest
     steps:

@@ -15,7 +15,18 @@ from .trip import validate as validate_trip, bucket, number
 from .race import Race
 
 UI_KEYS = {'frogdash.appearance.v1', 'frogdash.driving.v1', 'frogdash.units.v1'}
-VERSION = (Path(__file__).resolve().parents[2] / 'VERSION').read_text().strip()
+
+
+def read_version(path=Path(__file__).resolve().parents[2] / 'VERSION'):
+    """The release number; 'unknown' when the file is missing or unreadable, which must
+    never stop the dash from starting (tests/test_starts_with_damaged_files.py)."""
+    try:
+        return path.read_text(encoding='utf-8', errors='replace').strip() or 'unknown'
+    except OSError:
+        return 'unknown'
+
+
+VERSION = read_version()
 CHECKS = {'boot', 'crank', 'gps_loss', 'can_loss', 'storage', 'recording', 'display', 'controls'}
 
 
