@@ -57,6 +57,7 @@ class State:
         self.gaps = deque(maxlen=100)  # Modules that went quiet for a moment (a restart or a dropout)
         self.flag_since = {}  # (fault value name, bit) -> when the module first reported it
         self.received = self.malformed = self.ignored = self.seq = 0
+        self.tx_full = 0          # Sends that waited for room in can0's queue (adapters.send_frame)
         self.gps = None
         self.gps_recovery = None  # GpsRecovery when the USB GPS is in use.
         self.gps_aid = None       # GpsAid: the receiver's satellite data kept across power-offs (gpsaid.py).
@@ -271,7 +272,8 @@ class State:
         result = {"type": "state", "seq": self.seq, "timestamp_ms": int(self.wall() * 1000),
                 "mode": self.mode, "values": values, "modules": modules,
                 "transport": {"connected": self.connected, "status": self.status,
-                              "received": self.received, "malformed": self.malformed, "ignored": self.ignored},
+                              "received": self.received, "malformed": self.malformed, "ignored": self.ignored,
+                              "tx_full": self.tx_full},
                 "runtime": self.guarded('engine runtime', self.runtime.snapshot), "nav": self.guarded('navigation', self.nav.snapshot),
                 "tune": self.guarded('TunerStudio', self.tune.snapshot),
                 "gaps": list(self.gaps),

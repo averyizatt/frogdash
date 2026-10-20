@@ -127,8 +127,25 @@ class GitHubLinkTests(unittest.IsolatedAsyncioTestCase):
                              (True, 'averyizatt/frogdash', 'averyizatt', 'connected'))
             self.assertEqual(json.loads((Path(folder) / 'log-upload.json').read_text())['token'], 'gho_abc')
             self.assertEqual({c for _, c in asked}, {'Ov23test'})
+            # The reports waiting on the Pi go at once, not at the next update.
+            self.assertEqual((Path(folder) / 'update-request').read_text(), 'upload')
+            self.assertIn('sending the reports now', status['link']['message'])
+            self.assertTrue(status['sending'])
             link.disconnect()
             self.assertFalse(link.status()['configured'])
+
+    def test_send_now_asks_the_updater_and_never_replaces_an_update_request(self):
+        with tempfile.TemporaryDirectory() as folder:
+            link = GitHubLink(folder, client_id='Ov23test')
+            self.assertEqual(link.send_now(), 'Connect GitHub first')
+            (Path(folder) / 'log-upload.json').write_text(json.dumps({'repo': 'averyizatt/frogdash', 'token': 'gho_abc'}))
+            (Path(folder) / 'update-request').write_text('requested')
+            self.assertEqual(link.send_now(), 'An update is about to run: it sends the reports too')
+            self.assertEqual((Path(folder) / 'update-request').read_text(), 'requested')
+            (Path(folder) / 'update-request').unlink()
+            self.assertIsNone(link.send_now())
+            self.assertEqual((Path(folder) / 'update-request').read_text(), 'upload')
+            self.assertTrue(link.status()['sending'])
 
     def test_the_reports_waiting_come_from_the_uploaders_count_not_its_root_only_folder(self):
         with tempfile.TemporaryDirectory() as folder:

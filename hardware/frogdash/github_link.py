@@ -70,11 +70,31 @@ class GitHubLink:
         # Reports kept on the Pi, as the uploader counted them: their folder is root's alone
         # (the dash reading it was the 500 on the car, October 2026).
         held = status.get('held') if isinstance(status.get('held'), int) else 0
+        try:
+            asked = (self.folder / 'update-request').read_text(encoding='utf-8').strip() == 'upload'
+        except OSError:
+            asked = False
         link = dict(self.link)
         if link.get('state') == 'waiting' and self.wall() > link.get('expires_at', 0):
             link = self.link = {'state': 'failed', 'message': 'The code ran out before it was entered. Press Connect GitHub for a new one'}
         return {'configured': bool(config.get('token')), 'repo': config.get('repo') or None, 'account': config.get('account'),
-                'ready': bool(self.client_id), 'last': last or None, 'held': held, 'link': link}
+                'ready': bool(self.client_id), 'last': last or None, 'held': held, 'link': link,
+                'sending': asked or status.get('state') == 'sending'}
+
+    def send_now(self):
+        """Ask the updater (root, frogdash-update.path) to send the reports now: the ones kept
+        on the Pi and a fresh one. An error text, or None when asked."""
+        if not (self.read('log-upload.json') or {}).get('token'):
+            return 'Connect GitHub first'
+        request = self.folder / 'update-request'
+        try:
+            waiting = request.read_text(encoding='utf-8').strip()
+        except OSError:
+            waiting = ''
+        if waiting and waiting != 'upload':
+            return 'An update is about to run: it sends the reports too'
+        request.write_text('upload', encoding='utf-8')
+        return None
 
     def save(self, token, account):
         self.folder.mkdir(parents=True, exist_ok=True)
@@ -133,5 +153,9 @@ class GitHubLink:
             except (OSError, ValueError, urllib.error.URLError):
                 account = None
             await asyncio.to_thread(self.save, token, account)
-            self.link = {'state': 'connected', 'message': f'Connected{" as " + account if account else ""}: reports go up after every update'}
+            # The reports kept on the Pi go now, not at the next update (October 2026: two
+            # waited after connecting, because nothing sent them until an update).
+            sent = await asyncio.to_thread(self.send_now) is None
+            self.link = {'state': 'connected', 'message': f'Connected{" as " + account if account else ""}: '
+                         + ('sending the reports now; after that they go up after every update' if sent else 'reports go up after every update')}
             return

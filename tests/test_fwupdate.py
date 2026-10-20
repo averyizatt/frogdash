@@ -5,6 +5,7 @@ so both ends of the protocol are exercised together, including lost frames and a
 a module that goes back to its old firmware, and one that never comes back.
 """
 import asyncio
+import errno
 import hashlib
 import json
 from pathlib import Path
@@ -15,6 +16,7 @@ import tempfile
 import unittest
 
 from hardware.frogdash import fwupdate
+from hardware.frogdash.adapters import send_frame
 from hardware.frogdash.fwupdate import Firmware, crc16, data_frames, load_image
 from hardware.frogdash.state import State
 
@@ -162,6 +164,39 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(job['state'], 'done', job)
         self.assertEqual((self.folder / 'received.bin').read_bytes(), self.image)
         self.assertEqual((self.firmware.burst, self.firmware.gap > .001), (1, True))   # It slowed down after the misses.
+
+    async def test_a_full_send_queue_is_waited_for_and_the_update_finishes(self):
+        # The Pi's CAN queue fills while frames are sent faster than the controller puts
+        # them on the bus: Linux says ENOBUFS. That must cost a wait, not the update.
+        real, calls = self.module.sender, [0]
+        async def bus(identifier, data):
+            async def once(packet):
+                calls[0] += 1
+                if calls[0] % 5 == 0:
+                    raise OSError(errno.ENOBUFS, 'No buffer space available')
+                await real(identifier, data)
+            await send_frame(once, bytes(data), self.state)
+        self.state.controls.attach(bus)
+        job = await self.install()
+        self.assertEqual(job['state'], 'done', job)
+        self.assertEqual((self.folder / 'received.bin').read_bytes(), self.image)
+        self.assertGreater(self.state.tx_full, 10)
+
+    async def test_send_frame_waits_only_for_a_full_queue(self):
+        waits = []
+        async def sleep(seconds):
+            waits.append(seconds)
+        answers = iter([OSError(errno.ENOBUFS, 'full'), OSError(errno.ENOBUFS, 'full'), None])
+        async def send(packet):
+            answer = next(answers)
+            if answer:
+                raise answer
+        await send_frame(send, b'', self.state, sleep=sleep)
+        self.assertEqual(waits, [.001, .002])
+        async def down(packet):
+            raise OSError(errno.ENETDOWN, 'Network is down')
+        with self.assertRaises(OSError):          # Anything else is still an error
+            await send_frame(down, b'', self.state, sleep=sleep)
 
     async def test_the_pace_climbs_back_after_a_miss_and_the_speed_is_reported(self):
         image = random.Random(8).randbytes(448 * 120)

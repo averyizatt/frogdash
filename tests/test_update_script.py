@@ -134,6 +134,21 @@ class UpdateScriptTests(unittest.TestCase):
         path = self.state / name
         return path.read_text() if path.exists() else ''
 
+    def test_send_now_runs_the_uploader_alone(self):
+        before = self.head()
+        self.publish('dash.txt', 'version two')                    # A newer version is there: not installed by this
+        (self.state / 'update-request').write_text('upload')
+        tools = self.repo / 'tools'
+        tools.mkdir()
+        (tools / 'frogdash_upload.py').write_text('import os, pathlib\n'
+                                                   'pathlib.Path(os.environ["FROGDASH_STATE"], "uploaded").write_text("yes")\n')
+        done = subprocess.run([SHELL, SCRIPT.as_posix()], env=self.env, capture_output=True, text=True, timeout=120)
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(self.head(), before)
+        self.assertFalse((self.state / 'update-request').exists())
+        if shutil.which('python3'):
+            self.assertEqual((self.state / 'uploaded').read_text(), 'yes')
+
     def test_good_update_is_kept_and_can_be_undone_by_hand(self):
         second = self.publish('dash.txt', 'version two')
         status = self.run_script(request='requested')

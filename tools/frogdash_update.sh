@@ -162,6 +162,11 @@ if [ "$action" = setup ] || [ "$action" = helpers ]; then  # From the dash at st
     setup
     exit 0
 fi
+if [ "$action" = upload ]; then  # Send now, or GitHub just connected: the reports only.
+    [ -f "$REPO/tools/frogdash_upload.py" ] && FROGDASH_STATE=$STATE FROGDASH_REPO=$REPO FROGDASH_UNITS=$UNITS \
+        timeout 1200 python3 "$REPO/tools/frogdash_upload.py" >/dev/null 2>&1
+    exit 0
+fi
 
 before=$(git -C $REPO rev-parse HEAD) || { report failed "Not a git checkout: $REPO"; exit 1; }
 had_screen=0

@@ -1,5 +1,6 @@
 """Linux SocketCAN reception, optional GPS broadcast, and candump replay."""
 import asyncio
+import errno
 import re
 import socket
 import struct
@@ -15,6 +16,27 @@ def unpack_frame(packet):
     if dlc > 8:
         raise ValueError("invalid classical CAN DLC")
     return flags & 0x1FFFFFFF, data[:dlc], bool(flags & 0x80000000), bool(flags & 0x40000000), bool(flags & 0x20000000)
+
+
+async def send_frame(send, packet, state, sleep=asyncio.sleep):
+    """Send one frame, waiting while the CAN controller's send queue is full.
+
+    Linux answers ENOBUFS at once when can0's queue (ten frames) is full: the dash is
+    sending faster than the MCP2515 puts frames on the bus, as a firmware update does.
+    That is a moment to wait, not a failure (October 2026: a taillight update stopped on
+    "No buffer space available"). The caller's time limit still ends a bus that takes
+    nothing at all (no other module acknowledging)."""
+    pause = .001
+    while True:
+        try:
+            await send(packet)
+            return
+        except OSError as exc:
+            if exc.errno != errno.ENOBUFS:
+                raise
+        state.tx_full += 1
+        await sleep(pause)
+        pause = min(pause * 2, .02)
 
 
 async def socketcan(state, interface):
@@ -34,7 +56,8 @@ async def socketcan(state, interface):
                 async def send_control(identifier, data):
                     async def transmit():
                         async with tx_lock:
-                            await loop.sock_sendall(bus, CAN_FRAME.pack(identifier, len(data), data))
+                            await send_frame(lambda packet: loop.sock_sendall(bus, packet),
+                                             CAN_FRAME.pack(identifier, len(data), data), state)
                     await asyncio.wait_for(transmit(), .5)
                 state.controls.attach(send_control)
                 # Listen before transmitting to detect the CCM's existing GPS

@@ -86,7 +86,19 @@ async def main(browser_path):
             await page.locator('#software-card').scroll_into_view_if_needed()
             await page.screenshot(path=str(ROOT / '.tmp/software-updating.png'))
             github['authorized'] = True
+            # Connected: the report waiting goes at once (the updater is asked), not at the next update.
+            await page.wait_for_function("document.getElementById('uploads-pill').textContent === 'Sending…'", timeout=10000)
+            assert (folder / 'update-request').read_text() == 'upload'
+            assert await page.locator('#uploads-send').is_disabled()
+            (folder / 'update-request').unlink()                                     # The updater took it and sent them
+            (folder / 'upload-status.json').write_text(json.dumps({'state': 'done', 'held': 0, 'time': 1,
+                                                                   'message': 'Uploaded the diagnostics, and 1 earlier report kept on the Pi'}))
             await page.wait_for_function("document.getElementById('uploads-pill').textContent === 'Connected'", timeout=10000)
+            assert 'and 1 earlier report' in await page.locator('#uploads-status').inner_text()
+            # Send now: asks again.
+            await page.locator('#uploads-send').click()
+            await page.wait_for_function("document.getElementById('uploads-pill').textContent === 'Sending…'", timeout=10000)
+            (folder / 'update-request').unlink()
             assert await page.locator('#uploads-where').inner_text() == 'To averyizatt/frogdash (branch pi-logs) · as averyizatt'
             saved = json.loads((folder / 'log-upload.json').read_text())
             assert (saved['repo'], saved['token']) == ('averyizatt/frogdash', 'gho_test'), saved

@@ -201,8 +201,10 @@ class ModuleFirmware:
             raise Failure('CAN is disconnected')
         try:
             await sender(ID_COMMAND, payload)
+        except TimeoutError:
+            raise Failure('CAN send failed: the bus took no frames for half a second (is another module connected and on?)') from None
         except OSError as exc:
-            raise Failure(f'CAN send failed: {exc or "timeout"}') from None
+            raise Failure(f'CAN send failed: {exc}') from None
 
     async def expect(self, match, timeout):
         """The first reply that `match` accepts within the time, else None."""
@@ -391,6 +393,7 @@ class ModuleFirmware:
             reply[2] == BLOCK_END and (reply[3] != OK or reply[4:6] == number.to_bytes(2, 'big'))))
         for _ in range(BLOCK_TRIES):
             burst, gap = self.burst, self.gap
+            full = self.state.tx_full
             for index, frame in enumerate(frames, 1):
                 await self.send(frame)
                 if index % burst == 0:
@@ -403,7 +406,9 @@ class ModuleFirmware:
             if reply[3] == BUSY:
                 raise Failure(f'The {self.label.lower()} stopped the update because it was needed; its old firmware is still running. {self.warning}')
             if reply[3] == OK:
-                self.clean += 1
+                # A block that had to wait for room in the send queue is not a reason to go
+                # faster: the Pi's CAN controller is already the limit.
+                self.clean = self.clean + 1 if self.state.tx_full == full else 0
                 if self.clean >= self.need and self.pace > 0:
                     self.pace, self.clean = self.pace - 1, 0
                 return

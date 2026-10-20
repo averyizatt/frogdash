@@ -266,11 +266,15 @@ def create_app(state, adapter=None, connectivity=None):
                 action = (await request.json()).get('action')
             except (ValueError, AttributeError):
                 raise web.HTTPBadRequest(text='Invalid request')
-            if action not in ('connect', 'disconnect'):
-                raise web.HTTPBadRequest(text='connect or disconnect')
+            if action not in ('connect', 'disconnect', 'send'):
+                raise web.HTTPBadRequest(text='connect, disconnect or send')
             try:
                 if action == 'connect':
                     await state.github.connect()
+                elif action == 'send':
+                    error = await asyncio.to_thread(state.github.send_now)
+                    if error:
+                        raise web.HTTPConflict(text=error)
                 else:
                     await asyncio.to_thread(state.github.disconnect)
             except ValueError as error:

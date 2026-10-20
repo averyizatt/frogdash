@@ -364,6 +364,7 @@ def run(now=None, github=None, wait=time.sleep):
                      'message': 'Report kept on the Pi: uploads not set up'})
         return f'Uploads not set up; report kept on the Pi ({len(held())} waiting)'
     github = github or GitHub(repo, token, branch=config.get('branch') or BRANCH)
+    save_status({**status, 'state': 'sending', 'message': 'Sending the reports', 'held': len(held())})
     sent = status.get('sent', [])
     # Reports kept from before (uploads not yet set up, or offline at the time) go first.
     earlier = 0

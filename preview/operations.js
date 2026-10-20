@@ -46,7 +46,7 @@
     '<div class="software-card" id="uploads-card"><div class="sw-head"><div><span class="sw-title">Reports to GitHub</span><small id="uploads-where">After every update</small></div><span class="sw-pill" id="uploads-pill" data-tone="idle">Checking…</span></div>' +
     '<div class="sw-code" id="uploads-code" hidden><strong></strong><span>On your phone open <b>github.com/login/device</b>, type this code and press Authorize.</span></div>' +
     '<p class="sw-message" id="uploads-status">What went wrong (GPS, CAN, modules, power), the diagnostics, the system log and the newest drive.</p>' +
-    '<div class="sw-buttons"><button type="button" id="uploads-connect">Connect GitHub</button><button type="button" id="uploads-disconnect" hidden>Disconnect</button></div></div></div></div></section>');
+    '<div class="sw-buttons"><button type="button" id="uploads-connect">Connect GitHub</button><button type="button" id="uploads-send" hidden>Send now</button><button type="button" id="uploads-disconnect" hidden>Disconnect</button></div></div></div></div></section>');
   // TunerStudio is a desktop program: the kiosk opens it over the dash (hardware/frogdash/tune.py).
   dialog.querySelector('[data-ops-panel="support"]').insertAdjacentHTML('afterend',
     '<section class="driver-panel ops-panel control-section" data-ops-panel="tune" hidden><div class="ops-columns">' +
@@ -243,7 +243,7 @@
   let uploadsTimer = null, disconnectArmed = false;
   function renderUploads(s) {
     const link = s.link || {}, waiting = link.state === 'waiting';
-    const [tone, label] = waiting ? ['busy', 'Enter the code'] : s.configured ? (s.last?.state === 'failed' ? ['bad', 'Upload failed'] : ['good', 'Connected'])
+    const [tone, label] = waiting ? ['busy', 'Enter the code'] : s.configured ? (s.sending ? ['busy', 'Sending…'] : s.last?.state === 'failed' ? ['bad', 'Upload failed'] : ['good', 'Connected'])
       : link.state === 'failed' ? ['bad', 'Not connected'] : ['warn', 'Not connected'];
     $('uploads-pill').dataset.tone = tone; $('uploads-pill').textContent = label;
     $('uploads-where').textContent = s.configured ? `To ${s.repo || 'GitHub'} (branch pi-logs)${s.account ? ' · as ' + s.account : ''}` : 'After every update';
@@ -252,12 +252,14 @@
     const held = s.held ? ` ${s.held} report${s.held === 1 ? '' : 's'} waiting on the Pi${s.configured ? '' : ': they go up once connected'}.` : '';
     $('uploads-status').textContent = waiting ? `Waiting for GitHub… the code works for ${Math.max(0, Math.round((link.expires_at - Date.now() / 1000) / 60))} more minutes.`
       : link.state === 'failed' && !s.configured ? link.message + '.' + held
-      : s.configured ? `${s.last ? 'Last: ' + s.last.message + '.' : 'Nothing sent yet: it goes with the next update.'}${held}`
+      : s.configured && s.sending ? 'Sending the reports to GitHub: a minute or two, longer with a drive to send.'
+      : s.configured ? `${s.last ? 'Last: ' + s.last.message + '.' : 'Nothing sent yet: press Send now, or it goes with the next update.'}${held}`
       : !s.ready ? 'This dash does not have its GitHub app ID yet: it comes with an update.' + held
       : 'Press Connect GitHub (with internet), then type the code it shows on your phone. Once, and done.' + held;
     $('uploads-connect').hidden = s.configured || waiting; $('uploads-connect').disabled = !s.ready;
     $('uploads-disconnect').hidden = !s.configured; $('uploads-disconnect').textContent = 'Disconnect'; disconnectArmed = false;
-    clearTimeout(uploadsTimer); uploadsTimer = waiting && dialog.open ? setTimeout(uploadsPoll, 3000) : null;
+    $('uploads-send').hidden = !s.configured; $('uploads-send').disabled = !!s.sending;
+    clearTimeout(uploadsTimer); uploadsTimer = (waiting || s.sending) && dialog.open ? setTimeout(uploadsPoll, 3000) : null;
   }
   async function uploadsPoll(action) {
     if (demo()) { renderUploads({ready: true, configured: false, held: 0, link: {state: 'idle'}}); return; }
@@ -268,6 +270,7 @@
     } catch { $('uploads-status').textContent = 'The dash did not answer'; }
   }
   $('uploads-connect').onclick = () => { $('uploads-status').textContent = 'Asking GitHub for a code…'; uploadsPoll('connect'); };
+  $('uploads-send').onclick = () => { $('uploads-send').disabled = true; uploadsPoll('send'); };
   $('uploads-disconnect').onclick = () => {
     if (disconnectArmed) return uploadsPoll('disconnect');
     disconnectArmed = true; $('uploads-disconnect').textContent = 'Press again';
