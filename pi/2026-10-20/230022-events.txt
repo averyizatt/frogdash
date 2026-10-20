@@ -1,0 +1,17 @@
+2026-10-20 22:58:12 UTC  WARN   module   taillights module not heard (stale)
+2026-10-20 22:58:16 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-20 22:58:18 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-20 22:58:18 UTC  WARN   alert    Alert shown: TAILLIGHTS NOT RESPONDING  {"vehicle.speed_kph":0.0432,"engine.boost_kpa":2,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN"}
+2026-10-20 22:58:20 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-20 22:58:22 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-20 22:58:38 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-20 22:58:58 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-20 22:59:04 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-20 22:59:08 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-20 22:59:14 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-20 22:59:24 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-20 22:59:54 UTC  INFO   gps      Satellite data saved: 16 satellite orbits, 32 almanac entries
+2026-10-20 22:59:56 UTC  WARN   module   sensor gateway silent for 1.2 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-20 23:00:02 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-20 23:00:14 UTC  WARN   module   sensor gateway silent for 1.2 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-20 23:00:20 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
