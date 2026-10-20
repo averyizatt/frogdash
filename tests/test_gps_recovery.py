@@ -28,6 +28,17 @@ class ReceiverCommandTests(unittest.TestCase):
         self.assertEqual(UBX_COLD_START.hex(' '), 'b5 62 06 04 04 00 ff ff 02 00 0e 61')
         self.assertEqual(ubx(0x06, 0x04, bytes([0, 0, 2, 0])).hex(' '), 'b5 62 06 04 04 00 00 00 02 00 10 68')  # Hot start
 
+    def test_the_commands_kept_as_bytes_are_what_pyubx2_builds_from_their_fields(self):
+        from pyubx2 import POLL, SET, UBXMessage
+        from hardware.frogdash.gps import UBX_AUTOMOTIVE, UBX_HARDWARE_POLL
+        self.assertEqual(UBX_WARM_START, UBXMessage('CFG', 'CFG-RST', SET, eph=1, resetMode=2).serialize())
+        self.assertEqual(UBX_COLD_START, UBXMessage('CFG', 'CFG-RST', SET, eph=1, alm=1, health=1, klob=1, pos=1, clkd=1, osc=1,
+                                                    utc=1, rtc=1, reserved2=63, aop=1, resetMode=2).serialize())
+        self.assertEqual(UBX_AUTOMOTIVE, UBXMessage('CFG', 'CFG-NAV5', SET, dyn=1, dynModel=4).serialize())
+        self.assertEqual(UBX_HARDWARE_POLL, UBXMessage('MON', 'MON-HW', POLL).serialize())
+        for name, (c, i) in (('AID-HUI', (0x0B, 0x02)), ('AID-ALM', (0x0B, 0x30)), ('AID-EPH', (0x0B, 0x31))):
+            self.assertEqual(ubx(c, i), UBXMessage('AID', name, POLL).serialize())
+
     def test_they_reach_the_receiver_as_a_gpsd_device_command(self):
         server = socket.create_server(('127.0.0.1', 0))
         got = []

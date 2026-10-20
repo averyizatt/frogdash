@@ -21,14 +21,22 @@ import json
 import os
 from pathlib import Path
 import socket
+import struct
 import subprocess
 import time
 
-from pyubx2 import GET, POLL, SET, UBXMessage, UBXReader, VALCKSUM
-from pyubx2.exceptions import UBXMessageError, UBXParseError, UBXTypeError
-from pyubx2.ubxhelpers import calc_checksum
+# pyubx2 reads the receiver's answers by field name when it is installed (the Pi setup
+# installs it). The dash must start without it: everything here also works from the
+# bytes, as it did before pyubx2.
+try:
+    from pyubx2 import GET, SET, UBXMessage, UBXReader, VALCKSUM
+    from pyubx2.exceptions import UBXMessageError, UBXParseError, UBXTypeError
+    UBX_ERRORS = (UBXParseError, UBXMessageError, UBXTypeError)
+except ImportError:
+    UBXMessage = UBXReader = None
+    UBX_ERRORS = ()
 
-from .gps import ANTENNA, JAMMING, UBX_HARDWARE_POLL, ubx
+from .gps import ANTENNA, JAMMING, UBX_HARDWARE_POLL, checksum, ubx
 
 AID_INI, AID_HUI, AID_ALM, AID_EPH = (0x0B, 0x01), (0x0B, 0x02), (0x0B, 0x30), (0x0B, 0x31)
 HARDWARE_EVERY_S = 60      # How often the receiver is asked about its radio (MON-HW)
@@ -40,18 +48,20 @@ EPH_BYTES, ALM_BYTES, HUI_BYTES = 104, 40, 72   # Payload length of a message th
 
 def packets_in(data):
     """The UBX packets in `data` whose checksum is right: [(raw, message)], the message as
-    pyubx2 reads it, or None for one it has no layout for (kept: the satellite data is
-    sent back byte for byte). A damaged packet is skipped and the search goes on from
-    the next header, which pyubx2's own stream reader does not do."""
+    pyubx2 reads it, or None for one it has no layout for or without pyubx2 (kept either
+    way: the satellite data is sent back byte for byte). A damaged packet is skipped and
+    the search goes on from the next header, which pyubx2's own stream reader does not do."""
     found, i = [], 0
     while (i := data.find(b'\xb5\x62', i)) >= 0 and i + 8 <= len(data):
         end = i + 8 + int.from_bytes(data[i + 4:i + 6], 'little')
-        if end <= len(data) and calc_checksum(data[i + 2:end - 2]) == data[end - 2:end]:
+        if end <= len(data) and checksum(data[i + 2:end - 2]) == data[end - 2:end]:
             raw = data[i:end]
-            try:
-                message = UBXReader.parse(raw, validate=VALCKSUM, msgmode=GET)
-            except (UBXParseError, UBXMessageError, UBXTypeError, ValueError, KeyError, IndexError):
-                message = None
+            message = None
+            if UBXReader:
+                try:
+                    message = UBXReader.parse(raw, validate=VALCKSUM, msgmode=GET)
+                except (*UBX_ERRORS, ValueError, KeyError, IndexError):
+                    pass
             found.append((raw, message))
             i = end
             continue
@@ -115,16 +125,26 @@ def initial(lat, lon, alt_m=0.0, accuracy_m=50000, wall=None):
         gps_s = wall - 315964800 + 18         # Unix time to GPS time (18 leap seconds)
         week, tow_ms = int(gps_s // 604800), int((gps_s % 604800) * 1000)
         t_acc_ms, flags = 2000, flags | 0x02  # Time valid, to about 2 s
-    return UBXMessage('AID', 'AID-INI', SET, ecefXOrLat=round(lat * 1e7), ecefYOrLon=round(lon * 1e7),
-                      ecefZOrAlt=round(alt_m * 100), posAcc=round(accuracy_m * 100), wn=week, tow=tow_ms,
-                      tAccMs=t_acc_ms, flags=flags.to_bytes(4, 'little')).serialize()
+    if UBXMessage:
+        return UBXMessage('AID', 'AID-INI', SET, ecefXOrLat=round(lat * 1e7), ecefYOrLon=round(lon * 1e7),
+                          ecefZOrAlt=round(alt_m * 100), posAcc=round(accuracy_m * 100), wn=week, tow=tow_ms,
+                          tAccMs=t_acc_ms, flags=flags.to_bytes(4, 'little')).serialize()
+    payload = struct.pack('<iiiIHHIiIIiII', round(lat * 1e7), round(lon * 1e7), round(alt_m * 100),
+                          round(accuracy_m * 100), 0, week, tow_ms, 0, t_acc_ms, 0, 0, 0, flags)
+    return ubx(*AID_INI, payload)
 
 
-def hardware_report(message, seen):
-    """What MON-HW says about the receiver's radio, in words the dash shows."""
-    return {'antenna': ANTENNA.get(message.aStatus, 'unknown'), 'jamming': JAMMING.get(message.jammingState, 'unknown'),
-            'jam_ind': message.jamInd, 'noise': message.noisePerMS, 'agc_pct': round(message.agcCnt * 100 / 8191),
-            'seen': seen}
+def hardware_report(payload, seen):
+    """What MON-HW says about the receiver's radio, in words the dash shows: read by
+    pyubx2 when installed, else from its fixed layout (u-blox 7 and later)."""
+    if UBXMessage:
+        m = UBXMessage(b'\x0a', b'\x09', GET, payload=payload)
+        noise, agc, antenna, jamming, level = m.noisePerMS, m.agcCnt, m.aStatus, m.jammingState, m.jamInd
+    else:
+        noise, agc = struct.unpack_from('<HH', payload, 16)
+        antenna, jamming, level = payload[20], payload[22] >> 2 & 3, payload[45]
+    return {'antenna': ANTENNA.get(antenna, 'unknown'), 'jamming': JAMMING.get(jamming, 'unknown'),
+            'jam_ind': level, 'noise': noise, 'agc_pct': round(agc * 100 / 8191), 'seen': seen}
 
 
 class GpsAid:
@@ -151,7 +171,7 @@ class GpsAid:
             return None
 
     def save(self):
-        polls = [UBXMessage('AID', name, POLL).serialize() for name in ('AID-HUI', 'AID-ALM', 'AID-EPH')]
+        polls = [ubx(*AID_HUI), ubx(*AID_ALM), ubx(*AID_EPH)]
         packets = self.talk(self.gps.device, polls)
         keep = [(c, i, p) for c, i, p in packets
                 if (c, i) == AID_EPH and len(p) == EPH_BYTES or (c, i) == AID_ALM and len(p) == ALM_BYTES
@@ -203,7 +223,7 @@ class GpsAid:
         self.hardware_at = now
         for c, i, payload in self.talk(self.gps.device, [UBX_HARDWARE_POLL], seconds=1.5):
             if (c, i) == (0x0A, 0x09) and len(payload) >= 60:
-                self.gps.hardware = hardware_report(UBXMessage(b'\x0a', b'\x09', GET, payload=payload), now)
+                self.gps.hardware = hardware_report(payload, now)
                 return
 
     def step(self):
@@ -213,7 +233,7 @@ class GpsAid:
         self.keep_data()
         try:
             self.check_hardware()    # After the satellite data: that is what a cold start waits for
-        except (OSError, UBXParseError, UBXMessageError, UBXTypeError) as error:
+        except (OSError, struct.error, *UBX_ERRORS) as error:
             self.note = f'Could not ask the receiver about its radio: {error}'
 
     def keep_data(self):

@@ -106,6 +106,20 @@ class SetupScriptTests(unittest.TestCase):
         path = self.fake / name
         return path.read_text() if path.exists() else ''
 
+    def test_a_python_package_the_new_version_adds_is_installed_and_the_dash_restarted(self):
+        # The dash's environment, missing the package until pip has run.
+        venv = self.fake / 'venv-python'
+        venv.write_text('#!/bin/sh\necho "$@" >> "$FAKE/venv.log"\n'
+                        'case "$1" in -c) [ -f "$FAKE/installed" ] || echo "pyubx2==1.3.9";; -m) touch "$FAKE/installed";; esac\n', newline='\n')
+        venv.chmod(0o755)
+        self.env['FROGDASH_VENV_PY'] = venv.as_posix()
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Python packages'], ('waiting', 'Needs the internet (next Update now): pyubx2 1.3.9'))
+        said, status, steps = self.run_setup('online')
+        self.assertEqual(steps['Python packages'], ('done', 'Installed: pyubx2 1.3.9'))
+        self.assertIn('-m pip install --quiet --disable-pip-version-check --no-deps pyubx2==1.3.9', self.log('venv.log'))
+        self.assertIn('restart frogdash.service', self.log('systemctl.log'))
+
     def test_the_terminal_gets_sudo_only_while_it_is_switched_on(self):
         said, status, steps = self.run_setup('offline')
         self.assertEqual(steps['Terminal with sudo'][0], 'ok')                  # Off: nothing installed

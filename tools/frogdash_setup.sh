@@ -90,6 +90,39 @@ for name in $SERVICES; do
     [ -f "$UNITS/$name.service" ] && systemctl is-enabled --quiet "$name.service" && continue
     if install_unit "$name" "$name.service"; then added="$added ${name#frogdash-}"; else broken="$broken ${name#frogdash-}"; fi
 done
+# --- Python packages the dash uses (requirements.lock) ---
+# The updater moves the code on with git; a package added to requirements.lock is
+# installed here, into the dash's own environment, and the dash restarted to use it.
+# Only packages that are missing: a version that is already there and working is kept.
+# The dash starts without these (tests/test_starts_without_new_packages.py).
+VENV_PY=${FROGDASH_VENV_PY:-$REPO/.venv/bin/python}
+if [ ! -x "$VENV_PY" ] || [ ! -f "$REPO/requirements.lock" ]; then
+    step "Python packages" skipped "No dash environment at $REPO/.venv"
+else
+    missing=$("$VENV_PY" -c '
+import sys
+from importlib.metadata import PackageNotFoundError, version
+need = []
+for line in open(sys.argv[1], encoding="utf-8"):
+    pin = line.split("#")[0].strip()
+    if not pin or pin.startswith("-") or "==" not in pin:
+        continue
+    try:
+        version(pin.split("==")[0])
+    except PackageNotFoundError:
+        need.append(pin)
+print(" ".join(need))' "$REPO/requirements.lock" 2>/dev/null)
+    shown=$(printf '%s' "$missing" | sed 's/==/ /g')   # The status keeps no '='
+    if [ -z "$missing" ]; then
+        step "Python packages" ok "All installed"
+    elif ! is_online; then
+        step "Python packages" waiting "Needs the internet (next Update now): $shown"
+    elif timeout 900 "$VENV_PY" -m pip install --quiet --disable-pip-version-check --no-deps $missing >/dev/null 2>&1; then
+        step "Python packages" done "Installed: $shown"; restart_dash=1
+    else
+        step "Python packages" failed "Could not install: $shown"
+    fi
+fi
 if [ -n "$broken" ]; then step "Dash helpers" failed "Could not install:$broken"
 elif [ -n "$added" ]; then step "Dash helpers" done "Installed:$added"
 else step "Dash helpers" ok "All installed"

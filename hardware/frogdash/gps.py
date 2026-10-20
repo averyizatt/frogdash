@@ -5,9 +5,6 @@ import math
 import socket
 import time
 
-from pyubx2 import POLL, SET, UBXMessage
-from pyubx2.ubxhelpers import calc_checksum
-
 STALL_S = 10  # Reopen the gpsd connection after this long without any report.
 # gpsd can send one 'no fix' report between good ones: a receiver tracking several satellite
 # systems sends a fix-status sentence per system, and one with none of its satellites in use
@@ -17,26 +14,36 @@ STALE_S = 3.0  # A speed or position older than this is not shown as live
 QUIET_S = 15  # No report from any receiver for this long: the receiver is not being heard.
 
 
-# u-blox binary messages are built and read with pyubx2 (semuconsulting), which knows
-# each message's fields by name and adds the checksum.
+# The fixed u-blox commands are kept as bytes here, so the dash never needs a package to
+# start (October 2026: the dash failed to start on a Pi that did not have pyubx2 yet).
+# tests/test_gps_recovery.py checks each against pyubx2 (semuconsulting), which builds
+# them from their fields by name; gpsaid.py uses pyubx2 to read the answers when installed.
+def checksum(body):
+    """u-blox's 8-bit Fletcher checksum over class, id, length and payload."""
+    a = b = 0
+    for byte in body:
+        a = (a + byte) & 0xFF
+        b = (b + a) & 0xFF
+    return bytes([a, b])
+
+
 def ubx(message_class, message_id, payload=b''):
-    """A u-blox message from its class, id and raw payload (for messages kept as bytes)."""
+    """A u-blox message from its class, id and raw payload."""
     body = bytes([message_class, message_id]) + len(payload).to_bytes(2, 'little') + payload
-    return b'\xb5\x62' + body + calc_checksum(body)
+    return b'\xb5\x62' + body + checksum(body)
 
 
 # CFG-RST, GNSS-only controlled restart (resetMode 2). Warm clears only the satellites'
-# orbits (eph); cold clears everything the receiver knows and starts from nothing.
-UBX_WARM_START = UBXMessage('CFG', 'CFG-RST', SET, eph=1, resetMode=2).serialize()
-UBX_COLD_START = UBXMessage('CFG', 'CFG-RST', SET, eph=1, alm=1, health=1, klob=1, pos=1, clkd=1, osc=1,
-                            utc=1, rtc=1, reserved2=63, aop=1, resetMode=2).serialize()
+# orbits (navBbrMask eph); cold clears everything the receiver knows and starts from nothing.
+UBX_WARM_START = ubx(0x06, 0x04, bytes([0x01, 0x00, 0x02, 0x00]))
+UBX_COLD_START = ubx(0x06, 0x04, bytes([0xFF, 0xFF, 0x02, 0x00]))
 # CFG-NAV5 with only the dynamic model applied (mask 'dyn'): 4 = automotive. u-blox's own
 # advice for a receiver in a car: its position and speed filter expects a vehicle on a
 # road, not a person walking ('portable', the default). Kept until the receiver loses power.
-UBX_AUTOMOTIVE = UBXMessage('CFG', 'CFG-NAV5', SET, dyn=1, dynModel=4).serialize()
+UBX_AUTOMOTIVE = ubx(0x06, 0x24, bytes([0x01, 0x00, 0x04]) + bytes(33))
 # MON-HW: the receiver's own view of its radio: antenna, noise and whether something
 # nearby is jamming it (gpsaid.py asks for it once a minute).
-UBX_HARDWARE_POLL = UBXMessage('MON', 'MON-HW', POLL).serialize()
+UBX_HARDWARE_POLL = ubx(0x0A, 0x09)
 JAMMING = {0: 'unknown', 1: 'ok', 2: 'warning', 3: 'critical'}
 ANTENNA = {0: 'starting', 1: 'unknown', 2: 'ok', 3: 'short circuit', 4: 'open circuit'}
 HARDWARE_FRESH_S = 180

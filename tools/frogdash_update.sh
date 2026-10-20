@@ -63,6 +63,15 @@ upload() {  # Diagnostics and the newest drive to the owner's private repository
     [ -z "$said" ] || note="$note. $said"
     return 0
 }
+packages() {  # A package the new version adds to requirements.lock, before it starts.
+    # The dash also starts without it (the setup step installs it otherwise), but then a
+    # feature waits for the setup. Best effort: a failure here is not a failed update.
+    git -C $REPO diff --quiet "$before" "$after" -- requirements.lock 2>/dev/null && return 0
+    [ -x "$REPO/.venv/bin/python" ] || return 0
+    report running "Installing the Python packages this version adds"
+    timeout 900 "$REPO/.venv/bin/python" -m pip install --quiet --disable-pip-version-check -r "$REPO/requirements.lock" >/dev/null 2>&1
+    return 0
+}
 restart_dash() {
     systemctl restart frogdash.service
     systemctl try-restart 'frogdash-console@*.service' 2>/dev/null
@@ -164,6 +173,7 @@ fi
 sync_units
 changes=$(git -C $REPO rev-list --count "$before..$after")
 echo "$before" > "$STATE/update-previous"
+packages
 report running "Updated ($changes changes). Restarting the dash and checking it"
 restart_dash
 if healthy $had_screen; then
