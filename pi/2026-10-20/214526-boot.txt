@@ -1,0 +1,376 @@
+Frogdash boot report (read-only; times start at kernel boot, not key-on)
+
+--- Operating system ---
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+NAME="Debian GNU/Linux"
+VERSION_ID="12"
+VERSION="12 (bookworm)"
+VERSION_CODENAME=bookworm
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+
+
+--- Architecture ---
+aarch64
+
+--- Default boot target ---
+multi-user.target
+
+--- Boot timing ---
+Startup finished in 1.949s (kernel) + 6.367s (userspace) = 8.316s 
+multi-user.target reached after 6.321s in userspace.
+
+--- Slowest unit activation times (parallel durations do not add up) ---
+40.773s frogdash-update.service
+ 1.292s dev-mmcblk0p2.device
+ 1.208s frogdash.service
+  846ms rpi-eeprom-update.service
+  658ms NetworkManager.service
+  518ms user@1000.service
+  506ms systemd-rfkill.service
+  465ms dbus.service
+  434ms systemd-logind.service
+  413ms ssh.service
+  357ms systemd-binfmt.service
+  347ms dphys-swapfile.service
+  338ms frogdash-console@foxbody.service
+  317ms preload.service
+  300ms systemd-journal-flush.service
+  244ms proc-sys-fs-binfmt_misc.mount
+  242ms frogdash-can.service
+  215ms keyboard-setup.service
+  213ms sshswitch.service
+  212ms systemd-udev-trigger.service
+
+--- Critical chain: frogdash.service ---
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+frogdash.service +1.208s
+`-(Wi-Fi network).service @3.859s
+  `-NetworkManager.service @3.175s +658ms
+    `-dbus.service @2.684s +465ms
+      `-basic.target @2.673s
+        `-sockets.target @2.673s
+          `-frogdash-terminal.socket @2.614s +32ms
+            `-sysinit.target @2.579s
+              `-systemd-binfmt.service @2.221s +357ms
+                `-proc-sys-fs-binfmt_misc.mount @2.300s +244ms
+                  `-systemd-journald.socket @672ms
+                    `--.mount @631ms
+                      `--.slice @631ms
+
+--- Critical chain: frogdash-console@foxbody.service ---
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+frogdash-console@foxbody.service +338ms
+`-systemd-user-sessions.service @3.883s +37ms
+  `-network.target @3.835s
+    `-NetworkManager.service @3.175s +658ms
+      `-dbus.service @2.684s +465ms
+        `-basic.target @2.673s
+          `-sockets.target @2.673s
+            `-frogdash-terminal.socket @2.614s +32ms
+              `-sysinit.target @2.579s
+                `-systemd-binfmt.service @2.221s +357ms
+                  `-proc-sys-fs-binfmt_misc.mount @2.300s +244ms
+                    `-systemd-journald.socket @672ms
+                      `--.mount @631ms
+                        `--.slice @631ms
+
+--- Dash, display manager, UPS and network waits ---
+UNIT                             LOAD      ACTIVE   SUB       DESCRIPTION
+frogdash-canreset.path           loaded    active   waiting   Reset can0 when the Frogdash dash stops receiving CAN with the key on
+frogdash-gps.path                loaded    active   waiting   Run a GPS recovery step when the Frogdash watchdog asks for one
+frogdash-screen.path             loaded    active   waiting   Change the dash screen mode when the dash asks (try, keep, go back)
+frogdash-update.path             loaded    active   waiting   Start a Frogdash update when the dash requests one
+frogdash-wifi.path               loaded    active   waiting   Run a Frogdash Wi-Fi request (scan, join, disconnect)
+display-manager.service          not-found inactive dead      display-manager.service
+frogdash-can.service             loaded    active   exited    Configure Frogdash MCP2515 SocketCAN at 500 kbit/s
+frogdash-canreset.service        loaded    inactive dead      CAN recovery for Frogdash (take can0 down and up again)
+frogdash-console@foxbody.service loaded    active   running   Frogdash console kiosk for foxbody
+frogdash-gps.service             loaded    inactive dead      GPS recovery step for Frogdash (restart gpsd, find the receiver, reset its USB port)
+frogdash-guard.service           loaded    active   running   Frogdash recovery guard (puts back the last version that ran if the dash stops starting)
+(Wi-Fi network).service         loaded    active   running   Frogdash local Wi-Fi hotspot broker
+frogdash-netkeeper.service       loaded    active   running   Frogdash Wi-Fi keeper (keeps the dash cam connection up)
+frogdash-power.service           loaded    active   running   Frogdash PiSugar 3 input-power monitor
+frogdash-rescue.service          loaded    active   running   Frogdash rescue screen (shown on the screen when the dash is not running)
+frogdash-screen-boot.service     loaded    inactive dead      Frogdash screen check after each start: finish or undo a screen trial, record the boot
+frogdash-screen.service          loaded    inactive dead      Try, keep or undo exact 1920 x 720 on the dash screen
+frogdash-update.service          loaded    inactive dead      Update Frogdash from GitHub and restart it
+frogdash-wifi.service            loaded    inactive dead      Join a Wi-Fi network requested from the Frogdash screen
+frogdash.service                 loaded    active   running   Frogdash CAN and GPS state service
+pisugar-server.service           loaded    active   running   pisugar-server
+frogdash-terminal.socket         loaded    active   listening Frogdash Terminal tab: commands as the screen user (only with --terminal)
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+22 loaded units listed.
+To show all installed unit files use 'systemctl list-unit-files'.
+
+--- Enabled startup units ---
+UNIT FILE                             STATE    PRESET
+frogdash-canreset.path                enabled  enabled
+frogdash-gps.path                     enabled  enabled
+frogdash-screen.path                  enabled  enabled
+frogdash-update.path                  enabled  enabled
+frogdash-wifi.path                    enabled  enabled
+frogdash-can.service                  enabled  enabled
+frogdash-canreset.service             static   -
+frogdash-console@.service             indirect enabled
+frogdash-gps.service                  static   -
+frogdash-guard.service                enabled  enabled
+(Wi-Fi network).service              enabled  enabled
+frogdash-netkeeper.service            enabled  enabled
+frogdash-power.service                enabled  enabled
+frogdash-rescue.service               enabled  enabled
+frogdash-screen-boot.service          enabled  enabled
+frogdash-screen.service               static   -
+frogdash-terminal@.service            static   -
+frogdash-update.service               static   -
+frogdash-wifi.service                 static   -
+frogdash.service                      enabled  enabled
+NetworkManager-wait-online.service    disabled enabled
+pisugar-poweroff.service              masked   enabled
+pisugar-server.service                enabled  enabled
+systemd-networkd-wait-online.service  disabled disabled
+systemd-networkd-wait-online@.service disabled enabled
+frogdash-terminal.socket              enabled  enabled
+
+26 unit files listed.
+
+--- Service timing and dependencies: frogdash.service ---
+ExecMainStartTimestampMonotonic=768864699
+Requires=-.mount sysinit.target system.slice
+Wants=frogdash-can.service (Wi-Fi network).service tmp.mount gpsd.socket
+After=gpsd.socket (Wi-Fi network).service system.slice tmp.mount systemd-tmpfiles-setup.service basic.target sysinit.target -.mount frogdash-can.service systemd-journald.socket systemd-remount-fs.service
+LoadState=loaded
+ActiveState=active
+SubState=running
+ActiveEnterTimestampMonotonic=770073741
+
+--- Service timing and dependencies: frogdash-console@foxbody.service ---
+ExecMainStartTimestampMonotonic=719197222
+Requires="system-frogdash\\x2dconsole.slice" sysinit.target
+Wants=frogdash.service systemd-logind.service dbus.socket
+After=basic.target getty@tty7.service systemd-logind.service systemd-user-sessions.service dbus.socket "system-frogdash\\x2dconsole.slice" sysinit.target systemd-journald.socket
+LoadState=loaded
+ActiveState=active
+SubState=running
+ActiveEnterTimestampMonotonic=719526014
+
+--- Service timing and dependencies: display-manager.service ---
+ExecMainStartTimestampMonotonic=0
+Requires=
+Wants=
+After=console-setup.service
+LoadState=not-found
+ActiveState=inactive
+SubState=dead
+ActiveEnterTimestampMonotonic=0
+
+--- Kiosk launch and first render (current boot) ---
+[  719.492280] pi python3[19980]: Frogdash kiosk: session c24 active after 0.02s
+[  719.474141] pi python3[19980]: Frogdash kiosk: activated logind session c24 on tty7
+[  719.004562] pi python3[19961]: Frogdash kiosk: session c23 active after 0.02s
+[  718.984707] pi python3[19961]: Frogdash kiosk: activated logind session c23 on tty7
+[  686.733483] pi python3[18865]: Frogdash kiosk: session c22 active after 0.01s
+[  686.718014] pi python3[18865]: Frogdash kiosk: activated logind session c22 on tty7
+[  654.706259] pi python3[18129]: Frogdash kiosk: session c21 active after 0.02s
+[  654.691040] pi python3[18129]: Frogdash kiosk: activated logind session c21 on tty7
+[  622.548081] pi python3[17163]: Frogdash kiosk: session c20 active after 0.03s
+[  622.512437] pi python3[17163]: Frogdash kiosk: activated logind session c20 on tty7
+[  590.485183] pi python3[16142]: Frogdash kiosk: session c19 active after 0.02s
+[  590.469157] pi python3[16142]: Frogdash kiosk: activated logind session c19 on tty7
+[  558.272103] pi python3[15553]: Frogdash kiosk: session c18 active after 0.03s
+[  558.241386] pi python3[15553]: Frogdash kiosk: activated logind session c18 on tty7
+[  526.187389] pi python3[14543]: Frogdash kiosk: session c17 active after 0.02s
+[  526.169821] pi python3[14543]: Frogdash kiosk: activated logind session c17 on tty7
+[  494.212214] pi python3[13957]: Frogdash kiosk: session c16 active after 0.02s
+[  494.189962] pi python3[13957]: Frogdash kiosk: activated logind session c16 on tty7
+[  462.216418] pi python3[12947]: Frogdash kiosk: session c15 active after 0.02s
+[  462.199986] pi python3[12947]: Frogdash kiosk: activated logind session c15 on tty7
+[  430.006976] pi python3[11928]: Frogdash kiosk: session c14 active after 0.02s
+[  429.990550] pi python3[11928]: Frogdash kiosk: activated logind session c14 on tty7
+[  397.936091] pi python3[11335]: Frogdash kiosk: session c13 active after 0.02s
+[  397.920930] pi python3[11335]: Frogdash kiosk: activated logind session c13 on tty7
+[  365.723777] pi python3[10324]: Frogdash kiosk: session c12 active after 0.02s
+[  365.705147] pi python3[10324]: Frogdash kiosk: activated logind session c12 on tty7
+[  333.482155] pi python3[9740]: Frogdash kiosk: session c11 active after 0.02s
+[  333.462448] pi python3[9740]: Frogdash kiosk: activated logind session c11 on tty7
+[  301.284087] pi python3[8713]: Frogdash kiosk: session c10 active after 0.04s
+[  301.245121] pi python3[8713]: Frogdash kiosk: activated logind session c10 on tty7
+
+--- Desktop kiosk launch (if used) ---
+-- No entries --
+Exit status 1
+
+--- Kiosk user session logs (includes Cage/Chromium child processes) ---
+[  205.831685] pi dbus-run-session[6167]: Frogdash kiosk: waiting for local HTTP (boot+205.83s)
+[  206.676697] pi dbus-run-session[6153]: 00:00:01.547 [ERROR] [backend/drm/atomic.c:81] connector HDMI-A-1: Atomic commit failed: Permission denied
+[  235.832793] pi dbus-run-session[6167]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  237.221916] pi dbus-run-session[7155]: 00:00:00.093 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  237.221916] pi dbus-run-session[7155]: 00:00:00.093 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  237.831489] pi dbus-run-session[7164]: Frogdash kiosk: waiting for local HTTP (boot+237.83s)
+[  267.833183] pi dbus-run-session[7164]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  269.183415] pi dbus-run-session[7741]: 00:00:00.055 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  269.184081] pi dbus-run-session[7741]: 00:00:00.055 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  269.769848] pi dbus-run-session[7750]: Frogdash kiosk: waiting for local HTTP (boot+269.76s)
+[  271.070288] pi dbus-run-session[7741]: 00:00:01.942 [ERROR] [backend/drm/atomic.c:81] connector HDMI-A-1: Atomic commit failed: Permission denied
+[  299.770939] pi dbus-run-session[7750]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  301.292148] pi dbus-run-session[8716]: 00:00:00.111 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  301.292148] pi dbus-run-session[8716]: 00:00:00.111 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  301.892870] pi dbus-run-session[8727]: Frogdash kiosk: waiting for local HTTP (boot+301.89s)
+[  308.955402] pi dbus-run-session[8716]: 00:00:07.775 [ERROR] [backend/drm/atomic.c:81] connector HDMI-A-1: Atomic commit failed: Permission denied
+[  331.893785] pi dbus-run-session[8727]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  333.485916] pi dbus-run-session[9743]: 00:00:00.070 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  333.485916] pi dbus-run-session[9743]: 00:00:00.070 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  334.191095] pi dbus-run-session[9754]: Frogdash kiosk: waiting for local HTTP (boot+334.18s)
+[  364.192165] pi dbus-run-session[9754]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  365.747280] pi dbus-run-session[10327]: 00:00:00.087 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  365.747280] pi dbus-run-session[10327]: 00:00:00.088 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  366.456603] pi dbus-run-session[10337]: Frogdash kiosk: waiting for local HTTP (boot+366.45s)
+[  396.460103] pi dbus-run-session[10337]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  397.946687] pi dbus-run-session[11338]: 00:00:00.063 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  397.946687] pi dbus-run-session[11338]: 00:00:00.063 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  398.615219] pi dbus-run-session[11348]: Frogdash kiosk: waiting for local HTTP (boot+398.61s)
+[  428.619286] pi dbus-run-session[11348]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  430.035845] pi dbus-run-session[11936]: 00:00:00.088 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  430.036535] pi dbus-run-session[11936]: 00:00:00.088 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  430.663718] pi dbus-run-session[11955]: Frogdash kiosk: waiting for local HTTP (boot+430.66s)
+[  460.665377] pi dbus-run-session[11955]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  462.232101] pi dbus-run-session[12950]: 00:00:00.062 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  462.232101] pi dbus-run-session[12950]: 00:00:00.062 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  462.802435] pi dbus-run-session[12959]: Frogdash kiosk: waiting for local HTTP (boot+462.80s)
+[  471.567750] pi dbus-run-session[12950]: 00:00:09.400 [ERROR] [backend/drm/atomic.c:81] connector HDMI-A-1: Atomic commit failed: Permission denied
+[  492.803505] pi dbus-run-session[12959]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  494.208763] pi dbus-run-session[13960]: 00:00:00.073 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  494.208763] pi dbus-run-session[13960]: 00:00:00.073 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  494.800669] pi dbus-run-session[13974]: Frogdash kiosk: waiting for local HTTP (boot+494.80s)
+[  524.801880] pi dbus-run-session[13974]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  526.196087] pi dbus-run-session[14546]: 00:00:00.057 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  526.196087] pi dbus-run-session[14546]: 00:00:00.057 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  526.771068] pi dbus-run-session[14555]: Frogdash kiosk: waiting for local HTTP (boot+526.77s)
+[  528.900507] pi dbus-run-session[14546]: 00:00:02.765 [ERROR] [backend/drm/atomic.c:81] connector HDMI-A-1: Atomic commit failed: Permission denied
+[  556.772126] pi dbus-run-session[14555]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  558.256822] pi dbus-run-session[15556]: 00:00:00.089 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  558.256822] pi dbus-run-session[15556]: 00:00:00.089 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  558.866424] pi dbus-run-session[15572]: Frogdash kiosk: waiting for local HTTP (boot+558.86s)
+[  588.867493] pi dbus-run-session[15572]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  590.468223] pi dbus-run-session[16145]: 00:00:00.064 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  590.468223] pi dbus-run-session[16145]: 00:00:00.064 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  591.149749] pi dbus-run-session[16156]: Frogdash kiosk: waiting for local HTTP (boot+591.14s)
+[  611.031426] pi dbus-run-session[16145]: 00:00:20.628 [ERROR] [backend/drm/atomic.c:81] connector HDMI-A-1: Atomic commit failed: Permission denied
+[  621.150680] pi dbus-run-session[16156]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  622.551085] pi dbus-run-session[17166]: 00:00:00.082 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  622.551085] pi dbus-run-session[17166]: 00:00:00.083 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  623.233684] pi dbus-run-session[17180]: Frogdash kiosk: waiting for local HTTP (boot+623.23s)
+[  624.270430] pi dbus-run-session[17166]: 00:00:01.802 [ERROR] [backend/drm/atomic.c:81] connector HDMI-A-1: Atomic commit failed: Permission denied
+[  653.234917] pi dbus-run-session[17180]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  654.688138] pi dbus-run-session[18132]: 00:00:00.054 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  654.688138] pi dbus-run-session[18132]: 00:00:00.054 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  655.300802] pi dbus-run-session[18143]: Frogdash kiosk: waiting for local HTTP (boot+655.30s)
+[  685.301910] pi dbus-run-session[18143]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  686.762142] pi dbus-run-session[18868]: 00:00:00.074 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  686.762142] pi dbus-run-session[18868]: 00:00:00.075 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  687.400724] pi dbus-run-session[18877]: Frogdash kiosk: waiting for local HTTP (boot+687.40s)
+[  715.738803] pi sudo[19856]:  foxbody : TTY=tty1 ; PWD=/(Wi-Fi network)/foxbody ; USER=root ; COMMAND=/usr/bin/sh /opt/frogdash/tools/frogdash_update.sh
+[  715.739699] pi sudo[19856]: pam_unix(sudo:session): session opened for user root(uid=0) by foxbody(uid=1000)
+[  717.403350] pi dbus-run-session[18877]: Local Frogdash HTTP service did not become ready within 30 seconds; systemd will retry. Check journalctl -u frogdash.
+[  718.979528] pi dbus-run-session[19964]: 00:00:00.060 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  718.979528] pi dbus-run-session[19964]: 00:00:00.060 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  719.151364] pi dbus-run-session[19963]: dbus-daemon[19963]: [session uid=1000 pid=19963] Reloaded configuration
+[  719.575396] pi dbus-run-session[19995]: 00:00:00.063 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  719.575396] pi dbus-run-session[19995]: 00:00:00.063 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[  720.171536] pi dbus-run-session[20006]: Frogdash kiosk: waiting for local HTTP (boot+720.17s)
+[  720.182154] pi dbus-run-session[20006]: Frogdash kiosk: HTTP ready; launching Chromium (boot+720.18s)
+[  723.323510] pi dbus-run-session[19995]: 00:00:03.811 [ERROR] [backend/drm/atomic.c:81] connector HDMI-A-1: Atomic commit failed: Permission denied
+[  725.715538] pi dbus-run-session[19993]: dbus-daemon[19993]: [session uid=1000 pid=19993] Activating service name='org.a11y.Bus' requested by ':1.1' (uid=1000 pid=20007 comm="/usr/lib/chromium/chromium --force-renderer-access")
+[  725.732098] pi dbus-run-session[19993]: dbus-daemon[19993]: [session uid=1000 pid=19993] Successfully activated service 'org.a11y.Bus'
+[  730.284385] pi dbus-run-session[20006]: Frogdash kiosk: first render heartbeat observed (boot+730.28s; 10.10s after browser launch)
+[  732.857630] pi dbus-run-session[20007]: [20007:20007:1020/154448.671126:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  734.741917] pi dbus-run-session[20007]: [20007:20007:1020/154450.555550:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  736.203096] pi dbus-run-session[20007]: [20007:20007:1020/154452.014789:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  736.873755] pi dbus-run-session[20007]: [20007:20064:1020/154452.687275:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: QUOTA_EXCEEDED
+[  738.167054] pi dbus-run-session[20007]: [20007:20007:1020/154453.980474:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  739.627465] pi dbus-run-session[20007]: [20007:20007:1020/154455.440195:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  740.973946] pi dbus-run-session[20007]: [20007:20007:1020/154456.787503:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  742.246305] pi dbus-run-session[20007]: [20007:20007:1020/154458.057837:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  743.602717] pi dbus-run-session[20007]: [20007:20007:1020/154459.416364:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  744.890023] pi dbus-run-session[20007]: [20007:20007:1020/154500.703602:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  746.903757] pi dbus-run-session[20007]: [20007:20007:1020/154502.717236:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  748.234343] pi dbus-run-session[20007]: [20007:20007:1020/154504.047999:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  749.685255] pi dbus-run-session[20007]: [20007:20007:1020/154505.498157:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  751.068522] pi dbus-run-session[20007]: [20007:20007:1020/154506.881445:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  752.496082] pi dbus-run-session[20007]: [20007:20007:1020/154508.306264:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  753.837461] pi dbus-run-session[20007]: [20007:20007:1020/154509.651066:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  755.187489] pi dbus-run-session[20007]: [20007:20007:1020/154511.001002:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  756.426374] pi dbus-run-session[20007]: [20007:20007:1020/154512.240039:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  757.827157] pi dbus-run-session[20007]: [20007:20007:1020/154513.640776:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  759.198753] pi dbus-run-session[20007]: [20007:20007:1020/154515.012225:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  760.669678] pi dbus-run-session[20007]: [20007:20007:1020/154516.483140:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  761.936488] pi dbus-run-session[20007]: [20007:20007:1020/154517.750163:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  763.174347] pi dbus-run-session[20007]: [20007:20007:1020/154518.986698:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  764.586678] pi dbus-run-session[20007]: [20007:20007:1020/154520.400346:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  765.866264] pi dbus-run-session[20007]: [20007:20007:1020/154521.679267:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  767.518748] pi dbus-run-session[20007]: [20007:20007:1020/154523.332396:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  770.854406] pi dbus-run-session[20007]: [20007:20007:1020/154526.666934:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  772.177475] pi dbus-run-session[20007]: [20007:20007:1020/154527.991161:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  773.438124] pi dbus-run-session[20007]: [20007:20007:1020/154529.250936:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  774.707675] pi dbus-run-session[20007]: [20007:20007:1020/154530.521366:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  776.110098] pi dbus-run-session[20007]: [20007:20007:1020/154531.923779:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  777.419884] pi dbus-run-session[20007]: [20007:20007:1020/154533.233430:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  778.715990] pi dbus-run-session[20007]: [20007:20007:1020/154534.529651:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  779.937887] pi dbus-run-session[20007]: [20007:20007:1020/154535.751456:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  781.341638] pi dbus-run-session[20007]: [20007:20007:1020/154537.155167:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  782.694613] pi dbus-run-session[20007]: [20007:20007:1020/154538.508280:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  783.962404] pi dbus-run-session[20007]: [20007:20007:1020/154539.776068:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+[  785.297877] pi dbus-run-session[20007]: [20007:20007:1020/154541.111561:ERROR:ui/ozone/platform/wayland/host/wayland_frame_manager.cc:714] The server has buggy presentation feedback. Discarding all presentation feedback requests in all frames except the last 3.
+
+--- Kiosk restart count and last exit ---
+Result=success
+NRestarts=0
+ExecMainCode=0
+ExecMainStatus=0
+
+--- Recent console display errors ---
+[  107.562880] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  139.781504] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  171.835336] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  203.936057] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  235.934011] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  267.915026] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  299.913930] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  331.976540] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  364.275223] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  396.558230] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  428.709556] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  460.783207] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  492.908981] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  524.907780] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  556.857257] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  588.990168] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  621.237239] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  653.320339] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  685.386199] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+[  717.520658] pi systemd[1]: frogdash-console@foxbody.service: Failed with result 'exit-code'.
+
+--- Display connectors ---
+card1-HDMI-A-1: connected
+Advertised modes (not proof of current mode):
+1920x720
+card1-HDMI-A-2: disconnected
+Advertised modes (not proof of current mode):
+none
+card1-Writeback-1: unknown
+Advertised modes (not proof of current mode):
+none
+
+--- Pi voltage/throttling flags ---
+throttled=0x0
+
+Compare with a video of key-on to visible gauges. A render heartbeat is a browser liveness observation, not proof the physical screen is lit.
