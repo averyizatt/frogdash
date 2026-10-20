@@ -1,0 +1,266 @@
+Frogdash boot report (read-only; times start at kernel boot, not key-on)
+
+--- Operating system ---
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+NAME="Debian GNU/Linux"
+VERSION_ID="12"
+VERSION="12 (bookworm)"
+VERSION_CODENAME=bookworm
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+
+
+--- Architecture ---
+aarch64
+
+--- Default boot target ---
+multi-user.target
+
+--- Boot timing ---
+Startup finished in 2.188s (kernel) + 6.657s (userspace) = 8.846s 
+multi-user.target reached after 6.627s in userspace.
+
+--- Slowest unit activation times (parallel durations do not add up) ---
+2.342s frogdash-gps.service
+1.631s frogdash.service
+1.238s rpi-eeprom-update.service
+ 882ms dev-mmcblk0p2.device
+ 829ms NetworkManager.service
+ 765ms dbus.service
+ 744ms systemd-logind.service
+ 556ms user@1000.service
+ 511ms dphys-swapfile.service
+ 473ms frogdash-can.service
+ 377ms sshswitch.service
+ 361ms preload.service
+ 285ms wpa_supplicant.service
+ 273ms ssh.service
+ 226ms keyboard-setup.service
+ 223ms frogdash-console@foxbody.service
+ 214ms systemd-udev-trigger.service
+ 203ms systemd-udevd.service
+ 180ms systemd-tmpfiles-setup.service
+ 168ms chrony.service
+
+--- Critical chain: frogdash.service ---
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+frogdash.service +1.631s
+`-(Wi-Fi network).service @3.820s
+  `-NetworkManager.service @2.960s +829ms
+    `-dbus.service @2.161s +765ms
+      `-basic.target @2.146s
+        `-sockets.target @2.146s
+          `-frogdash-terminal.socket @2.130s +15ms
+            `-sysinit.target @2.116s
+              `-systemd-update-utmp.service @2.081s +34ms
+                `-systemd-tmpfiles-setup.service @1.857s +180ms
+                  `-local-fs.target @1.823s
+                    `-run-user-1000.mount @4.264s
+                      `-local-fs-pre.target @1.094s
+                        `-systemd-tmpfiles-setup-dev.service @1.036s +58ms
+                          `-systemd-sysusers.service @945ms +64ms
+                            `-systemd-remount-fs.service @840ms +71ms
+                              `-systemd-fsck-root.service @761ms +53ms
+                                `-systemd-journald.socket @721ms
+                                  `--.mount @680ms
+                                    `--.slice @680ms
+
+--- Critical chain: frogdash-console@foxbody.service ---
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+frogdash-console@foxbody.service +223ms
+`-systemd-user-sessions.service @3.860s +37ms
+  `-network.target @3.790s
+    `-NetworkManager.service @2.960s +829ms
+      `-dbus.service @2.161s +765ms
+        `-basic.target @2.146s
+          `-sockets.target @2.146s
+            `-frogdash-terminal.socket @2.130s +15ms
+              `-sysinit.target @2.116s
+                `-systemd-update-utmp.service @2.081s +34ms
+                  `-systemd-tmpfiles-setup.service @1.857s +180ms
+                    `-local-fs.target @1.823s
+                      `-run-user-1000.mount @4.264s
+                        `-local-fs-pre.target @1.094s
+                          `-systemd-tmpfiles-setup-dev.service @1.036s +58ms
+                            `-systemd-sysusers.service @945ms +64ms
+                              `-systemd-remount-fs.service @840ms +71ms
+                                `-systemd-fsck-root.service @761ms +53ms
+                                  `-systemd-journald.socket @721ms
+                                    `--.mount @680ms
+                                      `--.slice @680ms
+
+--- Dash, display manager, UPS and network waits ---
+UNIT                             LOAD      ACTIVE     SUB       JOB   DESCRIPTION
+frogdash-canreset.path           loaded    active     waiting         Reset can0 when the Frogdash dash stops receiving CAN with the key on
+frogdash-gps.path                loaded    active     waiting         Run a GPS recovery step when the Frogdash watchdog asks for one
+frogdash-screen.path             loaded    active     waiting         Change the dash screen mode when the dash asks (try, keep, go back)
+frogdash-update.path             loaded    active     running         Start a Frogdash update when the dash requests one
+frogdash-wifi.path               loaded    active     waiting         Run a Frogdash Wi-Fi request (scan, join, disconnect)
+display-manager.service          not-found inactive   dead            display-manager.service
+frogdash-can.service             loaded    active     exited          Configure Frogdash MCP2515 SocketCAN at 500 kbit/s
+frogdash-canreset.service        loaded    inactive   dead            CAN recovery for Frogdash (take can0 down and up again)
+frogdash-console@foxbody.service loaded    active     running         Frogdash console kiosk for foxbody
+frogdash-gps.service             loaded    inactive   dead            GPS recovery step for Frogdash (restart gpsd, find the receiver, reset its USB port)
+frogdash-guard.service           loaded    active     running         Frogdash recovery guard (puts back the last version that ran if the dash stops starting)
+(Wi-Fi network).service         loaded    active     running         Frogdash local Wi-Fi hotspot broker
+frogdash-netkeeper.service       loaded    active     running         Frogdash Wi-Fi keeper (keeps the dash cam connection up)
+frogdash-power.service           loaded    active     running         Frogdash PiSugar 3 input-power monitor
+frogdash-rescue.service          loaded    active     running         Frogdash rescue screen (shown on the screen when the dash is not running)
+frogdash-screen-boot.service     loaded    inactive   dead            Frogdash screen check after each start: finish or undo a screen trial, record the boot
+frogdash-screen.service          loaded    inactive   dead            Try, keep or undo exact 1920 x 720 on the dash screen
+frogdash-update.service          loaded    activating start     start Update Frogdash from GitHub and restart it
+frogdash-wifi.service            loaded    inactive   dead            Join a Wi-Fi network requested from the Frogdash screen
+frogdash.service                 loaded    active     running         Frogdash CAN and GPS state service
+pisugar-server.service           loaded    active     running         pisugar-server
+frogdash-terminal.socket         loaded    active     listening       Frogdash Terminal tab: commands as the screen user (only with --terminal)
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+JOB    = Pending job for the unit.
+
+22 loaded units listed.
+To show all installed unit files use 'systemctl list-unit-files'.
+
+--- Enabled startup units ---
+UNIT FILE                             STATE    PRESET
+frogdash-canreset.path                enabled  enabled
+frogdash-gps.path                     enabled  enabled
+frogdash-screen.path                  enabled  enabled
+frogdash-update.path                  enabled  enabled
+frogdash-wifi.path                    enabled  enabled
+frogdash-can.service                  enabled  enabled
+frogdash-canreset.service             static   -
+frogdash-console@.service             indirect enabled
+frogdash-gps.service                  static   -
+frogdash-guard.service                enabled  enabled
+(Wi-Fi network).service              enabled  enabled
+frogdash-netkeeper.service            enabled  enabled
+frogdash-power.service                enabled  enabled
+frogdash-rescue.service               enabled  enabled
+frogdash-screen-boot.service          enabled  enabled
+frogdash-screen.service               static   -
+frogdash-terminal@.service            static   -
+frogdash-update.service               static   -
+frogdash-wifi.service                 static   -
+frogdash.service                      enabled  enabled
+NetworkManager-wait-online.service    disabled enabled
+pisugar-poweroff.service              masked   enabled
+pisugar-server.service                enabled  enabled
+systemd-networkd-wait-online.service  disabled disabled
+systemd-networkd-wait-online@.service disabled enabled
+frogdash-terminal.socket              enabled  enabled
+
+26 unit files listed.
+
+--- Service timing and dependencies: frogdash.service ---
+ExecMainStartTimestampMonotonic=53509509
+Requires=system.slice -.mount sysinit.target
+Wants=gpsd.socket frogdash-can.service tmp.mount (Wi-Fi network).service
+After=systemd-remount-fs.service frogdash-can.service tmp.mount (Wi-Fi network).service systemd-journald.socket sysinit.target system.slice basic.target systemd-tmpfiles-setup.service -.mount gpsd.socket
+LoadState=loaded
+ActiveState=active
+SubState=running
+ActiveEnterTimestampMonotonic=55142440
+
+--- Service timing and dependencies: frogdash-console@foxbody.service ---
+ExecMainStartTimestampMonotonic=55422296
+Requires=sysinit.target "system-frogdash\\x2dconsole.slice"
+Wants=dbus.socket frogdash.service systemd-logind.service
+After=systemd-user-sessions.service basic.target "system-frogdash\\x2dconsole.slice" getty@tty7.service dbus.socket sysinit.target systemd-logind.service systemd-journald.socket
+LoadState=loaded
+ActiveState=active
+SubState=running
+ActiveEnterTimestampMonotonic=55640990
+
+--- Service timing and dependencies: display-manager.service ---
+ExecMainStartTimestampMonotonic=0
+Requires=
+Wants=
+After=console-setup.service
+LoadState=not-found
+ActiveState=inactive
+SubState=dead
+ActiveEnterTimestampMonotonic=0
+
+--- Kiosk launch and first render (current boot) ---
+[   55.612215] pi python3[2826]: Frogdash kiosk: session c2 active after 0.02s
+[   55.595498] pi python3[2826]: Frogdash kiosk: activated logind session c2 on tty7
+[    7.113589] pi python3[689]: Frogdash kiosk: session c1 active after 0.02s
+[    7.093586] pi python3[689]: Frogdash kiosk: activated logind session c1 on tty7
+
+--- Desktop kiosk launch (if used) ---
+-- No entries --
+Exit status 1
+
+--- Kiosk user session logs (includes Cage/Chromium child processes) ---
+[    6.966664] pi systemd[701]: Queued start job for default target default.target.
+[    7.047522] pi systemd[701]: Created slice app.slice - User Application Slice.
+[    7.051254] pi systemd[701]: Reached target paths.target - Paths.
+[    7.051607] pi systemd[701]: Reached target timers.target - Timers.
+[    7.051782] pi systemd[701]: Starting dbus.socket - D-Bus User Message Bus Socket...
+[    7.051888] pi systemd[701]: Listening on dirmngr.socket - GnuPG network certificate management daemon.
+[    7.051997] pi systemd[701]: Listening on gcr-ssh-agent.socket - GCR ssh-agent wrapper.
+[    7.052136] pi systemd[701]: Listening on gnome-keyring-daemon.socket - GNOME Keyring daemon.
+[    7.052220] pi systemd[701]: Listening on gpg-agent-browser.socket - GnuPG cryptographic agent and passphrase cache (access for web browsers).
+[    7.052300] pi systemd[701]: Listening on gpg-agent-extra.socket - GnuPG cryptographic agent and passphrase cache (restricted).
+[    7.052387] pi systemd[701]: Listening on gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation).
+[    7.052464] pi systemd[701]: Listening on gpg-agent.socket - GnuPG cryptographic agent and passphrase cache.
+[    7.052554] pi systemd[701]: Listening on dbus.socket - D-Bus User Message Bus Socket.
+[    7.052647] pi systemd[701]: Reached target sockets.target - Sockets.
+[    7.052727] pi systemd[701]: Reached target basic.target - Basic System.
+[    7.052807] pi systemd[701]: Reached target default.target - Main User Target.
+[    7.052887] pi systemd[701]: Startup finished in 458ms.
+[   10.281364] pi dbus-run-session[737]: 00:00:00.814 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[   10.322718] pi dbus-run-session[737]: 00:00:00.977 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[   13.450958] pi dbus-run-session[1301]: Frogdash kiosk: waiting for local HTTP (boot+13.45s)
+[   13.465595] pi dbus-run-session[1301]: Frogdash kiosk: HTTP ready; launching Chromium (boot+13.46s)
+[   19.047706] pi dbus-run-session[733]: dbus-daemon[733]: [session uid=1000 pid=733] Activating service name='org.a11y.Bus' requested by ':1.1' (uid=1000 pid=1302 comm="/usr/lib/chromium/chromium --force-renderer-access")
+[   19.063267] pi dbus-run-session[733]: dbus-daemon[733]: [session uid=1000 pid=733] Successfully activated service 'org.a11y.Bus'
+[   24.956059] pi dbus-run-session[1301]: Frogdash kiosk: first render heartbeat observed (boot+24.95s; 11.49s after browser launch)
+[   25.966965] pi systemd[701]: Reached target bluetooth.target - Bluetooth.
+[   29.535924] pi dbus-run-session[1302]: [1302:1388:1020/155323.551905:ERROR:google_apis/gcm/engine/registration_request.cc:275] Registration URL fetching failed.
+[   40.880152] pi dbus-run-session[737]: 00:00:31.546 [ERROR] [libinput] event4  - Logitech M325: client bug: event processing lagging behind by 102ms, your system is too slow
+[   52.492405] pi dbus-run-session[1302]: [1302:1388:1020/155346.503828:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[   55.182255] pi dbus-run-session[733]: dbus-daemon[733]: [session uid=1000 pid=733] Reloaded configuration
+[   55.196072] pi chromium[1302]: Error reading events from display: Broken pipe
+[   55.617478] pi dbus-run-session[2831]: 00:00:00.061 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[   55.617478] pi dbus-run-session[2831]: 00:00:00.061 [ERROR] [EGL] command: eglQueryDeviceStringEXT, error: EGL_BAD_PARAMETER (0x300c), message: "eglQueryDeviceStringEXT"
+[   56.242811] pi dbus-run-session[2843]: Frogdash kiosk: waiting for local HTTP (boot+56.24s)
+[   56.253238] pi dbus-run-session[2843]: Frogdash kiosk: HTTP ready; launching Chromium (boot+56.25s)
+[   57.327034] pi dbus-run-session[2830]: dbus-daemon[2830]: [session uid=1000 pid=2830] Activating service name='org.a11y.Bus' requested by ':1.0' (uid=1000 pid=2844 comm="/usr/lib/chromium/chromium --force-renderer-access")
+[   57.354643] pi dbus-run-session[2830]: dbus-daemon[2830]: [session uid=1000 pid=2830] Successfully activated service 'org.a11y.Bus'
+[   60.372174] pi dbus-run-session[2843]: Frogdash kiosk: first render heartbeat observed (boot+60.37s; 4.12s after browser launch)
+[   66.418816] pi dbus-run-session[2844]: [2844:2886:1020/155400.434803:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+[   93.146683] pi dbus-run-session[2844]: [2844:2886:1020/165818.036458:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+
+--- Kiosk restart count and last exit ---
+Result=success
+NRestarts=0
+ExecMainCode=0
+ExecMainStatus=0
+
+--- Recent console display errors ---
+-- No entries --
+
+--- Display connectors ---
+card1-HDMI-A-1: connected
+Advertised modes (not proof of current mode):
+1920x720
+card1-HDMI-A-2: disconnected
+Advertised modes (not proof of current mode):
+none
+card1-Writeback-1: unknown
+Advertised modes (not proof of current mode):
+none
+
+--- Pi voltage/throttling flags ---
+throttled=0x0
+
+Compare with a video of key-on to visible gauges. A render heartbeat is a browser liveness observation, not proof the physical screen is lit.
