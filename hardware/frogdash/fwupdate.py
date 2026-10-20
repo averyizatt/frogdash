@@ -419,6 +419,11 @@ class ModuleFirmware:
         raise Failure(f'Block {number} could not be delivered: check the CAN wiring')
 
 
+# The dash's module names (snapshot['modules'], state.GAP_WATCH) each firmware target
+# speaks for: while it is updated or restarted they are quiet on purpose.
+QUIET = {'gateway': ('comfort', 'sensor gateway'), 'taillights': ('taillights',), 'watermeth': ('watermeth', 'knock', 'water/meth')}
+
+
 class Firmware:
     """Every module that takes firmware over CAN. One update at a time."""
 
@@ -435,6 +440,10 @@ class Firmware:
 
     def busy(self):
         return any(module.busy() for module in self.modules.values())
+
+    def quiet(self):
+        """The dash's names for the modules being updated or restarted now."""
+        return {name for target, module in self.modules.items() if module.busy() for name in QUIET.get(target, ())}
 
     def snapshot(self):
         return {name: module.snapshot() for name, module in self.modules.items()}

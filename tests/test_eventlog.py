@@ -17,14 +17,14 @@ class Clock:
         return self.now
 
 
-def snapshot(gps='fix', speed='live', connected=True, modules=None, rpm=None, ups=None):
+def snapshot(gps='fix', speed='live', connected=True, modules=None, rpm=None, ups=None, updating=()):
     values = {'vehicle.speed_kph': {'value': 50 if speed == 'live' else None, 'quality': speed}}
     if rpm is not None:
         values['engine.rpm'] = {'value': rpm, 'quality': 'live'}
     return {'mode': 'socketcan', 'values': values, 'transport': {'connected': connected, 'status': 'can0 down' if not connected else 'ok'},
             'modules': modules or {'watermeth': 'live'}, 'recording': {'state': 'recording', 'error': None},
             'gps': {'status': 'GPS fix', 'diagnosis': {'state': gps, 'text': {'fix': 'Fix with 9 satellites', 'silent': 'No receiver is reporting'}.get(gps, gps)}},
-            'system': {'ups': ups or {}}}
+            'system': {'ups': ups or {}}, 'updating': list(updating)}
 
 
 class EventLogTests(unittest.TestCase):
@@ -67,6 +67,12 @@ class EventLogTests(unittest.TestCase):
         self.watch(10)
         self.watch(10, modules={'watermeth': 'stale'})
         self.assertEqual(self.texts(), ['watermeth module not heard (stale)'])
+
+    def test_a_module_being_updated_is_not_written_as_not_heard(self):
+        self.watch(10, modules={'taillights': 'live', 'watermeth': 'live'})
+        self.watch(10, modules={'taillights': 'stale', 'watermeth': 'live'}, updating=['taillights'])
+        self.watch(10, modules={'taillights': 'live', 'watermeth': 'live'})
+        self.assertEqual(self.texts(), [])
 
     def test_restarts_fault_blips_module_faults_and_alerts_are_all_written(self):
         base = snapshot()

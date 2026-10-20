@@ -69,6 +69,9 @@ class DrivingTests(unittest.TestCase):
         self.assertEqual(self.drive.alerts['taillights']['title'], 'TAILLIGHTS NOT RESPONDING')
         # Nothing heard at all is the bus, not the taillights.
         self.assertIsNone(self.drive.taillight_condition(snapshot(12, 'stale', others='stale')))
+        # Being updated from the dash, they are quiet on purpose: no alert.
+        updating = {**snapshot(13, 'stale'), 'updating': ['taillights']}
+        self.assertIsNone(self.drive.taillight_condition(updating))
 
     def test_recovered_alert_stays_visible_until_ack(self):
         self.sample(0, **{'knock.warning': True}); self.sample(.3)

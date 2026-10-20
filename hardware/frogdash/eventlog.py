@@ -174,7 +174,10 @@ class EventLog:
             self.note('can-state', bus, 'error' if bad else 'info', 'can', f'CAN controller {bus}',
                       {k: (system['can'] or {}).get(k) for k in ('error_counters', 'rx_errors', 'tx_errors')} if bad else None)
         if bus_up:   # With the bus down every module is quiet: that is one problem, not five.
+            updating = set(snapshot.get('updating') or ())
             for name, quality in (snapshot.get('modules') or {}).items():
+                if name in updating:
+                    continue   # Quiet on purpose while its firmware is updated
                 here = quality == 'live'
                 self.note('module:' + name, here, 'info' if here else 'warn', 'module',
                           f'{name} module answering' if here else f'{name} module not heard ({quality})')

@@ -138,7 +138,8 @@ class State:
         if can_id in self.frames or len(self.frames) < 512:
             entry = self.frames.setdefault(can_id, {'count': 0, 'first': now, 'error': None, 'error_at': None})
             # A module that restarts goes quiet for a second or two, then reports from scratch.
-            if can_id in GAP_WATCH and 'seen' in entry and self.connected and now - entry['seen'] > max(1.0, 2 * TIMEOUTS[can_id]):
+            if can_id in GAP_WATCH and 'seen' in entry and self.connected and now - entry['seen'] > max(1.0, 2 * TIMEOUTS[can_id]) \
+                    and not (self.firmware and GAP_WATCH[can_id] in self.firmware.quiet()):   # Quiet while it is updated
                 self.gaps.append({'id': can_id, 'module': GAP_WATCH[can_id], 'seconds': round(now - entry['seen'], 1), 't': self.wall()})
             entry.update(count=entry['count'] + 1, seen=now, data=data.hex().upper())
         try:
@@ -288,6 +289,7 @@ class State:
                 "can_errors": dict(self.can_errors),
                 "can_watch": self.guarded('CAN watch', self.can_watch.snapshot) if self.can_watch else None,
                 "firmware": self.guarded('module firmware', self.firmware.snapshot_with_nano) if self.firmware else None,
+                "updating": sorted(self.guarded('module firmware', self.firmware.quiet) or ()) if self.firmware else [],
                 "wheel": self.guarded('steering wheel', lambda: self.wheel.snapshot(self.connected and self.mode == "socketcan")),
                 "recording": dict(self.recorder.status) if self.recorder else {"enabled": False, "state": "disabled"}}
         result["faults"] = dict(self.faults)   # Last, so a part that failed just now is in it

@@ -344,6 +344,22 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.module.restarts, 0)
         self.assertEqual(self.module.line('F ' + fwupdate.command(fwupdate.QUERY, 2).hex()).split()[1][12:14], '00')   # Not updating.
 
+    async def test_a_module_being_updated_is_quiet_on_purpose(self):
+        self.assertEqual(self.manager.quiet(), set())
+        self.manager.modules['taillights'].job = {'state': 'running', 'message': '', 'progress': 0.0}
+        self.assertEqual(self.manager.quiet(), {'taillights'})
+        self.assertEqual(self.state.snapshot()['updating'], ['taillights'])
+        # Its frames stopping and coming back is not written as a silence.
+        self.state.connected = True
+        self.state.ingest(0x100, bytes([1, 1, 0, 0, 100, 40, 0]))
+        self.now += 20
+        self.state.ingest(0x100, bytes([1, 1, 0, 0, 100, 40, 0]))
+        self.assertEqual(list(self.state.gaps), [])
+        self.manager.modules['taillights'].job = {'state': 'done', 'message': '', 'progress': 1.0}
+        self.now += 20
+        self.state.ingest(0x100, bytes([1, 1, 0, 0, 100, 40, 0]))
+        self.assertEqual([g['module'] for g in self.state.gaps], ['taillights'])
+
     async def test_only_one_module_is_updated_at_a_time(self):
         self.publish(self.image, NEW, 'taillights')
         self.assertIsNone(self.manager.start('gateway'))

@@ -116,6 +116,8 @@ class Driving:
             return None
         if not any(modules.get(name) == 'live' for name in ('comfort', 'watermeth')):
             return None   # Nothing heard at all: the bus, not the taillights.
+        if 'taillights' in (snapshot.get('updating') or ()):
+            return None   # Being updated or restarted from the dash: quiet on purpose
         return modules.get('taillights') != 'live'
 
     @staticmethod
