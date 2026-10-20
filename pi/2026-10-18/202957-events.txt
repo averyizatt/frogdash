@@ -1,0 +1,7 @@
+2026-10-18 20:29:32 UTC  INFO   dash     Dash started (f3f4abb)
+2026-10-18 20:29:34 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-10-18 20:29:34 UTC  INFO   gps      Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-10-18 20:29:36 UTC  INFO   engine   Engine stopped
+2026-10-18 20:29:38 UTC  INFO   power    Ignition power on
+2026-10-18 20:29:54 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-10-18 20:29:58 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
