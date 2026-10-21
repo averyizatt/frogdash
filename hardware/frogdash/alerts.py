@@ -24,7 +24,8 @@ V1 = {'oil_enabled': ('oil', 'enabled'), 'oil_psi': ('oil', 'psi'), 'oil_rpm': (
       'lean_rpm': ('lean', 'rpm'), 'coolant_enabled': ('coolant', 'enabled'), 'coolant_c': ('coolant', 'c'),
       'meth_enabled': ('meth', 'enabled')}
 OPS = {'<': lambda a, b: a < b, '<=': lambda a, b: a <= b, '>': lambda a, b: a > b, '>=': lambda a, b: a >= b,
-       '==': lambda a, b: a == b, '!=': lambda a, b: a != b, 'abs>': lambda a, b: abs(a) > b}
+       '==': lambda a, b: a == b, '!=': lambda a, b: a != b, # A MegaSquirt-style correction, 100 % for none: further from 100 than b either way.
+       'trim>': lambda a, b: abs(a - 100) > b}
 
 
 def rule_defaults(rule):

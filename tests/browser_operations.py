@@ -44,7 +44,7 @@ async def preview(browser):
     await page.evaluate("frogdashDemo.scenario('normal')")
     await page.wait_for_function("document.getElementById('speed-digits').textContent === '76'")
     assert await page.locator('#coolant-val').inner_text() == '96'
-    assert await page.locator('#boost-val').inner_text() == '85.0'
+    assert await page.locator('#boost-val').inner_text() == '55.0'
     assert await page.locator('.speed-readout .unit').inner_text() == 'km/h'
     await page.reload()
     await page.evaluate("frogdashDemo.scenario('normal')")

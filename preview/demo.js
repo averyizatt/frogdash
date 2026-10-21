@@ -4,9 +4,9 @@
   const readings = {
     'engine.rpm': 3450, 'vehicle.speed_kph': 76, 'gps.satellites': 9,
     'engine.coolant_c': 96, 'engine.iat_c': 40, 'vehicle.battery_v': 14.2,
-    'engine.boost_kpa': 85, 'engine.afr': 12.4, 'ecu.afr_target': 12.5,
+    'engine.boost_kpa': 55, 'engine.afr': 12.4, 'ecu.afr_target': 12.5,
     'engine.ego_correction_pct': 100, 'engine.oil_pressure_psi': 62,
-    'engine.fuel_pressure_psi': 39, 'vehicle.fuel_pct': null,
+    'engine.fuel_pressure_psi': 47, 'vehicle.fuel_pct': null,
     'meth.state': 'OFF', 'meth.duty_pct': 0, 'meth.tank_pct': 85,
     'meth.flow': 'OK', 'meth.fault_flags': 0,
     'lighting.turn_left': false, 'lighting.turn_right': false,

@@ -168,8 +168,11 @@ class DrivingTests(unittest.TestCase):
         self.assertFalse(self.condition('meth_off', **{'meth.state': 'SPRAYING'}))
 
     def test_fuel_trim_either_way_and_cold_boost(self):
-        self.assertTrue(self.condition('trim', **{'engine.ego_correction_pct': -20}))
-        self.assertFalse(self.condition('trim', **{'engine.ego_correction_pct': 10}))
+        # The ECU sends 100 % for no correction (its logs: 90 to 110).
+        self.assertFalse(self.condition('trim', **{'engine.ego_correction_pct': 100}))
+        self.assertFalse(self.condition('trim', **{'engine.ego_correction_pct': 106}))
+        self.assertTrue(self.condition('trim', **{'engine.ego_correction_pct': 110}))
+        self.assertTrue(self.condition('trim', **{'engine.ego_correction_pct': 90}))
         self.assertTrue(self.condition('cold_boost', **{'engine.coolant_c': 40, 'engine.boost_kpa': 30}))
         self.assertFalse(self.condition('cold_boost', **{'engine.coolant_c': 85}))
 

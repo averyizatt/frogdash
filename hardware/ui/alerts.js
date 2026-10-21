@@ -18,6 +18,8 @@
     boost: {unit: () => u.metric ? 'kPa' : 'psi', show: v => u.boost(v), store: v => u.metric ? v : v / .145037738, digits: () => u.metric ? 0 : 1},
     temp: {unit: () => u.metric ? '°C' : '°F', show: v => u.temperature(v), store: v => u.metric ? v : (v - 32) / 1.8, digits: () => 0},
     rpm: {unit: () => 'RPM', digits: () => 0}, pct: {unit: () => '%', digits: () => 0}, afr: {unit: () => 'AFR', digits: () => 1},
+    // The ECU's fuel correction, 100 % for none: shown as + or − from none.
+    trim: {unit: () => '%', digits: () => 0, show: v => v - 100, signed: true},
     volt: {unit: () => 'V', digits: () => 1}, deg: {unit: () => '°', digits: () => 1}, count: {unit: () => '', digits: () => 0},
     text: {unit: () => '', digits: () => 0}, module: {unit: () => '', digits: () => 0},
   };
@@ -26,7 +28,8 @@
     if (value === null || value === undefined) return '—';
     if (typeof value !== 'number') return String(value).toUpperCase();
     const k = kind(name), shown = k.show ? k.show(value) : value;
-    return `${shown.toFixed(k.digits())}${k.unit() ? ' ' + k.unit() : ''}`;
+    const text = shown.toFixed(k.digits());
+    return `${k.signed && shown > 0 && Number(text) !== 0 ? '+' : ''}${text}${k.unit() ? ' ' + k.unit() : ''}`;
   };
   const NAMES = {'engine.rpm': 'Engine speed', 'engine.oil_pressure_psi': 'Oil pressure', 'engine.fuel_pressure_psi': 'Fuel pressure',
     'engine.boost_kpa': 'Boost', 'engine.afr': 'Air/fuel ratio', 'ecu.afr_target': 'AFR target', 'engine.coolant_c': 'Coolant',
@@ -35,7 +38,7 @@
     'ecu.sync_loss_count': 'Sync losses'};
   const KIND_OF = {'engine.oil_pressure_psi': 'pressure', 'engine.fuel_pressure_psi': 'pressure', 'engine.boost_kpa': 'boost',
     'engine.coolant_c': 'temp', 'ecu.iat_c': 'temp', 'engine.rpm': 'rpm', 'vehicle.fuel_pct': 'pct', 'meth.tank_pct': 'pct',
-    'engine.ego_correction_pct': 'pct', 'engine.afr': 'afr', 'ecu.afr_target': 'afr', 'vehicle.battery_v': 'volt', 'ecu.knock_retard_deg': 'deg'};
+    'engine.ego_correction_pct': 'trim', 'engine.afr': 'afr', 'ecu.afr_target': 'afr', 'vehicle.battery_v': 'volt', 'ecu.knock_retard_deg': 'deg'};
 
   // ---- The same rules as the Pi (alerts.py), for the preview's simulated car ----
   const live = (snapshot, key) => { const v = snapshot?.values?.[key]; return v && v.quality === 'live' && v.value !== null && v.value !== undefined ? v.value : null; };
@@ -45,7 +48,7 @@
     const base = 'param' in value ? settings[value.param] : live(snapshot, value.signal);
     return base === null || base === undefined ? null : base * (value.scale ?? 1);
   }
-  const OPS = {'<': (a, b) => a < b, '<=': (a, b) => a <= b, '>': (a, b) => a > b, '>=': (a, b) => a >= b, '==': (a, b) => a === b, '!=': (a, b) => a !== b, 'abs>': (a, b) => Math.abs(a) > b};
+  const OPS = {'<': (a, b) => a < b, '<=': (a, b) => a <= b, '>': (a, b) => a > b, '>=': (a, b) => a >= b, '==': (a, b) => a === b, '!=': (a, b) => a !== b, 'trim>': (a, b) => Math.abs(a - 100) > b};   // 100 % = no correction
   function condition(rule, settings, snapshot) {
     if (!settings.enabled) return false;
     if (rule.special === 'knock') { const w = live(snapshot, 'knock.warning'), c = live(snapshot, 'knock.critical'); return w === null || c === null ? null : !!(w || c); }
