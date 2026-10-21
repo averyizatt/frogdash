@@ -50,6 +50,7 @@ def valid_ssid(name):
 IMAGE_DATA = re.compile(r"data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+")
 
 WEB = Path(__file__).resolve().parents[1] / "ui"
+SKIN_FILE = re.compile(r"[a-z0-9-]+\.(jpg|png)")
 # Every CAN message the dash knows, for SavvyCAN and cantools (tools/make_dbc.py).
 DBC = Path(__file__).resolve().parents[1] / "can_contract" / "frogdash.dbc"
 RECORDINGS_KEPT = 5
@@ -789,7 +790,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "keyboard.js", "keyboard.css", "summary.js", "later.js", "alert-rules.json", "alerts.js", "alerts.css", "graphs.js", "graphs.css", "uPlot.iife.min.js", "uPlot.min.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js", "knock.js", "knock.css", "screen.js"}:
+        if name not in {"index.html", "app.js", "style.css", "keyboard.js", "keyboard.css", "summary.js", "later.js", "alert-rules.json", "alerts.js", "alerts.css", "graphs.js", "graphs.css", "uPlot.iife.min.js", "uPlot.min.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "skins.js", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js", "knock.js", "knock.css", "screen.js"}:
             raise web.HTTPNotFound()
         if name == 'index.html' and state.paint and state.paint.value:
             page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')
@@ -819,6 +820,13 @@ def create_app(state, adapter=None, connectivity=None):
         if name not in {'frames.bin', 'frames.json'}:
             raise web.HTTPNotFound()
         return web.FileResponse(WEB / 'taillights' / name, headers={'Cache-Control': 'no-cache'})
+
+    async def skin_image(request):
+        # Photo gauge faces (skins.js): pictures shipped in hardware/ui/skins.
+        name = request.match_info['name']
+        if not SKIN_FILE.fullmatch(name) or not (WEB / 'skins' / name).is_file():
+            raise web.HTTPNotFound()
+        return web.FileResponse(WEB / 'skins' / name, headers={'Cache-Control': 'no-cache'})
 
     async def map_data(request):
         # Offline street maps built by tools/make_map.py (OpenStreetMap, ODbL).
@@ -974,7 +982,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get('/operations/{action}', operations), web.post('/operations/{action}', operations),
                     web.post('/ui/appearance', appearance_snapshot),
                     web.route('*', '/ui/appearance/image/{field:background|splash}', appearance_image),
-                    web.get('/taillights/{name}', taillight_frames), web.get('/maps/{name}', map_data),
+                    web.get('/taillights/{name}', taillight_frames), web.get('/skins/{name}', skin_image), web.get('/maps/{name}', map_data),
                     web.get('/ui/import', import_list), web.get('/ui/import/{name}', import_file),
                     web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),
                     web.get('/dashcam/status', dashcam_status), web.get('/dashcam/stream', dashcam_stream),

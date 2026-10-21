@@ -95,6 +95,7 @@
   function render(snapshot, connected) {
     last = {snapshot, connected};
     if (root.dataset.gauges === 'standard' || !root.dataset.gauges) return;
+    if (window.FrogdashSkins?.render(snapshot, connected)) return;   // A photo face (skins.js)
     const u = window.FrogdashUnits; if (metric !== u.metric) configureScales();
     const reading = id => window.FrogdashMetrics.read(id, snapshot, connected);
     const live = key => { const s = snapshot.values?.[key]; return connected && s?.quality === 'live' && Number.isFinite(s.value) ? s.value : null; };

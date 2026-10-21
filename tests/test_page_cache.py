@@ -23,6 +23,16 @@ class PageCacheTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual((await client.get('/' + name)).headers['Cache-Control'], 'no-cache', name)
             self.assertEqual((await client.get('/')).headers['Cache-Control'], 'no-store')
 
+    async def test_photo_faces_are_served_and_nothing_else_from_there(self):
+        async with TestClient(TestServer(create_app(State()))) as client:
+            self.assertEqual((await client.get('/skins.js')).status, 200)
+            face = await client.get('/skins/ferrari.jpg')
+            self.assertEqual((face.status, face.content_type), (200, 'image/jpeg'))
+            self.assertGreater(len(await face.read()), 50_000)
+            self.assertEqual((await client.get('/skins/ferrari-lamps.jpg')).status, 200)
+            for name in ('missing.jpg', '..%2Fskins.js', 'ferrari.JPG', 'ferrari.jpg.bak'):
+                self.assertEqual((await client.get('/skins/' + name)).status, 404, name)
+
     async def test_the_reports_get_the_live_picture_and_the_pages_own_timing(self):
         async with TestClient(TestServer(create_app(State()))) as client:
             snapshot = await (await client.get('/snapshot')).json()
