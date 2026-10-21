@@ -219,7 +219,8 @@ def run_busy(runner):
 def sync_units(runner):
     """The unit files of the version now checked out, for the ones that are installed."""
     changed = False
-    for unit in sorted((REPO / 'hardware/systemd').glob('*.service')) + sorted((REPO / 'hardware/systemd').glob('*.path')):
+    folder = REPO / 'hardware/systemd'
+    for unit in sorted(folder.glob('*.service')) + sorted(folder.glob('*.path')) + sorted(folder.glob('*.timer')):
         target = UNITS / unit.name
         if target.exists() and target.read_bytes() != unit.read_bytes():
             shutil.copyfile(unit, target)

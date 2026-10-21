@@ -2,6 +2,13 @@
 """After an update: the dash's diagnostics and its newest drive, to the owner's GitHub
 repository (run as root by tools/frogdash_update.sh while the Pi is online).
 
+And by itself (--auto, every few minutes from frogdash-autoreport.timer): whenever the Pi
+can reach GitHub (home Wi-Fi or a phone hotspot: the dash cam's Wi-Fi has no internet),
+a report goes up once after every start, and again when new events have been recorded,
+at most every AUTO_EVERY_S. Reports only: the drive recordings, which can be large on a
+phone's data, go with Update now and Send now. Nothing new, no internet, uploads not set
+up, or an update running: it does nothing.
+
 By the owner's choice this is the public frogdash repository itself, on its own branch
 (pi-logs), so nothing lands on main: no test runs, no mixing with the code. Recordings
 contain GPS positions; the owner is fine with them being public. Wi-Fi passwords and
@@ -39,6 +46,7 @@ Prints one line for the update's status message. Never prints the token.
 import base64
 import calendar
 import gzip
+import socket
 import json
 import os
 from pathlib import Path
@@ -64,6 +72,8 @@ UNITS = Path(os.environ.get('FROGDASH_UNITS', '/etc/systemd/system'))
 API, UPLOADS = 'https://api.github.com', 'https://uploads.github.com'
 NAME = re.compile(r'frogdash-(?:live|replay)-(\d{8}T\d{6}Z)-[0-9a-f]{12}\.mlg')
 BRANCH = 'pi-logs'
+AUTO_EVERY_S = 30 * 60         # New events go up at most this often by themselves
+BUSY = Path(os.environ.get('FROGDASH_BUSY', '/run/frogdash-busy'))   # An update or recovery is running
 DRIVE_GAP_S = 10 * 60          # Recordings further apart than this belong to different drives
 MAX_DRIVE_BYTES = 400 << 20    # Compressed; GitHub takes up to 2 GB a file
 STATUS_FILES = ('update-status.json', 'setup-status.json', 'gps-status.json', 'can-status.json', 'wifi-status.json', 'screen-status.json')
@@ -352,7 +362,48 @@ def send_report(github, when, files):
         github.put_file(f'pi/{stamp}-{name}', files[name], message)
 
 
-def run(now=None, github=None, wait=time.sleep):
+def boot_id():
+    """This start of the Pi (a new one at every boot)."""
+    try:
+        return Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+    except OSError:
+        return None
+
+
+def can_reach_github(timeout=5):
+    try:
+        socket.create_connection(('api.github.com', 443), timeout=timeout).close()
+        return True
+    except OSError:
+        return False
+
+
+def auto(now=None, github=None, reach=can_reach_github, boot=boot_id):
+    """One look (frogdash-autoreport.timer): send a report if there is something new and
+    GitHub can be reached. Returns what it did, in a few words."""
+    now = now or time.time()
+    config = load(CONFIG, {})
+    if not config.get('repo') or not config.get('token'):
+        return 'Uploads not set up'
+    if BUSY.exists() and now - BUSY.stat().st_mtime < 20 * 60:
+        return 'An update or recovery is running'
+    status = load(STATUS, {})
+    if status.get('state') == 'failed' and now - float(status.get('time') or 0) < AUTO_EVERY_S / 3:
+        return 'The last upload failed: trying again later'
+    current = boot()
+    new_boot = current != status.get('boot_reported')
+    events, _ = events_since(status.get('events_until') or now - FIRST_EVENTS_S)
+    due = new_boot or (events and now - float(status.get('time') or 0) >= AUTO_EVERY_S)
+    if not due:
+        return 'Nothing new to send'
+    if not reach():
+        return 'No internet'
+    said = run(now, github, drives=False)
+    save_status({**load(STATUS, {}), 'boot_reported': current})   # This start has gone up
+    return said
+
+
+def run(now=None, github=None, wait=time.sleep, drives=True):
     now = now or time.time()
     config = load(CONFIG, {})
     repo, token = config.get('repo', ''), config.get('token', '')
@@ -380,6 +431,11 @@ def run(now=None, github=None, wait=time.sleep):
         save_status({**status, 'events_until': until, 'held': len(held())})
         raise
     status = {**status, 'events_until': until}
+    if not drives:   # By itself (auto): the report only
+        result = 'Sent a report by itself' + (f', and {earlier} kept on the Pi' if earlier else '')
+        save_status({**status, 'time': int(now), 'state': 'done', 'message': result, 'repo': repo,
+                     'held': len(held()), 'boot_reported': boot_id()})
+        return result
 
     # Then the newest drive. The file being recorded is finished first, so a drive that
     # has just ended is complete.
@@ -417,18 +473,29 @@ def run(now=None, github=None, wait=time.sleep):
     if skipped:
         result += f'; {skipped} more too large for one upload'
     save_status({'time': int(now), 'state': 'done', 'message': result, 'repo': repo, 'sent': sent, 'events_until': until,
-                 'held': len(held())})
+                 'held': len(held()), 'boot_reported': boot_id()})
     return result
 
 
 def main():
     try:
-        said = run()
+        import fcntl   # One upload at a time: the timer's and an update's never overlap
+        lock = open(STATE / 'upload.lock', 'w')
+        fcntl.flock(lock, fcntl.LOCK_EX | (fcntl.LOCK_NB if '--auto' in sys.argv else 0))
+    except BlockingIOError:
+        print('Another upload is running')
+        return
+    except (ImportError, OSError):
+        lock = None
+    try:
+        said = auto() if '--auto' in sys.argv else run()
     except Exception as error:   # One line for the update message; the update itself carries on.
         said = f'Upload failed: {str(error)[:160]}'
         status = load(STATUS, {})
         save_status({**status, 'time': int(time.time()), 'state': 'failed', 'message': said})
     print(said)
+    if lock:
+        lock.close()
 
 
 if __name__ == '__main__':

@@ -45,7 +45,7 @@ report() {  # state, message: shown on the dash like an update's result
 }
 sync_units() {  # The unit files of the version put back, for those that are installed.
     changed=0
-    for unit in "$REPO"/hardware/systemd/*.service "$REPO"/hardware/systemd/*.path; do
+    for unit in "$REPO"/hardware/systemd/*.service "$REPO"/hardware/systemd/*.path "$REPO"/hardware/systemd/*.timer; do
         [ -f "$unit" ] || continue
         target=$UNITS/$(basename "$unit")
         if [ -f "$target" ] && ! cmp -s "$unit" "$target"; then cp "$unit" "$target"; changed=1; fi

@@ -55,7 +55,7 @@ screens() { printf '%s' "$1" | sed -n 's/.*"ui_clients": *\([0-9][0-9]*\).*/\1/p
 restarts() { systemctl show -p NRestarts --value frogdash.service 2>/dev/null; }
 sync_units() {  # Refresh only the unit files that are already installed.
     changed=0
-    for unit in $REPO/hardware/systemd/*.service $REPO/hardware/systemd/*.path; do
+    for unit in $REPO/hardware/systemd/*.service $REPO/hardware/systemd/*.path $REPO/hardware/systemd/*.timer; do
         [ -f "$unit" ] || continue
         target=$UNITS/$(basename "$unit")
         if [ -f "$target" ] && ! cmp -s "$unit" "$target"; then cp "$unit" "$target"; changed=1; fi

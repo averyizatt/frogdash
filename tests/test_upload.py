@@ -130,6 +130,35 @@ class UploadTests(unittest.TestCase):
         self.assertEqual(self.up.run(now=1792069200, github=hub2, wait=lambda s: None), 'Uploaded the diagnostics (no new drive to send)')
         self.assertEqual((len(hub2.files), hub2.assets), (4, []))
 
+    def test_reports_go_by_themselves_when_github_can_be_reached(self):
+        boot, online, hub = ['boot-1'], [False], FakeGitHub()
+        go = lambda now: self.up.auto(now=now, github=hub, reach=lambda: online[0], boot=lambda: boot[0])
+        self.assertEqual(go(1792065600), 'Uploads not set up')
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
+        self.log('20261015T120000Z', 30, b'a drive')
+        self.assertEqual(go(1792065600), 'No internet')                   # The dash cam's Wi-Fi: nothing goes
+        self.assertEqual(hub.files, {})
+        online[0] = True                                                 # Home Wi-Fi or the phone hotspot
+        self.assertEqual(go(1792065660), 'Sent a report by itself')
+        self.assertTrue(any(p.endswith('events.txt') for p in hub.files))
+        self.assertEqual((hub.releases, hub.assets), ({}, []))            # Drives go with Update now / Send now
+        count = len(hub.files)
+        self.assertEqual(go(1792065960), 'Nothing new to send')           # Same start, nothing new
+        events = self.state / 'events'
+        events.mkdir(exist_ok=True)
+        (events / '2026-10-15.jsonl').write_text(json.dumps({'t': 1792065900, 'level': 'warn', 'area': 'gps', 'text': 'GPS lost'}) + '\n')
+        self.assertEqual(go(1792066200), 'Nothing new to send')           # New events, but not 30 minutes yet
+        self.assertIn('Sent a report', go(1792065660 + self.up.AUTO_EVERY_S + 1))
+        self.assertGreater(len(hub.files), count)
+        boot[0] = 'boot-2'                                               # The next start goes up at once
+        self.assertIn('Sent a report', go(1792065660 + self.up.AUTO_EVERY_S + 60))
+        # While an update or recovery runs, it waits.
+        boot[0] = 'boot-3'
+        busy = self.state / 'busy'
+        busy.write_text('')
+        self.up.BUSY = busy
+        self.assertEqual(go(1792065660 + self.up.AUTO_EVERY_S + 120), 'An update or recovery is running')
+
     def test_wifi_passwords_and_names_are_blanked_before_anything_goes_up(self):
         (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
         (self.state / 'wifi-status.json').write_text(json.dumps({'state': 'joined', 'ssid': 'HomeNet42', 'message': 'Joined HomeNet42'}))

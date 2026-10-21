@@ -43,7 +43,7 @@
     '<div class="sw-column"><div class="software-card" id="modules-card"><span class="sw-title">Modules on the CAN bus</span>' +
     '<ul class="sw-modules" id="firmware-modules"><li class="sw-empty">Waiting for the dash…</li></ul>' +
     '<p class="control-note">New builds arrive with Update now. Install one with the car stopped: two presses.</p></div>' +
-    '<div class="software-card" id="uploads-card"><div class="sw-head"><div><span class="sw-title">Reports to GitHub</span><small id="uploads-where">After every update</small></div><span class="sw-pill" id="uploads-pill" data-tone="idle">Checking…</span></div>' +
+    '<div class="software-card" id="uploads-card"><div class="sw-head"><div><span class="sw-title">Reports to GitHub</span><small id="uploads-where">By itself whenever the Pi has internet</small></div><span class="sw-pill" id="uploads-pill" data-tone="idle">Checking…</span></div>' +
     '<div class="sw-code" id="uploads-code" hidden><strong></strong><span>On your phone open <b>github.com/login/device</b>, type this code and press Authorize.</span></div>' +
     '<p class="sw-message" id="uploads-status">What went wrong (GPS, CAN, modules, power), the diagnostics, the system log and the newest drive.</p>' +
     '<div class="sw-buttons"><button type="button" id="uploads-connect">Connect GitHub</button><button type="button" id="uploads-send" hidden>Send now</button><button type="button" id="uploads-disconnect" hidden>Disconnect</button></div></div></div></div></section>');
@@ -246,14 +246,14 @@
     const [tone, label] = waiting ? ['busy', 'Enter the code'] : s.configured ? (s.sending ? ['busy', 'Sending…'] : s.last?.state === 'failed' ? ['bad', 'Upload failed'] : ['good', 'Connected'])
       : link.state === 'failed' ? ['bad', 'Not connected'] : ['warn', 'Not connected'];
     $('uploads-pill').dataset.tone = tone; $('uploads-pill').textContent = label;
-    $('uploads-where').textContent = s.configured ? `To ${s.repo || 'GitHub'} (branch pi-logs)${s.account ? ' · as ' + s.account : ''}` : 'After every update';
+    $('uploads-where').textContent = s.configured ? `To ${s.repo || 'GitHub'} (branch pi-logs)${s.account ? ' · as ' + s.account : ''} · by itself whenever the Pi has internet` : 'By itself whenever the Pi has internet';
     $('uploads-code').hidden = !waiting;
     $('uploads-code').querySelector('strong').textContent = waiting ? link.code : '';
     const held = s.held ? ` ${s.held} report${s.held === 1 ? '' : 's'} waiting on the Pi${s.configured ? '' : ': they go up once connected'}.` : '';
     $('uploads-status').textContent = waiting ? `Waiting for GitHub… the code works for ${Math.max(0, Math.round((link.expires_at - Date.now() / 1000) / 60))} more minutes.`
       : link.state === 'failed' && !s.configured ? link.message + '.' + held
       : s.configured && s.sending ? 'Sending the reports to GitHub: a minute or two, longer with a drive to send.'
-      : s.configured ? `${s.last ? 'Last: ' + s.last.message + '.' : 'Nothing sent yet: press Send now, or it goes with the next update.'}${held}`
+      : s.configured ? `${s.last ? 'Last: ' + s.last.message + '.' : 'Nothing sent yet: it goes by itself once the Pi reaches the internet, or press Send now.'}${held} Drive recordings go with Update now and Send now.`
       : !s.ready ? 'This dash does not have its GitHub app ID yet: it comes with an update.' + held
       : 'Press Connect GitHub (with internet), then type the code it shows on your phone. Once, and done.' + held;
     $('uploads-connect').hidden = s.configured || waiting; $('uploads-connect').disabled = !s.ready;

@@ -1,0 +1,10 @@
+[Unit]
+Description=Look every few minutes whether a Frogdash report should go to GitHub
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=5min
+RandomizedDelaySec=30
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,9 @@
+[Unit]
+Description=Send a Frogdash report to GitHub when the Pi can reach it and there is something new
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/frogdash/tools/frogdash_upload.py --auto
+TimeoutStartSec=15min
+Nice=10

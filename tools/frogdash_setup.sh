@@ -107,6 +107,15 @@ for path in "$REPO"/hardware/systemd/frogdash-*.path; do
     [ -f "$UNITS/$name.path" ] && [ -f "$UNITS/$name.service" ] && systemctl is-enabled --quiet "$name.path" && continue
     if install_unit "$name" "$name.path"; then added="$added ${name#frogdash-}"; else broken="$broken ${name#frogdash-}"; fi
 done
+# Timers: a service run every so often (the reports sent by themselves).
+for timer in "$REPO"/hardware/systemd/frogdash-*.timer; do
+    [ -f "$timer" ] || continue
+    name=$(basename "$timer" .timer)
+    [ -f "$REPO/hardware/systemd/$name.service" ] || continue
+    [ -f "$UNITS/$name.timer" ] && [ -f "$UNITS/$name.service" ] && systemctl is-enabled --quiet "$name.timer" && continue
+    if cp "$REPO/hardware/systemd/$name.service" "$REPO/hardware/systemd/$name.timer" "$UNITS/" && systemctl daemon-reload &&
+        systemctl enable --now "$name.timer" >/dev/null 2>&1; then added="$added ${name#frogdash-}"; else broken="$broken ${name#frogdash-}"; fi
+done
 for name in $SERVICES; do
     [ -f "$REPO/hardware/systemd/$name.service" ] || continue
     [ -f "$UNITS/$name.service" ] && systemctl is-enabled --quiet "$name.service" && continue

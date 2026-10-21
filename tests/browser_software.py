@@ -99,7 +99,7 @@ async def main(browser_path):
             await page.locator('#uploads-send').click()
             await page.wait_for_function("document.getElementById('uploads-pill').textContent === 'Sending…'", timeout=10000)
             (folder / 'update-request').unlink()
-            assert await page.locator('#uploads-where').inner_text() == 'To averyizatt/frogdash (branch pi-logs) · as averyizatt'
+            assert await page.locator('#uploads-where').inner_text() == 'To averyizatt/frogdash (branch pi-logs) · as averyizatt · by itself whenever the Pi has internet'
             saved = json.loads((folder / 'log-upload.json').read_text())
             assert (saved['repo'], saved['token']) == ('averyizatt/frogdash', 'gho_test'), saved
             assert 'gho_test' not in await page.content()                            # Never shown
