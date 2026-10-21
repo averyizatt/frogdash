@@ -55,6 +55,19 @@ class KioskTests(unittest.TestCase):
         self.assertNotIn('--autoplay-policy=no-user-gesture-required', args)
         self.assertIn('--autoplay-policy=no-user-gesture-required', browser_args('chromium', allow_audio=True))
 
+    def test_the_dash_browser_is_lighter_and_its_features_are_one_flag(self):
+        args = browser_args('/usr/bin/chromium', wayland=True, profile='/home/foxbody/.config/frogdash-chromium')
+        self.assertIn('--renderer-process-limit=1', args)
+        features = [arg for arg in args if arg.startswith('--disable-features=')]
+        self.assertEqual(len(features), 1)                 # Chromium would only honour the last of several
+        self.assertEqual(features[0], '--disable-features=Translate,MediaRouter,OptimizationHints,IsolateOrigins,site-per-process')
+        self.assertNotIn('--no-sandbox', args)
+        self.assertNotIn('--disable-gpu', args)
+        # A desktop kiosk without the dedicated profile keeps Chromium's usual processes.
+        plain = browser_args('chromium')
+        self.assertNotIn('--renderer-process-limit=1', plain)
+        self.assertIn('--disable-features=Translate,MediaRouter,OptimizationHints', plain)
+
     def test_health_probe_ignores_proxy_and_retries_connection_errors(self):
         with patch('tools.launch_kiosk.urllib.request.build_opener') as opener:
             opener.return_value.open.side_effect = ConnectionRefusedError()

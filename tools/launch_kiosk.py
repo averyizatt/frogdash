@@ -45,7 +45,9 @@ def browser_args(binary, port=8080, wayland=False, profile=None, allow_audio=Fal
             '--disable-session-crashed-bubble',
             # A local-only dashboard needs no sync, update or push-registration traffic.
             '--disable-background-networking', '--disable-component-update', '--disable-sync',
-            '--disable-breakpad', '--disable-features=Translate,MediaRouter,OptimizationHints']
+            '--disable-breakpad']
+    # Chromium honours only the last --disable-features, so they are gathered into one.
+    features = ['Translate', 'MediaRouter', 'OptimizationHints']
     if wayland:
         args.append('--ozone-platform=wayland')
     if profile:
@@ -59,6 +61,13 @@ def browser_args(binary, port=8080, wayland=False, profile=None, allow_audio=Fal
         if os.environ.get('FROGDASH_ACCESSIBILITY') != '1':
             args.append('--disable-renderer-accessibility')
         args.append('--disable-extensions')
+        # Lighter, for the dash's own browser only: it shows nothing but pages from this
+        # Pi, so one page process is enough and site isolation guards nothing; fewer
+        # processes to start and less memory. Sandboxing and graphics acceleration stay.
+        args += ['--renderer-process-limit=1', '--disable-default-apps', '--disable-client-side-phishing-detection',
+                 '--no-pings', '--disable-domain-reliability']
+        features += ['IsolateOrigins', 'site-per-process']
+    args.append('--disable-features=' + ','.join(features))
     if allow_audio:
         args.append('--autoplay-policy=no-user-gesture-required')
     return args + [f'http://127.0.0.1:{port}/']
