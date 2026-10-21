@@ -67,6 +67,16 @@ class KioskTests(unittest.TestCase):
             self.assertTrue(probe())
             opener.return_value.open.assert_called_with('http://127.0.0.1:8080/health', timeout=.5)
 
+    def test_dedicated_profile_skips_extensions_and_unrequested_accessibility(self):
+        with patch.dict('os.environ', {}, clear=True):
+            args = browser_args('chromium', profile='/home/dash/profile')
+            self.assertIn('--disable-renderer-accessibility', args)
+            self.assertIn('--disable-extensions', args)
+            self.assertNotIn('--disable-renderer-accessibility', browser_args('chromium'))
+            self.assertNotIn('--disable-extensions', browser_args('chromium'))
+        with patch.dict('os.environ', {'FROGDASH_ACCESSIBILITY': '1'}):
+            self.assertNotIn('--disable-renderer-accessibility', browser_args('chromium', profile='/home/dash/profile'))
+
     def test_first_render_is_logged_once_only_after_browser_heartbeat(self):
         process = Mock()
         process.poll.side_effect = [None, None, None, 0, 0]

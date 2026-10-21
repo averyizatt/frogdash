@@ -235,6 +235,8 @@ else
 fi
 
 # --- Screen and start-up: fixed 1920 x 720 ---
+# The updater also refreshes the console unit: start_console.sh now records Cage
+# startup, and the dedicated browser skips extensions and forced accessibility.
 # The fixed 1920 x 720 EDID and matching early firmware mode, applied on updates.
 # Keep the panel's normal boot delay; removing it caused signal trouble.
 if [ ! -f "$REPO/tools/frogdash_screen.py" ]; then

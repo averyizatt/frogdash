@@ -32,6 +32,35 @@ def section(title, value):
     print(f'\n--- {title} ---\n{value}', flush=True)
 
 
+def usb_topology(root=Path('/sys/bus/usb/devices')):
+    """Map kernel port names to devices, without serial numbers or network names."""
+    lines = []
+    for device in sorted(root.glob('*')):
+        if not (device / 'idVendor').exists():
+            continue
+        fields = []
+        for name in ('idVendor', 'idProduct', 'manufacturer', 'product', 'speed',
+                     'power/control', 'power/runtime_status'):
+            try:
+                value = (device / name).read_text().strip().replace('\n', ' ')
+                fields.append(f'{name}={value}')
+            except OSError:
+                pass
+        drivers = sorted({p.resolve().name for p in root.glob(device.name + ':*/driver')})
+        lines.append(f'{device.name}: ' + ', '.join(fields) + f'; drivers={",".join(drivers) or "none"}')
+    return '\n'.join(lines) or 'No USB sysfs devices available'
+
+
+def early_kiosk_lines(output):
+    """Keep the first boot's timeline even after a software update restarts the kiosk."""
+    lines = []
+    for line in output.splitlines():
+        match = re.match(r'\[\s*(\d+(?:\.\d+)?)\]', line)
+        if match and float(match[1]) <= 60:
+            lines.append((float(match[1]), line))
+    return '\n'.join(line for _, line in sorted(lines)) or 'No kiosk milestones in the first 60 seconds'
+
+
 def report(user):
     console = f'frogdash-console@{user}.service'
     print('Frogdash boot report (read-only; times start at kernel boot, not key-on)', flush=True)
@@ -42,6 +71,7 @@ def report(user):
     section('Architecture', command(['uname', '-m']))
     section('Default boot target', command(['systemctl', 'get-default']))
     section('Boot timing', command(['systemd-analyze', 'time']))
+    section('Kernel version', command(['uname', '-r']))
     section('Slowest unit activation times (parallel durations do not add up)',
             '\n'.join(command(['systemd-analyze', 'blame', '--no-pager']).splitlines()[:20]))
     for unit in ('frogdash.service', console):
@@ -67,6 +97,9 @@ def report(user):
     # unit-only journal query then misses the error causing the restart loop.
     uid = command(['id', '-u', user]).strip()
     if uid.isdecimal():
+        section('First 60 seconds: kiosk timeline (all session scopes)', early_kiosk_lines(command([
+            'journalctl', '-b', '--no-pager', '-o', 'short-monotonic',
+            f'_UID={uid}', '--grep=Frogdash kiosk:'])))
         section('Kiosk user session logs (includes Cage/Chromium child processes)', command([
             'journalctl', '-b', '--no-pager', '-o', 'short-monotonic', '-n', '120', f'_UID={uid}']))
     section('Kiosk restart count and last exit', command([
@@ -84,6 +117,11 @@ def report(user):
         except OSError as exc:
             connectors.append(f'{status.parent.name}: {exc}')
     section('Display connectors', '\n'.join(connectors) or 'No DRM connector information available')
+    section('USB ports, devices, drivers and power state', usb_topology())
+    section('USB topology reported by lsusb', command(['lsusb', '-t']))
+    section('USB and graphics kernel warnings (current boot)', command([
+        'journalctl', '-b', '-k', '--no-pager', '-o', 'short-monotonic', '-n', '100',
+        '--grep=error -71|clear tt|device descriptor|disconnect|reset .*USB|vc4|drm|under-voltage']))
     section('Pi voltage/throttling flags', command(['vcgencmd', 'get_throttled']))
     print('\nCompare with a video of key-on to visible gauges. A render heartbeat is a browser liveness observation, not proof the physical screen is lit.', flush=True)
 

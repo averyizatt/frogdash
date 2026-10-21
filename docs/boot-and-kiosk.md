@@ -2,6 +2,35 @@
 
 ## Exact 1920 x 720, and a quicker start
 
+**Cold-start follow-up.** The latest available October 20 reports (`225803` and
+`230022` on `pi-logs`) record the same boot: session active at 7.1 s, browser
+launch at 13.46 s, first heartbeat at 24.95 s. The launcher finds HTTP ready
+immediately. These are kernel-relative observations, not a measurement of key-on
+to visible gauges. The reports precede the firmware-mode fix.
+
+The dedicated dashboard browser now disables extensions and renderer accessibility
+processing. The distro wrapper was forcing accessibility on; Chromium documents
+that `--disable-renderer-accessibility` overrides that flag. This is limited to
+the dedicated profile, with `FROGDASH_ACCESSIBILITY=1` as an opt-out for assistive
+technology. Browser sandboxing, graphics acceleration, saved preferences and
+audio remain enabled. Expected savings need a cold-boot comparison.
+
+`start_console.sh` logs immediately before executing Cage without changing the
+main PID; the browser launcher logs when Cage has launched it. The boot report
+now includes early milestones across user session scopes, USB sysfs port names,
+device IDs, drivers, power state, `lsusb -t`, and kernel USB/graphics messages.
+These arrive through the existing Reports to GitHub flow. Normal Update now
+refreshes the console unit and launcher; the next Pi restart is the cold-boot test.
+
+The old report shows repeated USB transaction errors at hub `1-1.2`, a Realtek
+Wi-Fi adapter at `1-1.2.4`, and a VC4 modeset warning while Cage is running. These
+do not prove a particular hardware cause or a six-second timeout. The next
+physical comparison is a boot with the external hub and its peripherals removed,
+then reconnecting them one at a time while parked. USB reset/driver blacklisting
+is not applied automatically because that could disconnect GPS and update Wi-Fi.
+
+Reference: [Chromium accessibility switches](https://chromium.googlesource.com/chromium/src/+/HEAD/ui/accessibility/accessibility_switches.cc).
+
 **Explicit early boot mode (October 20, 2026).** Setup now also selects custom
 firmware mode 87 on both HDMI ports, with `hdmi_timings` decoded from the installed
 1920 x 720 EDID. This targets the low-resolution firmware picture before Linux

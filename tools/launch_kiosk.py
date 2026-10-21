@@ -53,6 +53,12 @@ def browser_args(binary, port=8080, wayland=False, profile=None, allow_audio=Fal
         # This dedicated local dashboard profile has no website logins. Avoid
         # a desktop keyring prompt/timeout in an unattended console session.
         args.append('--password-store=basic')
+        # The distro wrapper forces accessibility even without a screen reader.
+        # Only the dedicated instrument display opts out; desktop kiosks retain it.
+        # Set FROGDASH_ACCESSIBILITY=1 for a dash using assistive technology.
+        if os.environ.get('FROGDASH_ACCESSIBILITY') != '1':
+            args.append('--disable-renderer-accessibility')
+        args.append('--disable-extensions')
     if allow_audio:
         args.append('--autoplay-policy=no-user-gesture-required')
     return args + [f'http://127.0.0.1:{port}/']
@@ -278,6 +284,7 @@ def supervise(args, port, token, tuner=None):
 
 
 def main():
+    print(f'Frogdash kiosk: compositor ready; launcher entered ({boot_stamp()})', flush=True)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--wayland', action='store_true')
     parser.add_argument('--dedicated-profile', action='store_true', help='Use ~/.config/frogdash-chromium; keep preferences on disk')
