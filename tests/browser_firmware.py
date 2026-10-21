@@ -73,7 +73,9 @@ async def main(browser_path):
             errors = []
             page.on('pageerror', lambda error: errors.append(str(error)))
             try:
+                await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
                 await page.goto(f'http://127.0.0.1:{site._server.sockets[0].getsockname()[1]}')
+                await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
                 await page.locator('#drive-launch').click()
                 await page.locator('#operations-launch').click()
                 await page.locator('[data-ops-tab="software"]').click()

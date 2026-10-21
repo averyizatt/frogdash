@@ -156,9 +156,17 @@
     wasReverse = reverse;
   });
 
-  // Dash management > Support & testing: camera status and a test view that does not need reverse.
-  const support = document.querySelector('[data-ops-panel="support"] .ops-columns');
-  support.firstElementChild.insertAdjacentHTML('beforeend', '<div class="setting-card camera-test" data-state="unknown"><div><span>Reverse camera</span><strong id="camera-test-status">Checking…</strong><small id="camera-test-detail">Opens without reverse, for aiming the camera and setting guides.</small></div><button id="camera-test" type="button">Open camera test</button></div>');
+  // Dash management > Support & testing: camera status and a test view that does not need
+  // reverse. Management loads after the gauges (later.js): the card is added once it is there.
+  function addTestCard() {
+    const support = document.querySelector('[data-ops-panel="support"] .ops-columns');
+    if (!support || document.querySelector('.camera-test')) return;
+    support.firstElementChild.insertAdjacentHTML('beforeend', '<div class="setting-card camera-test" data-state="unknown"><div><span>Reverse camera</span><strong id="camera-test-status">Checking…</strong><small id="camera-test-detail">Opens without reverse, for aiming the camera and setting guides.</small></div><button id="camera-test" type="button">Open camera test</button></div>');
+    $('camera-test').onclick = () => open('manual');
+    new MutationObserver(testStatus).observe(document.querySelector('[data-ops-panel="support"]'), {attributes: true, attributeFilter: ['hidden']});
+  }
+  addTestCard();
+  window.addEventListener('frogdash-later', addTestCard);
   async function testStatus() {
     const card = document.querySelector('.camera-test');
     if (!card?.checkVisibility()) return;
@@ -179,8 +187,6 @@
     $('camera-test').disabled = state === 'off';
   }
   setInterval(testStatus, 2000);
-  new MutationObserver(testStatus).observe(document.querySelector('[data-ops-panel="support"]'), {attributes: true, attributeFilter: ['hidden']});
-  $('camera-test').onclick = () => open('manual');
   $('camera-launch').onclick = () => open('manual');
   $('camera-close').onclick = close;
   $('camera-guides-toggle').onclick = () => { prefs.guides = !prefs.guides; save(); };

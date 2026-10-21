@@ -11,11 +11,6 @@
   <link rel="stylesheet" href="responsive.css?v=131055bbeee8">
 <link rel="stylesheet" href="instruments.css?v=eb10e480f82a">
 <link rel="stylesheet" href="camera.css?v=b12b9525cfcb">
-<link rel="stylesheet" href="taillights.css?v=d1359011b47c">
-<link rel="stylesheet" href="knock.css?v=0c2fbd4e553a">
-<link rel="stylesheet" href="keyboard.css?v=254b6a8a85a9">
-<link rel="stylesheet" href="uPlot.min.css?v=df630c6a8d6f">
-<link rel="stylesheet" href="graphs.css?v=972a51403f2a">
 <script src="offline.js?v=c5796081ea94"></script>
 <script src="boot.js?v=447cd355bc91"></script>
 </head>
@@ -489,6 +484,8 @@
   </div>
   <p id="driver-feedback" class="command-result" role="status">Bookmarks and fault captures are saved with your drive review.</p>
 </dialog>
+<!-- What driving needs, first: the gauges and their look, warning alerts, trip and
+     odometer, and the reverse camera and dash cam (they open on the reverse signal). -->
 <script src="viewport.js?v=2123ae318b10"></script>
 <script src="units.js?v=7f934be8abf3"></script>
 <script src="review.js?v=c6ec99c5fdab"></script>
@@ -496,21 +493,31 @@
 <script src="personalize.js?v=b0cfd4bc02b1"></script>
 <script src="trip.js?v=d38d5ba947a7"></script>
 <script src="driving.js?v=03a3600a0df6"></script>
-<script src="operations.js?v=471fc0616ba0"></script>
-<script src="screen.js?v=d764dc9a10fb"></script>
-<script src="navigation.js?v=2409712e6378"></script>
-<script src="camera.js?v=ad18e6e6fd6f"></script>
+<script src="camera.js?v=200cc8af8600"></script>
 <script src="dashcam.js?v=59b85171a81e"></script>
-<script src="map.js?v=c563c41f37d5"></script>
-<script src="taillights.js?v=04906b265706"></script>
-<script src="taillight-settings.js?v=179b3ed31292"></script>
 <script src="meth-tune.js?v=661bd0c3d2c6"></script>
-<script src="knock.js?v=78a86c754486"></script>
-<script src="keyboard.js?v=b4449fd4d760"></script>
-<script src="summary.js?v=10e9f3c08954"></script>
-<script src="uPlot.iife.min.js?v=2d27e8ad3d22"></script>
-<script src="graphs.js?v=4ddec132eab0"></script>
 <script src="demo.js?v=e9e8d4cc38a1"></script>
-<script src="app.js?v=93ce0e8652ca"></script>
+<script src="app.js?v=7c4dc48c6452"></script>
+<!-- Everything else, about four seconds after the gauges' first frame (later.js), one
+     file at a time, in this order: ready long before it is opened. -->
+<script type="application/json" id="later-files">[
+  "taillights.css?v=d1359011b47c",
+  "knock.css?v=0c2fbd4e553a",
+  "keyboard.css?v=254b6a8a85a9",
+  "uPlot.min.css?v=df630c6a8d6f",
+  "graphs.css?v=972a51403f2a",
+  "operations.js?v=61fa50bcdffe",
+  "screen.js?v=d764dc9a10fb",
+  "navigation.js?v=2409712e6378",
+  "map.js?v=c563c41f37d5",
+  "taillights.js?v=04906b265706",
+  "taillight-settings.js?v=179b3ed31292",
+  "knock.js?v=78a86c754486",
+  "keyboard.js?v=b4449fd4d760",
+  "summary.js?v=10e9f3c08954",
+  "uPlot.iife.min.js?v=2d27e8ad3d22",
+  "graphs.js?v=4ddec132eab0"
+]</script>
+<script src="later.js?v=801f6fa7ed05"></script>
 </body>
 </html>

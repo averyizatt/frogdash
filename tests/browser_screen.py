@@ -45,7 +45,9 @@ async def main(browser_path):
             page = await browser.new_page(viewport={'width': 1920, 'height': 720})
             errors = []
             page.on('pageerror', lambda error: errors.append(str(error)))
+            await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
             await page.goto(f'http://127.0.0.1:{port}')
+            await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
             await page.locator('#drive-launch').click()
             await page.locator('#operations-launch').click()
             await page.locator('[data-ops-tab="support"]').click()
@@ -61,7 +63,7 @@ async def main(browser_path):
             status.write_text(json.dumps({'state': 'trial', 'message': 'Trying exact 1920 x 720', 'started': int(time.time()), 'deadline_s': 90,
                                           'applied': False, **SURVEY}))
             await page.reload()
-            await page.wait_for_function("document.getElementById('screen-trial').open", timeout=8000)
+            await page.wait_for_function("document.getElementById('screen-trial')?.open", timeout=8000)
             count = await text(page, '#screen-trial-count')
             assert 'goes back by itself in 8' in count or 'goes back by itself in 9' in count, count
             assert await page.evaluate("document.activeElement.id") == 'screen-keep'
@@ -73,7 +75,7 @@ async def main(browser_path):
             assert (folder / 'screen-request').read_text() == 'keep'
             (folder / 'screen-request').unlink()
             status.write_text(json.dumps({'state': 'kept', 'message': 'The screen now gets exactly 1920 x 720 at every start', 'applied': True, **SURVEY}))
-            await page.wait_for_function("!document.getElementById('screen-trial').open", timeout=5000)
+            await page.wait_for_function("!document.getElementById('screen-trial')?.open", timeout=5000)
             assert not errors, errors
             # The preview: no Pi, so no row and no question.
             preview = await browser.new_page(viewport={'width': 1920, 'height': 720})

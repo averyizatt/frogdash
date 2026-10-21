@@ -131,10 +131,12 @@ async def check_preview(browser, errors):
     network = []
     page.on('websocket', lambda ws: network.append(ws.url))
     page.on('request', lambda request: network.append(request.url) if request.url.startswith(('http:', 'https:')) else None)
+    await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
     await page.goto((Path(__file__).resolve().parents[1] / 'preview' / 'index.html').as_uri())
+    await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
     await page.evaluate("frogdashDemo.scenario('normal')")
     await page.wait_for_function("document.getElementById('connection-summary').textContent === 'DEMO · SIMULATED'")
-    assert await page.locator('#afr-target').inner_text() == '12.5'
+    await page.wait_for_function("document.getElementById('afr-target').textContent === '12.5'")   # The next update after the switch
     assert (await page.locator('#afr-state').inner_text()).lower() == 'at target'
     await page.screenshot(path='.tmp/dashboard-preview.png')
     await page.evaluate("frogdashDemo.scenario('vacuum')")
@@ -239,7 +241,9 @@ async def main(browser_path=None):
             browser = await p.chromium.launch(executable_path=browser_path, headless=True)
             page = await browser.new_page(viewport={'width': 1920, 'height': 720})
             page.on('pageerror', lambda error: errors.append(str(error)))
+            await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
             await page.goto(f'http://127.0.0.1:{port}')
+            await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
             await page.wait_for_function("document.getElementById('rpm-value').textContent === '3450'")
             assert await page.locator('#speed-digits').inner_text() == '47'
             assert await page.locator('#fuel-val').inner_text() == '—'

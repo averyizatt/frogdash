@@ -35,7 +35,9 @@ async def check(browser, url, state):
     async def focused(identifier):
         await page.wait_for_function('(id) => document.activeElement.id === id', arg=identifier)
     try:
+        await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
         await page.goto(url)
+        await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
         await page.wait_for_timeout(300)
         # Any button on the plain dashboard opens the quick menu; entries deep-link into a section.
         await press(16)
@@ -102,7 +104,9 @@ async def check(browser, url, state):
 async def preview(browser):
     page = await browser.new_page(viewport={'width': 1280, 'height': 480})
     try:
+        await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
         await page.goto((ROOT / 'preview/index.html').as_uri())
+        await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
         await page.keyboard.press('Enter')
         assert await page.locator('#wheel-menu').evaluate('(el) => el.open')
         await page.keyboard.press('Escape')

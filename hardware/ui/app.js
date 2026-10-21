@@ -316,19 +316,34 @@
     ws.send(JSON.stringify(message)); renderControls();
   }
   window.FrogdashControls = {send: sendCommand};
-  for (const button of document.querySelectorAll('[data-action]')) {
-    if (button.dataset.compute !== undefined) continue; // Owner computes the value and calls send().
-    button.onclick = () => {
-      let value;
-      if (button.dataset.input) {
-        const input = $(button.dataset.input);
-        if (!input.reportValidity() || input.value === '') return;
-        value = Number(input.value);
-        if (button.dataset.scale) value = Math.round(value * Number(button.dataset.scale));
-      } else if (button.dataset.value !== undefined) value = Number(button.dataset.value);
-      sendCommand(button.dataset.action, value);
-    };
+  // The kiosk's watchdog (tools/launch_kiosk.py) restarts the browser if the gauges stop
+  // drawing: they say so here, from the start, whatever else has loaded.
+  const kioskToken = new URLSearchParams(location.search).get('kiosk');
+  let lastBeat = 0, lastBeatRender = 0;
+  function heartbeat(now) {
+    if (/^[0-9a-f]{32}$/.test(kioskToken) && now - lastBeat > 2000 && window.frogdashRendered !== lastBeatRender) {
+      lastBeat = now; lastBeatRender = window.frogdashRendered;
+      fetch('/ui/heartbeat/' + kioskToken, {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: window.frogdashDisplayInfo ? JSON.stringify({display: window.frogdashDisplayInfo()}) : undefined,
+        signal: AbortSignal.timeout(3000)}).catch(() => {});
+    }
+    requestAnimationFrame(heartbeat);
   }
+  requestAnimationFrame(heartbeat);
+  // Every command button, also those the screens loaded after the gauges make (later.js):
+  // one handler for the page, not one per button found at start.
+  document.addEventListener('click', event => {
+    const button = event.target.closest?.('[data-action]');
+    if (!button || button.disabled || button.dataset.compute !== undefined) return;   // compute: its owner sends
+    let value;
+    if (button.dataset.input) {
+      const input = $(button.dataset.input);
+      if (!input.reportValidity() || input.value === '') return;
+      value = Number(input.value);
+      if (button.dataset.scale) value = Math.round(value * Number(button.dataset.scale));
+    } else if (button.dataset.value !== undefined) value = Number(button.dataset.value);
+    sendCommand(button.dataset.action, value);
+  });
   // Interior LEDs on the sensor gateway (0x502): zone 0 both, 1 upper, 2 lower.
   // Every button applies at once with the current lights / brightness / colour selection.
   const interior = {zone: 0, level: 50, color: '#ffb46b', seeded: false};

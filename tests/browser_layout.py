@@ -105,7 +105,9 @@ async def main(browser_path=None, url=None):
         page = await browser.new_page(viewport={'width': 1920, 'height': 720})
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
+        await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
         await page.goto(url or (ROOT / 'preview' / 'index.html').as_uri())
+        await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
         await page.evaluate("frogdashDemo.scenario('normal')")
         await page.wait_for_function("document.getElementById('rpm-value').textContent === '3450'")
         await page.evaluate("frogdashDemo.scenario('parked')")

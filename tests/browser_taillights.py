@@ -44,7 +44,9 @@ async def main(executable):
             page = await browser.new_page(viewport={'width': 1920, 'height': 720})
             errors = []
             page.on('pageerror', lambda e: errors.append(str(e)))
+            await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
             await page.goto(f'http://127.0.0.1:{port}/index.html')
+            await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
             await page.wait_for_function('window.frogdashRendered > 2')
             await page.evaluate("frogdashDemo.scenario('parked')")
             await page.locator('#controls-launch').click()

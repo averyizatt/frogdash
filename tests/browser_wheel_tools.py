@@ -50,7 +50,9 @@ async def wheel_session(browser, url, state, imports):
     active = lambda: page.evaluate('document.activeElement.textContent || document.activeElement.id')
     task = asyncio.create_task(publisher())
     try:
+        await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
         await page.goto(url)
+        await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
         await page.wait_for_function('document.querySelectorAll(".look-card").length > 20')
         await page.wait_for_timeout(300)
 

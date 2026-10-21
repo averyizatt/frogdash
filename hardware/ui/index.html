@@ -11,11 +11,6 @@
   <link rel="stylesheet" href="responsive.css">
 <link rel="stylesheet" href="instruments.css">
 <link rel="stylesheet" href="camera.css">
-<link rel="stylesheet" href="taillights.css">
-<link rel="stylesheet" href="knock.css">
-<link rel="stylesheet" href="keyboard.css">
-<link rel="stylesheet" href="uPlot.min.css">
-<link rel="stylesheet" href="graphs.css">
 <script src="boot.js"></script>
 </head>
 <body>
@@ -488,6 +483,8 @@
   </div>
   <p id="driver-feedback" class="command-result" role="status">Bookmarks and fault captures are saved with your drive review.</p>
 </dialog>
+<!-- What driving needs, first: the gauges and their look, warning alerts, trip and
+     odometer, and the reverse camera and dash cam (they open on the reverse signal). -->
 <script src="viewport.js"></script>
 <script src="units.js"></script>
 <script src="review.js"></script>
@@ -495,20 +492,30 @@
 <script src="personalize.js"></script>
 <script src="trip.js"></script>
 <script src="driving.js"></script>
-<script src="operations.js"></script>
-<script src="screen.js"></script>
-<script src="navigation.js"></script>
 <script src="camera.js"></script>
 <script src="dashcam.js"></script>
-<script src="map.js"></script>
-<script src="taillights.js"></script>
-<script src="taillight-settings.js"></script>
-<script src="meth-tune.js"></script>
-<script src="knock.js"></script>
-<script src="keyboard.js"></script>
-<script src="summary.js"></script>
-<script src="uPlot.iife.min.js"></script>
-<script src="graphs.js"></script>
 <script src="app.js"></script>
+<!-- Everything else, about four seconds after the gauges' first frame (later.js), one
+     file at a time, in this order: ready long before it is opened. -->
+<script type="application/json" id="later-files">[
+  "taillights.css",
+  "knock.css",
+  "keyboard.css",
+  "uPlot.min.css",
+  "graphs.css",
+  "operations.js",
+  "screen.js",
+  "navigation.js",
+  "map.js",
+  "taillights.js",
+  "taillight-settings.js",
+  "meth-tune.js",
+  "knock.js",
+  "keyboard.js",
+  "summary.js",
+  "uPlot.iife.min.js",
+  "graphs.js"
+]</script>
+<script src="later.js"></script>
 </body>
 </html>

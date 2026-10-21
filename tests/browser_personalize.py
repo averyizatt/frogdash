@@ -23,7 +23,9 @@ async def preview(browser):
     errors, network = [], []
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.on('request', lambda request: network.append(request.url) if request.url.startswith(('http:', 'https:')) else None)
+    await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
     await page.goto((ROOT / 'preview/index.html').as_uri())
+    await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
     await page.evaluate("frogdashDemo.scenario('normal')")
     await page.wait_for_function("document.getElementById('rpm-value').textContent === '3450'")
     await page.screenshot(path=str(ROOT / '.tmp/appearance-test-upload.png'))
@@ -186,7 +188,9 @@ async def live(browser):
                     'time': datetime.fromtimestamp(1700000000 + t, timezone.utc).isoformat()})
             try:
                 feed(0, 0)
+                await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
                 await page.goto(f'http://127.0.0.1:{port}')
+                await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
                 await page.locator('#race-launch').click()
                 await page.locator('[data-race="accel"]').click()
                 await page.wait_for_function('document.getElementById("race-phase").textContent === "ARMED"')
