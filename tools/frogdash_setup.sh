@@ -16,7 +16,7 @@ ETC=${FROGDASH_ETC:-/etc}
 OPT=${FROGDASH_OPT:-/opt}
 STATUS=$STATE/setup-status.json
 # Services that are not started by a request file but belong to every install.
-SERVICES="frogdash-netkeeper frogdash-screen-boot frogdash-guard frogdash-rescue"
+SERVICES="frogdash-netkeeper frogdash-screen-boot frogdash-guard frogdash-rescue frogdash-warm"
 # Where the recovery guard and the rescue screen run from: outside the dash's own files,
 # and copied there only by this script, which runs after a version has started.
 LIB=${FROGDASH_LIB:-/usr/local/lib/frogdash}
@@ -249,6 +249,16 @@ else
         skipped:*) step "Screen and start-up" skipped "${said#skipped: }";;
         *) step "Screen and start-up" failed "The screen helper did not finish";;
     esac
+fi
+# rpi-eeprom-update checks for and applies a bootloader update at every start: 1.2 s of SD
+# card reads while Chromium is reading its own (boot reports, October 2026). The bootloader
+# works as it is; an update can still be applied by hand (sudo rpi-eeprom-update -a).
+if ! systemctl is-enabled --quiet rpi-eeprom-update.service 2>/dev/null; then
+    step "Start-up: bootloader update check" ok "Off"
+elif systemctl disable rpi-eeprom-update.service >/dev/null 2>&1; then
+    step "Start-up: bootloader update check" done "Switched off rpi-eeprom-update at start (1.2 s of disk work)"
+else
+    step "Start-up: bootloader update check" failed "Could not switch off rpi-eeprom-update"
 fi
 # e2scrub_reap looks for LVM snapshots, which this Pi does not use: 1.8 s of disk work at every start.
 if ! systemctl is-enabled --quiet e2scrub_reap.service 2>/dev/null; then

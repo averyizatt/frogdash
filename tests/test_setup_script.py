@@ -123,6 +123,17 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn('-m pip install --quiet --disable-pip-version-check --no-deps pyubx2==1.3.9', self.log('venv.log'))
         self.assertIn('restart frogdash.service', self.log('systemctl.log'))
 
+    def test_the_bootloader_update_check_is_switched_off_at_start(self):
+        (self.units / 'enabled-rpi-eeprom-update.service').write_text('')     # On by default in Raspberry Pi OS
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Start-up: bootloader update check'][0], 'done')
+        self.assertIn('disable rpi-eeprom-update.service', self.log('systemctl.log'))
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Start-up: bootloader update check'], ('ok', 'Off'))
+        # The browser is read into memory early in boot from now on.
+        self.assertTrue((self.units / 'frogdash-warm.service').is_file())
+        self.assertIn('enable --now frogdash-warm.service', self.log('systemctl.log'))
+
     def test_the_terminal_gets_sudo_only_while_it_is_switched_on(self):
         said, status, steps = self.run_setup('offline')
         self.assertEqual(steps['Terminal with sudo'][0], 'ok')                  # Off: nothing installed
@@ -146,7 +157,7 @@ class SetupScriptTests(unittest.TestCase):
     def test_first_run_without_internet_does_all_it_can_and_names_what_waits(self):
         said, status, steps = self.run_setup('offline')
         self.assertEqual((status['stamp'], status['running']), (stamp(SCRIPT), False))   # The dash recognises this run.
-        self.assertEqual(steps['Dash helpers'], ('done', 'Installed: canreset gps screen wifi netkeeper screen-boot guard rescue'))
+        self.assertEqual(steps['Dash helpers'], ('done', 'Installed: canreset gps screen wifi netkeeper screen-boot guard rescue warm'))
         for unit in ('frogdash-canreset.path', 'frogdash-canreset.service', 'frogdash-gps.path', 'frogdash-gps.service', 'frogdash-wifi.path', 'frogdash-wifi.service', 'frogdash-netkeeper.service',
                      'frogdash-screen.path', 'frogdash-screen.service', 'frogdash-screen-boot.service'):
             self.assertTrue((self.units / unit).is_file(), unit)

@@ -783,7 +783,11 @@ def create_app(state, adapter=None, connectivity=None):
         if name == 'index.html' and state.paint and state.paint.value:
             page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')
             return web.Response(text=state.paint.inject(page), content_type='text/html', headers={"Cache-Control": "no-store"})
-        return web.FileResponse(WEB / name, headers={"Cache-Control": "no-store"})
+        # The browser may keep the page's files, and with them the compiled code of its
+        # scripts, as long as it asks first each time (no-cache: a 304 when nothing changed,
+        # the new file after an update). With no-store it compiled every script again at
+        # every start. index.html stays no-store: the saved look is put into it.
+        return web.FileResponse(WEB / name, headers={"Cache-Control": "no-store" if name == 'index.html' else "no-cache"})
 
     async def import_list(request):
         require_local(request)
