@@ -147,14 +147,14 @@ class OperationsTests(unittest.IsolatedAsyncioTestCase):
                 self.assertFalse(parked(state), condition)
                 for route, body in (
                     ('/operations/settings', {'check': 'display'}),
-                    ('/drive/settings', {**state.driving.settings, 'oil_psi': 22}),
+                    ('/drive/settings', {**state.driving.settings, 'rules': {'oil': {'psi': 22}}}),
                     ('/trip', {'settings': {**state.trip.settings, 'capacity_l': 58}}),
                 ):
                     response = await client.post(route, json=body)
                     self.assertEqual(response.status, 200, (condition, route, await response.text()))
                 response = await client.post('/operations/restore', json=state.operations.backup())
                 self.assertEqual(response.status, 200, (condition, await response.text()))
-            self.assertEqual(state.driving.settings['oil_psi'], 22)
+            self.assertEqual(state.driving.settings['rules']['oil']['psi'], 22)
             self.assertEqual(state.trip.settings['capacity_l'], 58)
             response = await client.post('/trip', json={'settings': {**state.trip.settings, 'capacity_l': -1}})
             self.assertEqual(response.status, 400)

@@ -16,6 +16,21 @@ from hardware.frogdash.recorder import Recorder, Config
 from hardware.frogdash.connectivity import TransferPortal
 
 ROOT = Path(__file__).resolve().parents[1]
+OIL = '.alert-widget[data-key="oil"]'
+
+
+async def limits(page, **values):
+    """Open the oil alert's details in the Alerts tab and save new limits."""
+    await page.wait_for_function('window.FrogdashAlerts?.ready')
+    await page.locator('.alert-widget[data-key="oil"] .alert-widget-main').click()
+    for key, value in values.items():
+        await page.locator(f'#alert-detail input[data-param="{key}"]').fill(str(value))
+    await page.get_by_role('button', name='Save limits', exact=True).click()
+    await page.wait_for_function('document.getElementById("alert-settings-status").textContent.includes("limits saved")')
+
+
+async def oil_state(page, states):
+    await page.wait_for_function('(s) => s.includes(document.querySelector(\'.alert-widget[data-key="oil"]\')?.dataset.state)', arg=states)
 
 
 async def preview(browser):
@@ -61,18 +76,21 @@ async def preview(browser):
     await page.evaluate("frogdashDemo.scenario('parked')")
     await page.wait_for_timeout(150)
     await page.locator('#alerts-launch').click()
-    await page.locator('#setting-oil_psi').fill('90')
-    await page.locator('#setting-oil_rpm').fill('500')  # Parked demo now idles at 900 RPM.
-    await page.locator('#alert-settings button[type=submit]').click()
-    await page.wait_for_function('document.getElementById("driver-alerts").textContent.includes("LOW OIL PRESSURE")')
-    await page.locator('#driver-alerts button').first.click()
-    assert 'engine.oil_pressure_psi: 62' in await page.locator('#alert-capture').inner_text()
+    await limits(page, psi=90, rpm=500)  # Parked demo now idles at 900 RPM.
+    await oil_state(page, ['active'])
+    await page.wait_for_function('document.getElementById("alert-detail").textContent.includes("Going off")')
+    assert '62 psi' in await page.locator('#alert-detail').inner_text()
     await page.locator('#ack-all').click()
     await page.wait_for_function('document.getElementById("alert-count").textContent === "0"')
-    assert 'ACTIVE' in await page.locator('#driver-alerts').inner_text()
-    await page.locator('#setting-oil_psi').fill('15')
-    await page.locator('#alert-settings button[type=submit]').click()
-    await page.wait_for_function('document.getElementById("driver-alerts").textContent.includes("No active")')
+    assert await page.locator(OIL).get_attribute('data-state') == 'active'
+    # Switched off from its widget: no longer counted as on; back on, then the limit put back.
+    await page.locator(f'{OIL} .alert-switch').click()
+    await oil_state(page, ['off'])
+    assert '24 of 26' in await page.locator('#alerts-summary').inner_text()
+    await page.locator(f'{OIL} .alert-switch').click()
+    await oil_state(page, ['active'])
+    await limits(page, psi=15)
+    await oil_state(page, ['normal', 'latched'])
     await page.locator('[data-driver-tab="review"]').click()
     await page.locator('#drive-review .review-events button').last.click()
     assert 'Marker #' in await page.locator('#drive-review .review-event-detail').inner_text()
@@ -121,13 +139,15 @@ async def live(browser):
             await page.locator('#bookmark-launch').click()
             await page.wait_for_function('document.getElementById("bookmark-launch").textContent.startsWith("Marked #")')
             await page.locator('#alerts-launch').click()
-            await page.locator('#setting-oil_psi').fill('60')
-            await page.locator('#alert-settings button[type=submit]').click()
-            await page.wait_for_function('document.getElementById("driver-alerts").textContent.includes("LOW OIL PRESSURE")')
+            await limits(page, psi=60)
+            await oil_state(page, ['active'])
             await page.locator('#ack-all').click()
             await page.wait_for_function('document.getElementById("alert-count").textContent === "0"')
             signals['engine.oil_pressure_psi'] = 70
-            await page.wait_for_function('document.getElementById("driver-alerts").textContent.includes("No active")')
+            await oil_state(page, ['normal'])
+            # Its details from the Pi: the readings when it went off.
+            await page.wait_for_function('document.getElementById("alert-detail").textContent.includes("1 time")')
+            assert '50 psi' in await page.locator('#alert-detail').inner_text()
             await page.locator('[data-driver-tab="review"]').click()
             await page.locator('#drive-review .review-events button').last.click()
             assert 'MLG Time' in await page.locator('#drive-review .review-event-detail').inner_text()
@@ -159,7 +179,7 @@ async def live(browser):
         stored = Driving(state, Path(directory))
         sessions = await stored.get_reviews()
         assert sessions[0]['status'] == 'complete'
-        assert stored.settings['oil_psi'] == 60
+        assert stored.settings['rules']['oil']['psi'] == 60
         assert len((await stored.get_review(sessions[0]['name']))['events']) >= 2
 
 

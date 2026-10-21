@@ -44,6 +44,16 @@ async def inspect(page, selector, scroll_selector=None):
       for (const el of dialog.querySelectorAll('button, input')) {
         if (!el.checkVisibility()) continue;
         const r = el.getBoundingClientRect();
+        // A list that scrolls by itself (the alert widgets): the list must fit, and the
+        // controls scrolled out of its view are reached by scrolling it.
+        const list = el.closest('[data-wheel-scroll]');
+        if (list) {
+          const l = list.getBoundingClientRect();
+          if (l.left < box.left || l.right > box.right || l.top < box.top || l.bottom > box.bottom)
+            errors.push('List clipped: ' + (list.id || list.className));
+          if (r.bottom <= l.top + 1 || r.top >= l.bottom - 1) continue;
+          if (r.top < l.top || r.bottom > l.bottom) continue;   // Partly scrolled out
+        }
         if (r.left < box.left || r.right > box.right || r.top < box.top || r.bottom > box.bottom)
           errors.push('Control clipped: ' + (el.id || el.textContent));
         const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);

@@ -35,7 +35,7 @@
       if (/^#[0-9a-f]{6}$/i.test(p.nightAccent)) prefs.nightAccent = p.nightAccent;
     }
   } catch { /* Use defaults when browser storage is unavailable. */ }
-  let latest = {values: {}}, online = false, loadedSettings = false, alertSignature = '', ackBusy = false, markBusy = false;
+  let latest = {values: {}}, online = false, ackBusy = false, markBusy = false;
   let audio, audioAttempted = false, audioError = false, lastChime = -Infinity, seenAlerts = null, pendingChime = 0, pendingTest = 0;
   const get = key => online && latest.values?.[key]?.quality === 'live' ? latest.values[key].value : null;
   const el = (tag, text, cls) => { const n = document.createElement(tag); if (text !== undefined) n.textContent = text; if (cls) n.className = cls; return n; };
@@ -159,18 +159,10 @@
     renderPicker();
   }
   syncDisplayForm();
-  const rules = [
-    ['oil', 'Low oil pressure', [['oil_psi', 'Below psi', 1, 100, 1], ['oil_rpm', 'Above RPM', 500, 7000, 100]]],
-    ['lean', 'Lean under boost', [['lean_delta', 'AFR over target', .2, 5, .1], ['lean_boost_kpa', 'Boost ≥ kPa', 0, 250, 1], ['lean_rpm', 'Above RPM', 500, 7000, 100]]],
-    ['coolant', 'High coolant', [['coolant_c', 'Above °C', 70, 140, 1]]], ['meth', 'Water/meth faults', []]
-  ];
-  for (const [key, name, fields] of rules) {
-    const group = el('div', undefined, 'alert-setting-row'), label = el('label', undefined, 'check-label'), enabled = el('input'); enabled.type = 'checkbox'; enabled.id = `setting-${key}_enabled`; label.append(enabled, document.createTextNode(name)); group.append(label);
-    const inputs = el('div', undefined, 'alert-number-fields');
-    for (const [key, name, min, max, step] of fields) { const l = el('label', name), input = el('input'); Object.assign(input, {type: 'number', min, max, step, id: `setting-${key}`, required: true}); l.append(input); inputs.append(l); }
-    group.append(inputs); $('alert-fields').append(group);
-  }
-  const defaults = {oil_enabled: true, oil_psi: 15, oil_rpm: 1500, lean_enabled: true, lean_delta: 1, lean_boost_kpa: 20, lean_rpm: 1500, coolant_enabled: true, coolant_c: 112, meth_enabled: true, chime: false};
+  // The alerts themselves, their words and limits: alert-rules.json, shown and set in the
+  // Alerts tab by alerts.js (loaded after the gauges). Until then, the settings say only
+  // whether chimes are on.
+  const defaults = {version: 2, chime: false, rules: {}};
   const demo = {settings: {...defaults}, alerts: [], alert_seq: 0, marker_seq: 2, current: null, error: ''};
   const demoReview = {version: 1, name: 'drive-demo.json', started_ms: Date.now() - 60000, ended_ms: Date.now(), duration_s: 60, mode: 'demo', status: 'complete', sample_seconds: .5,
     channels: ['engine.rpm', 'vehicle.speed_kph', 'engine.boost_kpa', 'engine.afr', 'ecu.afr_target', 'engine.fuel_pressure_psi', 'engine.oil_pressure_psi', 'engine.coolant_c', 'engine.iat_c', 'meth.duty_pct', 'meth.tank_pct', 'knock.energy'],
@@ -181,27 +173,7 @@
     demoReview.events.push(event); demoReview.events = demoReview.events.slice(-250); demoReview.event_count++; demo.last_event = event; return event;
   }
   demoMark('Simulated tuning pull');
-  function simulateAlerts() {
-    const p = demo.settings;
-    const compare = (keys, fn) => { const values = keys.map(get); return values.some(v => v === null) ? null : fn(...values); };
-    const conditions = {
-      knock: compare(['knock.warning', 'knock.critical'], (w, c) => w || c),
-      coolant: p.coolant_enabled ? compare(['engine.coolant_c'], c => c >= p.coolant_c) : false,
-      oil: p.oil_enabled ? compare(['engine.rpm', 'engine.oil_pressure_psi'], (r, o) => r >= p.oil_rpm && o < p.oil_psi) : false,
-      lean: p.lean_enabled ? compare(['engine.rpm', 'engine.boost_kpa', 'engine.afr', 'ecu.afr_target'], (r, b, a, t) => r >= p.lean_rpm && b >= p.lean_boost_kpa && a > t + p.lean_delta) : false,
-      meth: p.meth_enabled ? compare(['meth.fault_flags', 'meth.state', 'meth.flow'], (f, s, flow) => f !== 0 || s === 'FAULT' || s === 'SPRAYING' && ['LOW_FLOW', 'NO_FLOW'].includes(flow)) : false
-    };
-    const titles = {oil: 'LOW OIL PRESSURE', lean: 'LEAN UNDER BOOST', coolant: 'COOLANT HIGH', meth: 'WATER/METH FAULT', knock: 'KNOCK DETECTED', taillights: 'TAILLIGHTS NOT RESPONDING'};
-    for (const [key, active] of Object.entries(conditions)) {
-      let a = demo.alerts.find(a => a.key === key);
-      if (active === null) { if (a) a.condition = 'unknown'; continue; }
-      if (active && !a?.active) {
-        a = {key, title: titles[key], active: true, latched: true, acknowledged: false, condition: 'active', context: structuredClone(latest.values)};
-        demo.alerts = demo.alerts.filter(x => x.key !== key).concat(a); demo.alert_seq++; demoMark(a.title, 'alert', key);
-      } else if (!active && a) { a.active = false; a.condition = 'normal'; if (a.acknowledged) a.latched = false; }
-      else if (a) a.condition = 'active';
-    }
-  }
+  function simulateAlerts() { window.FrogdashAlerts?.simulate(latest, demo); }
   function currentDrive() { return latest.mode === 'demo' ? demo : latest.drive || {settings: defaults, alerts: []}; }
   async function request(path, options = {}) {
     const response = await fetch(path, {...options, signal: AbortSignal.timeout(5000)});
@@ -229,22 +201,21 @@
   $('drive-launch').onclick = () => { $('drive-dialog').showModal(); render(); };
   $('drive-close').onclick = () => $('drive-dialog').close();
   $('alerts-launch').onclick = () => { selectTab('alerts'); $('drive-launch').click(); };
-  function formSettings(settings) {
-    for (const [key, v] of Object.entries(settings)) { const input = key === 'chime' ? $('alert-chime') : $(`setting-${key}`); if (input) { if (typeof v === 'boolean') input.checked = v; else input.value = v; } }
+  // Settings to the Pi (or the demo): the Alerts tab and the chime switch use this.
+  async function saveSettings(settings) {
+    if (latest.mode === 'demo') { demo.settings = settings; return demo; }
+    const result = await request('/drive/settings', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(settings)});
+    latest.drive = result;
+    if (result.error) throw new Error(result.error);
+    return result;
   }
-  formSettings(defaults);
-  $('alert-settings').onsubmit = async e => {
-    e.preventDefault(); if (!$('alert-settings').reportValidity()) return;
-    const settings = {};
-    for (const [key, v] of Object.entries(defaults)) { const input = key === 'chime' ? $('alert-chime') : $(`setting-${key}`); settings[key] = typeof v === 'boolean' ? input.checked : Number(input.value); }
-    const button = $('alert-settings').querySelector('[type=submit]'); button.disabled = true;
+  $('alert-chime').onchange = async e => {
+    const settings = {...structuredClone(currentDrive().settings || defaults), chime: e.target.checked};
     try {
-      if (latest.mode === 'demo') demo.settings = settings;
-      else { const result = await request('/drive/settings', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(settings)}); latest.drive = result; if (result.error) throw new Error(result.error); }
-      $('alert-settings-status').textContent = latest.mode === 'demo' ? 'Simulated alert settings applied.' : 'Alert settings saved on the Pi.';
+      await saveSettings(settings);
+      $('alert-settings-status').textContent = settings.chime ? 'Warning chimes on.' : 'Warning chimes off.';
       if (settings.chime) enableAudio();
-    } catch (error) { $('alert-settings-status').textContent = error.message; }
-    finally { button.disabled = false; }
+    } catch (error) { $('alert-settings-status').textContent = error.message; e.target.checked = !e.target.checked; }
   };
   function audioStatus() {
     const status = audioError ? 'Audio unavailable; visual alerts remain active.'
@@ -341,7 +312,7 @@
       else await request('/drive/ack', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({key})});
       $('driver-feedback').textContent = 'Acknowledged. Active conditions remain visible until they recover.';
     } catch (error) { $('driver-feedback').textContent = error.message; }
-    finally { ackBusy = false; alertSignature = ''; render(); }
+    finally { ackBusy = false; render(); }
   }
   $('ack-all').onclick = () => ack('all');
   $('bookmark-launch').onclick = async () => {
@@ -412,21 +383,13 @@
   function render() {
     renderDisplay();
     const d = currentDrive();
-    if (!loadedSettings && latest.drive?.settings || !loadedSettings && latest.mode === 'demo') { formSettings(d.settings); loadedSettings = true; }
+    const chime = !!d.settings?.chime;
+    if (document.activeElement !== $('alert-chime') && $('alert-chime').checked !== chime) $('alert-chime').checked = chime;
     const alerts = (d.alerts || []).filter(a => a.active || a.latched);
     $('alert-count').textContent = alerts.filter(a => !a.acknowledged).length;
     $('alerts-launch').dataset.warning = alerts.length > 0;
     $('bookmark-launch').disabled = !online || markBusy;
     $('ack-all').disabled = !online || ackBusy || !alerts.some(a => !a.acknowledged);
-    const signature = JSON.stringify(alerts);
-    if (signature !== alertSignature) {
-      alertSignature = signature; $('driver-alerts').replaceChildren(...alerts.map(a => {
-        const card = el('div', undefined, 'driver-alert-row'), info = el('button', `${a.title} · ${a.condition === 'unknown' ? 'SIGNAL LOST' : a.active ? 'ACTIVE' : 'RECOVERED'}${a.acknowledged ? ' · ACK' : ''}`); info.type = 'button';
-        info.onclick = () => { const shown = v => v.quality !== 'live' ? v.quality : typeof v.value === 'number' && !Number.isInteger(v.value) ? v.value.toFixed(1) : v.value; const flags = a.context?.['meth.fault_flags']; $('alert-capture').textContent = (a.key === 'meth' && flags?.quality === 'live' && flags.value ? window.FrogdashMethFault(flags.value) + ' — ' : '') + Object.entries(a.context || {}).map(([k, v]) => `${k}: ${shown(v)}`).join(' · '); };
-        const acknowledge = el('button', 'ACK'); acknowledge.type = 'button'; acknowledge.disabled = a.acknowledged; acknowledge.onclick = () => ack(a.key); card.append(info, acknowledge); return card;
-      }));
-      if (!alerts.length) $('driver-alerts').append(el('p', 'No active or unacknowledged alerts.', 'control-note'));
-    }
     if (online && Number.isFinite(d.alert_seq)) {
       if ((seenAlerts === null || d.alert_seq > seenAlerts) && d.settings?.chime) pendingChime = performance.now() + 5000;
       seenAlerts = d.alert_seq;
@@ -438,5 +401,7 @@
     if ($('drive-dialog').open && !document.querySelector('[data-driver-panel="health"]').hidden) renderHealth();
   }
   window.addEventListener('frogdash-state', e => { latest = e.detail.snapshot; online = e.detail.connected; if (latest.mode === 'demo') { simulateAlerts(); latest.drive = demo; } render(); });
+  // For the Alerts tab (alerts.js): what the dash says, saving, acknowledging, the demo.
+  window.FrogdashDrive = {current: currentDrive, save: saveSettings, ack, online: () => online, demo};
   selectTab('display'); render();
 })();

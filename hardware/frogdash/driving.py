@@ -9,41 +9,19 @@ import re
 import time
 from uuid import uuid4
 
+from . import alerts as catalogue
+from .alerts import live, validate_settings   # validate_settings: also for backups (operations.py)
+
 NAME = re.compile(r'^drive-[0-9a-f]{32}\.json$')
 CHANNELS = ['engine.rpm', 'vehicle.speed_kph', 'engine.boost_kpa', 'engine.afr', 'ecu.afr_target',
             'engine.fuel_pressure_psi', 'engine.oil_pressure_psi', 'engine.coolant_c', 'engine.iat_c',
             'meth.duty_pct', 'meth.tank_pct', 'knock.energy']
-CONTEXT = CHANNELS + ['meth.state', 'meth.flow', 'meth.fault_flags', 'knock.warning', 'knock.critical']
-DEFAULTS = {'oil_enabled': True, 'oil_psi': 15, 'oil_rpm': 1500, 'lean_enabled': True,
-            'lean_delta': 1, 'lean_boost_kpa': 20, 'lean_rpm': 1500,
-            'coolant_enabled': True, 'coolant_c': 112, 'meth_enabled': True, 'chime': False}
-LIMITS = {'oil_psi': (1, 100), 'oil_rpm': (500, 7000), 'lean_delta': (.2, 5),
-          'lean_boost_kpa': (0, 250), 'lean_rpm': (500, 7000), 'coolant_c': (70, 140)}
-RULES = {'oil': ('LOW OIL PRESSURE', 1.), 'lean': ('LEAN UNDER BOOST', .8),
-         'coolant': ('COOLANT HIGH', 2.), 'meth': ('WATER/METH FAULT', 1.),
-         'knock': ('KNOCK DETECTED', .2),
-         # The taillight controller can fail to start at power-on (owner, October 2026: frozen
-         # lamps, no brake, until its button is pressed). The driver has to know.
-         'taillights': ('TAILLIGHTS NOT RESPONDING', 10.)}
-
-
-def live(snapshot, key):
-    sample = snapshot.get('values', {}).get(key, {})
-    value = sample.get('value')
-    return value if sample.get('quality') == 'live' and (not isinstance(value, float) or math.isfinite(value)) else None
-
-
-def validate_settings(data):
-    if not isinstance(data, dict) or set(data) != set(DEFAULTS):
-        raise ValueError('Expected all alert settings, without extra fields')
-    for key, value in data.items():
-        if key in LIMITS:
-            lo, hi = LIMITS[key]
-            if type(value) not in (int, float) or not math.isfinite(value) or not lo <= value <= hi:
-                raise ValueError(f'{key} must be between {lo} and {hi}')
-        elif type(value) is not bool:
-            raise ValueError(f'{key} must be true or false')
-    return dict(data)
+# The readings kept with an alert when it goes off (what was happening).
+CONTEXT = CHANNELS + ['meth.state', 'meth.flow', 'meth.fault_flags', 'knock.warning', 'knock.critical',
+                      'vehicle.battery_v', 'vehicle.fuel_pct', 'ecu.iat_c', 'ecu.knock_retard_deg',
+                      'engine.ego_correction_pct', 'ecu.sync_loss_count']
+# Every alert, its words and its rules: hardware/ui/alert-rules.json (alerts.py).
+RULES = catalogue.RULES
 
 
 def atomic_write(path, data):
@@ -65,11 +43,13 @@ def atomic_write(path, data):
 class Driving:
     def __init__(self, state, directory=None):
         self.state, self.directory = state, Path(directory) if directory else None
-        self.settings = dict(DEFAULTS)
+        self.settings = catalogue.defaults()
         self.settings_error = self.storage_error = ''
-        self.alerts = {key: {'key': key, 'title': title, 'active': False, 'latched': False,
-                            'acknowledged': False, 'condition': 'unknown', 'since_ms': None,
-                            'context': {}} for key, (title, _) in RULES.items()}
+        self.specials = catalogue.Specials()
+        self.alerts = {key: {'key': key, 'code': rule['code'], 'title': rule['title'], 'severity': rule['severity'],
+                             'group': rule['group'], 'active': False, 'latched': False, 'acknowledged': False,
+                             'condition': 'unknown', 'since_ms': None, 'context': {}, 'value': None,
+                             'count': 0, 'last_ms': None, 'last_context': {}} for key, rule in RULES.items()}
         self.pending, self.normal_since = {}, {}
         self.current, self.started, self.idle_since = None, 0, None
         self.last_point = self.last_save = float('-inf')
@@ -94,42 +74,27 @@ class Driving:
         self.settings_dirty = True
 
     def conditions(self, snapshot):
-        p = self.settings
-        def check(keys, predicate):
-            values = [live(snapshot, key) for key in keys]
-            return None if any(value is None for value in values) else bool(predicate(*values))
-        return {
-            'oil': check(['engine.rpm', 'engine.oil_pressure_psi'], lambda rpm, oil: rpm >= p['oil_rpm'] and oil < p['oil_psi']) if p['oil_enabled'] else False,
-            'lean': check(['engine.rpm', 'engine.boost_kpa', 'engine.afr', 'ecu.afr_target'],
-                          lambda rpm, boost, afr, target: rpm >= p['lean_rpm'] and boost >= p['lean_boost_kpa'] and afr > target + p['lean_delta']) if p['lean_enabled'] else False,
-            'coolant': check(['engine.coolant_c'], lambda value: value >= p['coolant_c']) if p['coolant_enabled'] else False,
-            'meth': self.meth_condition(snapshot) if p['meth_enabled'] else False,
-            'knock': check(['knock.warning', 'knock.critical'], lambda warning, critical: warning or critical),
-            'taillights': self.taillight_condition(snapshot),
-        }
+        """Each alert's condition now: True, False, or None when it cannot be told."""
+        result = {}
+        for key, rule in RULES.items():
+            settings = self.settings['rules'][key]
+            if not settings['enabled']:
+                result[key] = False
+            elif 'special' in rule:
+                result[key] = self.specials.check(rule['special'], settings, snapshot)
+            else:
+                result[key] = catalogue.clauses(rule, settings, snapshot)
+            self.alerts[key]['value'] = catalogue.reading(rule, snapshot)
+        return result
 
     @staticmethod
     def taillight_condition(snapshot):
         """The taillights silent while other modules are heard on the bus."""
-        modules = snapshot.get('modules') or {}
-        if snapshot.get('mode') != 'socketcan' or not (snapshot.get('transport') or {}).get('connected'):
-            return None
-        if not any(modules.get(name) == 'live' for name in ('comfort', 'watermeth')):
-            return None   # Nothing heard at all: the bus, not the taillights.
-        if 'taillights' in (snapshot.get('updating') or ()):
-            return None   # Being updated or restarted from the dash: quiet on purpose
-        return modules.get('taillights') != 'live'
+        return catalogue.module_quiet(snapshot, 'taillights')
 
     @staticmethod
     def meth_condition(snapshot):
-        flags, mode, flow = [live(snapshot, key) for key in ('meth.fault_flags', 'meth.state', 'meth.flow')]
-        if flags is not None and flags != 0 or mode == 'FAULT':
-            return True
-        if flags is None or mode is None:
-            return None
-        if mode != 'SPRAYING':
-            return False
-        return None if flow not in ('OK', 'LOW_FLOW', 'NO_FLOW') else flow != 'OK'
+        return catalogue.Specials().check('meth', {}, snapshot)
 
     def evaluate(self, snapshot):
         now = self.state.clock()
@@ -151,10 +116,11 @@ class Driving:
             if alert['active']:
                 continue
             since = self.pending.setdefault(key, now)
-            if now - since < RULES[key][1]:
+            if now - since < self.settings['rules'][key]['delay']:
                 continue
-            alert.update(active=True, latched=True, acknowledged=False,
-                         since_ms=snapshot['timestamp_ms'], context=self.context(snapshot))
+            context = self.context(snapshot)
+            alert.update(active=True, latched=True, acknowledged=False, since_ms=snapshot['timestamp_ms'], context=context,
+                         count=alert['count'] + 1, last_ms=snapshot['timestamp_ms'], last_context=context)
             self.alert_seq += 1
             self.bookmark(alert['title'], 'alert', snapshot, key)
 
@@ -257,10 +223,20 @@ class Driving:
         self.current = None
 
     def snapshot(self):
-        return {'settings': dict(self.settings), 'alerts': deepcopy(list(self.alerts.values())),
+        """Sent to the screen with every update, so kept small: the readings captured when an
+        alert went off only while it is shown (latched); all of it is in details()."""
+        alerts = [{**{k: v for k, v in alert.items() if k not in ('context', 'last_context')},
+                   'context': deepcopy(alert['context']) if alert['latched'] else {}} for alert in self.alerts.values()]
+        return {'settings': deepcopy(self.settings), 'alerts': alerts,
                 'alert_seq': self.alert_seq, 'marker_seq': self.marker_seq,
                 'last_event': deepcopy(self.history[-1]) if self.history else None,
                 'current': self.summary(self.current) if self.current else None,
+                'error': self.storage_error or self.settings_error}
+
+    def details(self):
+        """The Alerts tab's full picture (GET /drive/alerts): the settings and every alert with
+        the readings from the last time it went off."""
+        return {'settings': deepcopy(self.settings), 'alerts': deepcopy(list(self.alerts.values())),
                 'error': self.storage_error or self.settings_error}
 
     @staticmethod

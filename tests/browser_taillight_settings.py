@@ -14,6 +14,7 @@ async def main():
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
         await page.goto((ROOT / 'preview' / 'index.html').as_uri())
+        await page.wait_for_function('!!window.FrogdashTaillights')   # Loaded after the gauges
         await page.evaluate('window.FrogdashTaillights.open()')
         sync = '#tl-panel-style [data-tl-sync]'
         await page.locator('#tl-tab-style').click()

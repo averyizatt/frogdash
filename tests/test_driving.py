@@ -6,7 +6,16 @@ import unittest
 from unittest.mock import patch
 
 from aiohttp.test_utils import TestClient, TestServer
-from hardware.frogdash.driving import Driving, DEFAULTS, CHANNELS, validate_settings
+from hardware.frogdash.alerts import defaults as alert_defaults, CATALOGUE as alert_catalogue
+from hardware.frogdash.driving import Driving, CHANNELS, validate_settings
+
+
+def settings_with(**rules):
+    """The default alert settings with some rules changed: settings_with(oil={'psi': 22})."""
+    result = alert_defaults()
+    for key, changes in rules.items():
+        result['rules'][key].update(changes)
+    return result
 from hardware.frogdash.health import Health, throttled_flags
 from hardware.frogdash.state import State
 from hardware.frogdash.server import create_app
@@ -97,12 +106,111 @@ class DrivingTests(unittest.TestCase):
         self.assertTrue(self.drive.alerts['meth']['active'])
         self.assertEqual(self.drive.current['events'][-1]['rule'], 'meth')
 
+    def condition(self, key, system=None, **changes):
+        """One alert's condition for the readings now (no debounce): True, False or None."""
+        self.values.update(changes)
+        snapshot = {'timestamp_ms': int((1700000000 + self.now) * 1000), 'values': {
+            k: {'value': v, 'quality': 'live' if v is not None else 'stale'} for k, v in self.values.items()}}
+        if system is not None: snapshot['system'] = system
+        return self.drive.conditions(snapshot)[key]
+
+    def test_catalogue_codes_limits_and_checks_are_consistent(self):
+        rules = alert_catalogue['rules']
+        self.assertEqual(len({r['code'] for r in rules}), len(rules))
+        self.assertEqual(len({r['key'] for r in rules}), len(rules))
+        groups = {key for key, _ in alert_catalogue['groups']}
+        for rule in rules:
+            with self.subTest(rule=rule['key']):
+                self.assertIn(rule['group'], groups)
+                self.assertIn(rule['severity'], ('critical', 'warning'))
+                self.assertNotEqual('when' in rule, 'special' in rule)
+                for param in rule['params']:
+                    self.assertLessEqual(param['min'], param['default']); self.assertLessEqual(param['default'], param['max'])
+                used = {term['param'] for _, _, term in rule.get('when', []) if isinstance(term, dict) and 'param' in term}
+                used |= {part['param'] for _, _, term in rule.get('when', []) if isinstance(term, dict)
+                         for part in term.get('sum', []) if isinstance(part, dict) and 'param' in part}
+                self.assertLessEqual(used, {p['key'] for p in rule['params']})
+                # Every rule can be evaluated from a snapshot without raising.
+                self.drive.conditions(self.sample(self.now))
+
+    def test_fuel_pressure_must_rise_with_boost(self):
+        # 50 kPa of boost wants 39 + 7.3 psi; 5 psi short of that is 41.3 psi.
+        self.values['engine.fuel_pressure_psi'] = 45
+        self.assertFalse(self.condition('fuel_boost', **{'engine.boost_kpa': 50}))
+        self.assertTrue(self.condition('fuel_boost', **{'engine.fuel_pressure_psi': 40}))
+        self.assertFalse(self.condition('fuel_boost', **{'engine.boost_kpa': 10}))        # Not in boost yet
+        self.assertIsNone(self.condition('fuel_boost', **{'engine.boost_kpa': 50, 'engine.fuel_pressure_psi': None}))
+        self.assertTrue(self.condition('fuel_low', **{'engine.fuel_pressure_psi': 25}))
+        self.drive.configure(settings_with(fuel_boost={'base': 33}))
+        self.assertFalse(self.condition('fuel_boost', **{'engine.fuel_pressure_psi': 40}))
+
+    def test_overboost_limit_and_its_own_delay(self):
+        self.assertFalse(self.condition('overboost', **{'engine.boost_kpa': 70}))
+        self.assertTrue(self.condition('overboost', **{'engine.boost_kpa': 80}))
+        self.drive.configure(settings_with(overboost={'boost': 90, 'delay': 2}))
+        self.assertFalse(self.condition('overboost'))
+        self.sample(10, **{'engine.boost_kpa': 95}); self.sample(11.5)
+        self.assertFalse(self.drive.alerts['overboost']['active'])
+        self.sample(12.1)
+        self.assertTrue(self.drive.alerts['overboost']['active'])
+        alert = next(a for a in self.drive.details()['alerts'] if a['key'] == 'overboost')
+        self.assertEqual((alert['code'], alert['count']), ('BST-01', 1))
+        self.assertEqual(alert['last_context']['engine.boost_kpa']['value'], 95)
+
+    def test_switched_off_alerts_never_go_off(self):
+        self.drive.configure(settings_with(oil={'enabled': False}))
+        self.sample(0, **{'engine.oil_pressure_psi': 5}); self.sample(3)
+        self.assertFalse(self.drive.alerts['oil']['active'])
+        # Water/meth off in boost starts switched off; switched on it watches.
+        self.assertFalse(self.condition('meth_off', **{'engine.boost_kpa': 50}))
+        self.drive.configure(settings_with(meth_off={'enabled': True}))
+        self.assertTrue(self.condition('meth_off'))
+        self.assertFalse(self.condition('meth_off', **{'meth.state': 'SPRAYING'}))
+
+    def test_fuel_trim_either_way_and_cold_boost(self):
+        self.assertTrue(self.condition('trim', **{'engine.ego_correction_pct': -20}))
+        self.assertFalse(self.condition('trim', **{'engine.ego_correction_pct': 10}))
+        self.assertTrue(self.condition('cold_boost', **{'engine.coolant_c': 40, 'engine.boost_kpa': 30}))
+        self.assertFalse(self.condition('cold_boost', **{'engine.coolant_c': 85}))
+
+    def test_pi_heat_power_and_sync_loss(self):
+        self.assertTrue(self.condition('pi_heat', system={'cpu_c': 82}))
+        self.assertFalse(self.condition('pi_heat', system={'cpu_c': 70}))
+        self.assertIsNone(self.condition('pi_heat', system={}))
+        self.assertTrue(self.condition('pi_power', system={'power': {'undervoltage_now': True}}))
+        self.assertIsNone(self.condition('pi_power', system={}))
+        self.assertIsNone(self.condition('sync'))
+        self.assertFalse(self.condition('sync', **{'ecu.sync_loss_count': 3}))     # Losses before the dash: not news
+        self.assertFalse(self.condition('sync'))
+        self.assertTrue(self.condition('sync', **{'ecu.sync_loss_count': 4}))
+        self.assertFalse(self.condition('sync'))
+
+    def test_gateway_and_meth_controller_silence(self):
+        snapshot = {'timestamp_ms': 0, 'mode': 'socketcan', 'transport': {'connected': True}, 'values': {},
+                    'modules': {'taillights': 'live', 'comfort': 'stale', 'watermeth': 'live'}}
+        result = self.drive.conditions(snapshot)
+        self.assertEqual((result['gateway'], result['meth_module'], result['taillights']), (True, False, False))
+        self.assertIsNone(self.drive.conditions({**snapshot, 'updating': ['comfort']})['gateway'])
+
     def test_settings_validation_is_atomic_and_rejects_extra_fields(self):
-        for key, value in [('oil_rpm', True), ('lean_delta', float('nan')), ('coolant_c', 500), ('chime', 1)]:
-            with self.subTest(key=key), self.assertRaises(ValueError):
-                self.drive.configure({**DEFAULTS, key: value})
-        self.assertEqual(self.drive.settings, DEFAULTS)
-        with self.assertRaises(ValueError): validate_settings({**DEFAULTS, 'shutdown': True})
+        for rule, field, value in [('oil', 'rpm', True), ('lean', 'delta', float('nan')), ('coolant', 'c', 500),
+                                   ('overboost', 'delay', 99), ('fuel_boost', 'enabled', 1), ('oil', 'shutdown', 1)]:
+            with self.subTest(rule=rule, field=field), self.assertRaises(ValueError):
+                self.drive.configure(settings_with(**{rule: {field: value}}))
+        self.assertEqual(self.drive.settings, alert_defaults())
+        with self.assertRaises(ValueError): validate_settings({**alert_defaults(), 'shutdown': True})
+        with self.assertRaises(ValueError): validate_settings({'rules': {'no_such_alert': {}}})
+        with self.assertRaises(ValueError): validate_settings({**alert_defaults(), 'chime': 1})
+
+    def test_version_one_settings_and_backups_carry_over(self):
+        old = {'oil_enabled': False, 'oil_psi': 22, 'oil_rpm': 1800, 'lean_enabled': True, 'lean_delta': 1.5,
+               'lean_boost_kpa': 30, 'lean_rpm': 2000, 'coolant_enabled': True, 'coolant_c': 105, 'meth_enabled': False, 'chime': True}
+        new = validate_settings(old)
+        self.assertEqual(new['rules']['oil'], {'enabled': False, 'delay': 1.0, 'psi': 22, 'rpm': 1800})
+        self.assertEqual(new['rules']['lean']['boost'], 30)
+        self.assertEqual((new['rules']['coolant']['c'], new['rules']['meth']['enabled'], new['chime']), (105, False, True))
+        self.assertEqual(new['rules']['overboost'], alert_defaults()['rules']['overboost'])     # New alerts: defaults
+        with self.assertRaises(ValueError): validate_settings({**old, 'shutdown': True})
 
     def test_bookmark_capture_and_log_channel_and_rate_limit(self):
         snap = self.sample(0)
@@ -184,12 +292,12 @@ class DrivingServiceTests(unittest.IsolatedAsyncioTestCase):
         with tempfile.TemporaryDirectory() as directory:
             state = State()
             drive = state.driving = Driving(state, directory)
-            drive.configure({**DEFAULTS, 'oil_psi': 22})
+            drive.configure(settings_with(oil={'psi': 22}))
             drive.bookmark('Checkpoint')
             name = drive.current['name']
             await drive.save(force=True)
             restart = Driving(state, directory)
-            self.assertEqual(restart.settings['oil_psi'], 22)
+            self.assertEqual(restart.settings['rules']['oil']['psi'], 22)
             self.assertEqual((await restart.get_review(name))['status'], 'interrupted')
             sentinel = Path(directory) / 'drives' / 'keep.json'; sentinel.write_text('keep')
             for i in range(23):
@@ -206,10 +314,15 @@ class DrivingServiceTests(unittest.IsolatedAsyncioTestCase):
         state.connected = True
         state.samples['ecu.rpm', 1520] = dict(value=0, quality='live', seen=state.clock(), source_id=1520, timestamp_ms=0)
         async with TestClient(TestServer(create_app(state))) as client:
-            response = await client.post('/drive/settings', json={**DEFAULTS, 'oil_psi': 20})
+            response = await client.post('/drive/settings', json=settings_with(oil={'psi': 20}))
             self.assertEqual(response.status, 200)
-            self.assertEqual((await response.json())['settings']['oil_psi'], 20)
-            self.assertEqual((await client.post('/drive/settings', json=DEFAULTS, headers={'Origin': 'https://evil.example'})).status, 403)
+            self.assertEqual((await response.json())['settings']['rules']['oil']['psi'], 20)
+            self.assertEqual((await client.post('/drive/settings', json=alert_defaults(), headers={'Origin': 'https://evil.example'})).status, 403)
+            details = await (await client.get('/drive/alerts')).json()
+            self.assertEqual(len(details['alerts']), 26)
+            self.assertEqual({a['key']: a['code'] for a in details['alerts']}['fuel_boost'], 'FUEL-02')
+            rules = await (await client.get('/alert-rules.json')).json()
+            self.assertEqual(len(rules['rules']), 26)
             self.assertEqual((await client.post('/drive/mark', json={'label': 'Test marker'})).status, 200)
             self.assertEqual((await client.post('/drive/ack', json={'key': 'all'})).status, 200)
             self.assertEqual((await client.post('/drive/ack', json={'key': 'nope'})).status, 400)
@@ -235,7 +348,7 @@ class DrivingServiceTests(unittest.IsolatedAsyncioTestCase):
             block = Path(directory) / 'file'; block.write_text('occupied')
             state = State()
             drive = Driving(state, block)
-            drive.configure(DEFAULTS); drive.bookmark('Test')
+            drive.configure(alert_defaults()); drive.bookmark('Test')
             await drive.save(force=True)
             self.assertTrue(drive.storage_error)
             self.assertTrue(drive.settings_error)

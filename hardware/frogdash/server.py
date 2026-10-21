@@ -638,6 +638,10 @@ def create_app(state, adapter=None, connectivity=None):
             await state.driving.save()
         return web.json_response(state.driving.snapshot(), headers={'Cache-Control': 'no-store'})
 
+    async def drive_alerts(request):
+        require_local(request)
+        return web.json_response(state.driving.details(), headers={'Cache-Control': 'no-store'})
+
     async def drive_action(request):
         require_local(request)
         try:
@@ -785,7 +789,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "keyboard.js", "keyboard.css", "summary.js", "later.js", "graphs.js", "graphs.css", "uPlot.iife.min.js", "uPlot.min.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js", "knock.js", "knock.css", "screen.js"}:
+        if name not in {"index.html", "app.js", "style.css", "keyboard.js", "keyboard.css", "summary.js", "later.js", "alert-rules.json", "alerts.js", "alerts.css", "graphs.js", "graphs.css", "uPlot.iife.min.js", "uPlot.min.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js", "knock.js", "knock.css", "screen.js"}:
             raise web.HTTPNotFound()
         if name == 'index.html' and state.paint and state.paint.value:
             page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')
@@ -963,7 +967,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get("/ui/display", display_info), web.get("/snapshot", snapshot_page), web.post("/ui/error", screen_error), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.get("/can/frogdash.dbc", can_dbc), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/events', events), web.get('/uploads', uploads), web.post('/uploads', uploads), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
-                    web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),
+                    web.get('/drive/settings', drive_settings), web.get('/drive/alerts', drive_alerts), web.post('/drive/settings', drive_settings),
                     web.post('/drive/{action:mark|ack}', drive_action),
                     web.get('/drives', drives), web.get('/drives/{name}', drive_review),
                     web.get('/trip', trip), web.post('/trip', trip),

@@ -51,6 +51,15 @@ async def volume(page, n):
     assert await page.locator('#alert-volume-value').inner_text() == f'{n}%'
 
 
+async def chimes(page):
+    """Chimes switched off and on again: saved even when the audio cannot start."""
+    await page.locator('#alert-chime').uncheck()
+    await page.wait_for_function('document.getElementById("alert-settings-status").textContent.includes("chimes off")')
+    await page.locator('#alert-chime').check()
+    await page.wait_for_function('document.getElementById("alert-settings-status").textContent.includes("chimes on")')
+    assert await page.locator('#alert-chime').is_enabled()
+
+
 async def check(browser, url, state):
     context = await browser.new_context(viewport={'width': 1920, 'height': 720})
     await context.add_init_script(TRACE)
@@ -116,12 +125,12 @@ async def check(browser, url, state):
         assert times[2] - times[0] >= 2990
         # Turning off chimes leaves the warning visible.
         await page.locator('#alert-chime').uncheck()
-        await page.locator('#alert-settings button[type=submit]').click()
-        await page.wait_for_function('document.getElementById("alert-settings-status").textContent.includes("saved")')
+        await page.wait_for_function('document.getElementById("alert-settings-status").textContent.includes("chimes off")')
+        assert state.driving.settings['chime'] is False
         incident()
         await page.wait_for_timeout(350)
         assert await page.evaluate('tones.length') == 4
-        assert 'LOW OIL PRESSURE' in await page.locator('#driver-alerts').inner_text()
+        await page.wait_for_function('document.querySelector(\'.alert-widget[data-key="oil"]\')?.dataset.state === "active"')
         await page.screenshot(path=str(ROOT / '.tmp/audio-alerts-1920x720.png'))
         assert not errors, errors
     finally:
@@ -136,10 +145,8 @@ async def check(browser, url, state):
         await page.goto(url)
         await page.locator('#alerts-launch').click()
         assert 'Audio unavailable' in await page.locator('#audio-status').inner_text()
-        assert 'LOW OIL PRESSURE' in await page.locator('#driver-alerts').inner_text()
-        await page.locator('#alert-settings button[type=submit]').click()
-        await page.wait_for_function('document.getElementById("alert-settings-status").textContent.includes("saved")')
-        assert await page.locator('#alert-settings button[type=submit]').is_enabled()
+        await page.wait_for_function('document.querySelector(\'.alert-widget[data-key="oil"]\')?.dataset.state === "active"')
+        await chimes(page)
     finally:
         await close_context(context, page)
 
@@ -157,9 +164,7 @@ async def check(browser, url, state):
         await page.goto(url)
         await page.locator('#alerts-launch').click()
         assert 'needs activation' in await page.locator('#audio-status').inner_text()
-        await page.locator('#alert-settings button[type=submit]').click()
-        await page.wait_for_function('document.getElementById("alert-settings-status").textContent.includes("saved")')
-        assert await page.locator('#alert-settings button[type=submit]').is_enabled()
+        await chimes(page)
         assert await page.evaluate('tones.length') == 0
         oil.update(active=False, condition='normal')
         await page.wait_for_timeout(200)
