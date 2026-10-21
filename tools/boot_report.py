@@ -123,6 +123,11 @@ def report(user):
         'journalctl', '-b', '-k', '--no-pager', '-o', 'short-monotonic', '-n', '100',
         '--grep=error -71|clear tt|device descriptor|disconnect|reset .*USB|vc4|drm|under-voltage']))
     section('Pi voltage/throttling flags', command(['vcgencmd', 'get_throttled']))
+    section('Memory', command(['free', '-m']))
+    section('Browser files read early in boot (frogdash-warm)', command([
+        'journalctl', '-b', '--no-pager', '-o', 'short-monotonic', '-n', '10', '-u', 'frogdash-warm.service']))
+    section('Chromium as it runs (first processes, with their settings)',
+            '\n'.join(line[:600] for line in command(['pgrep', '-a', 'chromium']).splitlines()[:3]))
     print('\nCompare with a video of key-on to visible gauges. A render heartbeat is a browser liveness observation, not proof the physical screen is lit.', flush=True)
 
 

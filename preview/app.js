@@ -152,6 +152,7 @@
     renderControls();
     if ($('diagnostics').open) renderDiagnostics();
     window.frogdashRendered = (window.frogdashRendered || 0) + 1;
+    if (window.frogdashFirstFrameMs === undefined) window.frogdashFirstFrameMs = performance.now();   // For the reports
     updateUnits();
     window.FrogdashInstruments?.render(snapshot, connected);
   }

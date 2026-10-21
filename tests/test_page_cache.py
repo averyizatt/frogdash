@@ -23,6 +23,18 @@ class PageCacheTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual((await client.get('/' + name)).headers['Cache-Control'], 'no-cache', name)
             self.assertEqual((await client.get('/')).headers['Cache-Control'], 'no-store')
 
+    async def test_the_reports_get_the_live_picture_and_the_pages_own_timing(self):
+        async with TestClient(TestServer(create_app(State()))) as client:
+            snapshot = await (await client.get('/snapshot')).json()
+            for part in ('modules', 'transport', 'faults', 'updating', 'gps', 'firmware'):
+                self.assertIn(part, snapshot)
+            token = 'a' * 32
+            sent = await client.post(f'/ui/heartbeat/{token}', json={'display': {'viewport': [1920, 720], 'first_frame_ms': 812,
+                                                                                'others_loaded_ms': 4930}})
+            self.assertEqual(sent.status, 200)
+            shown = await (await client.get('/ui/display')).json()
+            self.assertEqual((shown['first_frame_ms'], shown['others_loaded_ms']), (812, 4930))
+
 
 if __name__ == '__main__':
     unittest.main()

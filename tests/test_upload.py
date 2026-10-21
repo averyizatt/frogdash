@@ -43,7 +43,9 @@ class UploadTests(unittest.TestCase):
         self.logs = self.state / 'logs'
         self.logs.mkdir()
         self.listing = {'files': []}
-        self.up.local = lambda path, method='GET', timeout=10: self.listing if path == '/logs' else None
+        self.snapshot = {'modules': {'taillights': 'live'}, 'updating': []}
+        self.up.local = lambda path, method='GET', timeout=10: (self.listing if path == '/logs' else
+                                                                 self.snapshot if path == '/snapshot' else None)
         self.up.text_of = lambda *args, timeout=30: f'(output of {args[0]})\n'
 
     def tearDown(self):
@@ -116,6 +118,7 @@ class UploadTests(unittest.TestCase):
         diagnostics = json.loads(next(v for p, v in hub.files.items() if p.endswith('diagnostics.json')))
         self.assertEqual(diagnostics['helpers']['screen-status.json'], {'state': 'original'})
         self.assertEqual(diagnostics['gps']['gpspipe'], '(output of timeout)\n')   # What gpsd hears, raw
+        self.assertEqual(diagnostics['state'], self.snapshot)                        # The dash's live picture
         self.assertIn('The start before this one', next(v for p, v in hub.files.items() if p.endswith('journal.txt')).decode())
         self.assertEqual(list(hub.releases), ['drive-20261015-1200'])
         self.assertEqual([(name, body[:14]) for _, name, body in hub.assets],

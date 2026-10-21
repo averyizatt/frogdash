@@ -234,6 +234,13 @@ def create_app(state, adapter=None, connectivity=None):
             clients.discard(ws)
         return ws
 
+    async def snapshot_page(request):
+        """Everything the screen is sent, once, as plain JSON: for the reports to GitHub
+        (tools/frogdash_upload.py), which cannot open the screen's WebSocket (/state)."""
+        require_local(request)
+        return web.json_response(state.snapshot(), dumps=lambda body: json.dumps(body, default=str),
+                                 headers={'Cache-Control': 'no-store'})
+
     async def health(request):
         snapshot = state.snapshot()
         # ui_clients lets the updater confirm the screen reconnected after a restart;
@@ -908,7 +915,7 @@ def create_app(state, adapter=None, connectivity=None):
                     report = data['display']
                     allowed = {'screen', 'viewport', 'visual', 'pixel_ratio', 'responsive',
                                'dashboard', 'position', 'transform', 'margin', 'body_overflow',
-                               'scroll', 'browser', 'responsive_css'}
+                               'scroll', 'browser', 'responsive_css', 'first_frame_ms', 'others_loaded_ms'}
                     if set(data) != {'display'} or not isinstance(report, dict) or not set(report) <= allowed:
                         raise ValueError()
                     for value in report.values():
@@ -953,7 +960,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.post("/ui/error", screen_error), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.get("/can/frogdash.dbc", can_dbc), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/events', events), web.get('/uploads', uploads), web.post('/uploads', uploads), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/snapshot", snapshot_page), web.post("/ui/error", screen_error), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.get("/can/frogdash.dbc", can_dbc), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/events', events), web.get('/uploads', uploads), web.post('/uploads', uploads), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.post('/drive/settings', drive_settings),

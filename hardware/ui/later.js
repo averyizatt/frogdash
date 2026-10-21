@@ -43,6 +43,7 @@
       await frame();          // One file per frame: the gauges keep drawing in between
     }
     window.frogdashLaterLoaded = true;
+    window.frogdashLaterMs = performance.now();   // For the reports (viewport.js)
     window.dispatchEvent(new Event('frogdash-later'));   // For the first screens that add to later ones
     finish();
     return done;

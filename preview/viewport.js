@@ -13,7 +13,11 @@
       position: css.position, transform: css.transform, margin: css.margin,
       body_overflow: getComputedStyle(document.body).overflow,
       scroll: [scrollX, scrollY], browser: navigator.userAgent.slice(0, 200),
-      responsive_css: [...document.styleSheets].some(sheet => sheet.href && new URL(sheet.href).pathname.endsWith('/responsive.css'))
+      responsive_css: [...document.styleSheets].some(sheet => sheet.href && new URL(sheet.href).pathname.endsWith('/responsive.css')),
+      // The page's own start, from the browser opening it: the gauges' first frame, and the
+      // other screens arriving (later.js). In the reports, beside the boot timeline.
+      ...(Number.isFinite(window.frogdashFirstFrameMs) ? {first_frame_ms: Math.round(window.frogdashFirstFrameMs)} : {}),
+      ...(Number.isFinite(window.frogdashLaterMs) ? {others_loaded_ms: Math.round(window.frogdashLaterMs)} : {})
     };
   };
   function resize() {
