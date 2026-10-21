@@ -26,7 +26,7 @@ async def preview(browser):
     errors, requests = [], []
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.on('request', lambda r: requests.append(r.url) if r.url.startswith(('http:', 'https:')) else None)
-    await page.goto((ROOT / 'preview/index.html').as_uri())
+    await page.goto((ROOT / 'preview/dash.html').as_uri())
     await page.evaluate("frogdashDemo.scenario('normal')")
     await page.wait_for_function("document.getElementById('speed-digits').textContent === '47'")
     await page.locator('#drive-launch').click()

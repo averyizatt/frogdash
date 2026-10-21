@@ -132,7 +132,7 @@ async def check_preview(browser, errors):
     page.on('websocket', lambda ws: network.append(ws.url))
     page.on('request', lambda request: network.append(request.url) if request.url.startswith(('http:', 'https:')) else None)
     await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
-    await page.goto((Path(__file__).resolve().parents[1] / 'preview' / 'index.html').as_uri())
+    await page.goto((Path(__file__).resolve().parents[1] / 'preview' / 'dash.html').as_uri())
     await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
     await page.evaluate("frogdashDemo.scenario('normal')")
     await page.wait_for_function("document.getElementById('connection-summary').textContent === 'DEMO · SIMULATED'")

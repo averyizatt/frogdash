@@ -22,7 +22,7 @@ async def main(path):
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.on('request', lambda request: network.append(request.url) if request.url.startswith(('http:', 'https:')) else None)
         await page.add_init_script('window.frogdashLaterDelay = 0')
-        await page.goto((ROOT / 'preview/index.html').as_uri())
+        await page.goto((ROOT / 'preview/dash.html').as_uri())
         await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)
         await page.evaluate("frogdashDemo.scenario('normal')")
         await page.wait_for_function("document.getElementById('rpm-value').textContent === '3450'")

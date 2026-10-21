@@ -129,7 +129,7 @@ async def main(browser_path):
         browser = await p.chromium.launch(executable_path=browser_path)
         try:
             page = await browser.new_page(viewport={'width': 1920, 'height': 720})
-            await page.goto((ROOT / 'preview/index.html').as_uri())
+            await page.goto((ROOT / 'preview/dash.html').as_uri())
             await page.wait_for_function("document.getElementById('speed-digits').textContent !== '—'")
             assert (await shown(page))['hidden']
             await page.evaluate("frogdashDemo.scenario('offline')")

@@ -108,6 +108,25 @@ async def inspect_responsive(page, selector):
     await dialog.locator('.close-button').first.scroll_into_view_if_needed()
 
 
+async def frame(browser):
+    """The published preview: the dash in a 1920 x 720 frame, on any window, never the
+    phone layout; scaled to fit and centred."""
+    for width, height in ((390, 844), (1280, 800), (2560, 1440)):
+        page = await browser.new_page(viewport={'width': width, 'height': height})
+        await page.goto((ROOT / 'preview' / 'index.html').as_uri())
+        inside = page.frame_locator('#screen')
+        await inside.locator('#display').wait_for()
+        dash = page.frames[1]
+        assert await dash.evaluate('[innerWidth, innerHeight]') == [1920, 720]
+        assert not await dash.evaluate("matchMedia('(max-aspect-ratio: 11/5)').matches")
+        box = await page.locator('#screen').bounding_box()
+        scale = min(width / 1920, height / 720)
+        assert abs(box['width'] - 1920 * scale) < 1 and abs(box['height'] - 720 * scale) < 1, (width, height, box)
+        assert abs(box['x'] + box['width'] / 2 - width / 2) < 1 and box['y'] >= 0, box
+        await page.screenshot(path=str(ROOT / '.tmp' / f'preview-frame-{width}x{height}.png'))
+        await page.close()
+
+
 async def main(browser_path=None, url=None):
     (ROOT / '.tmp').mkdir(exist_ok=True)
     async with async_playwright() as p:
@@ -116,7 +135,7 @@ async def main(browser_path=None, url=None):
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
         await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
-        await page.goto(url or (ROOT / 'preview' / 'index.html').as_uri())
+        await page.goto(url or (ROOT / 'preview' / 'dash.html').as_uri())
         await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
         await page.evaluate("frogdashDemo.scenario('normal')")
         await page.wait_for_function("document.getElementById('rpm-value').textContent === '3450'")
@@ -176,8 +195,9 @@ async def main(browser_path=None, url=None):
                 await page.keyboard.press('Escape')
                 assert await page.locator(f'#{launch}').evaluate('(el) => document.activeElement === el')
         assert not errors, errors
+        if not url: await frame(browser)
         await browser.close()
-    print(f'All 21 submenu views fit at {len(SIZES)} sizes; controls remain reachable, resize and keyboard close work.')
+    print(f'All 21 submenu views fit at {len(SIZES)} sizes; controls remain reachable, resize and keyboard close work; the published preview keeps the 1920 x 720 screen.')
 
 
 if __name__ == '__main__':

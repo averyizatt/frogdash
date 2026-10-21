@@ -32,7 +32,7 @@ async def preview(browser):
     page = await browser.new_page(viewport={'width': 1920, 'height': 720})
     errors = []
     page.on('pageerror', lambda e: errors.append(str(e)))
-    await page.goto((ROOT / 'preview/index.html').as_uri())
+    await page.goto((ROOT / 'preview/dash.html').as_uri())
     await page.wait_for_function('window.frogdashRendered > 2')
     await page.evaluate("frogdashDemo.scenario('normal')")
     assert await page.locator('#camera-launch').is_visible()

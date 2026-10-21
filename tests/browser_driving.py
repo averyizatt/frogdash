@@ -38,7 +38,7 @@ async def preview(browser):
     errors, network = [], []
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.on('request', lambda req: network.append(req.url) if req.url.startswith(('http:', 'https:')) else None)
-    await page.goto((ROOT / 'preview/index.html').as_uri())
+    await page.goto((ROOT / 'preview/dash.html').as_uri())
     await page.evaluate("frogdashDemo.scenario('normal')")
     await page.wait_for_function('document.getElementById("rpm-value").textContent === "3450"')
     await page.wait_for_function('document.documentElement.dataset.lighting === "day"')

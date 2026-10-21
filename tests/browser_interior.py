@@ -13,7 +13,7 @@ async def main():
         page = await browser.new_page(viewport={'width': 1920, 'height': 720})
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
-        await page.goto((ROOT / 'preview' / 'index.html').as_uri())
+        await page.goto((ROOT / 'preview' / 'dash.html').as_uri())
         await page.locator('#controls-launch').click()
         await page.locator('#tab-interior').click()
         status = "document.getElementById('interior-zones').textContent"

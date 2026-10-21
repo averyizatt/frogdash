@@ -17,7 +17,7 @@ async def main(browser_path):
             errors = []
             page.on('pageerror', lambda error: errors.append(str(error)))
             await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
-            await page.goto((ROOT / 'preview/index.html').as_uri())
+            await page.goto((ROOT / 'preview/dash.html').as_uri())
             await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
             await page.wait_for_function('window.frogdashRendered > 2')
             await page.wait_for_function('window.FrogdashGraphs.points >= 8', timeout=8000)   # Recording before it is opened

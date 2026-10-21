@@ -129,7 +129,7 @@ async def main(browser_path):
             # The preview: no Pi to update, said plainly.
             preview = await browser.new_page(viewport={'width': 1920, 'height': 720})
             preview.on('pageerror', lambda error: errors.append(str(error)))
-            await preview.goto((ROOT / 'preview/index.html').as_uri())
+            await preview.goto((ROOT / 'preview/dash.html').as_uri())
             await preview.wait_for_timeout(1200)
             await preview.locator('#drive-launch').click()
             await preview.locator('#operations-launch').click()

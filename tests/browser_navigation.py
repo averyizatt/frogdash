@@ -105,7 +105,7 @@ async def preview(browser):
     page = await browser.new_page(viewport={'width': 1280, 'height': 480})
     try:
         await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
-        await page.goto((ROOT / 'preview/index.html').as_uri())
+        await page.goto((ROOT / 'preview/dash.html').as_uri())
         await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
         await page.keyboard.press('Enter')
         assert await page.locator('#wheel-menu').evaluate('(el) => el.open')

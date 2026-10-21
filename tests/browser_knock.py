@@ -44,7 +44,7 @@ async def page_at(browser, width, height):
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.on('request', lambda request: network.append(request.url) if request.url.startswith(('http:', 'https:')) else None)
     await page.add_init_script("window.states=0; addEventListener('frogdash-state',()=>states++)")
-    await page.goto((ROOT / 'preview/index.html').as_uri())
+    await page.goto((ROOT / 'preview/dash.html').as_uri())
     await page.wait_for_function('states > 3')
     return page, errors, network
 

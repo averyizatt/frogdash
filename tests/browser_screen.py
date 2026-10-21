@@ -80,7 +80,7 @@ async def main(browser_path):
             # The preview: no Pi, so no row and no question.
             preview = await browser.new_page(viewport={'width': 1920, 'height': 720})
             preview.on('pageerror', lambda error: errors.append(str(error)))
-            await preview.goto((ROOT / 'preview/index.html').as_uri())
+            await preview.goto((ROOT / 'preview/dash.html').as_uri())
             await preview.wait_for_timeout(1500)
             assert await preview.locator('#screen-row').is_hidden()
             assert not await preview.locator('#screen-trial').evaluate('d => d.open')

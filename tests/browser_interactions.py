@@ -18,7 +18,7 @@ async def preview(browser):
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.on('request', lambda request: network.append(request.url) if request.url.startswith(('http:', 'https:')) else None)
         await page.add_init_script("window.speeds=[]; addEventListener('frogdash-state',e=>{const value=e.detail.snapshot.values?.['vehicle.speed_kph']?.value;if(Number.isFinite(value))speeds.push(value)})")
-        await page.goto((ROOT / 'preview/index.html').as_uri())
+        await page.goto((ROOT / 'preview/dash.html').as_uri())
         await page.wait_for_function('speeds.length > 2 && speeds.at(-1) > 1')
         await page.locator('#appearance-launch').click()
         await page.locator('#appearance-tab-custom').click()

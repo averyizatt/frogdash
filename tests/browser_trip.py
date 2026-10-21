@@ -21,7 +21,7 @@ async def preview(browser):
     errors, requests = [], []
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.on('request', lambda req: requests.append(req.url) if req.url.startswith(('http:', 'https:')) else None)
-    await page.goto((ROOT / 'preview/index.html').as_uri())
+    await page.goto((ROOT / 'preview/dash.html').as_uri())
     await page.locator('#drive-launch').click()
     await page.locator('[data-driver-tab="trip"]').click()
     await page.wait_for_function('document.getElementById("trip-range").textContent.includes("211")')

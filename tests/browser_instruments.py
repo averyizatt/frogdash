@@ -12,7 +12,7 @@ async def main(executable):
         page = await browser.new_page(viewport={'width':1920,'height':720})
         errors=[]
         page.on('pageerror', lambda e: errors.append(str(e)))
-        await page.goto((ROOT/'preview/index.html').as_uri())
+        await page.goto((ROOT/'preview/dash.html').as_uri())
         await page.wait_for_function('window.frogdashRendered > 2')
         await page.locator('#appearance-launch').click()
         await page.locator('[data-collection-filter="retro"]').click()

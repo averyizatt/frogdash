@@ -41,7 +41,7 @@ async def main(browser_path):
         try:
             page = await browser.new_page(viewport={'width': 1920, 'height': 720})
             page.on('pageerror', lambda error: errors.append(str(error)))
-            await page.goto((ROOT / 'preview/index.html').as_uri())
+            await page.goto((ROOT / 'preview/dash.html').as_uri())
             await open_health(page)
             await page.wait_for_function('document.getElementById("health-cards").textContent.includes("86.0%")')
             assert 'SIMULATED' in await page.locator('#health-shutdown-note').inner_text()

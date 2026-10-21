@@ -20,7 +20,7 @@ async def main(browser_path):
         page = await browser.new_page(viewport={'width': 1920, 'height': 720})
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
-        await page.goto((ROOT / 'preview/index.html').as_uri())
+        await page.goto((ROOT / 'preview/dash.html').as_uri())
         await page.wait_for_function('window.frogdashRendered >= 1')
         first = await page.evaluate('performance.now()')
         loaded = await page.evaluate("""() => ({knock: !!window.FrogdashKnock, graphs: !!window.FrogdashGraphs,
@@ -44,7 +44,7 @@ async def main(browser_path):
         page2 = await browser.new_page(viewport={'width': 1920, 'height': 720})
         errors2 = []
         page2.on('pageerror', lambda error: errors2.append(str(error)))
-        await page2.goto((ROOT / 'preview/index.html').as_uri())
+        await page2.goto((ROOT / 'preview/dash.html').as_uri())
         await page2.wait_for_function('window.frogdashRendered >= 1')
         assert not await page2.evaluate('window.frogdashLaterLoaded')
         await page2.locator('#knock-launch').click()

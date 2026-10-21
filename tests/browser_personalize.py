@@ -24,7 +24,7 @@ async def preview(browser):
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.on('request', lambda request: network.append(request.url) if request.url.startswith(('http:', 'https:')) else None)
     await page.add_init_script('window.frogdashLaterDelay = 0')   # The other screens straight after the gauges
-    await page.goto((ROOT / 'preview/index.html').as_uri())
+    await page.goto((ROOT / 'preview/dash.html').as_uri())
     await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # Everything after the gauges (later.js)
     await page.evaluate("frogdashDemo.scenario('normal')")
     await page.wait_for_function("document.getElementById('rpm-value').textContent === '3450'")
