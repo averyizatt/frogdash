@@ -31,7 +31,7 @@
 .look-card[data-gauge-preview="skin-ferrari"] .look-art { background:#000 url("skins/ferrari.jpg?v=f3a5132b3c") 50% 50% / contain no-repeat; }
 .look-card[data-gauge-preview="skin-fox"] .look-art { background:#000 url("skins/fox.jpg?v=894d45eccd") 50% 50% / contain no-repeat; }
 .look-card[data-gauge-preview="skin-ferrari-yellow"] .look-art { background:#000 url("skins/ferrari-yellow.jpg?v=f8280b01d3") 50% 50% / contain no-repeat; }
-.look-card[data-gauge-preview="skin-saleen"] .look-art { background:#000 url("skins/saleen.jpg?v=229bbbd52f") 50% 50% / contain no-repeat; }
+.look-card[data-gauge-preview="skin-saleen"] .look-art { background:#000 url("skins/saleen.jpg?v=cf7010853f") 50% 50% / contain no-repeat; }
 .look-card[data-gauge-preview^="skin-"] .look-art > * { visibility:hidden; }
 :root { --needle:#f5f0df; }
 .custom-cluster,.cluster-telemetry { display:none; }

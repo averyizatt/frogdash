@@ -75,7 +75,7 @@ async def main(path):
         await page.evaluate("frogdashDemo.scenario('drive')")
         await page.locator('#appearance-launch').click()
         await page.locator('[data-appearance-tab="instruments"]').click()
-        for name, readouts in (('skin-fox', {'boost': 'PSI', 'odometer': '067456 MI'}), ('skin-saleen', {'boost': 'PSI', 'odometer': '067456'}),
+        for name, readouts in (('skin-fox', {'boost': 'PSI', 'odometer': '067456 MI'}), ('skin-saleen', {'oil': 'OIL', 'odometer': '067456'}),
                                ('skin-ferrari-yellow', {'afr': 'AFR', 'intake': 'INTAKE', 'odometer': '067456'})):
             await page.locator('#appearance-gauges').select_option(name)
             await page.wait_for_function('(n) => document.querySelector(".skin-cluster")?.dataset.skin === n', arg=name)

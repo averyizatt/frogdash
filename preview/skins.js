@@ -92,30 +92,34 @@
       ],
       warning: [560, 610, 1360]
     },
-    // Saleen white faces. Coolant in °F; oil printed only L to H, read here as 0-80 psi.
-    // The speedometer's two misprinted labels are painted out of the picture; its marks
-    // follow the labels that are right (an unlabelled tick between 0 and 20 is 10, the one
-    // between 180 and 200 is 190).
+    // Saleen white faces from the owner's day and night pictures: tach 0-7, speedometer to 200
+    // MPH, boost and fuel on the left, coolant (L-H read as 130-270 degF) and volts on the
+    // right. The night picture was drawn a little apart, so it is fitted panel by panel.
     'skin-saleen': {
-      face: 'skins/saleen.jpg?v=229bbbd52f', night: 'skins/saleen-night.jpg?v=0590d0e405', needle: {body: '#e8341c', edge: '#5a0d04', glow: '#ff3a1a'},
+      face: 'skins/saleen.jpg?v=cf7010853f', night: 'skins/saleen-night.jpg?v=4a301745bb', needle: {body: '#e8341c', edge: '#5a0d04', glow: '#ff3a1a'},
       dials: [
-        {id: 'rpm', signal: 'engine.rpm', pivot: [613.8, 406.1], length: 262, tail: 40, width: 10, hub: 24,
-         marks: [[0, 360, 530], [1000, 327.5, 377.5], [2000, 387.5, 226], [3000, 520, 134], [4000, 701.5, 131], [5000, 835, 221], [6000, 902.5, 375], [7000, 870, 527.5]]},
-        {id: 'speed', signal: 'vehicle.speed_kph', convert: mph, pivot: [1310, 400], length: 262, tail: 40, width: 10, hub: 24,
-         marks: [[0, 1075, 546], [10, 1042.5, 475], [20, 1027.5, 382.5], [40, 1050, 287.5], [60, 1105, 201], [80, 1197.5, 136], [100, 1315, 120],
-                 [120, 1430, 150], [140, 1517.5, 212.5], [160, 1565, 292.5], [180, 1580, 382.5], [190, 1575, 474], [200, 1542.5, 540]]},
-        {id: 'coolant', signal: 'engine.coolant_c', convert: fahrenheit, pivot: [42, 233], length: 104, width: 6, clip: [30, 118, 166, 350],
-         marks: [[130, 107.5, 310], [200, 147.5, 235], [270, 102.5, 150]]},
-        {id: 'fuel', read: READ.fuelPct, pivot: [52, 502], length: 104, width: 6, clip: [30, 390, 166, 618],
-         marks: [[0, 110, 572.5], [50, 152.5, 505], [100, 102.5, 422.5]]},
-        {id: 'oil', signal: 'engine.oil_pressure_psi', pivot: [1860, 231], length: 104, width: 6, clip: [1744, 118, 1890, 350],
-         marks: [[0, 1815, 307.5], [40, 1770, 232.5], [80, 1815, 152.5]]},
-        {id: 'volts', signal: 'vehicle.battery_v', pivot: [1860, 509], length: 104, width: 6, clip: [1744, 390, 1890, 618],
-         marks: [[8, 1815, 587.5], [13, 1775, 510], [18, 1815, 430]]}
+        {id: 'rpm', signal: 'engine.rpm', pivot: [613, 393], length: 238, tail: 40, width: 10, hub: 24,
+         marks: [[0, 401.9, 499.4], [1000, 363.5, 371], [2000, 400.6, 240], [3000, 502, 149.2], [3500, 612, 123.6], [4000, 719.2, 148.7],
+                 [5000, 818, 236.2], [6000, 857.5, 374], [7000, 816, 500]]},
+        {id: 'speed', signal: 'vehicle.speed_kph', convert: mph, pivot: [1298, 397], length: 250, tail: 40, width: 10, hub: 24,
+         marks: [[0, 1093.5, 516.5], [20, 1051.5, 426.6], [40, 1048.1, 332.6], [60, 1083.7, 238.6], [80, 1163.3, 162.8], [100, 1298, 125.9],
+                 [120, 1428.3, 162.1], [140, 1510.9, 234.4], [160, 1547.7, 332.5], [180, 1546.8, 424.7], [200, 1507.4, 515.8]]},
+        // The small dials' ticks run down their flat outer edges; the needles pivot just past
+        // the round side, hidden, and show only on the face. The red blocks are the ends.
+        {id: 'boost', read: READ.boostPsi, pivot: [262, 230], length: 190, width: 6, clip: [36, 98, 230, 364],
+         marks: [[-20, 68.5, 328.5], [-10, 55, 271], [0, 61, 228.5], [10, 56, 188.5], [20, 68.5, 131.5]]},
+        {id: 'fuel', read: READ.fuelPct, pivot: [262, 511], length: 190, width: 6, clip: [36, 384, 228, 648],
+         marks: [[0, 68.5, 604], [50, 61, 510], [100, 68.5, 417.5]]},
+        {id: 'coolant', signal: 'engine.coolant_c', convert: fahrenheit, pivot: [1658, 230], length: 190, width: 6, clip: [1690, 98, 1884, 364],
+         marks: [[130, 1851.5, 328.5], [200, 1859, 229.5], [270, 1851.5, 131.5]]},
+        {id: 'volts', signal: 'vehicle.battery_v', pivot: [1658, 511], length: 190, width: 6, clip: [1692, 384, 1884, 648],
+         marks: [[8, 1851.5, 604], [13, 1859, 510], [18, 1851.5, 417.5]]}
       ],
+      // The speedometer's upper window shows oil pressure (the face has no oil dial); the
+      // lower one is the odometer.
       readouts: [
-        {id: 'boost', box: [1202, 235, 1424, 274], style: 'led', text: boostText},
-        {id: 'odometer', box: [1217, 507, 1406, 553], style: 'wheels', text: odometerText}
+        {id: 'oil', box: [1194, 241, 1399, 288], style: 'led', text: (snapshot, live) => { const psi = live('engine.oil_pressure_psi'); return `OIL ${psi === null ? '--' : String(Math.round(psi)).padStart(2, ' ')} PSI`; }},
+        {id: 'odometer', box: [1194, 512, 1388, 560], style: 'wheels', text: odometerText}
       ],
       warning: [560, 616, 1360]
     },
