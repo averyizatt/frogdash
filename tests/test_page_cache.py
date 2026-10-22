@@ -29,7 +29,8 @@ class PageCacheTests(unittest.IsolatedAsyncioTestCase):
             face = await client.get('/skins/ferrari.jpg')
             self.assertEqual((face.status, face.content_type), (200, 'image/jpeg'))
             self.assertGreater(len(await face.read()), 50_000)
-            self.assertEqual((await client.get('/skins/ferrari-lamps.jpg')).status, 200)
+            for name in ('ferrari-lamps.jpg', 'fox.jpg', 'saleen.jpg'):
+                self.assertEqual((await client.get('/skins/' + name)).status, 200, name)
             for name in ('missing.jpg', '..%2Fskins.js', 'ferrari.JPG', 'ferrari.jpg.bak'):
                 self.assertEqual((await client.get('/skins/' + name)).status, 404, name)
 

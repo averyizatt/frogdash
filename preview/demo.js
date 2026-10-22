@@ -6,7 +6,7 @@
     'engine.coolant_c': 96, 'engine.iat_c': 40, 'vehicle.battery_v': 14.2,
     'engine.boost_kpa': 55, 'engine.afr': 12.4, 'ecu.afr_target': 12.5,
     'engine.ego_correction_pct': 100, 'engine.oil_pressure_psi': 62,
-    'engine.fuel_pressure_psi': 47, 'vehicle.fuel_pct': null,
+    'engine.fuel_pressure_psi': 43, 'vehicle.fuel_pct': null,
     'meth.state': 'OFF', 'meth.duty_pct': 0, 'meth.tank_pct': 85,
     'meth.flow': 'OK', 'meth.fault_flags': 0,
     'lighting.turn_left': false, 'lighting.turn_right': false,
@@ -69,7 +69,7 @@
       'engine.boost_kpa': boost, 'engine.afr': target + .12 * Math.sin(seconds * 2.2),
       'ecu.afr_target': target, 'engine.ego_correction_pct': 100 + 2 * Math.sin(seconds * .7),
       'engine.oil_pressure_psi': 23 + rpm * .007,
-      'engine.fuel_pressure_psi': 39 + Math.max(0, boost) * .145,
+      'engine.fuel_pressure_psi': 35 + Math.max(0, boost) * .145,   // The owner's regulator: 35 psi + boost
       'engine.coolant_c': 93 + 2.5 * Math.sin(seconds / 15),
       'engine.iat_c': 34 + Math.max(0, boost) * .08,
       'vehicle.battery_v': 14.1 + .12 * Math.sin(seconds * .6),

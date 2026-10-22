@@ -134,15 +134,16 @@ class DrivingTests(unittest.TestCase):
                 self.drive.conditions(self.sample(self.now))
 
     def test_fuel_pressure_must_rise_with_boost(self):
-        # 50 kPa of boost wants 39 + 7.3 psi; 5 psi short of that is 41.3 psi.
+        # The owner's regulator: 35 psi, 1 psi more per psi of boost. 50 kPa (7.3 psi) of boost
+        # wants 42.3 psi; 5 psi short of that is 37.3 psi.
         self.values['engine.fuel_pressure_psi'] = 45
         self.assertFalse(self.condition('fuel_boost', **{'engine.boost_kpa': 50}))
-        self.assertTrue(self.condition('fuel_boost', **{'engine.fuel_pressure_psi': 40}))
+        self.assertTrue(self.condition('fuel_boost', **{'engine.fuel_pressure_psi': 36}))
         self.assertFalse(self.condition('fuel_boost', **{'engine.boost_kpa': 10}))        # Not in boost yet
         self.assertIsNone(self.condition('fuel_boost', **{'engine.boost_kpa': 50, 'engine.fuel_pressure_psi': None}))
         self.assertTrue(self.condition('fuel_low', **{'engine.fuel_pressure_psi': 25}))
-        self.drive.configure(settings_with(fuel_boost={'base': 33}))
-        self.assertFalse(self.condition('fuel_boost', **{'engine.fuel_pressure_psi': 40}))
+        self.drive.configure(settings_with(fuel_boost={'base': 30}))
+        self.assertFalse(self.condition('fuel_boost', **{'engine.fuel_pressure_psi': 36}))
 
     def test_overboost_limit_and_its_own_delay(self):
         self.assertFalse(self.condition('overboost', **{'engine.boost_kpa': 70}))

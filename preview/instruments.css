@@ -10,16 +10,23 @@
 :root[data-gauges^="skin-"] .dashboard-footer { grid-row:4; }
 .skin-needles { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .skin-needle { transform-box:view-box; transition:transform .12s linear; }
-.skin-needle-body { fill:#ff7418; stroke:#ffd2a0; stroke-width:1; }
-.skin-needle-glow { fill:none; stroke:#ff6a00; stroke-width:7; stroke-linejoin:round; opacity:.22; }
+.skin-needle-body { fill:var(--skin-needle-body, #ff7418); stroke:var(--skin-needle-edge, #ffd2a0); stroke-width:1; }
+.skin-needle-glow { fill:none; stroke:var(--skin-needle-glow, #ff6a00); stroke-width:7; stroke-linejoin:round; opacity:.22; }
 .skin-hub { fill:#0c0c0c; stroke:#3b3532; stroke-width:3; }
 .skin-hub-cap { fill:#1d1b1a; }
 .skin-dial[data-quality]:not([data-quality="live"]) .skin-needle { opacity:.45; }
 .skin-lamp { position:absolute; border-radius:6px; background-repeat:no-repeat; opacity:0; transition:opacity .08s; }
 .skin-lamp[data-on="true"] { opacity:1; }
 .skin-lamp-tap { cursor:pointer; }
-.skin-warning { position:absolute; left:560px; width:800px; top:596px; margin:0; padding:5px 12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; font-size:15px; font-weight:800; letter-spacing:.5px; color:#ffb35c; background:#1a0d06; border:1px solid #ff6a1a; border-radius:4px; }
+.skin-readout { position:absolute; display:flex; align-items:center; justify-content:center; overflow:hidden; white-space:pre; font-variant-numeric:tabular-nums; pointer-events:none; }
+.skin-lcd { font:700 40px/1 "DejaVu Sans Mono", Consolas, monospace; color:#1e2410; letter-spacing:2px; text-shadow:1px 1px 0 #6d6f3f55; }
+.skin-led { font:700 26px/1 "DejaVu Sans Mono", Consolas, monospace; color:#ff4a2a; letter-spacing:2px; text-shadow:0 0 6px #ff2a0a99; }
+.skin-wheels { justify-content:space-between; padding:0 3px; }
+.skin-wheels span { flex:1; text-align:center; font:700 30px/1 "DejaVu Sans Mono", Consolas, monospace; color:#f2efe6; }
+.skin-warning { position:absolute; margin:0; padding:5px 12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; font-size:15px; font-weight:800; letter-spacing:.5px; color:#ffb35c; background:#1a0d06; border:1px solid #ff6a1a; border-radius:4px; }
 .look-card[data-gauge-preview="skin-ferrari"] .look-art { background:#000 url("skins/ferrari.jpg") 50% 50% / cover no-repeat; }
+.look-card[data-gauge-preview="skin-fox"] .look-art { background:#000 url("skins/fox.jpg") 50% 50% / cover no-repeat; }
+.look-card[data-gauge-preview="skin-saleen"] .look-art { background:#000 url("skins/saleen.jpg") 50% 50% / cover no-repeat; }
 .look-card[data-gauge-preview^="skin-"] .look-art > * { visibility:hidden; }
 :root { --needle:#f5f0df; }
 .custom-cluster,.cluster-telemetry { display:none; }

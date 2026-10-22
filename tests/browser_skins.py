@@ -42,9 +42,11 @@ async def main(path):
         assert -57 < rpm < -28, rpm
         assert -85 < speed < -56, speed
         assert -12 < oil < 0, oil
-        # No oil temperature or fuel level sender: resting at their stops, dimmed.
-        assert await page.locator('.skin-dial[data-dial="oiltemp"]').get_attribute('data-quality') != 'live'
-        assert await page.evaluate(NEEDLE, 'fuel') < -30
+        # Every dial is wired: the top-left one (an oil temperature dial in the picture) shows
+        # manifold pressure, and fuel the dash's estimate when there is no sender.
+        for dial in ('rpm', 'speed', 'map', 'oil', 'coolant', 'fuel'):
+            assert await page.locator(f'.skin-dial[data-dial="{dial}"]').get_attribute('data-quality') == 'live', dial
+        assert await page.evaluate(NEEDLE, 'map') > 25, 'About 141 kPa absolute at 55 kPa of boost: the top of its scale'
         # The dash fits on the photo's black edges: top bar and buttons above it, all clickable.
         for selector in ('#drive-launch', '#alerts-launch', '#appearance-launch'):
             box = await page.locator(selector).bounding_box()
@@ -65,11 +67,22 @@ async def main(path):
         await page.screenshot(path=str(ROOT / '.tmp/skin-ferrari-warning.png'))
         await page.locator('#drive-close').click()
 
-        # Back to another style: the photo goes, the vector dials come back; the choice is kept.
+        # The other faces, chosen as the gauge layout: every dial live, the readouts filled in.
         await page.reload()
         await page.wait_for_function("document.documentElement.dataset.gauges === 'skin-ferrari'")
+        await page.evaluate("frogdashDemo.scenario('drive')")
         await page.locator('#appearance-launch').click()
         await page.locator('[data-appearance-tab="instruments"]').click()
+        for name, readouts in (('skin-fox', {'boost': 'PSI', 'odometer': '067456 MI'}), ('skin-saleen', {'boost': 'PSI', 'odometer': '067456'})):
+            await page.locator('#appearance-gauges').select_option(name)
+            await page.wait_for_function('(n) => document.querySelector(".skin-cluster")?.dataset.skin === n', arg=name)
+            await page.wait_for_function("[...document.querySelectorAll('.skin-dial')].every(d => d.dataset.quality === 'live')")
+            assert await page.locator('.skin-dial').count() == 6
+            for readout, text in readouts.items():
+                assert text in await page.locator(f'[data-readout="{readout}"]').text_content(), (name, readout)
+            await page.screenshot(path=str(ROOT / f'.tmp/{name}.png'))
+        await page.locator('#appearance-gauges').select_option('skin-ferrari')
+        # Back to another style: the photo goes, the vector dials come back; the choice is kept.
         await page.locator('#appearance-gauges').select_option('foxbody')
         await page.locator('#appearance-close').click()
         await page.wait_for_function("document.querySelector('.custom-cluster').checkVisibility()")

@@ -121,6 +121,8 @@
   $('fuel-amount-form').onsubmit = event => { event.preventDefault(); if ($('fuel-amount-form').reportValidity()) command({remaining_l: Number($('fuel-amount').value) * GAL}, 'fuel-settings-status'); };
   $('fuel-full').onclick = () => { if (view()) command({remaining_l: view().settings.capacity_l}, 'fuel-settings-status'); };
   // Odometer: shown under the speed, set once from the cluster's reading on the Trips page.
+  // For the photo gauge faces (skins.js): the fuel estimate and the odometer.
+  window.FrogdashTrip = {view};
   function renderOdometer() {
     const t = view(), km = t?.odometer_km;
     const text = Number.isFinite(km) ? `${Math.floor(u.distance(km)).toLocaleString('en-US')} ${u.distanceUnit}` : '';

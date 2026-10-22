@@ -51,7 +51,7 @@ window.frogdashAlertRules = {
      "about": "Under boost, fuel pressure should be the base pressure plus the boost (a 1:1 regulator). This goes off when it falls short by more than the margin.",
      "check": "The pump may not keep up, or the regulator's vacuum/boost line is off or leaking.",
      "show": ["engine.fuel_pressure_psi", "pressure"], "enabled": true, "delay": 0.5,
-     "params": [{"key": "base", "label": "Base pressure", "kind": "pressure", "min": 20, "max": 80, "step": 1, "default": 39},
+     "params": [{"key": "base", "label": "Base pressure", "kind": "pressure", "min": 20, "max": 80, "step": 1, "default": 35},
                 {"key": "margin", "label": "Short by more than", "kind": "pressure", "min": 1, "max": 30, "step": 1, "default": 5},
                 {"key": "boost", "label": "From boost", "kind": "boost", "min": 0, "max": 200, "step": 1, "default": 14}],
      "when": [["engine.boost_kpa", ">=", {"param": "boost"}],
