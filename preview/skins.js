@@ -34,7 +34,7 @@
     // psi, °C, bar and MPH, so these needles keep those units whatever the dash's own unit
     // setting is.
     'skin-ferrari': {
-      face: 'skins/ferrari.jpg?v=f3a5132b3c', night: 'skins/ferrari-night.jpg?v=270410d90c', lit: 'skins/ferrari-lamps.jpg?v=d1ba0e2712', litAt: [890, 134],
+      face: 'skins/ferrari.jpg?v=a281d1bd8f', night: 'skins/ferrari-night.jpg?v=f4cad9888d', lit: 'skins/ferrari-lamps.jpg?v=82276908b6', litAt: [890, 134],
       needle: {body: '#ff7418', edge: '#ffd2a0', glow: '#ff6a00'},
       dials: [
         // Tach 0-7 (x1000), its red band running on to 7500.
@@ -58,11 +58,11 @@
       // Lamps: lit from the dash's own indicators. The amber one (ABS in the photo) is CHECK:
       // an alert going off, and a tap on it opens the Alerts tab.
       lamps: [
-        {id: 'brake', box: [896, 140, 1024, 196], on: lit('icon-brake')},
-        {id: 'check', box: [896, 218, 1024, 274], on: () => $('alerts-launch')?.dataset.warning === 'true', tap: () => $('alerts-launch')?.click()},
-        {id: 'lights', box: [896, 298, 1024, 355], on: lit('icon-running')},
-        {id: 'left', box: [896, 379, 960, 436], on: turn('left')},
-        {id: 'right', box: [960, 379, 1024, 436], on: turn('right')}
+        {id: 'brake', box: [895, 134, 1023, 191], on: lit('icon-brake')},
+        {id: 'check', box: [895, 215, 1023, 271], on: () => $('alerts-launch')?.dataset.warning === 'true', tap: () => $('alerts-launch')?.click()},
+        {id: 'lights', box: [895, 295, 1023, 356], on: lit('icon-running')},
+        {id: 'left', box: [895, 381, 959, 440], on: turn('left')},
+        {id: 'right', box: [959, 381, 1023, 440], on: turn('right')}
       ],
       warning: [560, 596, 1360]
     },
