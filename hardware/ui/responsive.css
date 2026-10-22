@@ -42,10 +42,13 @@
   .appearance-tabs button { font-size:16px; padding:10px 14px; }
   .appearance-body { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .appearance-sample { grid-column:1 / -1; }
-  .appearance-gallery > * { flex-shrink:0; }
-  .gallery-heading { flex-wrap:wrap; gap:12px; }
-  .look-collections { flex-wrap:wrap; margin:0; }
-  .look-grid { flex:none; grid-auto-rows:minmax(155px,auto); grid-template-rows:none; }
+  .appearance-gallery { display:flex; flex-direction:column; gap:14px; }
+  .appearance-gallery > *,.gallery-main > * { flex-shrink:0; }
+  .gallery-rail { flex-direction:row; flex-wrap:wrap; }
+  .gallery-rail-label { display:none; }
+  .gallery-rail button { flex:1 0 auto; border-color:var(--line); }
+  .gallery-current { flex-basis:100%; margin:0; padding:4px 6px 0; border:0; }
+  .look-grid,.background-grid { flex:none; overflow:visible; padding:0; }
   .look-card { min-height:155px; }
   .look-art { gap:20px; }
   .background-grid { grid-template-columns:repeat(6,minmax(0,1fr)); }
@@ -76,7 +79,7 @@
   .boost-gauge { border:0; }
   .fuel-workspace,.alert-workspace,.ops-columns,.driver-panel .settings-grid { grid-template-columns:1fr; }
   .health-cards { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .look-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .look-grid { grid-template-columns:repeat(2,minmax(0,1fr)); grid-auto-rows:170px; }
   .race-body { grid-template-columns:1fr; }
   .race-main { padding:18px; }
   .race-history { max-height:260px; }

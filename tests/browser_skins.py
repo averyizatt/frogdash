@@ -29,7 +29,7 @@ async def main(path):
         assert await page.locator('.skin-cluster').count() == 0, 'Built only when chosen'
 
         await page.locator('#appearance-launch').click()
-        await page.locator('[data-collection-filter="retro"]').click()
+        await page.locator('[data-collection-filter="photo"]').click()
         await page.locator('button[data-look="ferrari"]').click()
         await page.locator('#appearance-close').click()
         await page.wait_for_function("document.documentElement.dataset.gauges === 'skin-ferrari'")

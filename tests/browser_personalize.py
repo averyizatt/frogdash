@@ -61,6 +61,8 @@ async def preview(browser):
         assert await page.evaluate('getComputedStyle(document.documentElement).getPropertyValue("--warn")') == warning_color
     await page.locator('[data-collection-filter="signature"]').click()
     await page.locator('[data-look="expedition"]').click()
+    await page.locator('[data-collection-filter="backgrounds"]').click()
+    assert await page.locator('#appearance-looks').is_hidden()
     for finish in ['midnight', 'graphite', 'carbon', 'glow', 'horizon', 'grid', 'contour', 'dusk', 'pitlane', 'apexline', 'technical', 'satin', 'void', 'duotone', 'neoncity', 'circuit', 'hazard', 'aurora']:
         await page.locator(f'button[data-background="{finish}"]').click()
         assert await page.locator('html').get_attribute('data-scene') == finish

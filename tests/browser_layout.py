@@ -181,8 +181,11 @@ async def main(browser_path=None, url=None):
                 if (width, height) in ((1980, 720), (1280, 480)):
                     await page.screenshot(path=str(ROOT / '.tmp' / f'menu-{dialog}-{width}x{height}.png'))
                 if dialog == 'appearance-dialog':
-                    await page.locator('[data-collection-filter="performance"]').click()
-                    await inspect(page, '#appearance-dialog', '.appearance-gallery')
+                    for name in ('performance', 'photo', 'backgrounds'):
+                        await page.locator(f'[data-collection-filter="{name}"]').click()
+                        await inspect(page, '#appearance-dialog', '.appearance-gallery')
+                        if name == 'photo' and (width, height) == (1920, 720):
+                            await page.screenshot(path=str(ROOT / '.tmp' / 'menu-appearance-photo.png'))
                     await page.locator('[data-collection-filter="signature"]').click()
                     await page.locator('#appearance-tab-custom').click()
                     await inspect(page, '#appearance-dialog', '.appearance-body')

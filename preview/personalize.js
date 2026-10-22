@@ -18,9 +18,9 @@
     executive: {name: 'Executive', note: 'Champagne analog / serif / midnight blue', accent: '#f0c060', accent2: '#ffe3a3', needle: '#f0c060', numeral: '#fff6e0', gauges: 'analog', font: 'serif', finish: 'horizon', surface: '#151d2a', raised: '#253145', line: '#42526a', style: 'touring', shape: 'round', transparency: 20},
     foxbody: {name: 'Foxbody LX', note: 'Charcoal binnacle / orange needles', accent: '#f2ecd2', accent2: '#ff6a1a', needle: '#ff5a1f', gauges: 'foxbody', collection: 'retro', finish: 'charcoal', surface: '#161b18', raised: '#252a27', line: '#454a43', shape: 'sharp'},
     foxnight: {name: 'Foxbody Afterdark', note: 'Green illumination / factory spirit', accent: '#2dff6a', accent2: '#2dff6a', needle: '#ff5a1f', numeral: '#c8ffd6', gauges: 'foxbody', collection: 'retro', finish: 'phosphor', surface: '#101e17', raised: '#20372a', line: '#385844', shape: 'sharp', glow: 30},
-    ferrari: {name: 'Old-school Ferrari', note: 'Photo cluster / Veglia dials / live needles', accent: '#ff9d2e', accent2: '#ff3b1f', needle: '#ff7418', numeral: '#ffd9a8', gauges: 'skin-ferrari', collection: 'retro', finish: 'carbon', surface: '#120d0a', raised: '#221a14', line: '#3d3026', shape: 'sharp'},
-    foxphoto: {name: 'Fox LCD cluster', note: 'Photo cluster / white scales / LCD boost and miles', accent: '#f2f2ee', accent2: '#ff5a1f', needle: '#ff5a1f', numeral: '#f2f2ee', gauges: 'skin-fox', collection: 'retro', finish: 'charcoal', surface: '#111213', raised: '#1d1f21', line: '#3a3d40', shape: 'sharp'},
-    saleen: {name: 'Saleen white face', note: 'Photo cluster / white dials / red needles', accent: '#f1ede4', accent2: '#e8341c', needle: '#e8341c', numeral: '#f1ede4', gauges: 'skin-saleen', collection: 'retro', finish: 'charcoal', surface: '#121212', raised: '#1e1e1e', line: '#3b3b3b', shape: 'sharp'},
+    ferrari: {name: 'Old-school Ferrari', note: 'Photo cluster / Veglia dials / live needles', accent: '#ff9d2e', accent2: '#ff3b1f', needle: '#ff7418', numeral: '#ffd9a8', gauges: 'skin-ferrari', collection: 'photo', finish: 'carbon', surface: '#120d0a', raised: '#221a14', line: '#3d3026', shape: 'sharp'},
+    foxphoto: {name: 'Fox LCD cluster', note: 'Photo cluster / white scales / LCD boost and miles', accent: '#f2f2ee', accent2: '#ff5a1f', needle: '#ff5a1f', numeral: '#f2f2ee', gauges: 'skin-fox', collection: 'photo', finish: 'charcoal', surface: '#111213', raised: '#1d1f21', line: '#3a3d40', shape: 'sharp'},
+    saleen: {name: 'Saleen white face', note: 'Photo cluster / white dials / red needles', accent: '#f1ede4', accent2: '#e8341c', needle: '#e8341c', numeral: '#f1ede4', gauges: 'skin-saleen', collection: 'photo', finish: 'charcoal', surface: '#121212', raised: '#1e1e1e', line: '#3b3b3b', shape: 'sharp'},
     svo: {name: 'Turbo Heritage', note: 'Amber serif dials / copper', accent: '#ffae00', accent2: '#ff3b1f', needle: '#ff3b1f', numeral: '#ffe7c2', gauges: 'analog', font: 'serif', collection: 'retro', finish: 'copper', surface: '#211811', raised: '#35251c', line: '#614c36', shape: 'round'},
     outrun: {name: 'Midnight Runner', note: '1986 tomorrow / slanted pink LEDs', accent: '#ff2bd6', accent2: '#00e5ff', needle: '#00e5ff', gauges: 'digital', font: 'racing', collection: 'retro', finish: 'synthwave', surface: '#171128', raised: '#2b1d3d', line: '#66426c', style: 'race', shape: 'sharp', edge: 'glow', glow: 60, transparency: 15},
     terminal: {name: 'Green Terminal', note: 'Phosphor display / segmented meters', accent: '#33ff66', accent2: '#33ff66', gauges: 'digital', font: 'mono', collection: 'retro', finish: 'phosphor', surface: '#091b13', raised: '#153525', line: '#346447', style: 'race', shape: 'sharp', edge: 'accent', glow: 40},
@@ -123,12 +123,24 @@
     button.onclick = () => { Object.assign(prefs, styleOf(look)); prefs.look = id; applyAppearance(); };
     $('appearance-looks').append(button);
   }
+  // The gallery's rail: each collection with what it holds; backgrounds are the last.
+  const collections = {
+    signature: ['Signature', 'Everyday looks for the standard gauges. Tap one to apply it.'],
+    performance: ['Track & touring', 'Race and touring styles: bolder numerals, rails and stripes.'],
+    retro: ['Retro & future', 'Factory-inspired analog dials, LED digits and terminal screens.'],
+    cyber: ['Cyber', 'Neon HUD styles in data blocks.'],
+    photo: ['Photo clusters', 'Pictures of real clusters with live needles. Every dial shows a reading from this car.'],
+    backgrounds: ['Backgrounds', 'What sits behind the gauges. Works with any look; upload your own in Customize.']
+  };
   function collection(name) {
     for (const button of document.querySelectorAll('button[data-collection-filter]')) button.setAttribute('aria-pressed', String(button.dataset.collectionFilter === name));
     for (const card of document.querySelectorAll('.look-card')) card.hidden = card.dataset.collection !== name;
+    $('appearance-looks').hidden = name === 'backgrounds';
+    $('appearance-backgrounds').hidden = name !== 'backgrounds';
+    [$('gallery-title').textContent, $('gallery-about').textContent] = collections[name];
+    (name === 'backgrounds' ? $('appearance-backgrounds') : $('appearance-looks')).scrollTop = 0;
   }
   for (const button of document.querySelectorAll('button[data-collection-filter]')) button.onclick = () => collection(button.dataset.collectionFilter);
-  collection(collectionOf(looks[prefs.look]));
   $('appearance-finish').replaceChildren();
   for (const [id, name] of Object.entries(finishes)) {
     const option = document.createElement('option'); option.value = id; option.textContent = name; $('appearance-finish').append(option);
@@ -138,6 +150,12 @@
     button.onclick = () => { prefs.finish = id; applyAppearance(); };
     $('appearance-backgrounds').append(button);
   }
+  for (const button of document.querySelectorAll('button[data-collection-filter]')) {
+    const name = button.dataset.collectionFilter;
+    const count = name === 'backgrounds' ? $('appearance-backgrounds').children.length : Object.values(looks).filter(look => collectionOf(look) === name).length;
+    button.querySelector('span').textContent = String(count).padStart(2, '0');
+  }
+  collection(collectionOf(looks[prefs.look]));
   for (const [id, choices] of [['font', fonts], ['shape', shapes], ['edge', edges]]) {
     $(`appearance-${id}`).replaceChildren(...Object.entries(choices).map(([value, label]) => Object.assign(document.createElement('option'), {value, textContent: Array.isArray(label) ? label[0] : label})));
   }

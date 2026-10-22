@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#090f13">
   <link rel="icon" href="data:,">
   <title>Fox Body · Driver display</title>
-  <link rel="stylesheet" href="style.css?v=28a2c5994738">
+  <link rel="stylesheet" href="style.css?v=19a8aa5d9484">
   <link rel="stylesheet" href="review.css?v=4131615d94e6">
-  <link rel="stylesheet" href="responsive.css?v=131055bbeee8">
-<link rel="stylesheet" href="instruments.css?v=3d5d4db4adfa">
+  <link rel="stylesheet" href="responsive.css?v=da2c9ab114c3">
+<link rel="stylesheet" href="instruments.css?v=1d3f883ef5d0">
 <link rel="stylesheet" href="camera.css?v=b12b9525cfcb">
 <script src="offline.js?v=c5796081ea94"></script>
 <script src="boot.js?v=447cd355bc91"></script>
@@ -397,11 +397,23 @@
 <dialog id="appearance-dialog" class="workspace-dialog" aria-labelledby="appearance-title">
   <header class="dialog-header"><div><span class="eyebrow">MAKE IT YOURS</span><h2 id="appearance-title">Appearance</h2><p id="appearance-access" role="status">Waiting for configuration status</p></div><nav class="appearance-tabs" role="tablist" aria-label="Appearance sections"><button id="appearance-tab-gallery" data-appearance-tab="gallery" type="button" role="tab" aria-selected="true" aria-controls="appearance-gallery">Preset gallery</button><button id="appearance-tab-custom" data-appearance-tab="custom" type="button" role="tab" aria-selected="false" aria-controls="appearance-custom" tabindex="-1">Customize &amp; splash</button><button id="appearance-tab-instruments" data-appearance-tab="instruments" type="button" role="tab" aria-selected="false" aria-controls="appearance-instruments" tabindex="-1">Gauges &amp; colors</button></nav><button id="appearance-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
   <section id="appearance-gallery" class="appearance-gallery" role="tabpanel" aria-labelledby="appearance-tab-gallery">
-    <div class="gallery-heading"><div><h3>Choose your look</h3><p>Coordinated instruments, panels and backgrounds. Tap to apply.</p></div><div class="look-collections" role="group" aria-label="Look collections"><button type="button" data-collection-filter="signature" aria-pressed="true">Signature <span>06</span></button><button type="button" data-collection-filter="performance" aria-pressed="false">Track &amp; touring <span>06</span></button><button type="button" data-collection-filter="retro" aria-pressed="false">Retro &amp; future <span>06</span></button><button type="button" data-collection-filter="cyber" aria-pressed="false">Cyber <span>06</span></button></div><strong id="appearance-current"></strong></div>
-    <div id="appearance-looks" class="look-grid" role="group" aria-label="Preset looks"></div>
-    <div class="gallery-heading"><h3>Make it your own</h3><p>Mix any look with a background below, or upload your own in Customize.</p></div>
-    <div id="appearance-backgrounds" class="background-grid" role="group" aria-label="Preset backgrounds"></div>
-    <p id="appearance-gallery-feedback" class="control-note" role="status">Settings save automatically on this display. Splash and driving layout are independent.</p>
+    <nav class="gallery-rail" aria-label="Look collections">
+      <span class="gallery-rail-label">Looks</span>
+      <button type="button" data-collection-filter="signature" aria-pressed="true">Signature <span></span></button>
+      <button type="button" data-collection-filter="performance" aria-pressed="false">Track &amp; touring <span></span></button>
+      <button type="button" data-collection-filter="retro" aria-pressed="false">Retro &amp; future <span></span></button>
+      <button type="button" data-collection-filter="cyber" aria-pressed="false">Cyber <span></span></button>
+      <button type="button" data-collection-filter="photo" aria-pressed="false">Photo clusters <span></span></button>
+      <span class="gallery-rail-label">Behind the gauges</span>
+      <button type="button" data-collection-filter="backgrounds" aria-pressed="false">Backgrounds <span></span></button>
+      <div class="gallery-current"><span>Now</span><strong id="appearance-current"></strong></div>
+    </nav>
+    <div class="gallery-main">
+      <div class="gallery-heading"><h3 id="gallery-title">Signature</h3><p id="gallery-about"></p></div>
+      <div id="appearance-looks" class="look-grid" role="group" aria-label="Preset looks" data-wheel-scroll tabindex="0"></div>
+      <div id="appearance-backgrounds" class="background-grid" role="group" aria-label="Preset backgrounds" data-wheel-scroll tabindex="0" hidden></div>
+      <p id="appearance-gallery-feedback" class="control-note" role="status">Settings save automatically on this display. Splash and driving layout are independent.</p>
+    </div>
   </section>
   <div id="appearance-custom" class="appearance-body control-section" role="tabpanel" aria-labelledby="appearance-tab-custom" hidden>
     <section class="setting-card"><h3>Background &amp; finish</h3>
@@ -506,7 +518,7 @@
 <script src="review.js?v=c6ec99c5fdab"></script>
 <script src="instruments.js?v=f99ebd832402"></script>
 <script src="skins.js?v=bcb2ff0eaa74"></script>
-<script src="personalize.js?v=0cfc0249ced9"></script>
+<script src="personalize.js?v=f00b49bc14de"></script>
 <script src="trip.js?v=8663447547eb"></script>
 <script src="driving.js?v=658ca7ef1cbc"></script>
 <script src="camera.js?v=200cc8af8600"></script>
