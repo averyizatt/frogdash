@@ -71,28 +71,29 @@
       ],
       warning: [560, 596, 1360]
     },
-    // Fox-style cluster with two LCD windows. Coolant in °F; the small dials sit on curved
-    // faces and pivot from the outer edge of their recesses.
+    // Fox-style cluster with two LCD windows. Coolant in °F; the small dials' needles pivot
+    // just off the screen's edge, as their ticks show, and swing up and down their recesses.
     'skin-fox': {
       face: 'skins/fox.jpg', needle: {body: '#ff5a1f', edge: '#ffc29a', glow: '#ff4a00'},
       dials: [
-        {id: 'rpm', signal: 'engine.rpm', pivot: [599.3, 403.6], length: 262, tail: 40, width: 10, hub: 24,
-         marks: [[0, 345, 522.5], [1000, 319, 370], [2000, 382.5, 224], [3000, 518.5, 134], [4000, 684, 134], [5000, 820, 224], [6000, 878, 370], [7000, 850, 522.5]]},
-        {id: 'speed', signal: 'vehicle.speed_kph', convert: mph, pivot: [1283.6, 405.7], length: 270, tail: 40, width: 10, hub: 24,
-         marks: [[0, 1025, 525], [20, 995, 386], [40, 1037.5, 252.5], [60, 1139, 155], [80, 1278.5, 117.5], [100, 1422.5, 151],
-                 [120, 1527.5, 250], [140, 1574, 386], [160, 1547.5, 525]]},
-        {id: 'coolant', signal: 'engine.coolant_c', convert: fahrenheit, pivot: [14, 246], length: 142, width: 6, clip: [56, 138, 172, 352],
-         marks: [[130, 137, 333], [200, 159, 245], [270, 132, 160]]},
-        {id: 'fuel', read: READ.fuelPct, pivot: [14, 499], length: 142, width: 6, clip: [56, 396, 172, 606],
-         marks: [[0, 132.5, 582.5], [50, 157.5, 499], [100, 132.5, 415]]},
-        {id: 'oil', signal: 'engine.oil_pressure_psi', pivot: [1906, 247], length: 142, width: 6, clip: [1748, 138, 1864, 352],
-         marks: [[0, 1790, 332.5], [50, 1767.5, 247.5], [100, 1790, 160]]},
-        {id: 'volts', signal: 'vehicle.battery_v', pivot: [1906, 506], length: 142, width: 6, clip: [1748, 396, 1864, 612],
-         marks: [[8, 1790, 590], [13, 1780, 506.5], [18, 1790, 420]]}
+        {id: 'rpm', signal: 'engine.rpm', pivot: [606.3, 381.1], length: 248, tail: 40, width: 10, hub: 24,
+         marks: [[0, 377.5, 522.5], [1000, 337.5, 376.5], [2000, 376, 230], [3000, 506, 124], [3500, 607.5, 102.5], [4000, 706, 124],
+                 [5000, 837.5, 225], [6000, 875, 376], [7000, 832.5, 520]]},
+        {id: 'speed', signal: 'vehicle.speed_kph', convert: mph, pivot: [1282.1, 380.2], length: 254, tail: 40, width: 10, hub: 24,
+         marks: [[0, 1049, 522.5], [20, 1007.5, 384], [40, 1037.5, 247.5], [60, 1132.5, 145], [80, 1276.5, 102.5], [100, 1425, 144],
+                 [120, 1526, 245], [140, 1560, 384], [160, 1520, 522.5]]},
+        {id: 'coolant', signal: 'engine.coolant_c', convert: fahrenheit, pivot: [-11, 236.5], length: 150, width: 6, clip: [42, 124, 176, 350],
+         marks: [[130, 127.5, 330], [200, 147.5, 236.5], [270, 135, 142.5]]},
+        {id: 'fuel', read: READ.fuelPct, pivot: [-11, 503], length: 150, width: 6, clip: [42, 392, 176, 616],
+         marks: [[0, 128.5, 595], [50, 148.5, 503], [100, 131, 409]]},
+        {id: 'oil', signal: 'engine.oil_pressure_psi', pivot: [1931, 236.5], length: 150, width: 6, clip: [1744, 124, 1878, 350],
+         marks: [[0, 1792.5, 330], [50, 1772.5, 236.5], [100, 1785, 142.5]]},
+        {id: 'volts', signal: 'vehicle.battery_v', pivot: [1931, 503], length: 150, width: 6, clip: [1744, 392, 1878, 616],
+         marks: [[8, 1792.5, 595], [13, 1771, 503], [18, 1787.5, 409]]}
       ],
       readouts: [
-        {id: 'boost', box: [479, 525, 719, 589], style: 'lcd', text: boostText},
-        {id: 'odometer', box: [1160, 525, 1402, 590], style: 'lcd', text: () => { const t = odometerText(); return t.includes('-') ? '------ MI' : `${t} MI`; }}
+        {id: 'boost', box: [485, 527, 732, 588], style: 'lcd', text: boostText},
+        {id: 'odometer', box: [1157, 527, 1404, 588], style: 'lcd', text: () => { const t = odometerText(); return t.includes('-') ? '------ MI' : `${t} MI`; }}
       ],
       warning: [560, 610, 1360]
     },
