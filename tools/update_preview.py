@@ -4,6 +4,7 @@ Run after editing hardware/ui. --check verifies committed preview assets match.
 The production service never loads the demo transport.
 """
 import argparse
+import re
 from hashlib import sha256
 from pathlib import Path
 
@@ -86,6 +87,29 @@ def assets():
     return {'index.html': FRAME, 'dash.html': html, 'style.css': css, 'app.js': js, 'personalize.js': personalize, **extra}
 
 
+# Photo gauge faces keep their file names when the owner sends a new picture, so every address
+# of one carries its contents' fingerprint: no browser (the car's screen, GitHub Pages' 10
+# minutes) shows a cached old picture. The fingerprints live in the production files too.
+SKIN_PICTURE = re.compile(r'skins/([a-z0-9-]+\.(?:jpg|png))(?:\?v=[0-9a-f]+)?')
+SKIN_USERS = [ROOT / 'hardware' / 'ui' / 'skins.js', ROOT / 'hardware' / 'ui' / 'instruments.css']
+
+
+def stamp_skin_pictures(check):
+    folder = ROOT / 'hardware' / 'ui' / 'skins'
+    def stamped(match):
+        picture = folder / match[1]
+        if not picture.is_file():
+            raise SystemExit(f'{match[0]} is named but hardware/ui/skins has no such picture')
+        return f'skins/{match[1]}?v={sha256(picture.read_bytes()).hexdigest()[:10]}'
+    for path in SKIN_USERS:
+        raw = path.read_bytes(); text = raw.decode('utf-8')
+        new = SKIN_PICTURE.sub(stamped, text)
+        if new != text:
+            if check:
+                raise SystemExit(f'{path.relative_to(ROOT)} names an old version of a skin picture. Run python tools/update_preview.py')
+            path.write_bytes(new.encode('utf-8'))
+
+
 def binary_folder(source):
     """Files copied byte-for-byte so the published preview has the same art and taillight frames."""
     return {path.name: path.read_bytes() for path in sorted(source.iterdir()) if path.is_file()}
@@ -116,6 +140,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
+    stamp_skin_pictures(args.check)
     for name, content in assets().items():
         dest = ROOT / 'preview' / name
         if args.check:

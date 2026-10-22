@@ -34,7 +34,7 @@
     // psi, °C, bar and MPH, so these needles keep those units whatever the dash's own unit
     // setting is.
     'skin-ferrari': {
-      face: 'skins/ferrari.jpg', night: 'skins/ferrari-night.jpg', lit: 'skins/ferrari-lamps.jpg', litAt: [890, 134],
+      face: 'skins/ferrari.jpg?v=f3a5132b3c', night: 'skins/ferrari-night.jpg?v=270410d90c', lit: 'skins/ferrari-lamps.jpg?v=d1ba0e2712', litAt: [890, 134],
       needle: {body: '#ff7418', edge: '#ffd2a0', glow: '#ff6a00'},
       dials: [
         // Tach 0-7 (x1000), its red band running on to 7500.
@@ -69,7 +69,7 @@
     // Fox-style cluster with two LCD windows. Coolant in °F; the small dials' needles pivot
     // just off the screen's edge, as their ticks show, and swing up and down their recesses.
     'skin-fox': {
-      face: 'skins/fox.jpg', night: 'skins/fox-night.jpg', needle: {body: '#ff5a1f', edge: '#ffc29a', glow: '#ff4a00'},
+      face: 'skins/fox.jpg?v=894d45eccd', night: 'skins/fox-night.jpg?v=cad464be8d', needle: {body: '#ff5a1f', edge: '#ffc29a', glow: '#ff4a00'},
       dials: [
         {id: 'rpm', signal: 'engine.rpm', pivot: [606.3, 381.1], length: 248, tail: 40, width: 10, hub: 24,
          marks: [[0, 377.5, 522.5], [1000, 337.5, 376.5], [2000, 376, 230], [3000, 506, 124], [3500, 607.5, 102.5], [4000, 706, 124],
@@ -97,7 +97,7 @@
     // follow the labels that are right (an unlabelled tick between 0 and 20 is 10, the one
     // between 180 and 200 is 190).
     'skin-saleen': {
-      face: 'skins/saleen.jpg', night: 'skins/saleen-night.jpg', needle: {body: '#e8341c', edge: '#5a0d04', glow: '#ff3a1a'},
+      face: 'skins/saleen.jpg?v=229bbbd52f', night: 'skins/saleen-night.jpg?v=0590d0e405', needle: {body: '#e8341c', edge: '#5a0d04', glow: '#ff3a1a'},
       dials: [
         {id: 'rpm', signal: 'engine.rpm', pivot: [613.8, 406.1], length: 262, tail: 40, width: 10, hub: 24,
          marks: [[0, 360, 530], [1000, 327.5, 377.5], [2000, 387.5, 226], [3000, 520, 134], [4000, 701.5, 131], [5000, 835, 221], [6000, 902.5, 375], [7000, 870, 527.5]]},
@@ -125,7 +125,7 @@
     // the numbers printed, the top tick read as 150. Small dials: coolant (degF), boost (psi,
     // its red stop is 10 psi of vacuum), fuel on the left arc only, oil 0-140 psi.
     'skin-ferrari-yellow': {
-      face: 'skins/ferrari-yellow.jpg', needle: {body: '#f4f1ea', edge: '#1c1c1c', glow: '#ffffff'},
+      face: 'skins/ferrari-yellow.jpg?v=f8280b01d3', needle: {body: '#f4f1ea', edge: '#1c1c1c', glow: '#ffffff'},
       dials: [
         {id: 'rpm', signal: 'engine.rpm', pivot: [965, 372.5], length: 186, tail: 34, width: 9, hub: 26, color: {body: '#d81e05', edge: '#3a0700', glow: '#ff2a0a'},
          marks: [[0, 960, 560], [1000, 845, 515], [2000, 785, 422.5], [3000, 782.5, 315], [4000, 855, 207.5], [5000, 965, 175],

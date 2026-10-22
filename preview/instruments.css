@@ -28,10 +28,10 @@
 .skin-wheels { justify-content:space-between; padding:0 3px; }
 .skin-wheels span { flex:1; text-align:center; font:700 30px/1 "DejaVu Sans Mono", Consolas, monospace; color:#f2efe6; }
 .skin-warning { position:absolute; margin:0; padding:5px 12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; font-size:15px; font-weight:800; letter-spacing:.5px; color:#ffb35c; background:#1a0d06; border:1px solid #ff6a1a; border-radius:4px; }
-.look-card[data-gauge-preview="skin-ferrari"] .look-art { background:#000 url("skins/ferrari.jpg") 50% 50% / contain no-repeat; }
-.look-card[data-gauge-preview="skin-fox"] .look-art { background:#000 url("skins/fox.jpg") 50% 50% / contain no-repeat; }
-.look-card[data-gauge-preview="skin-ferrari-yellow"] .look-art { background:#000 url("skins/ferrari-yellow.jpg") 50% 50% / contain no-repeat; }
-.look-card[data-gauge-preview="skin-saleen"] .look-art { background:#000 url("skins/saleen.jpg") 50% 50% / contain no-repeat; }
+.look-card[data-gauge-preview="skin-ferrari"] .look-art { background:#000 url("skins/ferrari.jpg?v=f3a5132b3c") 50% 50% / contain no-repeat; }
+.look-card[data-gauge-preview="skin-fox"] .look-art { background:#000 url("skins/fox.jpg?v=894d45eccd") 50% 50% / contain no-repeat; }
+.look-card[data-gauge-preview="skin-ferrari-yellow"] .look-art { background:#000 url("skins/ferrari-yellow.jpg?v=f8280b01d3") 50% 50% / contain no-repeat; }
+.look-card[data-gauge-preview="skin-saleen"] .look-art { background:#000 url("skins/saleen.jpg?v=229bbbd52f") 50% 50% / contain no-repeat; }
 .look-card[data-gauge-preview^="skin-"] .look-art > * { visibility:hidden; }
 :root { --needle:#f5f0df; }
 .custom-cluster,.cluster-telemetry { display:none; }
