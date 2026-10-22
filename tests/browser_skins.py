@@ -44,9 +44,9 @@ async def main(path):
         assert -12 < oil < 0, oil
         # Every dial is wired: the top-left one (an oil temperature dial in the picture) shows
         # manifold pressure, and fuel the dash's estimate when there is no sender.
-        for dial in ('rpm', 'speed', 'map', 'oil', 'coolant', 'fuel'):
+        for dial in ('rpm', 'speed', 'boost', 'oil', 'coolant', 'fuel'):
             assert await page.locator(f'.skin-dial[data-dial="{dial}"]').get_attribute('data-quality') == 'live', dial
-        assert await page.evaluate(NEEDLE, 'map') > 25, 'About 141 kPa absolute at 55 kPa of boost: the top of its scale'
+        assert await page.evaluate(NEEDLE, 'boost') > 20, 'About 8 psi at 55 kPa of boost'
         # The dash fits on the photo's black edges: top bar and buttons above it, all clickable.
         for selector in ('#drive-launch', '#alerts-launch', '#appearance-launch'):
             box = await page.locator(selector).bounding_box()

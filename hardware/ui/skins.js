@@ -19,13 +19,6 @@
       const t = snapshot.trip || trip(), litres = t?.remaining_l, tank = t?.settings?.capacity_l;
       return Number.isFinite(litres) && tank > 0 ? Math.max(0, Math.min(100, litres / tank * 100)) : null;
     },
-    // Manifold pressure, kPa absolute: about 86 standing still at 5,000 ft.
-    mapKpa(snapshot, live) {
-      const map = live('ecu.map_kpa');
-      if (map !== null) return map;
-      const boost = live('engine.boost_kpa'), baro = live('ecu.baro_kpa');
-      return boost === null ? null : boost + (baro ?? 86);
-    },
     odometerMiles() { const km = trip()?.odometer_km; return Number.isFinite(km) ? mph(km) : null; },
     boostPsi(snapshot, live) { const kpa = live('engine.boost_kpa'); return kpa === null ? null : kpa * .145037738; }
   };
@@ -35,33 +28,32 @@
   const odometerText = () => { const miles = READ.odometerMiles(); return miles === null ? '------' : String(Math.floor(miles) % 1000000).padStart(6, '0'); };
 
   const SKINS = {
-    // Each face has a night picture (tools: the owner's picture with its illumination lit):
-    // the Fox markings glow teal with backlit LCDs, the Saleen's white faces glow blue-green,
-    // the Ferrari's orange gets brighter.
-    // Veglia Borletti cluster from the owner's picture. Its faces are printed in °C, bar and
-    // MPH, so these needles keep those units whatever the dash's own unit setting is.
+    // Each face has a night picture, the cluster with its illumination lit: the owner's own
+    // for the Ferrari (green) and the Fox; a stand-in for the Saleen.
+    // Veglia Borletti cluster from the owner's day and night pictures. Its faces are printed in
+    // psi, °C, bar and MPH, so these needles keep those units whatever the dash's own unit
+    // setting is.
     'skin-ferrari': {
       face: 'skins/ferrari.jpg', night: 'skins/ferrari-night.jpg', lit: 'skins/ferrari-lamps.jpg', litAt: [890, 134],
       needle: {body: '#ff7418', edge: '#ffd2a0', glow: '#ff6a00'},
       dials: [
-        {id: 'rpm', signal: 'engine.rpm', pivot: [577.1, 363.4], length: 226, tail: 38, width: 10, hub: 22,
-         marks: [[0, 415, 547.5], [1000, 350, 457.5], [2000, 332.5, 342.5], [3000, 370, 230], [4000, 457.5, 145], [5000, 577.5, 115],
-                 [6000, 697.5, 145], [7000, 785, 227.5], [8000, 822.5, 342.5], [10000, 735, 545]]},
-        {id: 'speed', signal: 'vehicle.speed_kph', convert: mph, pivot: [1332.5, 371], length: 228, tail: 38, width: 10, hub: 22,
-         marks: [[0, 1162.5, 554], [20, 1100, 472.5], [40, 1076, 354], [60, 1115, 235], [80, 1207.5, 144], [100, 1326.5, 114],
-                 [120, 1447.5, 144], [140, 1542.5, 227.5], [160, 1589, 349], [180, 1572.5, 467.5], [200, 1515, 552.5]]},
-        // The small dials pivot just below their faces, as on the real cluster; the needle
-        // shows only inside its face. The car has no oil temperature sender: the top-left
-        // dial shows manifold pressure, its printed 60-140 read as kPa absolute
-        // (about 86 at rest here, 140 at 8 psi of boost).
-        {id: 'map', read: READ.mapKpa, pivot: [158.5, 352], length: 184, width: 7, clip: [36, 140, 282, 340],
-         marks: [[60, 50, 195], [100, 158.5, 161.5], [140, 267.5, 195]]},
-        {id: 'oil', signal: 'engine.oil_pressure_psi', convert: bar, pivot: [158.5, 591], length: 184, width: 7, clip: [36, 378, 282, 580],
-         marks: [[0, 50, 432.5], [5, 158.5, 400], [10, 267.5, 432.5]]},
-        {id: 'coolant', signal: 'engine.coolant_c', pivot: [1760, 352], length: 184, width: 7, clip: [1638, 140, 1884, 340],
-         marks: [[50, 1652.5, 195], [90, 1760, 161.5], [130, 1867.5, 195]]},
-        {id: 'fuel', read: READ.fuelPct, pivot: [1760, 591], length: 184, width: 7, clip: [1638, 378, 1884, 580],
-         marks: [[0, 1652.5, 432.5], [50, 1760, 400], [100, 1867.5, 432.5]]}
+        // Tach 0-7 (x1000), its red band running on to 7500.
+        {id: 'rpm', signal: 'engine.rpm', pivot: [583, 365], length: 222, tail: 38, width: 10, hub: 22,
+         marks: [[0, 454.5, 565.7], [1000, 382.6, 492.2], [2000, 350, 379], [3000, 374.1, 261.8], [4000, 457.7, 164.1], [5000, 584.7, 128.5],
+                 [6000, 717.3, 166.5], [7000, 799.5, 269.5], [7500, 817.5, 332]]},
+        {id: 'speed', signal: 'vehicle.speed_kph', convert: mph, pivot: [1333, 370], length: 226, tail: 38, width: 10, hub: 22,
+         marks: [[0, 1186.6, 559.6], [20, 1115, 474.5], [40, 1092.5, 362.5], [60, 1131.8, 235.7], [80, 1219.4, 156.6], [100, 1336, 126.9],
+                 [120, 1454.2, 159.4], [140, 1537.2, 241], [160, 1571.6, 355.4], [180, 1553.3, 468.8], [200, 1487.2, 557]]},
+        // The small dials' needles show only inside their faces, from just under the printing:
+        // boost (psi) top left, oil (bar) under it, coolant (degC) top right, fuel under it.
+        {id: 'boost', read: READ.boostPsi, pivot: [155.5, 270], length: 98, width: 6, clip: [36, 140, 282, 258],
+         marks: [[-20, 63.5, 226.4], [0, 155.5, 167.6], [20, 247.8, 226.8]]},
+        {id: 'oil', signal: 'engine.oil_pressure_psi', convert: bar, pivot: [159, 588], length: 162, width: 7, clip: [36, 378, 282, 580],
+         marks: [[0, 64, 447.5], [5, 159, 417.1], [10, 255, 447.5]]},
+        {id: 'coolant', signal: 'engine.coolant_c', pivot: [1758, 335], length: 160, width: 7, clip: [1638, 140, 1884, 330],
+         marks: [[50, 1658.4, 202.4], [90, 1757.5, 172], [130, 1857.5, 202.6]]},
+        {id: 'fuel', read: READ.fuelPct, pivot: [1757, 590], length: 168, width: 7, clip: [1638, 378, 1884, 580],
+         marks: [[0, 1665, 445], [50, 1757.5, 416.6], [100, 1857.1, 447.4]]}
       ],
       // Lamps: lit from the dash's own indicators. The amber one (ABS in the photo) is CHECK:
       // an alert going off, and a tap on it opens the Alerts tab.
