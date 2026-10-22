@@ -24,7 +24,7 @@
     lastlap: ['Last lap', '@last', 's', 0, 180, 2], bestlap: ['Best lap', '@best', 's', 0, 180, 2]
   };
   const layouts = {street: ['coolant', 'oil', 'fuelp', 'iat', 'batt', 'fuel'], tuning: ['afr', 'target', 'boost', 'fuelp', 'meth', 'tank'], track: ['coolant', 'oil', 'iat', 'boost', 'lastlap', 'bestlap']};
-  let prefs = {layout: 'street', layouts: structuredClone(layouts), lighting: 'auto', day: 100, night: 55, nightAccent: '#ffc77d', shift: 5800, chimeVolume: 50};
+  let prefs = {layout: 'street', layouts: structuredClone(layouts), lighting: 'auto', day: 100, night: 85, nightAccent: '#ffc77d', shift: 5800, chimeVolume: 50};
   try {
     const p = JSON.parse(localStorage.getItem('frogdash.driving.v1'));
     if (p && typeof p === 'object') {
@@ -33,6 +33,10 @@
       for (const key of ['street', 'tuning', 'track']) if (Array.isArray(p.layouts?.[key]) && p.layouts[key].length === 6 && p.layouts[key].every(k => Object.hasOwn(metricDefs, k))) prefs.layouts[key] = p.layouts[key];
       for (const [key, lo, hi] of [['day', 35, 100], ['night', 20, 100], ['shift', 2000, 9000], ['chimeVolume', 0, 100]]) if (Number.isFinite(p[key]) && p[key] >= lo && p[key] <= hi) prefs[key] = p[key];
       if (/^#[0-9a-f]{6}$/i.test(p.nightAccent)) prefs.nightAccent = p.nightAccent;
+      // At night the gauges now light up (they glow, the panels go dark), so the old default
+      // of 55 % for the whole screen only dulled them: a dash still on it moves to 85 %.
+      if (p.nightSet === true) prefs.nightSet = true;
+      else if (p.night === 55) prefs.night = 85;
     }
   } catch { /* Use defaults when browser storage is unavailable. */ }
   let latest = {values: {}}, online = false, ackBusy = false, markBusy = false;
@@ -129,7 +133,7 @@
   for (const b of document.querySelectorAll('button[data-layout]')) b.onclick = () => { prefs.layout = b.dataset.layout; saveDisplay(); };
   $('layout-reset').onclick = () => { prefs.layouts[prefs.layout] = [...layouts[prefs.layout]]; saveDisplay(); };
   $('lighting-mode').onchange = e => { prefs.lighting = e.target.value; saveDisplay(); };
-  for (const key of ['day', 'night']) $(`${key}-brightness`).oninput = e => { prefs[key] = Number(e.target.value); saveDisplay(); };
+  for (const key of ['day', 'night']) $(`${key}-brightness`).oninput = e => { prefs[key] = Number(e.target.value); if (key === 'night') prefs.nightSet = true; saveDisplay(); };
   $('night-accent').onchange = e => { prefs.nightAccent = window.FrogdashAppearance.readableAccent(e.target.value); saveDisplay(); };
   $('shift-rpm').onchange = e => { if (e.target.reportValidity() && e.target.value !== '') { prefs.shift = Number(e.target.value); saveDisplay(); } };
   function renderDisplay() {

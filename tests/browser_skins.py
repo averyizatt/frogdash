@@ -57,6 +57,8 @@ async def main(path):
         # Lamps: the headlight lamp from the running lights; CHECK from alerts, and a tap opens them.
         await page.evaluate("frogdashDemo.scenario('night')")
         await page.wait_for_function("document.querySelector('[data-lamp=\"lights\"]').dataset.on === 'true'")
+        # With the lights on the cluster lights up: its night picture, not a dimmed day one.
+        await page.wait_for_function("getComputedStyle(document.querySelector('.skin-cluster')).backgroundImage.includes('ferrari-night.jpg')")
         assert await page.locator('[data-lamp="brake"]').get_attribute('data-on') == 'false'
         await page.evaluate("frogdashDemo.scenario('warning')")
         await page.wait_for_function("document.querySelector('[data-lamp=\"check\"]').dataset.on === 'true'")
@@ -73,7 +75,8 @@ async def main(path):
         await page.evaluate("frogdashDemo.scenario('drive')")
         await page.locator('#appearance-launch').click()
         await page.locator('[data-appearance-tab="instruments"]').click()
-        for name, readouts in (('skin-fox', {'boost': 'PSI', 'odometer': '067456 MI'}), ('skin-saleen', {'boost': 'PSI', 'odometer': '067456'})):
+        for name, readouts in (('skin-fox', {'boost': 'PSI', 'odometer': '067456 MI'}), ('skin-saleen', {'boost': 'PSI', 'odometer': '067456'}),
+                               ('skin-ferrari-yellow', {'afr': 'AFR', 'intake': 'INTAKE', 'odometer': '067456'})):
             await page.locator('#appearance-gauges').select_option(name)
             await page.wait_for_function('(n) => document.querySelector(".skin-cluster")?.dataset.skin === n', arg=name)
             await page.wait_for_function("[...document.querySelectorAll('.skin-dial')].every(d => d.dataset.quality === 'live')")

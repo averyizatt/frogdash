@@ -35,10 +35,13 @@
   const odometerText = () => { const miles = READ.odometerMiles(); return miles === null ? '------' : String(Math.floor(miles) % 1000000).padStart(6, '0'); };
 
   const SKINS = {
+    // Each face has a night picture (tools: the owner's picture with its illumination lit):
+    // the Fox markings glow teal with backlit LCDs, the Saleen's white faces glow blue-green,
+    // the Ferrari's orange gets brighter.
     // Veglia Borletti cluster from the owner's picture. Its faces are printed in °C, bar and
     // MPH, so these needles keep those units whatever the dash's own unit setting is.
     'skin-ferrari': {
-      face: 'skins/ferrari.jpg', lit: 'skins/ferrari-lamps.jpg', litAt: [890, 134],
+      face: 'skins/ferrari.jpg', night: 'skins/ferrari-night.jpg', lit: 'skins/ferrari-lamps.jpg', litAt: [890, 134],
       needle: {body: '#ff7418', edge: '#ffd2a0', glow: '#ff6a00'},
       dials: [
         {id: 'rpm', signal: 'engine.rpm', pivot: [577.1, 363.4], length: 226, tail: 38, width: 10, hub: 22,
@@ -74,7 +77,7 @@
     // Fox-style cluster with two LCD windows. Coolant in °F; the small dials' needles pivot
     // just off the screen's edge, as their ticks show, and swing up and down their recesses.
     'skin-fox': {
-      face: 'skins/fox.jpg', needle: {body: '#ff5a1f', edge: '#ffc29a', glow: '#ff4a00'},
+      face: 'skins/fox.jpg', night: 'skins/fox-night.jpg', needle: {body: '#ff5a1f', edge: '#ffc29a', glow: '#ff4a00'},
       dials: [
         {id: 'rpm', signal: 'engine.rpm', pivot: [606.3, 381.1], length: 248, tail: 40, width: 10, hub: 24,
          marks: [[0, 377.5, 522.5], [1000, 337.5, 376.5], [2000, 376, 230], [3000, 506, 124], [3500, 607.5, 102.5], [4000, 706, 124],
@@ -102,7 +105,7 @@
     // follow the labels that are right (an unlabelled tick between 0 and 20 is 10, the one
     // between 180 and 200 is 190).
     'skin-saleen': {
-      face: 'skins/saleen.jpg', needle: {body: '#e8341c', edge: '#5a0d04', glow: '#ff3a1a'},
+      face: 'skins/saleen.jpg', night: 'skins/saleen-night.jpg', needle: {body: '#e8341c', edge: '#5a0d04', glow: '#ff3a1a'},
       dials: [
         {id: 'rpm', signal: 'engine.rpm', pivot: [613.8, 406.1], length: 262, tail: 40, width: 10, hub: 24,
          marks: [[0, 360, 530], [1000, 327.5, 377.5], [2000, 387.5, 226], [3000, 520, 134], [4000, 701.5, 131], [5000, 835, 221], [6000, 902.5, 375], [7000, 870, 527.5]]},
@@ -123,6 +126,44 @@
         {id: 'odometer', box: [1217, 507, 1406, 553], style: 'wheels', text: odometerText}
       ],
       warning: [560, 616, 1360]
+    },
+    // Ferrari with a yellow tach and a red speedometer on carbon (the owner's picture). The
+    // tach and speedometer start at the bottom and run clockwise. The speedometer's printing is
+    // uneven (0 to 20 takes two steps, no 40, an unlabelled tick at the top): the marks follow
+    // the numbers printed, the top tick read as 150. Small dials: coolant (degF), boost (psi,
+    // its red stop is 10 psi of vacuum), fuel on the left arc only, oil 0-140 psi.
+    'skin-ferrari-yellow': {
+      face: 'skins/ferrari-yellow.jpg', needle: {body: '#f4f1ea', edge: '#1c1c1c', glow: '#ffffff'},
+      dials: [
+        {id: 'rpm', signal: 'engine.rpm', pivot: [965, 372.5], length: 186, tail: 34, width: 9, hub: 26, color: {body: '#d81e05', edge: '#3a0700', glow: '#ff2a0a'},
+         marks: [[0, 960, 560], [1000, 845, 515], [2000, 785, 422.5], [3000, 782.5, 315], [4000, 855, 207.5], [5000, 965, 175],
+                 [6000, 1082.5, 212.5], [7000, 1147.5, 322], [7500, 1152.5, 395]]},
+        {id: 'speed', signal: 'vehicle.speed_kph', convert: mph, pivot: [1547.5, 377.5], length: 186, tail: 34, width: 9, hub: 26,
+         marks: [[0, 1544, 572.5], [20, 1407.5, 514], [60, 1355, 445], [80, 1345, 370], [100, 1365, 290], [120, 1412.5, 227.5], [140, 1492.5, 180],
+                 [150, 1549, 167.5], [160, 1602.5, 180], [180, 1685, 227.5], [200, 1730, 292.5], [220, 1747.5, 370], [240, 1735, 444]]},
+        {id: 'coolant', signal: 'engine.coolant_c', convert: fahrenheit, pivot: [195, 295], length: 108, tail: 18, width: 6, hub: 17,
+         marks: [[130, 112.5, 327.5], [210, 196, 175], [270, 290, 227.5]]},
+        {id: 'boost', read: READ.boostPsi, pivot: [485, 295], length: 108, tail: 18, width: 6, hub: 17,
+         marks: [[-10, 400, 322.5], [0, 395, 227.5], [10, 485, 175], [20, 580, 227.5]]},
+        {id: 'fuel', read: READ.fuelPct, pivot: [195, 515], length: 108, tail: 18, width: 6, hub: 17,
+         marks: [[0, 122.5, 570], [50, 107.5, 505], [100, 125, 445]]},
+        {id: 'oil', signal: 'engine.oil_pressure_psi', pivot: [485, 515], length: 108, tail: 18, width: 6, hub: 17,
+         marks: [[0, 395, 457.5], [70, 485, 415], [140, 580, 457.5]]}
+      ],
+      // The speedometer's own warning symbols glow when they mean something now: ABS is
+      // CHECK (an alert going off; a tap opens the Alerts tab), (!) the brake lights, the oil
+      // can a low oil pressure alert.
+      lamps: [
+        {id: 'check', box: [1672, 452, 1718, 488], glow: '#ffae1a', on: () => $('alerts-launch')?.dataset.warning === 'true', tap: () => $('alerts-launch')?.click()},
+        {id: 'brake', box: [1628, 491, 1672, 527], glow: '#ff3b1a', on: lit('icon-brake')},
+        {id: 'oil', box: [1594, 534, 1648, 562], glow: '#ff3b1a', on: () => !!window.FrogdashDrive?.current?.()?.alerts?.some(a => a.key === 'oil' && a.active)}
+      ],
+      readouts: [
+        {id: 'afr', box: [922, 248, 1012, 330], style: 'amber', text: (snapshot, live) => { const afr = live('engine.afr'); return `${afr === null ? '--.-' : afr.toFixed(1)}\nAFR`; }},
+        {id: 'intake', box: [984, 424, 1113, 536], style: 'amber', text: (snapshot, live) => { const c = live('engine.iat_c'); return `${c === null ? '---' : Math.round(fahrenheit(c))}°F\nINTAKE`; }},
+        {id: 'odometer', box: [1484, 286, 1612, 332], style: 'amber', text: odometerText}
+      ],
+      warning: [560, 606, 1360]
     }
   };
 
@@ -146,13 +187,18 @@
     built?.host.remove();
     const host = document.createElement('section'); host.className = 'skin-cluster'; host.dataset.skin = name;
     host.setAttribute('aria-label', 'Driving instruments');
-    host.style.backgroundImage = `url("${skin.face}")`;
+    // By day the picture as taken; with the lights on, its night picture (the cluster lit).
+    // The night one is fetched now so the change is instant when the lights come on.
+    host.style.setProperty('--skin-face', `url("${skin.face}")`);
+    host.style.setProperty('--skin-face-night', `url("${skin.night || skin.face}")`);
+    if (skin.night) new Image().src = skin.night;
     for (const [key, value] of Object.entries(skin.needle)) host.style.setProperty(`--skin-needle-${key}`, value);
     const face = svg('svg', {viewBox: '0 0 1920 720', class: 'skin-needles', 'aria-hidden': 'true'});
     const defs = svg('defs', {}); face.append(defs);
     const dials = skin.dials.map(dial => {
       const [px, py] = dial.pivot, w = dial.width, tail = dial.tail || 0;
       const group = svg('g', {class: 'skin-dial', 'data-dial': dial.id});
+      for (const [key, value] of Object.entries(dial.color || {})) group.style.setProperty(`--skin-needle-${key}`, value);
       if (dial.clip) {
         const [x0, y0, x1, y1] = dial.clip, id = `skin-clip-${name}-${dial.id}`;
         const path = svg('clipPath', {id}); path.append(svg('rect', {x: x0, y: y0, width: x1 - x0, height: y1 - y0, rx: 10})); defs.append(path);
@@ -169,8 +215,9 @@
     });
     const lamps = (skin.lamps || []).map(lamp => {
       const node = document.createElement('div'); place(node, lamp.box);
-      node.className = 'skin-lamp'; node.dataset.lamp = lamp.id; node.dataset.on = 'false';
-      Object.assign(node.style, {backgroundImage: `url("${skin.lit}")`, backgroundPosition: `${skin.litAt[0] - lamp.box[0]}px ${skin.litAt[1] - lamp.box[1]}px`});
+      node.className = lamp.glow ? 'skin-lamp skin-lamp-glow' : 'skin-lamp'; node.dataset.lamp = lamp.id; node.dataset.on = 'false';
+      if (lamp.glow) node.style.setProperty('--lamp', lamp.glow);
+      else Object.assign(node.style, {backgroundImage: `url("${skin.lit}")`, backgroundPosition: `${skin.litAt[0] - lamp.box[0]}px ${skin.litAt[1] - lamp.box[1]}px`});
       if (lamp.tap) { node.classList.add('skin-lamp-tap'); node.onclick = lamp.tap; }
       host.append(node);
       return {...lamp, node};
@@ -184,7 +231,7 @@
     const warning = document.createElement('p'); warning.className = 'skin-warning'; warning.setAttribute('role', 'status'); warning.hidden = true;
     const [left, top, right] = skin.warning;
     Object.assign(warning.style, {left: `${left}px`, top: `${top}px`, width: `${right - left}px`});
-    host.prepend(face); host.append(warning);
+    host.append(face, warning);   // Needles over the lamps and readouts, as on a real cluster
     document.querySelector('.custom-cluster').before(host);
     built = {name, host, dials, lamps, readouts, warning};
   }

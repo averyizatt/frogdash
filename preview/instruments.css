@@ -5,7 +5,9 @@
 :root[data-gauges^="skin-"] .display { background:#000; }
 :root[data-gauges^="skin-"] .display::before { display:none; }
 :root[data-gauges^="skin-"] .display .custom-cluster,:root[data-gauges^="skin-"] .display .cluster-telemetry { display:none !important; }   /* Over every gauge style's own rules */
-:root[data-gauges^="skin-"] .skin-cluster { display:block; position:absolute; inset:0; z-index:0; background:#000 0 0 / 1920px 720px no-repeat; }
+:root[data-gauges^="skin-"] .skin-cluster { display:block; position:absolute; inset:0; z-index:0; background:#000 var(--skin-face) 0 0 / 1920px 720px no-repeat; }
+:root[data-gauges^="skin-"][data-lighting="night"] .skin-cluster { background-image:var(--skin-face-night, var(--skin-face)); }
+:root[data-lighting="night"] .skin-needle-glow { opacity:.55; stroke-width:11; }
 :root[data-gauges^="skin-"] .topbar,:root[data-gauges^="skin-"] .dashboard-footer { position:relative; z-index:1; }
 :root[data-gauges^="skin-"] .dashboard-footer { grid-row:4; }
 .skin-needles { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
@@ -18,6 +20,8 @@
 .skin-lamp { position:absolute; border-radius:6px; background-repeat:no-repeat; opacity:0; transition:opacity .08s; }
 .skin-lamp[data-on="true"] { opacity:1; }
 .skin-lamp-tap { cursor:pointer; }
+.skin-lamp-glow { border-radius:50%; background:radial-gradient(closest-side,var(--lamp) 0,color-mix(in srgb,var(--lamp) 55%,transparent) 55%,transparent 100%); mix-blend-mode:screen; }
+.skin-amber { font:700 22px/1.15 "DejaVu Sans Mono", Consolas, monospace; color:#ffb02e; text-align:center; text-shadow:0 0 6px #ff8a0099; }
 .skin-readout { position:absolute; display:flex; align-items:center; justify-content:center; overflow:hidden; white-space:pre; font-variant-numeric:tabular-nums; pointer-events:none; }
 .skin-lcd { font:700 40px/1 "DejaVu Sans Mono", Consolas, monospace; color:#1e2410; letter-spacing:2px; text-shadow:1px 1px 0 #6d6f3f55; }
 .skin-led { font:700 26px/1 "DejaVu Sans Mono", Consolas, monospace; color:#ff4a2a; letter-spacing:2px; text-shadow:0 0 6px #ff2a0a99; }
@@ -26,6 +30,7 @@
 .skin-warning { position:absolute; margin:0; padding:5px 12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; font-size:15px; font-weight:800; letter-spacing:.5px; color:#ffb35c; background:#1a0d06; border:1px solid #ff6a1a; border-radius:4px; }
 .look-card[data-gauge-preview="skin-ferrari"] .look-art { background:#000 url("skins/ferrari.jpg") 50% 50% / contain no-repeat; }
 .look-card[data-gauge-preview="skin-fox"] .look-art { background:#000 url("skins/fox.jpg") 50% 50% / contain no-repeat; }
+.look-card[data-gauge-preview="skin-ferrari-yellow"] .look-art { background:#000 url("skins/ferrari-yellow.jpg") 50% 50% / contain no-repeat; }
 .look-card[data-gauge-preview="skin-saleen"] .look-art { background:#000 url("skins/saleen.jpg") 50% 50% / contain no-repeat; }
 .look-card[data-gauge-preview^="skin-"] .look-art > * { visibility:hidden; }
 :root { --needle:#f5f0df; }
@@ -151,10 +156,12 @@
 :root[data-gauges="digital"] .terminal-meter i[data-on="true"] { background:var(--accent-2); }
 .cluster-rpm:not([data-danger="true"]) .terminal-digits polyline { stroke:var(--accent-2); }
 .cluster-telemetry article > span { color:color-mix(in srgb,var(--accent-2) 55%,var(--muted)); }
-/* Glow is opt-in so the Pi does no shadow work when it is off. */
-:root[data-glow="on"] :is(#speed-digits,#rpm-value,.metric-reading > span:first-child,.sensor-reading > span:first-child,.cluster-telemetry strong,.terminal-value,.theme-preview strong) { text-shadow:0 0 var(--glow-blur) color-mix(in srgb,var(--accent) var(--glow-mix),transparent); }
-:root[data-glow="on"] :is(.tach-progress,.terminal-digits,.dial-needle) { filter:drop-shadow(0 0 calc(var(--glow-blur) / 3) color-mix(in srgb,var(--accent) var(--glow-mix),transparent)); }
-:root[data-glow="on"] :is(.sensor-card .fill,.boost-track .fill,.terminal-meter i[data-on="true"],.cyber-meter i[data-on="true"],#shift-lights i[data-on="true"]) { box-shadow:0 0 calc(var(--glow-blur) / 2) color-mix(in srgb,var(--accent) var(--glow-mix),transparent); }
+/* Glow is opt-in so the Pi does no shadow work when it is off, except at night: with the
+   lights on, every look glows in its night illumination colour, like a lit cluster. */
+:root[data-lighting="night"] .display { --glow-blur:16px; --glow-mix:80%; --numeral:color-mix(in srgb,var(--night-accent,#ffc77d) 42%,#ffffff); --needle:var(--night-accent,#ffc77d); }
+:root:is([data-glow="on"],[data-lighting="night"]) :is(#speed-digits,#rpm-value,.metric-reading > span:first-child,.sensor-reading > span:first-child,.cluster-telemetry strong,.terminal-value,.theme-preview strong) { text-shadow:0 0 var(--glow-blur) color-mix(in srgb,var(--accent) var(--glow-mix),transparent); }
+:root:is([data-glow="on"],[data-lighting="night"]) :is(.tach-progress,.terminal-digits,.dial-needle) { filter:drop-shadow(0 0 calc(var(--glow-blur) / 3) color-mix(in srgb,var(--accent) var(--glow-mix),transparent)); }
+:root:is([data-glow="on"],[data-lighting="night"]) :is(.sensor-card .fill,.boost-track .fill,.terminal-meter i[data-on="true"],.cyber-meter i[data-on="true"],#shift-lights i[data-on="true"]) { box-shadow:0 0 calc(var(--glow-blur) / 2) color-mix(in srgb,var(--accent) var(--glow-mix),transparent); }
 /* Panel shape. Foxbody and Neon HUD binnacles keep their own silhouettes. */
 :root[data-shape="sharp"] :is(.primary-instruments,.sensor-card,.cluster-telemetry article,.meth-summary,.dashboard-nav button,.drive-quick button),
 :root[data-shape="sharp"][data-gauges="digital"] .cluster-gauge,:root[data-shape="sharp"][data-gauges="analog"] .custom-cluster,:root[data-shape="sharp"][data-gauges="digital"] .custom-cluster { border-radius:2px; }
