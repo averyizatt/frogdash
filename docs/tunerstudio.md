@@ -8,11 +8,12 @@ TunerStudio is a separate desktop program, not a page of the dash. It talks to t
 MicroSquirt over the **USB serial cable**, exactly as it does from a laptop. The dash
 keeps reading the engine over CAN at the same time, so the two do not share a connection.
 
-## Setup on the Pi: press Update now
+## Setup on the Pi: press Install TunerStudio
 
-Nothing is typed on the Pi. With Wi-Fi connected, press **Dash management → Software & power →
-Update now**. The update's Pi setup (`tools/frogdash_setup.sh`) does all of this the
-first time, which takes several minutes:
+Nothing is typed on the Pi. Java and TunerStudio are a few hundred MB, so updates leave them
+out until they are asked for: with Wi-Fi connected, press **Dash management → Tune → Install
+TunerStudio**. The Pi setup (`tools/frogdash_setup.sh`) then does all of this, which takes
+10-30 minutes on Wi-Fi (Software & power shows what it is doing):
 
 - installs `xwayland`, which lets the kiosk show an older-style desktop program;
 - installs `default-jre` (Java, the full package, not the headless one);
@@ -64,7 +65,7 @@ The status line under the button says why. The usual causes:
 
 | Message | Fix |
 |---|---|
-| TunerStudio is not on the Pi yet | **Update now** with Wi-Fi connected; System check → Updates → TunerStudio: program |
+| TunerStudio is not on the Pi yet | **Tune → Install TunerStudio** with Wi-Fi connected; System check → Updates → TunerStudio: program |
 | The screen has no X display | **Update now** with Wi-Fi connected; System check → Updates → TunerStudio: Java and display |
 | Closed right after starting | The same line in System check; then the log below |
 | Only on the dash screen in the car | The dash is not running in its kiosk (for example a browser on a laptop) |

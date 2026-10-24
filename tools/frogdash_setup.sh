@@ -205,9 +205,20 @@ else
 fi
 
 # --- TunerStudio on the dash screen: Java and an X display, the program, the serial port ---
+# Only when asked for (Tune > Install TunerStudio writes tunerstudio-wanted) or already on
+# the Pi: Java and TunerStudio are a few hundred MB, and an update should not wait for them.
 user=$(kiosk_user)
 home=$(getent passwd "$user" 2>/dev/null | cut -d: -f6)
-if ! command -v dpkg >/dev/null 2>&1; then
+found=""
+for folder in "$home/TunerStudioMS" "$OPT/TunerStudioMS" /usr/local/TunerStudioMS; do
+    [ -f "$folder/TunerStudio.sh" ] && found=$folder
+done
+ts_wanted=""
+{ [ -f "$STATE/tunerstudio-wanted" ] || [ -n "$found" ]; } && ts_wanted=1
+TS_LATER="Not installed (a few hundred MB): Tune, Install TunerStudio when you want it"
+if [ -z "$ts_wanted" ]; then
+    step "TunerStudio: Java and display" skipped "$TS_LATER"
+elif ! command -v dpkg >/dev/null 2>&1; then
     step "TunerStudio: Java and display" skipped "Not a Debian system"
 else
     need=""
@@ -219,12 +230,10 @@ else
     else step "TunerStudio: Java and display" failed "Could not install$need"
     fi
 fi
-found=""
-for folder in "$home/TunerStudioMS" "$OPT/TunerStudioMS" /usr/local/TunerStudioMS; do
-    [ -f "$folder/TunerStudio.sh" ] && found=$folder
-done
 if [ -n "$found" ]; then
     step "TunerStudio: program" ok "In $found"
+elif [ -z "$ts_wanted" ]; then
+    step "TunerStudio: program" skipped "$TS_LATER"
 elif ! is_online; then
     step "TunerStudio: program" waiting "Not downloaded yet: $NEEDS_NET"
 else

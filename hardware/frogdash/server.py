@@ -21,6 +21,7 @@ from .helpers import Helpers
 from .fwupdate import Firmware
 from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
 from .connectivity import Connectivity, DEFAULT_SOCKET, current_update, require_local
+from . import netstate
 from .race import Race
 from .driving import Driving, atomic_write
 from .eventlog import EventLog, read as read_events, as_text as events_text
@@ -340,6 +341,7 @@ def create_app(state, adapter=None, connectivity=None):
             await asyncio.to_thread((folder / 'update-request').write_text, 'rollback' if undo else 'requested')
             return web.json_response({'state': 'requested', 'message': 'Going back requested' if undo else 'Update requested'})
         status = await asyncio.to_thread(current_update, folder)
+        status['network'] = await asyncio.to_thread(netstate.check)   # The Wi-Fi / internet indicator
         return web.json_response(status, headers={'Cache-Control': 'no-store'})
 
     async def screen(request):
@@ -395,7 +397,19 @@ def create_app(state, adapter=None, connectivity=None):
             raise web.HTTPNotFound()
         if request.method == 'POST':
             try:
-                return web.json_response(state.tune.request((await request.json()).get('action')))
+                action = (await request.json()).get('action')
+                if action == 'install':
+                    # Java and TunerStudio are left out of updates until asked for: the Pi setup
+                    # (tools/frogdash_setup.sh) installs them once this file is there.
+                    folder = state.paint.path.parent if state.paint else None
+                    if not folder:
+                        raise ValueError('Installing is only possible on the dash in the car')
+                    await asyncio.to_thread((folder / 'tunerstudio-wanted').write_text, '')
+                    request_file = folder / 'update-request'
+                    if not request_file.exists():
+                        await asyncio.to_thread(request_file.write_text, 'setup')
+                    return web.json_response({**state.tune.snapshot(), 'message': 'Installing TunerStudio: watch Software & power. It takes 10-30 minutes with internet'})
+                return web.json_response(state.tune.request(action))
             except (ValueError, AttributeError) as error:
                 raise web.HTTPConflict(text=str(error) or 'Invalid TunerStudio request')
         return web.json_response(state.tune.snapshot(), headers={'Cache-Control': 'no-store'})

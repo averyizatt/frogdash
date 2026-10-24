@@ -11,7 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from aiohttp import web
 from playwright.async_api import async_playwright
-from hardware.frogdash import connectivity
+from hardware.frogdash import connectivity, netstate
 from hardware.frogdash.github_link import GitHubLink
 from hardware.frogdash.paint import Paint
 from hardware.frogdash.server import create_app
@@ -44,6 +44,7 @@ async def main(browser_path):
     (folder / 'upload-status.json').write_text(json.dumps({'time': 1792065600, 'state': 'held', 'held': 1, 'message': 'Report kept on the Pi: uploads not set up'}))
     (folder / 'reports').mkdir(mode=0o700)
     state.health = SimpleNamespace(status={'status': 'sampled', 'ups': ups, 'shutdown': {'previous': {'state': 'saved', 'ended_ms': 1792000000000}, 'tracking': True}})
+    netstate.check = lambda: {'wifi': ['dashcam', 'Home'], 'internet': True}   # Stands in for nmcli and GitHub
     app = create_app(state)
     app.cleanup_ctx.clear()
     runner = web.AppRunner(app)
@@ -65,6 +66,10 @@ async def main(browser_path):
             assert await page.locator('#update-pill').get_attribute('data-tone') == 'good'
             assert await page.locator('#update-version').inner_text() == 'Version abc1234 · before it def5678'
             assert await steps(page) == 'internet:done download:skipped restart:done setup:done upload:done'
+            # Wi-Fi and internet at a glance: on the dash cam and home, home reaching GitHub.
+            assert await page.locator('#update-net').get_attribute('data-tone') == 'good'
+            assert await page.locator('#update-net').inner_text() == 'Home · internet', await page.locator('#update-net').inner_text()
+            await page.screenshot(path='.tmp/software-card.png')
             # Power and shutdown: on ignition, battery, last shutdown clean.
             power = await page.locator('#power-rows').inner_text()
             assert 'Ignition power' in power and 'On' in power and '82%' in power and 'Clean' in power, power

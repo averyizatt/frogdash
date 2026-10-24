@@ -43,6 +43,24 @@ class MailboxTests(unittest.IsolatedAsyncioTestCase):
             for bad in ({'installed': True, 'state': 'rooted', 'message': ''}, {'installed': 1, 'state': 'idle'}, {'installed': True, 'state': 'idle', 'message': 'x' * 301}):
                 self.assertEqual((await client.post('/tune/kiosk', json=bad)).status, 400)
 
+    async def test_install_asks_the_pi_setup_for_java_and_tunerstudio(self):
+        # Left out of updates (a few hundred MB) until asked for here.
+        from hardware.frogdash.paint import Paint
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            state = State()
+            state.paint = Paint(folder / 'appearance-paint.json')
+            async with TestClient(TestServer(create_app(state))) as client:
+                await client.post('/tune/kiosk', json={**READY, 'installed': False})
+                answer = await (await client.post('/tune', json={'action': 'install'})).json()
+                self.assertIn('Installing TunerStudio', answer['message'])
+                self.assertTrue((folder / 'tunerstudio-wanted').exists())
+                self.assertEqual((folder / 'update-request').read_text(), 'setup')
+                # An update the driver already asked for is never replaced; it runs the setup too.
+                (folder / 'update-request').write_text('requested')
+                await client.post('/tune', json={'action': 'install'})
+                self.assertEqual((folder / 'update-request').read_text(), 'requested')
+
     def test_opens_while_the_car_is_moving(self):
         # The owner removed the stopped-only check: road tuning with TunerStudio open.
         state = State(clock=lambda: 10)

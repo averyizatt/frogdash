@@ -27,7 +27,7 @@ class Tune:
                     'message': 'Only on the dash screen in the car: the kiosk starts TunerStudio'}
         if not self.kiosk['installed']:
             return {'available': False, 'state': 'missing',
-                    'message': 'TunerStudio is not on the Pi yet. Press Update now with internet: the dash downloads and installs it'}
+                    'message': 'TunerStudio is not on the Pi. Install TunerStudio downloads it with Java (a few hundred MB: 10-30 minutes on Wi-Fi)'}
         opening = self.want == 'open' and self.kiosk['state'] != 'running'
         return {'available': True, 'state': 'starting' if opening else self.kiosk['state'],
                 'message': 'Starting TunerStudio…' if opening else self.kiosk['message']}

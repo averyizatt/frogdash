@@ -69,6 +69,7 @@ class SetupScriptTests(unittest.TestCase):
         for name, body in SHIMS.items():
             (bin_dir / name).write_text('#!/bin/sh\n' + body, newline='\n')
             (bin_dir / name).chmod(0o755)
+        (self.state / 'tunerstudio-wanted').write_text('')   # Asked for under Tune (see the test without it)
         # A Pi as it is today: the update helper and the screen service by hand, gpsd on auto-detect.
         for name in ('frogdash-update.path', 'frogdash-update.service'):
             shutil.copy(ROOT / 'hardware/systemd' / name, self.units / name)
@@ -275,6 +276,20 @@ class SetupScriptTests(unittest.TestCase):
         self.assertEqual(self.log('systemctl.log').count('restart frogdash.service'), 1)
         new = self.log('systemctl.log')[len(calls):]
         self.assertTrue(all(line.startswith('is-enabled') for line in new.splitlines()), new)   # It only looked.
+
+    def test_java_and_tunerstudio_only_when_asked_for(self):
+        # An update fetches the code and its few packages; not a few hundred MB of Java.
+        (self.state / 'tunerstudio-wanted').unlink()
+        (self.fake / 'download').write_bytes(self.archive)
+        _, _, steps = self.run_setup('online')
+        for name in ('TunerStudio: Java and display', 'TunerStudio: program'):
+            self.assertEqual(steps[name][0], 'skipped', name)
+            self.assertIn('Install TunerStudio', steps[name][1])
+        self.assertNotIn('default-jre', self.log('apt.log'))
+        self.assertEqual(list(self.fake.glob('home/TunerStudioMS')), [])
+        (self.state / 'tunerstudio-wanted').write_text('')                 # Tune > Install TunerStudio
+        _, _, steps = self.run_setup('online')
+        self.assertEqual((steps['TunerStudio: Java and display'][0], steps['TunerStudio: program'][0]), ('done', 'done'))
 
     def test_a_download_that_is_not_the_expected_file_is_never_unpacked(self):
         (self.fake / 'download').write_bytes(self.archive + b'tampered')

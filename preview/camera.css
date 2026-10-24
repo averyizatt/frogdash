@@ -145,6 +145,13 @@
 .sw-pill[data-tone="bad"] { color:var(--danger); background:color-mix(in srgb,var(--danger) 14%,transparent); }
 .sw-pill[data-tone="idle"] { color:var(--muted); background:transparent; }
 .sw-pill[data-tone="busy"] { animation:sw-pulse 1.4s ease-in-out infinite; }
+.sw-head .sw-net { margin-left:auto; }
+.sw-net { flex:none; display:inline-flex; align-items:center; gap:6px; max-width:260px; padding:5px 10px; border-radius:999px; font-size:13px; font-weight:800; color:var(--muted); border:1px solid color-mix(in srgb,currentColor 45%,transparent); white-space:nowrap; }
+.sw-net span { overflow:hidden; text-overflow:ellipsis; }
+.sw-net svg { width:17px; height:17px; flex:none; }
+.sw-net[data-tone="good"] { color:var(--accent); }
+.sw-net[data-tone="warn"] { color:var(--warn); }
+.sw-net[data-tone="bad"] { color:var(--danger); }
 @keyframes sw-pulse { 50% { opacity:.55; } }
 .sw-steps { display:flex; list-style:none; margin:4px 0 0; padding:0; gap:0; }
 .sw-steps li { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; position:relative; color:var(--muted); font-size:12px; font-weight:750; text-align:center; }

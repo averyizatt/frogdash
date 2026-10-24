@@ -34,7 +34,8 @@
   dialog.querySelector('[data-ops-panel="support"]').insertAdjacentHTML('beforebegin',
     '<section class="driver-panel ops-panel control-section" data-ops-panel="software" hidden><div class="ops-columns"><div class="sw-column">' +
     '<div class="software-card" id="software-card">' +
-    '<div class="sw-head"><div><span class="sw-title">Dash software</span><small id="update-version">Version unknown</small></div><span class="sw-pill" id="update-pill" data-tone="idle">Checking…</span></div>' +
+    '<div class="sw-head"><div><span class="sw-title">Dash software</span><small id="update-version">Version unknown</small></div>' +
+    '<span class="sw-net" id="update-net" data-tone="idle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/></svg><span>Checking Wi-Fi…</span></span><span class="sw-pill" id="update-pill" data-tone="idle">Checking…</span></div>' +
     '<ol class="sw-steps" id="update-steps">' + [['internet', 'Internet'], ['download', 'Download'], ['restart', 'Restart &amp; check'], ['setup', 'Pi setup'], ['upload', 'Upload']]
       .map(([key, label]) => `<li data-step="${key}" data-state="todo"><i></i><span>${label}</span></li>`).join('') + '</ol>' +
     '<p class="sw-message" id="update-status">Uses a saved Wi-Fi network (home or phone hotspot) and returns to the dash cam afterwards.</p>' +
@@ -60,19 +61,20 @@
   let tuneNote = '', tuneNoteUntil = 0;
   const tuneStatus = () => latest.tune || {available: false, state: 'unavailable', message: 'Only on the dash screen in the car: the kiosk starts TunerStudio'};
   function renderTune() {
-    const t = tuneStatus(), open = t.state === 'running' || t.state === 'starting';
+    const t = tuneStatus(), open = t.state === 'running' || t.state === 'starting', missing = t.state === 'missing';
     $('tune-status').textContent = Date.now() < tuneNoteUntil ? tuneNote : t.message;
-    $('tune-open').textContent = open ? 'Close TunerStudio' : 'Open TunerStudio';
-    $('tune-open').disabled = !t.available;
+    $('tune-open').textContent = missing ? 'Install TunerStudio' : open ? 'Close TunerStudio' : 'Open TunerStudio';
+    $('tune-open').disabled = !t.available && !missing;
   }
   async function tuneRequest(action) {
     try {
       const response = await fetch('/tune', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({action})});
-      tuneNote = response.ok ? (action === 'open' ? 'Starting TunerStudio… it takes a few seconds to appear' : 'Closing TunerStudio…') : await response.text();
+      tuneNote = !response.ok ? await response.text() : action === 'install' ? (await response.json()).message
+        : action === 'open' ? 'Starting TunerStudio… it takes a few seconds to appear' : 'Closing TunerStudio…';
     } catch { tuneNote = 'TunerStudio is not available here'; }
     tuneNoteUntil = Date.now() + 6000; renderTune();
   }
-  $('tune-open').onclick = () => tuneRequest(['running', 'starting'].includes(tuneStatus().state) ? 'close' : 'open');
+  $('tune-open').onclick = () => tuneRequest(tuneStatus().state === 'missing' ? 'install' : ['running', 'starting'].includes(tuneStatus().state) ? 'close' : 'open');
   window.FrogdashTune = {
     get available() { return tuneStatus().available; },
     // From the quick menu: show this page (for the status line) and start it.
@@ -104,13 +106,23 @@
         : broken ? (i < at ? 'done' : i === at ? (s.state === 'failed' ? 'bad' : 'warn') : 'todo') : 'todo';
     });
     $('update-run').disabled = busy;
+    if (s.network) renderNet(s.network);
     // Undo is offered while the version before the last update is still saved on the Pi.
     $('update-undo').disabled = busy || !s.previous;
     $('update-undo').textContent = 'Undo update'; undoArmed = false;
     return busy;
   }
+  // On Wi-Fi or not, and whether it reaches the internet (GitHub), which an update needs.
+  function renderNet(n) {
+    const names = (n.wifi || []).map(name => name || 'Wi-Fi'), other = names.filter(name => name !== 'dashcam');
+    const [tone, text] = n.internet ? ['good', `${other[0] || names[0] || 'Online'} · internet`]
+      : names.length ? ['warn', `${names.join(', ')} · no internet`] : ['bad', 'No Wi-Fi'];
+    $('update-net').dataset.tone = tone; $('update-net').querySelector('span').textContent = text;
+    $('update-net').title = n.internet ? 'Connected: Update now can reach GitHub' : names.length ? 'On Wi-Fi without internet: Update now borrows a saved network if one is in range' : 'Not connected to any Wi-Fi network';
+  }
+  setInterval(() => { if (dialog.open && !document.querySelector('[data-ops-panel="software"]').hidden && !updateTimer) updatePoll(); }, 10000);
   async function updatePoll() {
-    if (demo()) { renderUpdate({state: 'idle', message: 'The preview has no Pi to update: this works on the dash in the car.'}); return; }
+    if (demo()) { renderUpdate({state: 'idle', message: 'The preview has no Pi to update: this works on the dash in the car.'}); $('update-net').querySelector('span').textContent = 'No Pi in the preview'; return; }
     try {
       const response = await fetch('/update', {cache: 'no-store'});
       if (!response.ok) { renderUpdate({state: 'idle', message: 'Updates are not available on this dash (no update helper).'}); return; }
