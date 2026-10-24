@@ -251,13 +251,17 @@ def diagnostics(now):
         failure = (STATE / 'update-failure.log').read_text(errors='replace')[-20000:]
     except OSError:
         failure = None
+    try:
+        setup_log = (STATE / 'setup.log').read_text(errors='replace')[-20000:]
+    except OSError:
+        setup_log = None
     return {'format': 'pi-diagnostics', 'version': 1, 'created': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(now)),
             'version_installed': text_of('git', '-C', str(REPO_DIR), 'log', '-1', '--format=%h %s').strip(),
             'selftest': local('/selftest'), 'health': local('/health'), 'logs': local('/logs'),
             # /state is the screen's WebSocket: its contents come from /snapshot.
             'state': local('/snapshot'), 'display': local('/ui/display'), 'firmware': local('/firmware'),
             'gps': gps_evidence(), 'can': can_evidence(),
-            'helpers': {name: read_json(name) for name in STATUS_FILES}, 'update_failure_log': failure,
+            'helpers': {name: read_json(name) for name in STATUS_FILES}, 'update_failure_log': failure, 'setup_log': setup_log,
             'uptime_s': float((Path('/proc/uptime').read_text().split() or ['0'])[0]) if Path('/proc/uptime').exists() else None,
             'throttled': text_of('vcgencmd', 'get_throttled').strip(), 'disk': text_of('df', '-h', '/', str(STATE)).strip()}
 

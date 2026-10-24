@@ -20,7 +20,7 @@ from .gpsaid import GpsAid
 from .helpers import Helpers
 from .fwupdate import Firmware
 from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
-from .connectivity import Connectivity, DEFAULT_SOCKET, require_local
+from .connectivity import Connectivity, DEFAULT_SOCKET, current_update, require_local
 from .race import Race
 from .driving import Driving, atomic_write
 from .eventlog import EventLog, read as read_events, as_text as events_text
@@ -339,11 +339,7 @@ def create_app(state, adapter=None, connectivity=None):
                     raise web.HTTPBadRequest(text='Invalid update request')
             await asyncio.to_thread((folder / 'update-request').write_text, 'rollback' if undo else 'requested')
             return web.json_response({'state': 'requested', 'message': 'Going back requested' if undo else 'Update requested'})
-        try:
-            status = json.loads(await asyncio.to_thread((folder / 'update-status.json').read_text))
-        except (OSError, ValueError):
-            status = {'state': 'idle', 'message': 'No update has been run yet'}
-        status['pending'] = (folder / 'update-request').exists()
+        status = await asyncio.to_thread(current_update, folder)
         return web.json_response(status, headers={'Cache-Control': 'no-store'})
 
     async def screen(request):

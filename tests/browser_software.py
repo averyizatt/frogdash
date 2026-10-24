@@ -11,6 +11,7 @@ from types import SimpleNamespace
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from aiohttp import web
 from playwright.async_api import async_playwright
+from hardware.frogdash import connectivity
 from hardware.frogdash.github_link import GitHubLink
 from hardware.frogdash.paint import Paint
 from hardware.frogdash.server import create_app
@@ -68,6 +69,7 @@ async def main(browser_path):
             power = await page.locator('#power-rows').inner_text()
             assert 'Ignition power' in power and 'On' in power and '82%' in power and 'Clean' in power, power
             # An update running: the steps follow the updater's messages.
+            connectivity.BUSY = folder / 'busy'; connectivity.BUSY.touch()   # The updater is running (its /run/frogdash-busy)
             status.write_text(json.dumps({'state': 'running', 'message': 'Updated (3 changes). Restarting the dash and checking it', 'version': 'abc1234'}))
             await page.locator('#update-check').click()
             await page.wait_for_function("document.getElementById('update-pill').textContent === 'Updating…'")

@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, patch
 
 from aiohttp import CookieJar, ClientSession, UnixConnector, web
 from aiohttp.test_utils import TestClient, TestServer
-from hardware.frogdash.connectivity import Connectivity, RESUME_S, TransferPortal, load_resume
+from hardware.frogdash.connectivity import Connectivity, RESUME_S, TransferPortal, current_update, load_resume
 from hardware.frogdash.hotspot_helper import Hotspot, create_helper, LIFETIME
 from hardware.frogdash.recorder import Recorder, Config
 from hardware.frogdash.server import create_app
@@ -50,6 +50,32 @@ class SetupTests(unittest.TestCase):
             self.assertIn(setting, config)
         with self.assertRaises(ValueError): profile(UUID, 'wlan0;reboot', 'Frogdash', 'a' * 20)
         with self.assertRaises(ValueError): profile(UUID, 'wlan0', 'a\n[ipv4]', 'a' * 20)
+
+
+class UpdateStatusTests(unittest.TestCase):
+    def test_a_running_update_is_believed_only_while_the_updater_runs(self):
+        # October 2026: a fresh start stayed on 'Pi setup' with Update now greyed out for good.
+        with tempfile.TemporaryDirectory() as directory:
+            folder, busy = Path(directory), Path(directory) / 'busy'
+            (folder / 'update-status.json').write_text(json.dumps(
+                {'state': 'running', 'message': 'Updated (3 changes) and checked. Finishing the Pi setup (a first-time install can take several minutes)', 'time': 1000}))
+            (folder / 'setup-status.json').write_text(json.dumps({'stamp': 'x', 'running': True, 'now': 'Installing Java for TunerStudio', 'steps': []}))
+            busy.touch()
+            status = current_update(folder, busy=busy, wall=lambda: 1600)
+            self.assertEqual(status['state'], 'running')
+            self.assertIn('Now: Installing Java for TunerStudio', status['message'])
+            # Cut off: the updater is gone (the Pi was turned off) or its hour is up.
+            for wall, gone in ((1600, True), (1000 + 3800, False)):
+                if gone: busy.unlink()
+                else: busy.touch()
+                status = current_update(folder, busy=busy, wall=lambda: wall)
+                self.assertEqual(status['state'], 'failed')
+                self.assertIn('Finishing the Pi setup. Update now runs it again', status['message'].replace(' at: Updated (3 changes) and checked. ', ' '))
+                self.assertFalse(status['pending'])
+            (folder / 'update-request').write_text('requested')
+            self.assertTrue(current_update(folder, busy=busy)['pending'])
+            (folder / 'update-status.json').write_text(json.dumps({'state': 'current', 'message': 'Already up to date'}))
+            self.assertEqual(current_update(folder, busy=busy)['state'], 'current')
 
 
 class ConnectivityTests(unittest.IsolatedAsyncioTestCase):

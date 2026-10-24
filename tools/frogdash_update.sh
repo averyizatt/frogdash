@@ -39,6 +39,9 @@ action=${1:-$(cat "$STATE/update-request" 2>/dev/null)}
 rm -f "$STATE/update-request"
 touch "$BUSY" 2>/dev/null   # Holds off the PiSugar shutdown until this is done
 trap 'rm -f "$BUSY"' EXIT
+# Stopped (its hour is up, or the Pi is shutting down): say so, or 'running' would stay on the
+# screens. The dash also stops believing a 'running' with no $BUSY (connectivity.current_update).
+trap 'report failed "Stopped before it finished (the Pi was turning off, or it ran over an hour). Update now runs it again"; exit 1' TERM INT
 
 short() { git -C $REPO rev-parse --short "$1" 2>/dev/null; }
 report() {  # state, message
@@ -159,7 +162,13 @@ healthy() {  # $1 = 1 when a screen was connected before, so it has to come back
 }
 
 if [ "$action" = setup ] || [ "$action" = helpers ]; then  # From the dash at start-up. Nothing else changes.
+    # Shown while it runs (a first install takes a while, and Update now waits for it); the
+    # last update's result comes back afterwards.
+    last=""
+    [ -f "$STATUS" ] && cp "$STATUS" "$STATUS.last" && last=1
+    report running "Finishing the Pi setup for this version (a first-time install can take several minutes)"
     setup
+    if [ -n "$last" ]; then mv "$STATUS.last" "$STATUS"; else report current "Pi setup finished$note"; fi
     exit 0
 fi
 if [ "$action" = upload ]; then  # Send now, or GitHub just connected: the reports only.

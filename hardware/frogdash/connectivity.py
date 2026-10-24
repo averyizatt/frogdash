@@ -34,6 +34,35 @@ def read_json(path):
         return None
 
 
+BUSY = Path('/run/frogdash-busy')   # The updater's, for as long as it runs (tools/frogdash_update.sh)
+UPDATE_LIMIT_S = 3700                # frogdash-update.service stops a run after an hour
+
+
+def current_update(folder, busy=None, wall=time.time):
+    """update-status.json as the Update buttons should see it, with what the Pi setup is doing.
+
+    'running' is believed only while the updater is: a run cut off by the key going off, a
+    power loss or its hour running out never writes how it ended, and the screens keep Update
+    now greyed out while an update runs. October 2026: a fresh start stayed on 'Pi setup' with
+    the button greyed out, so the fix could not be fetched."""
+    status = read_json(folder / 'update-status.json') if folder else None
+    if not isinstance(status, dict):
+        status = {'state': 'idle', 'message': 'No update has been run yet'}
+    if status.get('state') == 'running':
+        stamp = status.get('time')
+        old = isinstance(stamp, (int, float)) and wall() - stamp > UPDATE_LIMIT_S
+        if old or not (busy or BUSY).exists():
+            was = re.sub(r'\s*\([^)]*\)\s*$', '', str(status.get('message', '')))[:140]   # Without its closing hint
+            status = {**status, 'state': 'failed', 'message': f'Stopped before it finished (the Pi was turned off, or it ran over an hour) at: {was}. Update now runs it again'}
+        else:
+            setup = read_json(folder / 'setup-status.json')
+            now = setup.get('now') if isinstance(setup, dict) and setup.get('running') else None
+            if isinstance(now, str) and now:
+                status = {**status, 'message': f"{status.get('message', '')} · Now: {now}"}
+    status['pending'] = bool(folder) and (folder / 'update-request').exists()
+    return status
+
+
 def load_resume(folder, wall=time.time):
     """The code and session kept across an update restart, while still fresh."""
     data = read_json(folder / 'hotspot-resume.json') if folder else None
@@ -64,11 +93,7 @@ class TransferPortal:
         self.runner = None
 
     def update_status(self):
-        status = read_json(self.folder / 'update-status.json') if self.folder else None
-        if not isinstance(status, dict):
-            status = {'state': 'idle', 'message': 'No update has been run yet'}
-        status['pending'] = bool(self.folder) and (self.folder / 'update-request').exists()
-        return status
+        return current_update(self.folder, wall=self.wall)
 
     def firmware_status(self):
         firmware = getattr(self.state, 'firmware', None)

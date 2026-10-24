@@ -255,7 +255,8 @@ class SetupScriptTests(unittest.TestCase):
         self.publish_firmware(b'water/meth image', '5e6f7081', 'watermeth')
         said, _, steps = self.run_setup('online')
         self.assertEqual(steps['TunerStudio: Java and display'], ('done', 'Installed xwayland default-jre'))
-        self.assertIn('install -y -q xwayland default-jre', self.log('apt.log'))
+        # Waits for the first-boot package updates to free apt's lock instead of failing at once.
+        self.assertIn('install -y -q -o DPkg::Lock::Timeout=600 xwayland default-jre', self.log('apt.log'))
         self.assertEqual(steps['Clock from GPS'][0], 'done')
         self.assertEqual((self.etc / 'chrony/conf.d/frogdash-gps.conf').read_bytes(), (ROOT / 'hardware/chrony/frogdash-gps.conf').read_bytes())
         self.assertIn('restart chrony', self.log('systemctl.log'))

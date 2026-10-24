@@ -31,15 +31,23 @@ TS_SHA=${FROGDASH_TS_SHA:-4f4781a6ff90127ef36672cc43d3edc78c4f61ef682dca38a02f9e
 STAMP=$(sha256sum "$0" 2>/dev/null | cut -c1-12)
 online=${1:-}   # 'online' from the updater, which has just reached GitHub; else found out when needed
 
-steps=""; did=""; restart_screen=""; restart_dash=""; apt_ready=""; reboot_note=""
+steps=""; did=""; restart_screen=""; restart_dash=""; apt_ready=""; reboot_note=""; now=""
+LOG=$STATE/setup.log   # What the installs said, for the diagnostics (the screen shows the steps)
+[ "$(wc -c < "$LOG" 2>/dev/null || echo 0)" -gt 400000 ] && tail -c 100000 "$LOG" > "$LOG.tmp" 2>/dev/null && mv "$LOG.tmp" "$LOG"
 write_status() {  # running: true or false
-    printf '{"stamp":"%s","running":%s,"time":%s,"steps":[%s]}\n' "$STAMP" "$1" "$(date +%s)" "$steps" > "$STATUS.tmp"
+    printf '{"stamp":"%s","running":%s,"time":%s,"now":"%s","steps":[%s]}\n' "$STAMP" "$1" "$(date +%s)" "$now" "$steps" > "$STATUS.tmp"
     chmod 644 "$STATUS.tmp"; mv "$STATUS.tmp" "$STATUS"
+}
+doing() {  # What takes a while, shown on the dash's update panel until the next step
+    now=$(printf '%s' "$1" | tr -cd 'A-Za-z0-9 .,:;()/_+-' | cut -c1-160)
+    printf '%s %s\n' "$(date '+%F %T')" "$now" >> "$LOG" 2>/dev/null
+    write_status true
 }
 step() {  # name, result (ok, done, waiting, failed, skipped), detail
     detail=$(printf '%s' "$3" | tr -cd 'A-Za-z0-9 .,:;()/_+-' | cut -c1-200)
     steps="$steps${steps:+,}{\"name\":\"$1\",\"result\":\"$2\",\"detail\":\"$detail\"}"
     [ "$2" = done ] && did="$did${did:+, }$1"
+    now=""
     write_status true
 }
 is_online() {
@@ -52,10 +60,12 @@ have() { dpkg -s "$1" 2>/dev/null | grep -q '^Status: install ok installed'; }
 install_packages() {
     if [ -z "$apt_ready" ]; then
         # An install cut short earlier (power off, a timeout) is finished first, or apt refuses to work.
-        timeout 600 dpkg --configure -a >/dev/null 2>&1
-        timeout 300 apt-get update -q >/dev/null 2>&1; apt_ready=1
+        # A fresh Pi runs its own package updates at first boot: wait for those (up to 10 minutes)
+        # instead of failing at once on apt's lock.
+        timeout 600 dpkg --configure -a >> "$LOG" 2>&1
+        timeout 900 apt-get update -q -o DPkg::Lock::Timeout=600 >> "$LOG" 2>&1; apt_ready=1
     fi
-    DEBIAN_FRONTEND=noninteractive timeout 1500 apt-get install -y -q "$@" >/dev/null 2>&1
+    DEBIAN_FRONTEND=noninteractive timeout 1500 apt-get install -y -q -o DPkg::Lock::Timeout=600 "$@" >> "$LOG" 2>&1
 }
 fetch() {  # url, file
     # Silent: this script's only output is its closing summary line, which the updater shows.
@@ -148,7 +158,7 @@ print(" ".join(need))' "$REPO/requirements.lock" 2>/dev/null)
         step "Python packages" ok "All installed"
     elif ! is_online; then
         step "Python packages" waiting "Needs the internet (next Update now): $shown"
-    elif timeout 900 "$VENV_PY" -m pip install --quiet --disable-pip-version-check --no-deps $missing >/dev/null 2>&1; then
+    elif doing "Installing Python packages: $shown" && timeout 900 "$VENV_PY" -m pip install --quiet --disable-pip-version-check --no-deps $missing >> "$LOG" 2>&1; then
         step "Python packages" done "Installed: $shown"; restart_dash=1
     else
         step "Python packages" failed "Could not install: $shown"
@@ -181,7 +191,7 @@ else
     result=ok; detail="chrony sets the clock from the GPS"
     if ! have chrony; then
         if ! is_online; then result=waiting; detail="chrony $NEEDS_NET"
-        elif install_packages chrony && have chrony; then result=done; detail="Installed chrony"
+        elif doing "Installing chrony (the clock from GPS)" && install_packages chrony && have chrony; then result=done; detail="Installed chrony"
         else result=failed; detail="Could not install chrony"
         fi
     fi
@@ -204,7 +214,8 @@ else
     for package in xwayland default-jre; do have $package || need="$need $package"; done
     if [ -z "$need" ]; then step "TunerStudio: Java and display" ok "Installed"
     elif ! is_online; then step "TunerStudio: Java and display" waiting "Missing$need: $NEEDS_NET"
-    elif install_packages $need; then restart_screen=1; step "TunerStudio: Java and display" done "Installed$need"
+    elif doing "Installing Java for TunerStudio:$need (a few hundred MB: 10-30 minutes on Wi-Fi)" && install_packages $need; then
+        restart_screen=1; step "TunerStudio: Java and display" done "Installed$need"
     else step "TunerStudio: Java and display" failed "Could not install$need"
     fi
 fi
@@ -220,6 +231,7 @@ else
     # Into the screen user's home when there is one, so TunerStudio can keep its own files there.
     if [ -n "$home" ] && [ -d "$home" ]; then target=$home; else target=$OPT; fi
     work=$(mktemp -d)
+    doing "Downloading TunerStudio"
     if ! fetch "$TS_URL" "$work/ts.tar.gz"; then
         step "TunerStudio: program" failed "Download failed from tunerstudio.com"
     elif [ "$(sha256sum "$work/ts.tar.gz" | cut -c1-64)" != "$TS_SHA" ]; then
@@ -327,6 +339,7 @@ firmware_file() {  # name, step name, release URL
         return
     fi
     work=$(mktemp -d)
+    doing "$2: looking for a newer build"
     fetch "$3/$1-firmware.json" "$work/$1.json"
     newest=$(field build "$work/$1.json"); sum=$(field sha256 "$work/$1.json")
     if [ -z "$newest" ] || [ ${#sum} != 64 ]; then
