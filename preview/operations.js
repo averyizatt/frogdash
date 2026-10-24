@@ -39,7 +39,7 @@
     '<ol class="sw-steps" id="update-steps">' + [['internet', 'Internet'], ['download', 'Download'], ['restart', 'Restart &amp; check'], ['setup', 'Pi setup'], ['upload', 'Upload']]
       .map(([key, label]) => `<li data-step="${key}" data-state="todo"><i></i><span>${label}</span></li>`).join('') + '</ol>' +
     '<p class="sw-message" id="update-status">Uses a saved Wi-Fi network (home or phone hotspot) and returns to the dash cam afterwards.</p>' +
-    '<div class="sw-buttons"><button type="button" id="update-run">Update now</button><button type="button" id="update-undo" disabled>Undo update</button><button type="button" id="update-check">Refresh</button><button type="button" id="update-wifi">Wi-Fi…</button></div></div>' +
+    '<div class="sw-buttons"><button type="button" id="update-run">Update now</button><button type="button" id="update-cancel" hidden>Cancel</button><button type="button" id="update-undo" disabled>Undo update</button><button type="button" id="update-check">Refresh</button><button type="button" id="update-wifi">Wi-Fi…</button></div></div>' +
     '<div class="software-card" id="power-card"><span class="sw-title">Power and shutdown</span><ul class="sw-modules sw-power" id="power-rows"></ul></div></div>' +
     '<div class="sw-column"><div class="software-card" id="modules-card"><span class="sw-title">Modules on the CAN bus</span>' +
     '<ul class="sw-modules" id="firmware-modules"><li class="sw-empty">Waiting for the dash…</li></ul>' +
@@ -91,7 +91,7 @@
     if (/Restarting the dash|did not start|Going back|went back|stay(ed)? on/i.test(m)) return 'restart';
     return 'download';
   }
-  const PILLS = {running: ['busy', 'Updating…'], updated: ['good', 'Updated'], current: ['good', 'Up to date'], failed: ['bad', 'Failed'],
+  const PILLS = {running: ['busy', 'Updating…'], updated: ['good', 'Updated'], current: ['good', 'Up to date'], failed: ['bad', 'Failed'], cancelled: ['warn', 'Cancelled'],
     rolledback: ['warn', 'Went back'], held: ['warn', 'Held back'], idle: ['idle', 'No update run yet']};
   function renderUpdate(s) {
     const busy = s.pending || s.state === 'running';
@@ -105,7 +105,12 @@
         : busy ? (i < at ? 'done' : i === at ? 'current' : 'todo')
         : broken ? (i < at ? 'done' : i === at ? (s.state === 'failed' ? 'bad' : 'warn') : 'todo') : 'todo';
     });
-    $('update-run').disabled = busy;
+    // A start-up Pi setup gives way to Update now; anything running can be cancelled.
+    const setupOnly = s.state === 'running' && s.mode === 'setup';
+    $('update-run').disabled = busy && !setupOnly;
+    $('update-cancel').hidden = !(s.state === 'running' && !s.pending);
+    $('update-cancel').disabled = s.message === 'Cancelling…';
+    if (s.stalled_s) $('update-pill').dataset.tone = 'warn';
     if (s.network) renderNet(s.network);
     // Undo is offered while the version before the last update is still saved on the Pi.
     $('update-undo').disabled = busy || !s.previous;
@@ -290,6 +295,7 @@
   };
   // Wi-Fi networks live in Controls > Wi-Fi: the button takes the driver there.
   $('update-wifi').onclick = () => { dialog.close(); $('controls-launch')?.click(); $('tab-wifi')?.click(); };
+  $('update-cancel').onclick = () => updateRequest('cancel', 'Cancelling…');
   $('update-check').onclick = () => { updatePoll(); uploadsPoll(); };
   $('event-refresh').onclick = () => loadEvents();
   // The software tab is read each time it opens, and follows an update while it runs.

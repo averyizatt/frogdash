@@ -1,0 +1,9 @@
+[Unit]
+Description=Stop the running Frogdash update (Cancel on the dash)
+
+[Service]
+Type=oneshot
+# The updater sees update-cancel while it stops and says "Cancelled". A request the dash left
+# (Update now during a start-up setup) then starts a fresh run.
+ExecStart=/bin/sh -c 'systemctl stop frogdash-update.service; rm -f /var/lib/private/frogdash/update-cancel'
+TimeoutStartSec=120

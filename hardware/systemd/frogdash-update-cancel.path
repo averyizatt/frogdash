@@ -1,0 +1,9 @@
+[Unit]
+Description=Cancel a running Frogdash update when the dash asks
+
+[Path]
+PathExists=/var/lib/private/frogdash/update-cancel
+Unit=frogdash-update-cancel.service
+
+[Install]
+WantedBy=multi-user.target

@@ -39,14 +39,25 @@ action=${1:-$(cat "$STATE/update-request" 2>/dev/null)}
 rm -f "$STATE/update-request"
 touch "$BUSY" 2>/dev/null   # Holds off the PiSugar shutdown until this is done
 trap 'rm -f "$BUSY"' EXIT
-# Stopped (its hour is up, or the Pi is shutting down): say so, or 'running' would stay on the
-# screens. The dash also stops believing a 'running' with no $BUSY (connectivity.current_update).
-trap 'report failed "Stopped before it finished (the Pi was turning off, or it ran over an hour). Update now runs it again"; exit 1' TERM INT
+# Stopped: Cancel on the dash (frogdash-update-cancel.service leaves update-cancel and stops this),
+# its hour up, or the Pi shutting down. Say so, or 'running' would stay on the screens; the dash
+# also stops believing a 'running' with no $BUSY (connectivity.current_update). Once the result
+# is written (finished), only the upload after it is cut short.
+mode=update; finished=""
+stopped() {
+    if [ -z "$finished" ]; then
+        if [ -f "$STATE/update-cancel" ]; then report cancelled "Cancelled. Update now starts again"
+        else report failed "Stopped before it finished (the Pi was turning off, or it ran over an hour). Update now runs it again"
+        fi
+    fi
+    exit 1
+}
+trap stopped TERM INT
 
 short() { git -C $REPO rev-parse --short "$1" 2>/dev/null; }
-report() {  # state, message
-    printf '{"state":"%s","message":"%s","version":"%s","previous":"%s","time":%s}\n' "$1" "$2" \
-        "$(short HEAD)" "$(short "$(cat "$STATE/update-previous" 2>/dev/null)")" "$(date +%s)" > "$STATUS.tmp"
+report() {  # state, message. The mode tells the dash a start-up setup (which Update now may stop) from an update.
+    printf '{"state":"%s","message":"%s","version":"%s","previous":"%s","time":%s,"mode":"%s"}\n' "$1" "$2" \
+        "$(short HEAD)" "$(short "$(cat "$STATE/update-previous" 2>/dev/null)")" "$(date +%s)" "$mode" > "$STATUS.tmp"
     chmod 644 "$STATUS.tmp"; mv "$STATUS.tmp" "$STATUS"
 }
 probe() {  # The dash's own health page; fails unless the service answers.
@@ -75,11 +86,15 @@ setup() {  # $1 = online when GitHub was just reached. Leaves what it did in $no
     return 0
 }
 upload() {  # Diagnostics and the newest drive to the owner's private repository, while online.
+    said=""
     [ -f "$REPO/tools/frogdash_upload.py" ] || return 0
-    report running "Uploading the diagnostics and the newest drive"
-    said=$(FROGDASH_STATE=$STATE FROGDASH_REPO=$REPO FROGDASH_UNITS=$UNITS timeout 1200 python3 "$REPO/tools/frogdash_upload.py" 2>/dev/null | tail -n 1 | tr -cd 'A-Za-z0-9 .,:;()/_-')
-    [ -z "$said" ] || note="$note. $said"
+    said=$(FROGDASH_STATE=$STATE FROGDASH_REPO=$REPO FROGDASH_UNITS=$UNITS timeout 600 python3 "$REPO/tools/frogdash_upload.py" 2>/dev/null | tail -n 1 | tr -cd 'A-Za-z0-9 .,:;()/_-')
     return 0
+}
+finish() {  # state, message: the result first (the buttons work again), then the upload, which adds what it did
+    report "$1" "$2"; finished=1
+    upload
+    [ -z "$said" ] || report "$1" "$2. $said"
 }
 packages() {  # $1 = commit. Packages it adds to requirements.lock, before it is tried.
     # Added to the dash's environment, which the running version keeps working with. The
@@ -164,7 +179,7 @@ healthy() {  # $1 = 1 when a screen was connected before, so it has to come back
 if [ "$action" = setup ] || [ "$action" = helpers ]; then  # From the dash at start-up. Nothing else changes.
     # Shown while it runs (a first install takes a while, and Update now waits for it); the
     # last update's result comes back afterwards.
-    last=""
+    last=""; mode=setup
     [ -f "$STATUS" ] && cp "$STATUS" "$STATUS.last" && last=1
     report running "Finishing the Pi setup for this version (a first-time install can take several minutes)"
     setup
@@ -201,6 +216,12 @@ if [ "$action" = rollback ]; then
 fi
 
 report running "Checking for updates"
+# Room for the new version and its trial copy first: a full SD card fails half way otherwise.
+free=$(df -Pk "$REPO" 2>/dev/null | awk 'NR==2 {print int($4 / 1024)}')
+if [ -n "$free" ] && [ "$free" -lt "${FROGDASH_MIN_FREE_MB:-300}" ]; then
+    report failed "Only $free MB free on the Pi: an update needs ${FROGDASH_MIN_FREE_MB:-300} MB. Delete old drives or dash cam clips, then try again"
+    exit 1
+fi
 # With one usable Wi-Fi adapter, it is normally on the dash cam. If there is no internet,
 # borrow that adapter: join a saved Wi-Fi network, update, then return to the dash cam.
 borrowed=""
@@ -241,7 +262,7 @@ if [ "$newest" != "$before" ]; then
     packages "$newest"
     if ! trial "$newest"; then
         echo "$newest" > "$STATE/update-bad"
-        report failed "Version $(short "$newest") would not start ($why), so the dash stayed on this version: nothing was changed"
+        finish failed "Version $(short "$newest") would not start ($why), so the dash stayed on this version: nothing was changed"
         exit 1
     fi
 fi
@@ -250,10 +271,9 @@ if ! out=$(git -C $REPO merge --ff-only --quiet FETCH_HEAD 2>&1); then
 fi
 after=$(git -C $REPO rev-parse HEAD)
 if [ "$before" = "$after" ]; then
-    report running "Already up to date. Checking the Pi setup (a first-time install can take several minutes)"
+    report running "Already up to date. Checking the Pi setup"
     setup online
-    upload
-    report current "Already up to date$note"; exit 0
+    finish current "Already up to date$note"; exit 0
 fi
 sync_units
 changes=$(git -C $REPO rev-list --count "$before..$after")
@@ -262,10 +282,9 @@ report running "Updated ($changes changes). Restarting the dash and checking it"
 restart_dash
 if healthy $had_screen; then
     rm -f "$STATE/update-bad"
-    report running "Updated ($changes changes) and checked. Finishing the Pi setup (a first-time install can take several minutes)"
+    report running "Updated ($changes changes) and checked. Finishing the Pi setup"
     setup online
-    upload
-    report updated "Updated ($changes changes). The dash restarted and passed its check$note"; exit 0
+    finish updated "Updated ($changes changes). The dash restarted and passed its check$note"; exit 0
 fi
 
 # The new version is not usable: keep the evidence, then put the old one back.
@@ -277,8 +296,8 @@ failed=$(short "$after"); reason=$why
 report running "Version $failed did not start properly ($reason). Going back to the previous version"
 note=""
 if git -C $REPO reset --keep --quiet "$before" && sync_units && restart_dash && healthy 0; then
-    upload   # The failed start's evidence is in the diagnostics.
-    report rolledback "Update undone: version $failed did not start properly ($reason), so the dash went back to the version that worked$note"
+    # The failed start's evidence goes up with the diagnostics.
+    finish rolledback "Update undone: version $failed did not start properly ($reason), so the dash went back to the version that worked$note"
 else
     report failed "Version $failed did not start and going back failed too. From a laptop: sudo git -C $REPO reset --keep $(short "$before"), then sudo systemctl restart frogdash"
 fi

@@ -7,6 +7,8 @@ and has no screen when it contains NOSCREEN.
 """
 import json
 import os
+import signal
+import time
 from pathlib import Path
 import shutil
 import socket
@@ -282,6 +284,90 @@ class UpdateScriptTests(unittest.TestCase):
             self.assertNotEqual(self.head(), newer)
             self.assertEqual(log.read_text().count('restart frogdash.service'), restarts)
             self.assertEqual((self.state / 'update-status.json').read_text(), before)
+
+
+    # --- Never stuck: whatever stops it, the screens get a usable state and Update now back ---
+    def slow(self, name, marker):
+        """A setup or uploader that announces itself and then takes its time."""
+        (self.origin / 'tools').mkdir(exist_ok=True)
+        if name.endswith('.sh'):
+            body = f'touch "$FROGDASH_STATE/{marker}"\npython3 -c "import time; time.sleep(60)"\n'
+        else:
+            body = f'import os, pathlib, time\npathlib.Path(os.environ["FROGDASH_STATE"], "{marker}").touch()\ntime.sleep(60)\n'
+        (self.origin / 'tools' / name).write_text(body, newline='\n')
+
+    def start(self, request=None):
+        if request:
+            (self.state / 'update-request').write_text(request)
+        return subprocess.Popen([SHELL, SCRIPT.as_posix()], env=self.env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                start_new_session=True)   # Its own process group: systemd stops the whole unit
+
+    def reach(self, process, marker):
+        for _ in range(600):
+            if (self.state / marker).exists():
+                return
+            self.assertIsNone(process.poll(), 'the updater ended before it got there')
+            time.sleep(.1)
+        self.fail(f'never reached {marker}')
+
+    def stop(self, process, sig):
+        os.killpg(process.pid, sig)
+        process.wait(30)
+        return json.loads((self.state / 'update-status.json').read_text())
+
+    @unittest.skipUnless(hasattr(os, 'killpg') and shutil.which('python3'), 'needs process groups and python3')
+    def test_stopped_cancelled_or_cut_off_during_the_setup(self):
+        from hardware.frogdash.connectivity import current_update
+        self.slow('frogdash_setup.sh', 'in-setup')
+        self.publish('dash.txt', 'version two')
+        # Stopped (its hour up, or the Pi shutting down): it says so and lets go of the shutdown hold.
+        process = self.start()
+        self.reach(process, 'in-setup')
+        self.assertEqual(json.loads((self.state / 'update-status.json').read_text())['state'], 'running')
+        status = self.stop(process, signal.SIGTERM)
+        self.assertEqual(status['state'], 'failed')
+        self.assertIn('Stopped before it finished', status['message'])
+        self.assertFalse((self.state / 'busy').exists())
+        # Cancel on the dash: the cancel unit leaves update-cancel, then stops the updater.
+        (self.state / 'in-setup').unlink()
+        process = self.start(request='setup')
+        self.reach(process, 'in-setup')
+        self.assertEqual(json.loads((self.state / 'update-status.json').read_text())['mode'], 'setup')
+        (self.state / 'update-cancel').write_text('cancel')
+        status = self.stop(process, signal.SIGTERM)
+        self.assertEqual((status['state'], status['message']), ('cancelled', 'Cancelled. Update now starts again'))
+        (self.state / 'update-cancel').unlink()
+        # Power cut: nothing is written, /run is empty after the restart. The dash shows it as
+        # stopped, Update now works, and the next run finishes normally.
+        (self.state / 'in-setup').unlink()
+        process = self.start(request='requested')
+        self.reach(process, 'in-setup')
+        status = self.stop(process, signal.SIGKILL)
+        self.assertEqual(status['state'], 'running')
+        (self.state / 'busy').unlink(missing_ok=True)
+        self.assertEqual(current_update(self.state, busy=self.state / 'busy')['state'], 'failed')
+        (self.origin / 'tools/frogdash_setup.sh').write_text('echo "Set up: nothing new"\n', newline='\n')
+        self.publish('tools/frogdash_setup.sh', 'echo "Set up: nothing new"\n')
+        self.assertIn(self.run_script()['state'], ('updated', 'current'))
+
+    @unittest.skipUnless(hasattr(os, 'killpg') and shutil.which('python3'), 'needs process groups and python3')
+    def test_the_result_is_shown_before_the_upload_and_a_cut_off_upload_keeps_it(self):
+        self.slow('frogdash_upload.py', 'in-upload')
+        second = self.publish('dash.txt', 'version two')
+        process = self.start()
+        self.reach(process, 'in-upload')
+        # Uploading: the update is already done and shown, so the buttons work.
+        self.assertEqual(json.loads((self.state / 'update-status.json').read_text())['state'], 'updated')
+        status = self.stop(process, signal.SIGTERM)
+        self.assertEqual((status['state'], self.head()), ('updated', second))
+
+    def test_an_sd_card_without_room_fails_at_once_and_changes_nothing(self):
+        self.publish('dash.txt', 'version two')
+        self.env['FROGDASH_MIN_FREE_MB'] = str(10 ** 9)
+        status = self.run_script()
+        self.assertEqual((status['state'], self.head()), ('failed', self.first))
+        self.assertIn('MB free on the Pi', status['message'])
+        self.assertFalse((self.state / 'busy').exists())
 
 
 if __name__ == '__main__':

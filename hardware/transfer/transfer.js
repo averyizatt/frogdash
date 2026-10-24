@@ -37,10 +37,11 @@
   function renderUpdate(update) {
     const busy = update.pending || update.state === 'running';
     $('update-status').textContent = update.pending ? 'Waiting for the dash to start…' : `${update.message}${update.version ? ` · version ${update.version}` : ''}`;
-    $('update-status').dataset.state = update.state === 'failed' ? 'fail' : update.state === 'rolledback' || update.state === 'held' ? 'warn' : '';
-    $('update-run').disabled = busy;
+    $('update-status').dataset.state = update.state === 'failed' ? 'fail' : ['rolledback', 'held', 'cancelled'].includes(update.state) || update.stalled_s ? 'warn' : '';
+    $('update-run').disabled = busy && !(update.state === 'running' && update.mode === 'setup');   // A start-up setup gives way
+    $('update-cancel').hidden = !(update.state === 'running' && !update.pending);
     $('update-undo').disabled = busy || !update.previous;
-    if (!armed) { $('update-run').textContent = 'Update now'; $('update-undo').textContent = 'Undo last update'; }
+    if (!armed) { $('update-run').textContent = 'Update now'; $('update-undo').textContent = 'Undo last update'; $('update-cancel').textContent = 'Cancel'; }
     if (busy && !updating) watchUpdate();
   }
   // The dash restarts during an update and the hotspot stays up for it: keep asking until it answers again.
@@ -154,6 +155,7 @@
   };
   $('upload-off').onclick = () => saveUpload('');
   twoPress($('update-run'), 'update', 'update');
+  twoPress($('update-cancel'), 'cancel', 'cancel');
   twoPress($('update-undo'), 'go back', 'rollback');
 
   async function refresh() {

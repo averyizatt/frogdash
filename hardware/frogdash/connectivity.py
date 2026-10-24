@@ -36,6 +36,8 @@ def read_json(path):
 
 BUSY = Path('/run/frogdash-busy')   # The updater's, for as long as it runs (tools/frogdash_update.sh)
 UPDATE_LIMIT_S = 3700                # frogdash-update.service stops a run after an hour
+STALL_S = 600                        # No step, no setup line, no install output for this long: say so
+PROGRESS = ('update-status.json', 'setup-status.json', 'setup.log')
 
 
 def current_update(folder, busy=None, wall=time.time):
@@ -59,8 +61,30 @@ def current_update(folder, busy=None, wall=time.time):
             now = setup.get('now') if isinstance(setup, dict) and setup.get('running') else None
             if isinstance(now, str) and now:
                 status = {**status, 'message': f"{status.get('message', '')} · Now: {now}"}
+            # Progress: the last time the updater, the setup or an install wrote anything.
+            seen = [path.stat().st_mtime for path in (folder / name for name in PROGRESS) if path.exists()]
+            quiet = wall() - max(seen) if seen else 0
+            if quiet > STALL_S:
+                status = {**status, 'stalled_s': round(quiet),
+                          'message': f"{status['message']} · No progress for {round(quiet / 60)} min: Cancel, or keep waiting"}
+            if (folder / 'update-cancel').exists():
+                status = {**status, 'message': 'Cancelling…'}
     status['pending'] = bool(folder) and (folder / 'update-request').exists()
     return status
+
+
+def ask_update(folder, action, wall=time.time):
+    """Update now, Undo or Cancel from a screen. A start-up Pi setup gives way to Update now:
+    the update runs the setup itself afterwards."""
+    status = current_update(folder, wall=wall)
+    running = status['state'] == 'running'
+    if action == 'cancel':
+        if running:
+            (folder / 'update-cancel').write_text('cancel', encoding='utf-8')
+        return
+    (folder / 'update-request').write_text('rollback' if action == 'rollback' else 'requested', encoding='utf-8')
+    if running and status.get('mode') == 'setup':
+        (folder / 'update-cancel').write_text('update', encoding='utf-8')
 
 
 def load_resume(folder, wall=time.time):
@@ -135,7 +159,7 @@ class TransferPortal:
         os.replace(tmp, path)
 
     def request_update(self, action):
-        (self.folder / 'update-request').write_text('rollback' if action == 'rollback' else 'requested', encoding='utf-8')
+        ask_update(self.folder, action, self.wall)
         # The dash restarts during an update: keep this hotspot and login so the phone page carries on.
         (self.folder / 'hotspot-resume.json').write_text(json.dumps(
             {'until': self.wall() + RESUME_S, 'code': self.code, 'session': self.session}), encoding='utf-8')
@@ -191,8 +215,8 @@ class TransferPortal:
                     action = body.get('action') if isinstance(body, dict) else None
                 except (ValueError, TypeError):
                     action = None
-                if action not in ('update', 'rollback'):
-                    raise web.HTTPBadRequest(text='Expected action: update or rollback')
+                if action not in ('update', 'rollback', 'cancel'):
+                    raise web.HTTPBadRequest(text='Expected action: update, rollback or cancel')
                 await asyncio.to_thread(self.request_update, action)
             return web.json_response(await asyncio.to_thread(self.update_status))
 

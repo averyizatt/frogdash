@@ -192,6 +192,30 @@ laptop on the same hotspot you can still use `ssh` and `sudo sh
 /opt/frogdash/tools/frogdash_update.sh`. Firmware for the ESP32 modules and the
 Nano is separate and still flashed over USB.
 
+### Never stuck on an update
+
+October 2026: a fresh start sat on "Pi setup" with Update now greyed out, so the fix could not
+even be fetched. Since then:
+
+- **Cancel** shows while anything runs (dash and phone). It leaves `update-cancel`, which
+  `frogdash-update-cancel.path` (root) turns into `systemctl stop frogdash-update.service`; the
+  updater says "Cancelled" and Update now works again.
+- **Update now during a start-up Pi setup** stops that setup and starts the update, which runs
+  the setup itself afterwards.
+- **A run that was cut off** (key off, power lost, its hour up) is not believed: "running" counts
+  only while `/run/frogdash-busy` is there and the status is under an hour old, and the updater
+  writes "Stopped before it finished" when it is stopped.
+- **No progress for 10 minutes** (no step, no setup line, no install output) is said on the
+  update panel: "Cancel, or keep waiting". The panel also shows what the setup is doing now.
+- **Checked first:** at least 300 MB free, or it fails at once with what to delete.
+- **Bounded:** every download and install has a time limit; firmware lists 60 s, files 300 s.
+  Java and TunerStudio (a few hundred MB) are installed only from Tune > Install TunerStudio.
+- **The result before the upload:** the screens show Updated (buttons back) while the reports
+  go to GitHub, and a failed or rolled-back update uploads its evidence too, with `setup.log`.
+
+`tests/test_update_script.py` stops, cancels and kills the updater mid-setup and mid-upload and
+checks that the next start shows a usable state and updates normally.
+
 ## One Wi-Fi adapter for the dash cam and internet
 
 If the Pi's built-in Wi-Fi cannot reach your networks (for example it only receives

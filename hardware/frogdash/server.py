@@ -20,7 +20,7 @@ from .gpsaid import GpsAid
 from .helpers import Helpers
 from .fwupdate import Firmware
 from .recorder import Config as LogConfig, Recorder, NAME as LOG_NAME, MIB
-from .connectivity import Connectivity, DEFAULT_SOCKET, current_update, require_local
+from .connectivity import Connectivity, DEFAULT_SOCKET, ask_update, current_update, require_local
 from . import netstate
 from .race import Race
 from .driving import Driving, atomic_write
@@ -331,15 +331,18 @@ def create_app(state, adapter=None, connectivity=None):
         if not folder or state.mode == 'replay':
             raise web.HTTPNotFound()
         if request.method == 'POST':
-            # 'rollback' returns to the version before the last update (tools/frogdash_update.sh).
-            undo = False
+            # 'rollback' returns to the version before the last update (tools/frogdash_update.sh);
+            # 'cancel' stops the one running (frogdash-update-cancel.path).
+            action = 'update'
             if request.can_read_body:
                 try:
-                    undo = (await request.json()).get('action') == 'rollback'
+                    action = (await request.json()).get('action', 'update')
                 except (ValueError, AttributeError):
                     raise web.HTTPBadRequest(text='Invalid update request')
-            await asyncio.to_thread((folder / 'update-request').write_text, 'rollback' if undo else 'requested')
-            return web.json_response({'state': 'requested', 'message': 'Going back requested' if undo else 'Update requested'})
+            if action not in ('update', 'rollback', 'cancel'):
+                raise web.HTTPBadRequest(text='Invalid update request')
+            await asyncio.to_thread(ask_update, folder, action)
+            return web.json_response({'state': 'requested', 'message': {'rollback': 'Going back requested', 'cancel': 'Cancelling…'}.get(action, 'Update requested')})
         status = await asyncio.to_thread(current_update, folder)
         status['network'] = await asyncio.to_thread(netstate.check)   # The Wi-Fi / internet indicator
         return web.json_response(status, headers={'Cache-Control': 'no-store'})

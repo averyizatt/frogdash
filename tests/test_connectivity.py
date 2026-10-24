@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, patch
 
 from aiohttp import CookieJar, ClientSession, UnixConnector, web
 from aiohttp.test_utils import TestClient, TestServer
-from hardware.frogdash.connectivity import Connectivity, RESUME_S, TransferPortal, current_update, load_resume
+from hardware.frogdash.connectivity import Connectivity, RESUME_S, TransferPortal, ask_update, current_update, load_resume
 from hardware.frogdash.hotspot_helper import Hotspot, create_helper, LIFETIME
 from hardware.frogdash.recorder import Recorder, Config
 from hardware.frogdash.server import create_app
@@ -76,6 +76,53 @@ class UpdateStatusTests(unittest.TestCase):
             self.assertTrue(current_update(folder, busy=busy)['pending'])
             (folder / 'update-status.json').write_text(json.dumps({'state': 'current', 'message': 'Already up to date'}))
             self.assertEqual(current_update(folder, busy=busy)['state'], 'current')
+
+
+    def test_no_progress_for_ten_minutes_is_said(self):
+        import os
+        with tempfile.TemporaryDirectory() as directory:
+            folder, busy = Path(directory), Path(directory) / 'busy'
+            busy.touch()
+            status_file = folder / 'update-status.json'
+            status_file.write_text(json.dumps({'state': 'running', 'message': 'Updated (1 changes) and checked. Finishing the Pi setup', 'time': 5000}))
+            (folder / 'setup.log').write_text('Installing Java\n')
+            for path in (status_file, folder / 'setup.log'):
+                os.utime(path, (5000, 5000))
+            self.assertNotIn('stalled_s', current_update(folder, busy=busy, wall=lambda: 5000 + 300))
+            status = current_update(folder, busy=busy, wall=lambda: 5000 + 900)
+            self.assertEqual((status['state'], status['stalled_s']), ('running', 900))
+            self.assertIn('No progress for 15 min: Cancel, or keep waiting', status['message'])
+            os.utime(folder / 'setup.log', (5000 + 850, 5000 + 850))      # apt printed a line: progress
+            self.assertNotIn('stalled_s', current_update(folder, busy=busy, wall=lambda: 5000 + 900))
+
+    def test_cancel_and_update_now_during_a_start_up_setup(self):
+        import time
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            from hardware.frogdash import connectivity
+            connectivity.BUSY, saved = folder / 'busy', connectivity.BUSY
+            try:
+                connectivity.BUSY.touch()
+                status_file = folder / 'update-status.json'
+                status_file.write_text(json.dumps({'state': 'current', 'message': 'Already up to date', 'time': time.time()}))
+                ask_update(folder, 'cancel')                                      # Nothing running: nothing to cancel
+                self.assertFalse((folder / 'update-cancel').exists())
+                # An update running: Cancel asks the cancel unit, and the screens say so.
+                status_file.write_text(json.dumps({'state': 'running', 'message': 'Trying the new version', 'time': time.time(), 'mode': 'update'}))
+                ask_update(folder, 'cancel')
+                self.assertEqual(current_update(folder)['message'], 'Cancelling…')
+                (folder / 'update-cancel').unlink()
+                # The Pi setup the dash asked for at start-up gives way to Update now.
+                status_file.write_text(json.dumps({'state': 'running', 'message': 'Finishing the Pi setup for this version', 'time': time.time(), 'mode': 'setup'}))
+                ask_update(folder, 'update')
+                self.assertEqual(((folder / 'update-request').read_text(), (folder / 'update-cancel').exists()), ('requested', True))
+                # An update itself is never stopped by pressing Update now again.
+                (folder / 'update-cancel').unlink()
+                status_file.write_text(json.dumps({'state': 'running', 'message': 'Trying the new version', 'time': time.time(), 'mode': 'update'}))
+                ask_update(folder, 'update')
+                self.assertFalse((folder / 'update-cancel').exists())
+            finally:
+                connectivity.BUSY = saved
 
 
 class ConnectivityTests(unittest.IsolatedAsyncioTestCase):

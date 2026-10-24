@@ -80,6 +80,19 @@ async def main(browser_path):
             await page.wait_for_function("document.getElementById('update-pill').textContent === 'Updating…'")
             assert await steps(page) == 'internet:done download:done restart:current setup:todo upload:todo'
             assert await page.locator('#update-run').is_disabled()
+            # Cancel is there while it runs, and asks the cancel unit.
+            assert await page.locator('#update-cancel').is_visible()
+            await page.locator('#update-cancel').click()
+            await page.wait_for_function("document.getElementById('update-status').textContent === 'Cancelling…'")
+            assert (folder / 'update-cancel').exists()
+            (folder / 'update-cancel').unlink()
+            # The Pi setup asked for at start-up gives way to Update now.
+            status.write_text(json.dumps({'state': 'running', 'message': 'Finishing the Pi setup for this version', 'version': 'abc1234', 'mode': 'setup'}))
+            await page.locator('#update-check').click()
+            await page.wait_for_function("!document.getElementById('update-run').disabled")
+            status.write_text(json.dumps({'state': 'running', 'message': 'Updated (3 changes). Restarting the dash and checking it', 'version': 'abc1234'}))
+            await page.locator('#update-check').click()
+            await page.wait_for_function("document.getElementById('update-run').disabled")
             # The key goes off: the countdown is shown.
             ups.update(input_present=False, remaining_seconds=4.2)
             await page.wait_for_function("document.getElementById('power-rows').textContent.includes('Shutting down in 5 s')", timeout=8000)

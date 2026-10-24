@@ -67,10 +67,10 @@ install_packages() {
     fi
     DEBIAN_FRONTEND=noninteractive timeout 1500 apt-get install -y -q -o DPkg::Lock::Timeout=600 "$@" >> "$LOG" 2>&1
 }
-fetch() {  # url, file
+fetch() {  # url, file, most seconds (300)
     # Silent: this script's only output is its closing summary line, which the updater shows.
-    if command -v curl >/dev/null 2>&1; then curl -fsSL -m 900 -o "$2" "$1" >/dev/null 2>&1
-    else python3 -c 'import sys, urllib.request; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])' "$1" "$2" >/dev/null 2>&1
+    if command -v curl >/dev/null 2>&1; then curl -fsSL --connect-timeout 20 -m "${3:-300}" -o "$2" "$1" >/dev/null 2>&1
+    else timeout "${3:-300}" python3 -c 'import sys, urllib.request; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])' "$1" "$2" >/dev/null 2>&1
     fi
 }
 kiosk_user() {  # The user the dash screen runs as: the name after frogdash-console@
@@ -241,7 +241,7 @@ else
     if [ -n "$home" ] && [ -d "$home" ]; then target=$home; else target=$OPT; fi
     work=$(mktemp -d)
     doing "Downloading TunerStudio"
-    if ! fetch "$TS_URL" "$work/ts.tar.gz"; then
+    if ! fetch "$TS_URL" "$work/ts.tar.gz" 900; then
         step "TunerStudio: program" failed "Download failed from tunerstudio.com"
     elif [ "$(sha256sum "$work/ts.tar.gz" | cut -c1-64)" != "$TS_SHA" ]; then
         step "TunerStudio: program" failed "The download is not the expected file, so it was not installed"
@@ -349,7 +349,7 @@ firmware_file() {  # name, step name, release URL
     fi
     work=$(mktemp -d)
     doing "$2: looking for a newer build"
-    fetch "$3/$1-firmware.json" "$work/$1.json"
+    fetch "$3/$1-firmware.json" "$work/$1.json" 60
     newest=$(field build "$work/$1.json"); sum=$(field sha256 "$work/$1.json")
     if [ -z "$newest" ] || [ ${#sum} != 64 ]; then
         if [ -n "$on_pi" ]; then step "$2" ok "Build $on_pi is on the Pi (the published list could not be read)"
