@@ -1,147 +1,212 @@
+<div align="center">
+
 # Frogdash
 
-A Raspberry Pi instrument cluster for a Foxbody Mustang, designed for a 1920 × 720, 12.3-inch display, with automatic responsive layouts for standard monitors, tablets and portrait screens. Runs on Linux with SocketCAN, USB GPS through gpsd, and local vehicle controls.
+**A full digital instrument cluster for a turbocharged Foxbody Mustang.**
+Raspberry Pi, 12.3-inch 1920 × 720 display, live engine data over CAN.
 
-## See it running
+[![Tests](https://github.com/averyizatt/frogdash/actions/workflows/test.yml/badge.svg)](https://github.com/averyizatt/frogdash/actions/workflows/test.yml)
+[![Preview](https://github.com/averyizatt/frogdash/actions/workflows/pages.yml/badge.svg)](https://averyizatt.github.io/frogdash/)
+![Version](https://img.shields.io/badge/version-0.4.0-2f9e6b)
+
+**[Try the live preview](https://averyizatt.github.io/frogdash/)** · [Documentation](docs/README.md) · [Install](#install)
+
+</div>
 
 | Looks and photo clusters (72 s) | Menus, shortcuts and features (1:45) |
 |---|---|
 | [![Tour of the looks and photo clusters](docs/media/frogdash-tour-poster.jpg)](docs/media/frogdash-tour.mp4) | [![Tour of the menus and features](docs/media/frogdash-features-poster.jpg)](docs/media/frogdash-features.mp4) |
 
-Recorded from the simulated preview (`preview/`), so the readings are demo data. The live
-preview is at [averyizatt.github.io/frogdash](https://averyizatt.github.io/frogdash/).
+<sub>Recorded from the simulated preview: the readings are demo data. Click a picture to play the video.</sub>
 
-**Start here:** [CAN + USB GPS installation](docs/can-integration.md) and [water/meth, knock, and lighting controls](docs/controls.md). Desktop tests cover the integration; Raspberry Pi and vehicle validation are still pending.
+## What it is
 
-For a console Linux installation, see [console kiosk and boot timing](docs/boot-and-kiosk.md).
-The optional Cage service starts a minimal UI session and opens Chromium as soon
-as the local backend is ready, without waiting for CAN, GPS fix or Wi-Fi.
-Physical key-on startup time has not yet been measured.
+Frogdash replaces the gauge cluster of a 2.3 L turbo Foxbody with a wide screen that shows
+what the engine is doing, warns before something breaks, records every drive and runs the
+car's own add-ons: water/methanol injection, knock monitoring, custom taillights and
+interior lighting. It reads the MicroSquirt ECU and the car's modules over CAN, GPS through
+`gpsd`, and runs entirely on the Pi: no cloud, no phone app, no internet needed to drive.
 
-[CAN compatibility and ECU setup](docs/can-compatibility.md) covers both
-MicroSquirt broadcast modes and the shared fuel/GPS firmware contract.
+It is built to live in a car. It starts in seconds, survives the key going off mid-write,
+updates itself from GitHub with a trial start and automatic rollback, and can be set up,
+diagnosed and recovered from the screen, the steering wheel or a phone, without SSH.
 
-[Steering-wheel navigation](docs/steering-wheel.md) supports five CCM buttons
-over CAN, with visible focus, menu selection, value editing and hold-to-go-back.
-Arrow keys and Enter provide the same navigation in the preview.
+## Features
 
-## Driver display
+### Gauges and looks
+- **Live instruments:** tachometer, GPS speed, boost/vacuum, AFR against the ECU's target,
+  coolant, oil and fuel pressure, intake air, battery and fuel level, each with its own
+  live / stale / fault / no-signal state so a dead sensor never looks like a reading.
+- **28 looks in five collections:** signature, track and touring, retro and future, cyber
+  (neon HUD) and photo clusters, plus two dozen backgrounds, a colour studio, numeral
+  typefaces, panel shapes, glow, transparency and your own images and splash screens.
+- **Photo clusters:** real gauge faces (an old-school Ferrari, a yellow-tach Ferrari, a Fox
+  LCD cluster, Saleen white faces) with needles measured to the printed marks and every dial
+  wired to a real reading. Each has a day and a night picture: with the lights on, the
+  cluster lights up and the needles glow.
+- **Night lighting:** follows the running lights, with its own brightness and colour.
+- **Street, Tuning and Track layouts** that keep their own gauge choices.
+- [UI design](docs/ui-design.md) · [Race and appearance](docs/race-and-appearance.md)
 
-- Large, bold GPS speed and arc tachometer, with a quiet dark background and mint accents.
-- Zero-centered vacuum/boost gauge and AFR gauge with the ECU's actual target.
-- Matched coolant, oil pressure, fuel pressure, intake air, battery, and fuel cards.
-- Taillight turn, brake, running, and reverse inputs; module connection health.
-- Water/meth summary opens its controls directly. Separate tabs for injection, knock settings, and lighting.
-- Knock page: level history, the sensor signal's spectrum with the listening band and the frequency the engine rings at, amplifier gain, and every knock setting ([docs/knock.md](docs/knock.md)).
-- Searchable sensor readings, connection details, and raw CAN traffic.
-- Explicit stale, fault, and unavailable states. Fuel level arrives from the external controller over CAN.
+### Alerts that say what went wrong
+- **26 alerts** across oil, temperatures, boost, AFR, fuel, knock, ignition, electrics,
+  water/meth, the car's modules and the Pi itself. Each has its own switch, threshold, delay
+  and a plain explanation of what it watches and what to check.
+- Shown on the dash (and on photo clusters as a CHECK lamp), with optional chimes through
+  the screen's speakers, latched until acknowledged and saved in the drive's record.
+- [Driving tools and alerts](docs/driving-tools.md) · [Screen audio](docs/screen-audio.md)
 
-See [UI design and gauge behavior](docs/ui-design.md) for display scales and review details.
+### Logging, review and tuning
+- **MegaLogViewer logs:** genuine `.mlg` files at 20 Hz, rotated and kept within a budget,
+  recording with the screen closed.
+- **Drive review:** every drive with synchronised graphs, bookmarks (press **B**) and faults;
+  live graphs of boost, RPM, mixture, knock and temperatures; a last-drive summary.
+- **TunerStudio on the dash:** opens over the gauges with a keyboard and the tuning cable,
+  installed from the Tune tab when wanted.
+- **CAN tools:** a DBC file for SavvyCAN and cantools, raw CAN capture, live signal list.
+- [Data logging](docs/data-logging.md) · [TunerStudio](docs/tunerstudio.md) ·
+  [SavvyCAN and DBC](docs/savvycan.md)
 
-The Pi service also records [rotating MLG data logs](docs/data-logging.md) for
-MegaLogViewer: 20 Hz, 30-minute/32 MiB files, and a 2 GiB retention budget by
-default. Recording continues with the browser closed. Completed logs are available
-under **Sensors → Saved data logs** or in `/var/lib/frogdash/logs`.
+### Engine and car controls
+- **Water/methanol injection:** arm, pump test, progressive flow by boost, failsafes,
+  presets and live injection status, from a controller on the CAN bus.
+- **Knock monitor:** live knock energy, events, the sensor's spectrum with the listening
+  band, amplifier gain and every setting.
+- **Taillight studio:** shows, styles, colours, timing and profiles for custom LED
+  taillights, with a recorded mirror of the LEDs on screen.
+- **Interior lights, Wi-Fi and the phone hotspot** under Controls.
+- **Module firmware over CAN:** new builds for the car's ESP32 modules arrive with an update
+  and install from the dash.
+- [Controls](docs/controls.md) · [Water/meth](docs/water-meth.md) · [Knock](docs/knock.md) ·
+  [Taillights](docs/taillights.md) · [Firmware updates](docs/firmware-updates.md)
 
-[MCP2515 setup](docs/mcp2515.md) supplies the SPI wiring plan and persistent
-500 kbit/s CAN service. Optional [Wi-Fi access](docs/wifi-access.md) adds a
-20-minute hotspot toggle under **Controls → Wi-Fi** and a phone-friendly page for
-downloading logs and checking system status.
+### Driving
+- **Trips and fuel economy:** Trip A/B, MPG and range from calibrated injector data.
+- **Offline street map** centred on the GPS, heading up or north up.
+- **Race timer:** 0–60, eighth and quarter mile, automatic or manual GPS laps, saved sessions.
+- **Cameras:** a Pi CSI reverse camera with guide lines, and a Wi-Fi dash cam's live front
+  and rear view.
+- [Trips and fuel](docs/trip-and-fuel.md) · [Map](docs/map.md) ·
+  [Reverse camera](docs/reverse-camera.md) · [Dash cam](docs/dashcam.md)
 
-[Race mode and appearance](docs/race-and-appearance.md) add GPS acceleration
-splits, eighth/quarter-mile timing, automatic or manual laps, saved session
-exports, custom accents/backgrounds, and configurable startup splash screens.
-Race timing continues on the Pi with the menu closed and is included in MLG logs.
-An optional [reverse camera](docs/reverse-camera.md) (Raspberry Pi CSI camera) opens on the CAN
-reverse signal with adjustable guide lines and a clear CAMERA LOST state.
-Appearance preferences and uploaded artwork save on the current display.
-The appearance gallery includes twenty-four coordinated looks in four collections and
-twenty-four mixable preset backgrounds, including Foxbody-inspired analog, retro digital
-and a cyberpunk Neon HUD cluster. Choose from five gauge layouts, four numeral typefaces,
-panel shapes, edge styles and glow, plus a full-spectrum color studio for accent,
-secondary, numeral and needle colors, alongside image uploads and splash screens.
-Track & touring adds four motorsport looks and two restrained touring looks.
-Widget transparency is adjustable from solid to clear without fading the readings.
+### Phone and Wi-Fi
+- With the engine off, the Pi's Wi-Fi is yours: download logs, see faults, run the system
+  check and update the dash from a phone page, signed in with a code shown on the dash.
+- Diagnostics and the newest drive upload to GitHub after each update.
+- [Wi-Fi access](docs/wifi-access.md) · [Log uploads](docs/log-uploads.md)
 
-[Trips and fuel economy](docs/trip-and-fuel.md) add persistent Trip A/B and
-tracked distance, calibrated injector fuel estimates, US MPG and fuel range.
-The 15.4-gallon tank and four 440 cc/min injectors are prefilled; verify the
-remaining calibration in **Drive → Fuel setup** before enabling estimates.
+### Built to keep running
+- **Updates from the dash:** each new version is started on the side before it is used,
+  checked after the restart, and undone automatically if it does not come up. Cancel is
+  always there, and a run cut off by the key going off never leaves the screen stuck.
+- **Recovery without a keyboard:** a watchdog, a guard that puts back the last version that
+  ran, and a rescue screen with what can be done.
+- **Power:** a PiSugar 3 Plus rides through the key going off and shuts Linux down cleanly.
+- **Setup without SSH:** everything the Pi needs is a step the updater runs by itself, shown
+  with its result under Sensors → System check.
+- [Reliability](docs/reliability.md) · [Power](docs/pisugar-power.md) ·
+  [Setup and service](docs/ownership-and-service.md) · [Boot and kiosk](docs/boot-and-kiosk.md)
 
-[Driving tools](docs/driving-tools.md) add automatic day/night software dimming,
-saved Street/Tuning/Track layouts, conditional latched alerts, optional chimes,
-one-touch log bookmarks, synchronized drive-review graphs on the dash and Wi-Fi
-page, and read-only Pi/CAN health diagnostics.
-[PiSugar 3 Plus power management](docs/pisugar-power.md) replaces the old ACC/relay
-shutdown: battery ride-through, an 8-second input-loss grace period, orderly Linux
-shutdown, final UPS output cutoff, and startup on the next input restoration.
-**Drive > Dash health** shows UPS charge/input state and the previous boot's
-saved-and-synced, unconfirmed, or failed shutdown record.
-[Screen speakers](docs/screen-audio.md) support warning chimes through Linux audio,
-with saved display volume, a test sound and automatic activation in the kiosk.
+## Controls and shortcuts
 
-[Dash management](docs/ownership-and-service.md) adds a setup checklist,
-CAN fuel-level status, portable backup/restore, service
-reminders/history, diagnostic exports, US/metric instruments, supported LCD
-backlight control, parked configuration gates, watchdog recovery and versioned
-installation/rollback. Open **Drive > Dash management**. The [external fuel controller](docs/fuel-can.md) owns sender calibration;
-vehicle commissioning remains pending. Install and bench-test the separate
-[PiSugar power services](docs/pisugar-power.md) when changing the power hardware.
+Everything works from five steering-wheel buttons, a touch screen or a keyboard.
 
-## Browser preview
+| Wheel | Key | Does |
+|---|---|---|
+| Up / Down / Left / Right | Arrow keys (or W / S / D) | Move between items and tabs |
+| ON | Enter, E or Space | Select; edit a value |
+| Hold ON (0.8 s) | Hold Enter | Quick dock with every destination |
+| OFF | A or Esc | Back |
+| Hold OFF (1.5 s) / hold ON (3 s) | Hold A | Close every menu |
+| | M | Controls |
+| | K | Knock monitor |
+| | B | Bookmark this moment in the log |
 
-Open [preview/index.html](preview/index.html) in your browser, or use the GitHub Pages preview. It works directly from disk without dependencies or network access.
+[Steering-wheel navigation](docs/steering-wheel.md)
 
-The preview starts with a repeating simulated drive: acceleration, gear changes,
-cruise, braking and idle, with synchronized moving gauges and light indicators.
-Use **Pause / Play** in the header to freeze or resume, and **Park / Drive** to
-switch between simulated idle and motion. Configuration remains editable while
-the preview gauges move, including transparency, fuel setup and alert settings. **Drive > Dash management > Park demo**
-is also available.
+## Hardware
 
-The persistent **DEMO · SIMULATED** badge identifies generated readings. Controls only change the simulated state. `M` opens controls, `K` opens the knock monitor, and `Esc` closes a dialog. Use the arrow keys to change control tabs. The production UI receives its readings exclusively from the local CAN/GPS service.
+| Part | Used for |
+|---|---|
+| Raspberry Pi 4 | Runs the service and the screen (Raspberry Pi OS, Chromium kiosk under Cage) |
+| 12.3-inch 1920 × 720 bar display | The cluster; other screen sizes get responsive layouts |
+| MCP2515 CAN interface | `can0` at 500 kbit/s through SocketCAN |
+| MicroSquirt ECU | Engine data, broadcast over CAN |
+| ESP32 modules | Gateway, taillights and water/meth controllers on the same bus |
+| VK-162 USB GPS | Speed, position, lap timing and the clock (through `gpsd` and chrony) |
+| PiSugar 3 Plus | Battery ride-through and clean shutdown on ignition loss |
+| Optional | Pi CSI reverse camera, Wi-Fi dash cam, USB keyboard for TunerStudio |
 
-The preview uses copies of the production design with a separate demo transport. After editing `hardware/ui/`, regenerate it:
+[CAN installation](docs/can-integration.md) · [MCP2515 wiring](docs/mcp2515.md) ·
+[CAN compatibility](docs/can-compatibility.md) · [Fuel level over CAN](docs/fuel-can.md)
 
-```bash
-python tools/update_preview.py
-python tools/update_preview.py --check
+## How it fits together
+
+```mermaid
+flowchart LR
+  ECU[MicroSquirt ECU] -- CAN --> MCP[MCP2515 / can0]
+  MOD[ESP32 modules:<br/>gateway, taillights, water/meth] <-- CAN --> MCP
+  GPS[USB GPS] --> GPSD[gpsd]
+  MCP --> SVC[Frogdash service<br/>Python, aiohttp]
+  GPSD --> SVC
+  SVC -- WebSocket --> UI[Dash screen<br/>Chromium kiosk]
+  SVC --> LOGS[(MLG logs,<br/>drives, settings)]
+  SVC -- Wi-Fi hotspot --> PHONE[Phone page]
+  UPD[Updater, guard,<br/>rescue screen] -. systemd .-> SVC
 ```
 
-## Repository
+The service decodes CAN and GPS, runs alerts, logging and race timing, and sends one
+snapshot to the screen many times a second; the screen draws it. Commands (pump tests,
+lighting, firmware) go back over CAN with acknowledgements. Root-only jobs (updates, Wi-Fi,
+CAN resets) are separate systemd units that the service asks for through request files.
 
-| Path | Contents |
-| --- | --- |
-| `hardware/frogdash/` | Linux CAN/GPS service, protocol decoding, control commands |
-| `hardware/ui/` | Authoritative production dashboard |
-| `preview/` | Standalone simulated design preview; published by GitHub Pages |
-| `hardware/systemd/` | Raspberry Pi service templates |
-| `hardware/power/` | PiSugar input-loss monitor and final shutdown hook |
-| `hardware/can_contract/` | Shared schema-2 firmware header with fuel/GPS extension |
-| `hardware/compat/` | Comfort controller patches for GPS/control ownership |
-| `config/` | Production service environment |
-| `tests/` | Protocol, GPS, control, service, replay, and browser checks |
-| `docs/` | Installation, protocol provenance, controls, and design |
+## Install
 
-## Validation
+1. Wire the MCP2515 and enable `can0`: [MCP2515 setup](docs/mcp2515.md).
+2. Install the service, `gpsd` and the kiosk: [CAN + USB GPS installation](docs/can-integration.md)
+   and [console kiosk](docs/boot-and-kiosk.md).
+3. From then on, **Dash management → Software & power → Update now** keeps the Pi up to date
+   and runs every setup step by itself.
+
+## Try it without a car
+
+The [live preview](https://averyizatt.github.io/frogdash/) is the production dashboard with
+a simulated drive in place of the car: open it in any browser, or open
+[`preview/index.html`](preview/index.html) from disk. Everything is clickable; the
+**DEMO · SIMULATED** badge marks generated readings.
+
+## Develop
 
 ```bash
-python -m pip install -r requirements.txt
-python -m unittest discover -s tests -v
+python -m pip install -r requirements.txt -r requirements-tools.lock
+python -m unittest discover -s tests          # About 440 tests
+python tools/update_preview.py                # After editing hardware/ui/
 python tools/update_preview.py --check
 
-# Optional real browser integration and visual review
+# Browser tests (Playwright)
 python -m pip install -r requirements-browser.lock
 python -m playwright install chromium
-python tests/browser_smoke.py
-python tests/browser_personalize.py
-python tests/browser_driving.py
-python tests/browser_layout.py
-python tests/browser_trip.py
-python tests/browser_operations.py
-# Or pass --browser /path/to/chromium
+python tests/browser_smoke.py                 # Also browser_skins.py, browser_layout.py, ...
 ```
 
-The browser check saves screenshots in `.tmp/` and exercises live telemetry, command acknowledgements, stopping pump tests, reconnects, dialog navigation, warnings, offline states, and the isolated design preview.
+CI runs the Python tests on 3.11 and 3.13, pyflakes, the firmware contract build and the
+preview check, and deploys `preview/` to GitHub Pages.
 
-Vehicle commissioning still requires confirming controller firmware ownership, the external fuel-controller CAN format, and the display on the actual Pi. The [original phase plan](docs/phase-2-plan.md) is retained for reference.
+| Path | Contents |
+|---|---|
+| `hardware/frogdash/` | The service: CAN and GPS, alerts, logging, race timing, updates |
+| `hardware/ui/` | The dashboard (HTML, CSS, JavaScript) and the photo cluster pictures |
+| `hardware/transfer/` | The phone page |
+| `hardware/systemd/` | Service, path and timer units |
+| `hardware/can_contract/` | The CAN contract shared with the module firmware, and the DBC |
+| `hardware/power/` | PiSugar monitor and shutdown hook |
+| `tools/` | Updater, setup, guard, rescue screen, uploads and helpers |
+| `preview/` | The simulated preview (generated from `hardware/ui/`) |
+| `tests/` | Unit, script and browser tests |
+| `docs/` | Installation, hardware and feature guides |
+
+## Status
+
+Version 0.4.0. Running in the car, with diagnostics uploaded after each update; desktop
+and browser tests cover every feature. See the [documentation](docs/README.md) for what each
+part does and how it was checked.
