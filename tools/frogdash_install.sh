@@ -12,18 +12,20 @@
 # Options: --user NAME (the screen's user; default: the one running sudo)
 #          --oscillator HZ (the MCP2515 board's crystal; default 8000000, the car's board)
 #          --interrupt GPIO (default 25)
+#          --no-pisugar (skip installing the PiSugar 3 software)
 # Running it again is safe: each step looks first and changes only what is missing. From
 # then on, Update now on the dash keeps everything up to date (tools/frogdash_setup.sh).
 REPO=/opt/frogdash
 URL=https://github.com/averyizatt/frogdash.git
 LOG=/var/log/frogdash-install.log
-user=${SUDO_USER:-}; oscillator=8000000; interrupt=25; check=""
+user=${SUDO_USER:-}; oscillator=8000000; interrupt=25; check=""; pisugar=1
 while [ $# -gt 0 ]; do
     case "$1" in
         --user) user=$2; shift;;
         --oscillator) oscillator=$2; shift;;
         --interrupt) interrupt=$2; shift;;
         --check) check=1;;
+        --no-pisugar) pisugar="";;
         *) echo "Unknown option: $1"; exit 2;;
     esac
     shift
@@ -78,7 +80,7 @@ verify() {
     fi
     if command -v pisugar-server >/dev/null 2>&1 || systemctl cat pisugar-server >/dev/null 2>&1; then
         systemctl is-active --quiet frogdash-power.service && ok "PiSugar power monitor is running" || bad "PiSugar is installed but frogdash-power is not running"
-    else warn "No PiSugar software yet: see docs/pisugar-power.md (the dash runs without it, but turning the key off cuts power)"
+    else warn "No PiSugar software: run this script again without --no-pisugar (the dash runs without it, but turning the key off cuts power)"
     fi
     echo
     if [ $failed = 0 ]; then echo "Everything checked is working."; else echo "$failed check(s) failed: see above."; fi
@@ -158,6 +160,16 @@ for s in json.load(open(sys.argv[1])).get('steps', []):
 EOF
 
 step "9/9 PiSugar power"
+if [ -n "$pisugar" ] && ! systemctl cat pisugar-server >/dev/null 2>&1; then
+    # The vendor's installer, unattended, for the PiSugar 3 Plus (vendor model name "PiSugar 3").
+    if curl -fsSL -m 60 -o /tmp/pisugar-power-manager.sh https://cdn.pisugar.com/release/pisugar-power-manager.sh &&
+            run bash /tmp/pisugar-power-manager.sh --non-interactive --model "PiSugar 3"; then
+        ok "PiSugar software installed"
+    else
+        bad "PiSugar software did not install: see $LOG, then run this again"
+    fi
+    rm -f /tmp/pisugar-power-manager.sh
+fi
 if systemctl cat pisugar-server >/dev/null 2>&1; then
     run systemctl disable pisugar-poweroff.service; run systemctl mask pisugar-poweroff.service
     install -d -m 0755 /usr/local/lib/frogdash-power
@@ -172,7 +184,7 @@ if systemctl cat pisugar-server >/dev/null 2>&1; then
     systemctl daemon-reload; run systemctl enable --now frogdash-power.service
     ok "PiSugar: the dash's shutdown on ignition loss is installed"
 else
-    warn "PiSugar software is not installed. Install it from docs.pisugar.com (choose PiSugar 3), then run this script again."
+    warn "PiSugar skipped (--no-pisugar): the dash runs, but turning the key off cuts power"
 fi
 
 verify

@@ -55,7 +55,7 @@ It shows each step as it goes, `OK` or `FAIL` with what to do:
 7. The dash started and answering
 8. The Pi setup: helpers, GPS, the clock from GPS, the phone hotspot, the exact 1920 × 720
    screen mode, the recovery guard and rescue screen, module firmware
-9. PiSugar power, if its software is installed
+9. PiSugar power: the vendor software and the clean shutdown
 
 Everything is logged in `/var/log/frogdash-install.log`. Running it again is safe.
 
@@ -76,10 +76,9 @@ flags (under-voltage) and the Pi setup's steps.
 
 ## 4. PiSugar
 
-Install the PiSugar Power Manager from the
-[vendor instructions](https://docs.pisugar.com/docs/product-wiki/battery/pisugar3/pisugar-3-series),
-choosing **PiSugar 3**, then run the install command from step 2 again: it adds the dash's
-clean shutdown on ignition loss. Details: [PiSugar power](pisugar-power.md).
+Step 9 installs the PiSugar Power Manager (unattended, model PiSugar 3) and the dash's
+clean shutdown on ignition loss; nothing to do separately. Add `--no-pisugar` to the
+install command to leave it out on a Pi without one. Details: [PiSugar power](pisugar-power.md).
 
 ## 5. What a new card starts without
 
