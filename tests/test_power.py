@@ -119,7 +119,7 @@ class PowerTimerTests(unittest.TestCase):
     def test_normal_systemd_request_and_atomic_runtime_status(self):
         with patch('hardware.power.monitor.subprocess.run') as run:
             request_poweroff()
-            self.assertEqual(run.call_args.args[0], ['/usr/bin/systemctl', '--no-block', 'poweroff'])
+            self.assertEqual(run.call_args.args[0], ['/usr/bin/systemctl', '--no-block', '--job-mode=replace-irreversibly', 'start', 'poweroff.target'])
             self.assertTrue(run.call_args.kwargs['check'])
         with tempfile.TemporaryDirectory() as root:
             path = Path(root) / 'status.json'

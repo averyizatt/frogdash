@@ -102,6 +102,18 @@ elif [ -n "$copied" ]; then
 else step "Recovery guard and rescue screen" ok "Up to date"
 fi
 
+# --- PiSugar power monitor: keep the installed copy current (the installer put it there) ---
+POWER_LIB=${FROGDASH_POWER_LIB:-/usr/local/lib/frogdash-power}
+if [ -f "$POWER_LIB/monitor.py" ] && [ -f "$REPO/hardware/power/monitor.py" ]; then
+    if cmp -s "$REPO/hardware/power/monitor.py" "$POWER_LIB/monitor.py"; then
+        step "PiSugar power monitor" ok "Up to date"
+    elif cp "$REPO/hardware/power/monitor.py" "$POWER_LIB/monitor.py.new" && mv "$POWER_LIB/monitor.py.new" "$POWER_LIB/monitor.py"; then
+        systemctl try-restart frogdash-power.service >/dev/null 2>&1
+        step "PiSugar power monitor" done "Updated and restarted"
+    else step "PiSugar power monitor" failed "Could not copy into $POWER_LIB"
+    fi
+fi
+
 # --- Helpers: update, Wi-Fi and GPS recovery (request-file units), and the Wi-Fi keeper ---
 added=""; broken=""
 install_unit() {  # service name without extension, the unit to enable

@@ -177,7 +177,9 @@ class LossTimer:
 
 def request_poweroff():
     # Never call the UPS cutoff binary here. systemd stops the logger first.
-    subprocess.run(['/usr/bin/systemctl', '--no-block', 'poweroff'], check=True, timeout=5)
+    # Straight to systemd, as `systemctl poweroff` does underneath: on Trixie that command asks
+    # logind first, which refuses this locked-down service ("Call to PowerOff failed: Access denied").
+    subprocess.run(['/usr/bin/systemctl', '--no-block', '--job-mode=replace-irreversibly', 'start', 'poweroff.target'], check=True, timeout=5)
 
 
 class Monitor:
