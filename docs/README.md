@@ -3,6 +3,7 @@
 Back to the [project overview](../README.md).
 
 ## Install and hardware
+- [Fresh install on a new SD card](fresh-install.md): one script, then restart
 - [CAN + USB GPS installation](can-integration.md): the service, `gpsd` and the protocol
 - [MCP2515 wiring and boot configuration](mcp2515.md)
 - [CAN compatibility and ECU setup](can-compatibility.md): MicroSquirt broadcast modes

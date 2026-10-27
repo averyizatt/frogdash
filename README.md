@@ -162,11 +162,18 @@ CAN resets) are separate systemd units that the service asks for through request
 
 ## Install
 
-1. Wire the MCP2515 and enable `can0`: [MCP2515 setup](docs/mcp2515.md).
-2. Install the service, `gpsd` and the kiosk: [CAN + USB GPS installation](docs/can-integration.md)
-   and [console kiosk](docs/boot-and-kiosk.md).
-3. From then on, **Dash management → Software & power → Update now** keeps the Pi up to date
-   and runs every setup step by itself.
+Flash **Raspberry Pi OS Lite (64-bit)** with Raspberry Pi Imager, then on the Pi:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/averyizatt/frogdash/main/tools/frogdash_install.sh | sudo sh
+sudo reboot
+```
+
+One script installs everything (packages, the CAN overlay, the dash, its services, the
+screen, GPS, the hotspot and recovery) and checks each part:
+[fresh install guide](docs/fresh-install.md). From then on, **Dash management → Software &
+power → Update now** keeps the Pi up to date. Wiring: [MCP2515](docs/mcp2515.md) and
+[CAN + USB GPS](docs/can-integration.md).
 
 ## Try it without a car
 
