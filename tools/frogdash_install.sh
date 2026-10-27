@@ -72,7 +72,7 @@ verify() {
         *) bad "Under-voltage or throttling ($throttled): check the supply and the cable";;
     esac
     if [ -f /var/lib/frogdash/setup-status.json ]; then
-        fails=$(python3 -c 'import json,sys; s=json.load(open(sys.argv[1])); print("; ".join(f"{x[\"name\"]}: {x[\"detail\"]}" for x in s.get("steps",[]) if x.get("result")=="failed"))' /var/lib/frogdash/setup-status.json 2>/dev/null)
+        fails=$(python3 -c 'import json,sys; s=json.load(open(sys.argv[1])); print("; ".join(x["name"] + ": " + x["detail"] for x in s.get("steps",[]) if x.get("result")=="failed"))' /var/lib/frogdash/setup-status.json 2>/dev/null)
         if [ -z "$fails" ]; then ok "Pi setup: every step done"; else bad "Pi setup: $fails"; fi
     else warn "Pi setup has not written its status yet"
     fi
@@ -140,7 +140,8 @@ install -m 0644 $REPO/hardware/pam/frogdash-kiosk /etc/pam.d/frogdash-kiosk
 systemctl daemon-reload
 run systemctl set-default multi-user.target
 run systemctl enable frogdash.service frogdash-can.service frogdash-update.path "frogdash-console@$user.service"
-ok "Dash, CAN, updater and the screen for $user enabled; starts on the console without a desktop"
+run systemctl start frogdash-update.path
+ok "Dash, CAN, updater and the screen for $user enabled; CAN and the screen start at the next restart"
 
 step "7/9 The dash"
 run systemctl restart frogdash.service
