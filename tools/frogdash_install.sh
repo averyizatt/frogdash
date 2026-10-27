@@ -80,6 +80,7 @@ verify() {
     fi
     if command -v pisugar-server >/dev/null 2>&1 || systemctl cat pisugar-server >/dev/null 2>&1; then
         systemctl is-active --quiet frogdash-power.service && ok "PiSugar power monitor is running" || bad "PiSugar is installed but frogdash-power is not running"
+        [ -x /usr/lib/systemd/system-shutdown/frogdash-pisugar-poweroff ] && ok "PiSugar output turns off after shutdown" || bad "No PiSugar shutdown hook: run the install again"
     else warn "No PiSugar software: run this script again without --no-pisugar (the dash runs without it, but turning the key off cuts power)"
     fi
     echo
@@ -174,7 +175,9 @@ if systemctl cat pisugar-server >/dev/null 2>&1; then
     run systemctl disable pisugar-poweroff.service; run systemctl mask pisugar-poweroff.service
     install -d -m 0755 /usr/local/lib/frogdash-power
     install -m 0644 $REPO/hardware/power/monitor.py /usr/local/lib/frogdash-power/monitor.py
-    install -m 0755 $REPO/hardware/power/frogdash-pisugar-poweroff /usr/lib/systemd/system-shutdown/frogdash-pisugar-poweroff
+    # The folder does not exist on a fresh Trixie: -D makes it.
+    install -D -m 0755 $REPO/hardware/power/frogdash-pisugar-poweroff /usr/lib/systemd/system-shutdown/frogdash-pisugar-poweroff ||
+        bad "Could not install the shutdown hook that turns the PiSugar off"
     install -m 0644 $REPO/hardware/systemd/frogdash-power.service /etc/systemd/system/
     [ -f /etc/default/frogdash-power ] || install -m 0644 $REPO/config/frogdash-power.env /etc/default/frogdash-power
     [ -f /etc/default/pisugar-server.before-frogdash ] || cp -a /etc/default/pisugar-server /etc/default/pisugar-server.before-frogdash 2>/dev/null
@@ -182,7 +185,7 @@ if systemctl cat pisugar-server >/dev/null 2>&1; then
     run systemctl restart pisugar-server
     run python3 /usr/local/lib/frogdash-power/monitor.py --configure-vendor
     systemctl daemon-reload; run systemctl enable --now frogdash-power.service
-    ok "PiSugar: the dash's shutdown on ignition loss is installed"
+    [ -x /usr/lib/systemd/system-shutdown/frogdash-pisugar-poweroff ] && ok "PiSugar: the dash's shutdown on ignition loss is installed"
 else
     warn "PiSugar skipped (--no-pisugar): the dash runs, but turning the key off cuts power"
 fi
