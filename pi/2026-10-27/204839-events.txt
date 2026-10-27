@@ -1,0 +1,19 @@
+2026-10-27 20:47:04 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-27 20:47:05 UTC  INFO   can      CAN receiving again after the reset
+2026-10-27 20:47:07 UTC  INFO   gps      GPS recovery: Restarting the GPS service
+2026-10-27 20:47:15 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-27 20:47:19 UTC  INFO   can      CAN receiving again after the reset
+2026-10-27 20:47:29 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-27 20:47:31 UTC  INFO   gps      GPS recovery: Looking for the receiver on the USB ports
+2026-10-27 20:47:33 UTC  INFO   can      CAN receiving again after the reset
+2026-10-27 20:47:43 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-27 20:47:47 UTC  INFO   can      CAN receiving again after the reset
+2026-10-27 20:47:57 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-27 20:47:57 UTC  INFO   gps      GPS recovery: Resetting the receiver USB connection
+2026-10-27 20:48:01 UTC  INFO   can      CAN receiving again after the reset
+2026-10-27 20:48:11 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-27 20:48:15 UTC  INFO   can      CAN receiving again after the reset
+2026-10-27 20:48:17 UTC  INFO   can      CAN controller ERROR-ACTIVE
+2026-10-27 20:48:23 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":71}
+2026-10-27 20:48:26 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-27 20:48:30 UTC  INFO   can      CAN receiving again after the reset
