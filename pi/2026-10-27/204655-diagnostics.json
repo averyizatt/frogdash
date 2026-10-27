@@ -1,0 +1,2124 @@
+{
+ "format": "pi-diagnostics",
+ "version": 1,
+ "created": "2026-10-27T20:46:55Z",
+ "version_installed": "af4bf09 Install: step 9 installs the PiSugar 3 software itself (vendor installer, unattended); --no-pisugar to skip",
+ "selftest": {
+  "lines": [
+   {
+    "group": "CAN bus",
+    "name": "CAN module (MCP2515)",
+    "status": "ok",
+    "detail": "spi0.0 \u00b7 can0 up at 500000 bit/s",
+    "fix": ""
+   },
+   {
+    "group": "CAN bus",
+    "name": "Bus health",
+    "status": "warn",
+    "detail": "ERROR-PASSIVE \u00b7 TX err ?, RX err ?",
+    "fix": "Check CAN-H/CAN-L, 60 ohm termination with power off, and 500 kbit/s on every node"
+   },
+   {
+    "group": "CAN bus",
+    "name": "Traffic",
+    "status": "ok",
+    "detail": "56 frames received, 0 rejected",
+    "fix": ""
+   },
+   {
+    "group": "Modules",
+    "name": "Taillights",
+    "status": "fail",
+    "detail": "No messages received",
+    "fix": "Module off, not on the bus, or (MicroSquirt) broadcasting not enabled in TunerStudio"
+   },
+   {
+    "group": "Modules",
+    "name": "Comfort gateway",
+    "status": "fail",
+    "detail": "No messages received",
+    "fix": "Module off, not on the bus, or (MicroSquirt) broadcasting not enabled in TunerStudio"
+   },
+   {
+    "group": "Modules",
+    "name": "Water/meth",
+    "status": "fail",
+    "detail": "No messages received",
+    "fix": "Module off, not on the bus, or (MicroSquirt) broadcasting not enabled in TunerStudio"
+   },
+   {
+    "group": "Modules",
+    "name": "MicroSquirt",
+    "status": "fail",
+    "detail": "No messages received",
+    "fix": "Module off, not on the bus, or (MicroSquirt) broadcasting not enabled in TunerStudio"
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Engine RPM for water/meth (0x309)",
+    "status": "ok",
+    "detail": "0x309 not sent: [Errno 105] No buffer space available (no other node ACKing?)",
+    "fix": ""
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Taillight settings link",
+    "status": "warn",
+    "detail": "No settings status (0x103)",
+    "fix": "Flash the taillight PCB firmware with CAN settings (esp32-s3-pcb)"
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Steering wheel buttons",
+    "status": "warn",
+    "detail": "No button reports (0x501)",
+    "fix": "Check the gateway is running and no button input is stuck (Sensors > CAN check, 0x501)"
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Interior lights",
+    "status": "warn",
+    "detail": "No interior light state (0x503)",
+    "fix": "Needs the comfort module sensor-gateway firmware"
+   },
+   {
+    "group": "GPS and time",
+    "name": "USB GPS",
+    "status": "fail",
+    "detail": "No receiver is reporting (the GPS service is watching no port at all)",
+    "fix": "Receiver unplugged, or gpsd is watching the wrong port: ls -l /dev/serial/by-id/ and set DEVICES in /etc/default/gpsd to the GPS"
+   },
+   {
+    "group": "GPS and time",
+    "name": "Time to first position",
+    "status": "skip",
+    "detail": "No position yet",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "GPS recovery helper",
+    "status": "ok",
+    "detail": "No GPS receiver recognised on USB (no USB serial device is plugged in)",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "GPS broadcast to the bus (0x203)",
+    "status": "ok",
+    "detail": "0x203 not sent: [Errno 105] No buffer space available (no other node ACKing?)",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "Position without GPS",
+    "status": "warn",
+    "detail": "Now: none \u00b7 wheel speed not calibrated yet",
+    "fix": "Drive above 20 mph with a GPS fix for a minute so wheel speed can be calibrated; needs the gateway speed sensor"
+   },
+   {
+    "group": "GPS and time",
+    "name": "Clock",
+    "status": "ok",
+    "detail": "2026-10-27 20:46",
+    "fix": ""
+   },
+   {
+    "group": "Cameras",
+    "name": "Reverse camera",
+    "status": "skip",
+    "detail": "Not enabled",
+    "fix": ""
+   },
+   {
+    "group": "Cameras",
+    "name": "Dash cam",
+    "status": "skip",
+    "detail": "Not enabled",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Power supply",
+    "status": "ok",
+    "detail": "No undervoltage",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Temperature",
+    "status": "ok",
+    "detail": "42 \u00b0C",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Storage",
+    "status": "ok",
+    "detail": "106.0 GiB free",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Data logging",
+    "status": "ok",
+    "detail": "recording",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Internet",
+    "status": "warn",
+    "detail": "Wi-Fi not checked yet",
+    "fix": "Controls > Wi-Fi > Internet: Scan and Connect (only needed for updates)"
+   },
+   {
+    "group": "Updates",
+    "name": "Last update",
+    "status": "ok",
+    "detail": "Pi setup finished \u00b7 version af4bf09",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Gateway firmware",
+    "status": "skip",
+    "detail": "The gateway is not answering. Firmware from before this feature must be replaced once by USB",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Taillight firmware",
+    "status": "skip",
+    "detail": "The taillight controller is not answering. Firmware from before this feature must be replaced once by USB",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Water/meth firmware",
+    "status": "skip",
+    "detail": "No answer. That is normal with the Nano board, which is updated by USB; the ESP32 board answers here once it is fitted",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Pi setup",
+    "status": "ok",
+    "detail": "Done for this version",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Recovery guard and rescue screen",
+    "status": "ok",
+    "detail": "Up to date",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Python packages",
+    "status": "ok",
+    "detail": "All installed",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Dash helpers",
+    "status": "ok",
+    "detail": "All installed",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "GPS service",
+    "status": "warn",
+    "detail": "No GPS receiver recognised on USB (no USB serial device is plugged in). Done by itself once the receiver is plugged in",
+    "fix": "Dash management > Software & power > Update now, with internet connected, tries again"
+   },
+   {
+    "group": "Updates",
+    "name": "Clock from GPS",
+    "status": "ok",
+    "detail": "chrony sets the clock from the GPS",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "TunerStudio: Java and display",
+    "status": "skip",
+    "detail": "Not installed (a few hundred MB): Tune, Install TunerStudio when you want it",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "TunerStudio: program",
+    "status": "skip",
+    "detail": "Not installed (a few hundred MB): Tune, Install TunerStudio when you want it",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "TunerStudio: serial port",
+    "status": "ok",
+    "detail": "foxbody can open the tuning cable",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Screen and start-up",
+    "status": "ok",
+    "detail": "The screen gets exactly 1920 x 720, from start-up on",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Start-up: bootloader update check",
+    "status": "ok",
+    "detail": "Off",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Start-up: unused disk check",
+    "status": "ok",
+    "detail": "Off",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Terminal with sudo",
+    "status": "ok",
+    "detail": "Off (add --terminal to FROGDASH_ARGS in /etc/default/frogdash to turn on the Terminal tab)",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Gateway firmware file",
+    "status": "ok",
+    "detail": "Build a6fa0a6b is the newest",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Taillight firmware file",
+    "status": "ok",
+    "detail": "Build ea05500b is the newest",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Water/meth firmware file",
+    "status": "ok",
+    "detail": "Build 3a02a951 is the newest",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Phone hotspot",
+    "status": "ok",
+    "detail": "Ready: switch it on under Controls, Wi-Fi",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "System log kept",
+    "status": "ok",
+    "detail": "Kept across restarts, at most 150 MB",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Dash cam Wi-Fi",
+    "status": "skip",
+    "detail": "No dash cam connection on this Pi",
+    "fix": ""
+   }
+  ],
+  "counts": {
+   "ok": 26,
+   "warn": 7,
+   "fail": 5,
+   "skip": 9
+  },
+  "time_ms": 1793134015633
+ },
+ "health": {
+  "mode": "socketcan",
+  "transport": {
+   "connected": true,
+   "status": "listening on can0",
+   "received": 56,
+   "malformed": 0,
+   "ignored": 56,
+   "tx_full": 979
+  },
+  "modules": {
+   "taillights": "unavailable",
+   "comfort": "unavailable",
+   "watermeth": "unavailable",
+   "knock": "unavailable"
+  },
+  "gps": {
+   "status": "gpsd connected; waiting for fix",
+   "diagnosis": {
+    "state": "silent",
+    "text": "No receiver is reporting (the GPS service is watching no port at all)",
+    "fix": "Receiver unplugged, or gpsd is watching the wrong port: ls -l /dev/serial/by-id/ and set DEVICES in /etc/default/gpsd to the GPS"
+   },
+   "brief_losses": 0,
+   "receiver_setup": null,
+   "hardware": null,
+   "satellite_data": null,
+   "recovery": {
+    "kind": "silent",
+    "trying": null,
+    "tried": 3,
+    "helper": "ok",
+    "exhausted": true,
+    "next_in_s": 10,
+    "last": "No GPS receiver recognised on USB (no USB serial device is plugged in)",
+    "first_fix_s": null
+   },
+   "tx_status": "0x203 not sent: [Errno 105] No buffer space available (no other node ACKing?)",
+   "tx_count": 56,
+   "conflict": false,
+   "bad_reports": 0,
+   "last_bad": null
+  },
+  "recording": {
+   "enabled": true,
+   "state": "recording",
+   "file": "frogdash-live-20261027T204045Z-7892c84bd3aa.mlg",
+   "rows": 7412,
+   "dropped": 0,
+   "error": null,
+   "hz": 20
+  },
+  "system": {
+   "status": "sampled",
+   "timestamp_ms": 1793134010512,
+   "cpu_c": 41.868,
+   "power": {
+    "raw": 0,
+    "undervoltage_now": false,
+    "throttled_now": false,
+    "undervoltage_since_boot": false,
+    "throttled_since_boot": false
+   },
+   "disk": {
+    "free_bytes": 113837346816,
+    "total_bytes": 125257437184
+   },
+   "can": {
+    "interface": "can0",
+    "state": "ERROR-PASSIVE",
+    "bitrate": 500000,
+    "error_counters": null,
+    "rx_errors": 0,
+    "tx_errors": 64,
+    "rx_dropped": 0,
+    "tx_dropped": 65,
+    "rx_packets": 0,
+    "tx_packets": 0
+   },
+   "notes": [],
+   "ups": {
+    "available": true,
+    "battery_percent": 100.0,
+    "battery_volts": 4.1655326,
+    "charging": true,
+    "auto_power_on": true,
+    "input_present": true,
+    "state": "external_power",
+    "error": null,
+    "dry_run": false,
+    "remaining_seconds": null
+   },
+   "shutdown": {
+    "previous": {
+     "boot_id": "4a2efda8-13ac-49c0-b570-968ade53e193",
+     "scope": "boot",
+     "run_id": "0545974cf67f4b9c832301856e7b71fd",
+     "started_ms": 1793133250693,
+     "ended_ms": 1793133577578,
+     "state": "saved",
+     "interruptions": 0,
+     "errors": [],
+     "recording_enabled": true,
+     "log_rows": 6537,
+     "dropped_samples": 0
+    },
+    "tracking": true,
+    "error": "",
+    "scope": "boot"
+   },
+   "can_module": {
+    "present": true,
+    "driver": "mcp251x",
+    "spi": "spi0.0",
+    "up": true,
+    "interrupts": null
+   }
+  },
+  "can_errors": {
+   "frames": 56,
+   "bus_off": 0,
+   "restarts": 0
+  },
+  "ui_clients": 1,
+  "engine_running": false
+ },
+ "logs": {
+  "recording": {
+   "enabled": true,
+   "state": "recording",
+   "file": "frogdash-live-20261027T204045Z-7892c84bd3aa.mlg",
+   "rows": 7414,
+   "dropped": 0,
+   "error": null,
+   "hz": 20
+  },
+  "files": [
+   {
+    "name": "frogdash-live-20261027T204045Z-7892c84bd3aa.mlg",
+    "bytes": 11476102,
+    "modified_ms": 1793134015731,
+    "active": true
+   },
+   {
+    "name": "frogdash-live-20261027T203740Z-9ad0f4c877a7.mlg",
+    "bytes": 5703313,
+    "modified_ms": 1793133643456,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203410Z-967597c9d104.mlg",
+    "bytes": 10127938,
+    "modified_ms": 1793133577567,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203450Z-9d7a8c629f8e.mlg",
+    "bytes": 5241613,
+    "modified_ms": 1793133458845,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-b776134fd63a.mlg",
+    "bytes": 5720242,
+    "modified_ms": 1793133289090,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203014Z-ea77a3b9419b.mlg",
+    "bytes": 7000690,
+    "modified_ms": 1793133239752,
+    "active": false
+   }
+  ]
+ },
+ "state": {
+  "type": "state",
+  "seq": 19270,
+  "timestamp_ms": 1793134015778,
+  "mode": "socketcan",
+  "values": {
+   "engine.rpm": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "engine.coolant_c": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "engine.afr": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "engine.ego_correction_pct": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "vehicle.battery_v": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "vehicle.fuel_pct": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "lighting.highbeam": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "engine.oil_temp_c": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "vehicle.speed_kph": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "gps.altitude_m": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "gps.latitude": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "gps.longitude": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "gps.track_deg": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "gps.satellites": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "gps.satellites_in_view": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "nav.latitude": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "None",
+    "source_id": null,
+    "timestamp_ms": 1793134015777
+   },
+   "nav.longitude": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "None",
+    "source_id": null,
+    "timestamp_ms": 1793134015777
+   },
+   "nav.track_deg": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "None",
+    "source_id": null,
+    "timestamp_ms": 1793134015777
+   },
+   "nav.source": {
+    "value": "none",
+    "quality": "live",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793134015777
+   },
+   "nav.speed_source": {
+    "value": "none",
+    "quality": "live",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793134015777
+   },
+   "nav.accuracy_m": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793134015777
+   },
+   "nav.since_fix_s": {
+    "value": 0.0,
+    "quality": "live",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793134015777
+   },
+   "nav.wheel_scale": {
+    "value": 1.0,
+    "quality": "unavailable",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793134015777
+   },
+   "meth.flow_ml_min": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "Water/meth estimate",
+    "source_id": null,
+    "timestamp_ms": 1793134015777
+   },
+   "meth.dose_pct": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "Water/meth estimate",
+    "source_id": null,
+    "timestamp_ms": 1793134015777
+   },
+   "meth.iat_change_c": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "Water/meth estimate",
+    "source_id": null,
+    "timestamp_ms": 1793134015777
+   },
+   "trip.a_km": {
+    "value": 0.0,
+    "quality": "live",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793134015778
+   },
+   "trip.b_km": {
+    "value": 0.0,
+    "quality": "live",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793134015778
+   },
+   "trip.total_km": {
+    "value": 0.0,
+    "quality": "live",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793134015778
+   },
+   "fuel.flow_lph": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793134015778
+   },
+   "fuel.remaining_l": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793134015778
+   },
+   "fuel.range_km": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793134015778
+   },
+   "fuel.instant_mpg": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793134015778
+   },
+   "fuel.average_mpg": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793134015778
+   },
+   "dash.bookmark_id": {
+    "value": 0,
+    "quality": "live",
+    "source_id": null,
+    "source": "Drive review",
+    "timestamp_ms": 1793134015778
+   },
+   "race.phase": {
+    "value": "idle",
+    "quality": "live",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793134015778
+   },
+   "race.elapsed_s": {
+    "value": 0.0,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793134015778
+   },
+   "race.distance_m": {
+    "value": 0.0,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793134015778
+   },
+   "race.lap_count": {
+    "value": 0,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793134015778
+   },
+   "race.best_lap_s": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793134015778
+   }
+  },
+  "modules": {
+   "taillights": "unavailable",
+   "comfort": "unavailable",
+   "watermeth": "unavailable",
+   "knock": "unavailable"
+  },
+  "transport": {
+   "connected": true,
+   "status": "listening on can0",
+   "received": 56,
+   "malformed": 0,
+   "ignored": 56,
+   "tx_full": 979
+  },
+  "runtime": {
+   "enabled": true,
+   "conflict": false,
+   "tx_count": 273,
+   "status": "0x309 not sent: [Errno 105] No buffer space available (no other node ACKing?)"
+  },
+  "nav": {
+   "source": "none",
+   "speed_source": "none",
+   "on_road": false,
+   "since_fix_m": 0,
+   "since_fix_s": 0,
+   "accuracy_m": null,
+   "wheel_scale": 1.0,
+   "calibrated": false,
+   "map_loaded": false
+  },
+  "tune": {
+   "available": false,
+   "state": "missing",
+   "message": "TunerStudio is not on the Pi. Install TunerStudio downloads it with Java (a few hundred MB: 10-30 minutes on Wi-Fi)"
+  },
+  "gaps": [],
+  "summary": {
+   "current": null,
+   "last": null,
+   "shutting_down": false,
+   "remaining_s": null
+  },
+  "gps": {
+   "status": "gpsd connected; waiting for fix",
+   "diagnosis": {
+    "state": "silent",
+    "text": "No receiver is reporting (the GPS service is watching no port at all)",
+    "fix": "Receiver unplugged, or gpsd is watching the wrong port: ls -l /dev/serial/by-id/ and set DEVICES in /etc/default/gpsd to the GPS"
+   },
+   "brief_losses": 0,
+   "receiver_setup": null,
+   "hardware": null,
+   "satellite_data": null,
+   "recovery": {
+    "kind": "silent",
+    "trying": null,
+    "tried": 3,
+    "helper": "ok",
+    "exhausted": true,
+    "next_in_s": 9,
+    "last": "No GPS receiver recognised on USB (no USB serial device is plugged in)",
+    "first_fix_s": null
+   },
+   "tx_status": "0x203 not sent: [Errno 105] No buffer space available (no other node ACKing?)",
+   "tx_count": 56,
+   "conflict": false,
+   "bad_reports": 0,
+   "last_bad": null
+  },
+  "controls": {
+   "reasons": {
+    "meth.arm": "Water/meth telemetry is stale or unavailable",
+    "meth.test": "Water/meth telemetry is stale or unavailable",
+    "meth.stop": null,
+    "meth.boost": "Water/meth telemetry is stale or unavailable",
+    "meth.clear_faults": "Water/meth telemetry is stale or unavailable",
+    "meth.restart": "Water/meth telemetry is stale or unavailable",
+    "meth.setting": "Water/meth telemetry is stale or unavailable",
+    "meth.tune_action": "Water/meth telemetry is stale or unavailable",
+    "knock.enable": "Knock controller is offline",
+    "knock.threshold": "Knock controller is offline",
+    "knock.multiplier": "Knock controller is offline",
+    "knock.min_rpm": "Knock controller is offline",
+    "knock.min_map": "Knock controller is offline",
+    "knock.hold": "Knock controller is offline",
+    "knock.level_gain": "Knock controller is offline",
+    "knock.center": "Knock controller is offline",
+    "knock.bandwidth": "Knock controller is offline",
+    "knock.auto_frequency": "Knock controller is offline",
+    "knock.clear_events": "Knock controller is offline",
+    "knock.amp_gain": "Knock controller is offline",
+    "knock.bore": "Knock controller is offline",
+    "knock.relearn": "Knock controller is offline",
+    "knock.refresh": "Knock controller is offline",
+    "lighting.brightness": "Taillight controller is offline",
+    "lighting.mode": "Taillight controller is offline",
+    "lighting.show": "Taillight controller is offline",
+    "lighting.demo": "Taillight controller is offline",
+    "lighting.override": "Taillight controller is offline",
+    "lighting.clear": "Taillight controller is offline",
+    "lighting.custom": "Taillight controller is offline",
+    "lighting.setting": "Taillight controller is offline",
+    "lighting.color": "Taillight controller is offline",
+    "lighting.text": "Taillight controller is offline",
+    "lighting.action": "Taillight controller is offline",
+    "interior.light": "Sensor gateway interior lights are offline",
+    "meth.disarm": null
+   },
+   "pending": null,
+   "interior": {
+    "upper": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "lower": [
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "lighting_active": false,
+   "test_active": false,
+   "last_result": null,
+   "meth_config_conflict": false,
+   "meth_remembered": false,
+   "meth_rearm": null
+  },
+  "taillight": {
+   "supported": false,
+   "complete": false,
+   "revision": null,
+   "unsaved": false,
+   "show": false,
+   "demo": false,
+   "custom": false,
+   "override": false,
+   "show_anim": null,
+   "phase_ms": null,
+   "profiles": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "settings": {},
+   "colors": {},
+   "text": null,
+   "last_ack": null
+  },
+  "meth_tune": {
+   "supported": false,
+   "complete": false,
+   "revision": null,
+   "unsaved": false,
+   "rpm_ok": false,
+   "pre_valid": false,
+   "post_valid": false,
+   "pump_on": false,
+   "early_start": false,
+   "hot_air": false,
+   "ecu_temp": false,
+   "hold": null,
+   "on_ms": null,
+   "period_ms": null,
+   "drive": "relay",
+   "duty_pct": null,
+   "settings": {},
+   "preset": null,
+   "fluid": null,
+   "last_spray": null,
+   "last_ack": null
+  },
+  "knock_detail": {
+   "supported": false,
+   "start_hz": 2000,
+   "step_hz": 300,
+   "normal": null,
+   "burst": null
+  },
+  "events": [],
+  "race": {
+   "mode": "accel",
+   "phase": "idle",
+   "message": "Choose acceleration or laps",
+   "elapsed": 0.0,
+   "distance_m": 0.0,
+   "splits": {},
+   "laps": [],
+   "lap_count": 0,
+   "best_lap": null,
+   "gate": null,
+   "fresh": false,
+   "gps_reason": "Waiting for timestamped USB GPS speed",
+   "interval": null,
+   "warnings": [],
+   "history": [],
+   "storage_error": ""
+  },
+  "drive": {
+   "settings": {
+    "version": 2,
+    "chime": false,
+    "rules": {
+     "oil": {
+      "enabled": true,
+      "delay": 1.0,
+      "psi": 15,
+      "rpm": 1500
+     },
+     "oil_idle": {
+      "enabled": true,
+      "delay": 2.0,
+      "psi": 6,
+      "rpm": 1500
+     },
+     "overrev": {
+      "enabled": true,
+      "delay": 0.2,
+      "rpm": 6000
+     },
+     "knock": {
+      "enabled": true,
+      "delay": 0.2
+     },
+     "knock_retard": {
+      "enabled": true,
+      "delay": 0.5,
+      "deg": 3
+     },
+     "sync": {
+      "enabled": true,
+      "delay": 0.0
+     },
+     "fuel_low": {
+      "enabled": true,
+      "delay": 1.0,
+      "psi": 30
+     },
+     "fuel_boost": {
+      "enabled": true,
+      "delay": 0.5,
+      "base": 35,
+      "margin": 5,
+      "boost": 14
+     },
+     "fuel_level": {
+      "enabled": true,
+      "delay": 10.0,
+      "pct": 12
+     },
+     "trim": {
+      "enabled": true,
+      "delay": 5.0,
+      "pct": 9
+     },
+     "overboost": {
+      "enabled": true,
+      "delay": 0.3,
+      "boost": 76
+     },
+     "lean": {
+      "enabled": true,
+      "delay": 0.8,
+      "delta": 1,
+      "boost": 20,
+      "rpm": 1500
+     },
+     "rich": {
+      "enabled": true,
+      "delay": 1.0,
+      "afr": 10,
+      "boost": 34
+     },
+     "cold_boost": {
+      "enabled": true,
+      "delay": 0.5,
+      "c": 60,
+      "boost": 14
+     },
+     "coolant": {
+      "enabled": true,
+      "delay": 2.0,
+      "c": 112
+     },
+     "iat": {
+      "enabled": true,
+      "delay": 3.0,
+      "c": 60
+     },
+     "meth": {
+      "enabled": true,
+      "delay": 1.0
+     },
+     "meth_tank": {
+      "enabled": true,
+      "delay": 5.0,
+      "pct": 15
+     },
+     "meth_off": {
+      "enabled": false,
+      "delay": 1.0,
+      "boost": 34
+     },
+     "batt_low": {
+      "enabled": true,
+      "delay": 10.0,
+      "v": 12.6
+     },
+     "batt_high": {
+      "enabled": true,
+      "delay": 5.0,
+      "v": 15.2
+     },
+     "taillights": {
+      "enabled": true,
+      "delay": 10.0
+     },
+     "gateway": {
+      "enabled": true,
+      "delay": 5.0
+     },
+     "meth_module": {
+      "enabled": true,
+      "delay": 5.0
+     },
+     "pi_power": {
+      "enabled": true,
+      "delay": 2.0
+     },
+     "pi_heat": {
+      "enabled": true,
+      "delay": 10.0,
+      "c": 80
+     }
+    }
+   },
+   "alerts": [
+    {
+     "key": "oil",
+     "code": "OIL-01",
+     "title": "LOW OIL PRESSURE",
+     "severity": "critical",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "oil_idle",
+     "code": "OIL-02",
+     "title": "LOW OIL PRESSURE AT IDLE",
+     "severity": "critical",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "overrev",
+     "code": "RPM-01",
+     "title": "OVER-REV",
+     "severity": "critical",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "knock",
+     "code": "KNK-01",
+     "title": "KNOCK DETECTED",
+     "severity": "critical",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "knock_retard",
+     "code": "KNK-02",
+     "title": "ECU PULLING TIMING",
+     "severity": "warning",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "sync",
+     "code": "IGN-01",
+     "title": "IGNITION SYNC LOST",
+     "severity": "warning",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "fuel_low",
+     "code": "FUEL-01",
+     "title": "LOW FUEL PRESSURE",
+     "severity": "critical",
+     "group": "fuel",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "fuel_boost",
+     "code": "FUEL-02",
+     "title": "FUEL PRESSURE LOW IN BOOST",
+     "severity": "critical",
+     "group": "fuel",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "fuel_level",
+     "code": "FUEL-03",
+     "title": "FUEL LEVEL LOW",
+     "severity": "warning",
+     "group": "fuel",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "trim",
+     "code": "FUEL-04",
+     "title": "FUEL TRIM OFF",
+     "severity": "warning",
+     "group": "fuel",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "overboost",
+     "code": "BST-01",
+     "title": "OVERBOOST",
+     "severity": "critical",
+     "group": "boost",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "lean",
+     "code": "AFR-01",
+     "title": "LEAN UNDER BOOST",
+     "severity": "critical",
+     "group": "boost",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "rich",
+     "code": "AFR-02",
+     "title": "RICH UNDER BOOST",
+     "severity": "warning",
+     "group": "boost",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "cold_boost",
+     "code": "BST-02",
+     "title": "BOOST ON A COLD ENGINE",
+     "severity": "warning",
+     "group": "boost",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "coolant",
+     "code": "TMP-01",
+     "title": "COOLANT HIGH",
+     "severity": "critical",
+     "group": "temps",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "iat",
+     "code": "TMP-02",
+     "title": "INTAKE AIR HOT",
+     "severity": "warning",
+     "group": "temps",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "meth",
+     "code": "WMI-01",
+     "title": "WATER/METH FAULT",
+     "severity": "critical",
+     "group": "meth",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "meth_tank",
+     "code": "WMI-02",
+     "title": "WATER/METH TANK LOW",
+     "severity": "warning",
+     "group": "meth",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "meth_off",
+     "code": "WMI-03",
+     "title": "BOOST WITH WATER/METH OFF",
+     "severity": "warning",
+     "group": "meth",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "batt_low",
+     "code": "ELC-01",
+     "title": "NOT CHARGING",
+     "severity": "warning",
+     "group": "electrical",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "batt_high",
+     "code": "ELC-02",
+     "title": "CHARGING VOLTAGE HIGH",
+     "severity": "warning",
+     "group": "electrical",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "taillights",
+     "code": "MOD-01",
+     "title": "TAILLIGHTS NOT RESPONDING",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": "unavailable",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "gateway",
+     "code": "MOD-02",
+     "title": "SENSOR GATEWAY NOT RESPONDING",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": "unavailable",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "meth_module",
+     "code": "MOD-03",
+     "title": "WATER/METH CONTROLLER NOT RESPONDING",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": "unavailable",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "pi_power",
+     "code": "PI-01",
+     "title": "PI POWER LOW",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": "OK",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "pi_heat",
+     "code": "PI-02",
+     "title": "PI TOO HOT",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": 41.868,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    }
+   ],
+   "alert_seq": 0,
+   "marker_seq": 0,
+   "last_event": null,
+   "current": null,
+   "error": ""
+  },
+  "trip": {
+   "settings": {
+    "enabled": false,
+    "capacity_l": 58.2953414736,
+    "reserve_l": 3,
+    "injector_cc_min": 440,
+    "injectors": 4,
+    "pw2_injectors": 0,
+    "pulses_per_rev": 0.5,
+    "dead_ms": 0,
+    "correction": 1
+   },
+   "counters": {
+    "a": {
+     "km": 0.0,
+     "moving_s": 0.0,
+     "engine_s": 0.0,
+     "fuel_l": 0.0,
+     "paired_km": 0.0,
+     "paired_l": 0.0,
+     "missing_s": 1456.7275294460069,
+     "mpg": null
+    },
+    "b": {
+     "km": 0.0,
+     "moving_s": 0.0,
+     "engine_s": 0.0,
+     "fuel_l": 0.0,
+     "paired_km": 0.0,
+     "paired_l": 0.0,
+     "missing_s": 1456.7275294460069,
+     "mpg": null
+    },
+    "total": {
+     "km": 0.0,
+     "moving_s": 0.0,
+     "engine_s": 0.0,
+     "fuel_l": 0.0,
+     "paired_km": 0.0,
+     "paired_l": 0.0,
+     "missing_s": 1456.7275294460069,
+     "mpg": null
+    }
+   },
+   "learned": {
+    "km": 0.0,
+    "litres": 0.0
+   },
+   "flow_lph": null,
+   "instant_mpg": null,
+   "average_mpg": null,
+   "range_km": null,
+   "remaining_l": null,
+   "last_manual_l": null,
+   "odometer_km": null,
+   "fuel_source": "No fuel amount",
+   "coasting": false,
+   "gps_live": false,
+   "fuel_live": false,
+   "error": "",
+   "estimated": true
+  },
+  "operations": {
+   "version": "0.4.0",
+   "os": "Debian GNU/Linux 13 (trixie)",
+   "model": "Raspberry Pi 4 Model B Rev 1.5",
+   "python": "3.13.5",
+   "parked": false,
+   "maintenance": [],
+   "checks": {},
+   "error": "",
+   "restore_pending": false,
+   "capabilities": [
+    {
+     "module": "Water / meth",
+     "command": "Acknowledged by 0x30A",
+     "readback": "Live mode/duty/faults",
+     "persistence": "Not guaranteed by current firmware"
+    },
+    {
+     "module": "Knock",
+     "command": "Acknowledged by 0x30A",
+     "readback": "Configuration refresh supported",
+     "persistence": "Not guaranteed by current firmware"
+    },
+    {
+     "module": "Taillights",
+     "command": "Sent only; no ACK defined",
+     "readback": "Lighting state and brightness telemetry",
+     "persistence": "Not confirmed"
+    }
+   ]
+  },
+  "system": {
+   "status": "sampled",
+   "timestamp_ms": 1793134015695,
+   "cpu_c": 41.381,
+   "power": {
+    "raw": 0,
+    "undervoltage_now": false,
+    "throttled_now": false,
+    "undervoltage_since_boot": false,
+    "throttled_since_boot": false
+   },
+   "disk": {
+    "free_bytes": 113837178880,
+    "total_bytes": 125257437184
+   },
+   "can": {
+    "interface": "can0",
+    "state": "ERROR-PASSIVE",
+    "bitrate": 500000,
+    "error_counters": null,
+    "rx_errors": 0,
+    "tx_errors": 65,
+    "rx_dropped": 0,
+    "tx_dropped": 66,
+    "rx_packets": 0,
+    "tx_packets": 0
+   },
+   "notes": [],
+   "ups": {
+    "available": true,
+    "battery_percent": 100.0,
+    "battery_volts": 4.170333,
+    "charging": true,
+    "auto_power_on": true,
+    "input_present": true,
+    "state": "external_power",
+    "error": null,
+    "dry_run": false,
+    "remaining_seconds": null
+   },
+   "shutdown": {
+    "previous": {
+     "boot_id": "4a2efda8-13ac-49c0-b570-968ade53e193",
+     "scope": "boot",
+     "run_id": "0545974cf67f4b9c832301856e7b71fd",
+     "started_ms": 1793133250693,
+     "ended_ms": 1793133577578,
+     "state": "saved",
+     "interruptions": 0,
+     "errors": [],
+     "recording_enabled": true,
+     "log_rows": 6537,
+     "dropped_samples": 0
+    },
+    "tracking": true,
+    "error": "",
+    "scope": "boot"
+   },
+   "can_module": {
+    "present": true,
+    "driver": "mcp251x",
+    "spi": "spi0.0",
+    "up": true,
+    "interrupts": null
+   }
+  },
+  "can_errors": {
+   "frames": 56,
+   "bus_off": 0,
+   "restarts": 0
+  },
+  "can_watch": {
+   "silent_s": 1.1,
+   "resets": 27,
+   "tries": 0,
+   "helper": "ok",
+   "last_reset": 1793134013.6483312,
+   "last_result": {
+    "action": "reset",
+    "result": "ok",
+    "message": "can0 taken down and up again",
+    "time": 1793134013
+   }
+  },
+  "firmware": {
+   "gateway": {
+    "name": "gateway",
+    "label": "Gateway",
+    "title": "Gateway firmware",
+    "warning": "Speed, fuel, wheel buttons and interior lights pause for about a minute.",
+    "installed": null,
+    "can_restart": false,
+    "on_trial": false,
+    "available": "a6fa0a6b",
+    "can_install": false,
+    "new": false,
+    "note": "The gateway is not answering. Firmware from before this feature must be replaced once by USB",
+    "short": "not answering",
+    "job": {
+     "state": "idle",
+     "message": "",
+     "progress": 0.0
+    }
+   },
+   "taillights": {
+    "name": "taillights",
+    "label": "Taillight controller",
+    "title": "Taillight firmware",
+    "warning": "Lights off and foot off the brake: the taillights stay dark for a few minutes, and any light switched on stops the update.",
+    "installed": null,
+    "can_restart": false,
+    "on_trial": false,
+    "available": "ea05500b",
+    "can_install": false,
+    "new": false,
+    "note": "The taillight controller is not answering. Firmware from before this feature must be replaced once by USB",
+    "short": "not answering",
+    "job": {
+     "state": "idle",
+     "message": "",
+     "progress": 0.0
+    }
+   },
+   "watermeth": {
+    "name": "watermeth",
+    "label": "Water/meth controller",
+    "title": "Water/meth firmware",
+    "warning": "Engine off: injection is off for about a minute, and the controller stops the update if boost comes up.",
+    "installed": null,
+    "can_restart": false,
+    "on_trial": false,
+    "available": "3a02a951",
+    "can_install": false,
+    "new": false,
+    "note": "No answer. That is normal with the Nano board, which is updated by USB; the ESP32 board answers here once it is fitted",
+    "short": "no answer (normal with the Nano board)",
+    "job": {
+     "state": "idle",
+     "message": "",
+     "progress": 0.0
+    }
+   }
+  },
+  "updating": [],
+  "wheel": {
+   "session": "5300c8b03e314308b11fb32c504da557",
+   "seq": 0,
+   "status": "unavailable",
+   "events": []
+  },
+  "recording": {
+   "enabled": true,
+   "state": "recording",
+   "file": "frogdash-live-20261027T204045Z-7892c84bd3aa.mlg",
+   "rows": 7414,
+   "dropped": 0,
+   "error": null,
+   "hz": 20
+  },
+  "faults": {}
+ },
+ "display": {
+  "status": "fresh",
+  "age_seconds": 1.4,
+  "screen": [
+   1920,
+   720
+  ],
+  "viewport": [
+   1920,
+   720
+  ],
+  "visual": [
+   1920,
+   720,
+   1,
+   0,
+   0
+  ],
+  "pixel_ratio": 1,
+  "responsive": false,
+  "dashboard": [
+   0,
+   0,
+   1920,
+   720
+  ],
+  "position": "absolute",
+  "transform": "matrix(1, 0, 0, 1, 0, 0)",
+  "margin": "-360px 0px 0px -960px",
+  "body_overflow": "hidden",
+  "scroll": [
+   0,
+   0
+  ],
+  "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+  "responsive_css": true,
+  "first_frame_ms": 1389,
+  "others_loaded_ms": 5943
+ },
+ "firmware": {
+  "gateway": {
+   "name": "gateway",
+   "label": "Gateway",
+   "title": "Gateway firmware",
+   "warning": "Speed, fuel, wheel buttons and interior lights pause for about a minute.",
+   "installed": null,
+   "can_restart": false,
+   "on_trial": false,
+   "available": "a6fa0a6b",
+   "can_install": false,
+   "new": false,
+   "note": "The gateway is not answering. Firmware from before this feature must be replaced once by USB",
+   "short": "not answering",
+   "job": {
+    "state": "idle",
+    "message": "",
+    "progress": 0.0
+   }
+  },
+  "taillights": {
+   "name": "taillights",
+   "label": "Taillight controller",
+   "title": "Taillight firmware",
+   "warning": "Lights off and foot off the brake: the taillights stay dark for a few minutes, and any light switched on stops the update.",
+   "installed": null,
+   "can_restart": false,
+   "on_trial": false,
+   "available": "ea05500b",
+   "can_install": false,
+   "new": false,
+   "note": "The taillight controller is not answering. Firmware from before this feature must be replaced once by USB",
+   "short": "not answering",
+   "job": {
+    "state": "idle",
+    "message": "",
+    "progress": 0.0
+   }
+  },
+  "watermeth": {
+   "name": "watermeth",
+   "label": "Water/meth controller",
+   "title": "Water/meth firmware",
+   "warning": "Engine off: injection is off for about a minute, and the controller stops the update if boost comes up.",
+   "installed": null,
+   "can_restart": false,
+   "on_trial": false,
+   "available": "3a02a951",
+   "can_install": false,
+   "new": false,
+   "note": "No answer. That is normal with the Nano board, which is updated by USB; the ESP32 board answers here once it is fitted",
+   "short": "no answer (normal with the Nano board)",
+   "job": {
+    "state": "idle",
+    "message": "",
+    "progress": 0.0
+   }
+  }
+ },
+ "gps": {
+  "services": [
+   "active",
+   "active"
+  ],
+  "gpsd_config": "# Devices gpsd should collect to at boot time.\n# They need to be read/writeable, either by user gpsd or the group dialout.\nDEVICES=\"\"\n\n# Other options you want to pass to gpsd\nGPSD_OPTIONS=\"\"\n\n# Automatically hot add/remove USB GPS devices via gpsdctl\nUSBAUTO=\"true\"\n",
+  "serial_ports": "ls: cannot access '/dev/serial/by-id/': No such file or directory\n",
+  "usb": "Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub\nBus 001 Device 002: ID 2109:3431 VIA Labs, Inc. Hub\nBus 001 Device 003: ID 1038:1622 SteelSeries ApS SteelSeries Apex 3 TKL\nBus 001 Device 004: ID 1038:1720 SteelSeries ApS Mouse\nBus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub\n",
+  "gpspipe": "{\"class\":\"VERSION\",\"release\":\"3.25\",\"rev\":\"3.25\",\"proto_major\":3,\"proto_minor\":15}\n{\"class\":\"DEVICES\",\"devices\":[]}\n{\"class\":\"WATCH\",\"enable\":true,\"json\":true,\"nmea\":false,\"raw\":0,\"scaled\":false,\"timing\":false,\"split24\":false,\"pps\":false}\n"
+ },
+ "can": {
+  "link": "3: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 16 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10\n    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 \n    can state ERROR-PASSIVE restart-ms 100 \n\t  bitrate 500000 sample-point 0.750\n\t  tq 250 prop-seg 2 phase-seg1 3 phase-seg2 2 sjw 1 brp 1\n\t  mcp251x: tseg1 3..16 tseg2 2..8 sjw 1..4 brp 1..64 brp_inc 1\n\t  clock 4000000 \n\t  re-started bus-errors arbit-lost error-warn error-pass bus-off\n\t  0          0          0          66         66         0         numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus spi parentdev spi0.0 \n    RX:  bytes packets errors dropped  missed   mcast           \n             0       0      0       0       0       0 \n    TX:  bytes packets errors dropped carrier collsns           \n             0       0     65      66       0       0 \n",
+  "traffic_2s": "read: Network is down\n"
+ },
+ "helpers": {
+  "update-status.json": {
+   "state": "current",
+   "message": "Pi setup finished",
+   "version": "af4bf09",
+   "previous": "",
+   "time": 1793133775,
+   "mode": "setup"
+  },
+  "setup-status.json": {
+   "stamp": "d2d79365f3bb",
+   "running": false,
+   "time": 1793133861,
+   "now": "",
+   "steps": [
+    {
+     "name": "Recovery guard and rescue screen",
+     "result": "ok",
+     "detail": "Up to date"
+    },
+    {
+     "name": "Python packages",
+     "result": "ok",
+     "detail": "All installed"
+    },
+    {
+     "name": "Dash helpers",
+     "result": "ok",
+     "detail": "All installed"
+    },
+    {
+     "name": "GPS service",
+     "result": "waiting",
+     "detail": "No GPS receiver recognised on USB (no USB serial device is plugged in). Done by itself once the receiver is plugged in"
+    },
+    {
+     "name": "Clock from GPS",
+     "result": "ok",
+     "detail": "chrony sets the clock from the GPS"
+    },
+    {
+     "name": "TunerStudio: Java and display",
+     "result": "waiting",
+     "detail": "Missing xwayland default-jre: needs the internet: press Update now with Wi-Fi connected"
+    },
+    {
+     "name": "TunerStudio: program",
+     "result": "waiting",
+     "detail": "Not downloaded yet: needs the internet: press Update now with Wi-Fi connected"
+    },
+    {
+     "name": "TunerStudio: serial port",
+     "result": "ok",
+     "detail": "foxbody can open the tuning cable"
+    },
+    {
+     "name": "Screen and start-up",
+     "result": "ok",
+     "detail": "The screen gets exactly 1920 x 720, from start-up on"
+    },
+    {
+     "name": "Start-up: bootloader update check",
+     "result": "ok",
+     "detail": "Off"
+    },
+    {
+     "name": "Start-up: unused disk check",
+     "result": "ok",
+     "detail": "Off"
+    },
+    {
+     "name": "Terminal with sudo",
+     "result": "ok",
+     "detail": "Off (add --terminal to FROGDASH_ARGS in /etc/default/frogdash to turn on the Terminal tab)"
+    },
+    {
+     "name": "Gateway firmware file",
+     "result": "ok",
+     "detail": "Build a6fa0a6b is on the Pi (no internet to look for a newer one)"
+    },
+    {
+     "name": "Taillight firmware file",
+     "result": "ok",
+     "detail": "Build ea05500b is on the Pi (no internet to look for a newer one)"
+    },
+    {
+     "name": "Water/meth firmware file",
+     "result": "ok",
+     "detail": "Build 3a02a951 is on the Pi (no internet to look for a newer one)"
+    },
+    {
+     "name": "Phone hotspot",
+     "result": "ok",
+     "detail": "Ready: switch it on under Controls, Wi-Fi"
+    },
+    {
+     "name": "System log kept",
+     "result": "ok",
+     "detail": "Kept across restarts, at most 150 MB"
+    },
+    {
+     "name": "Dash cam Wi-Fi",
+     "result": "skipped",
+     "detail": "No dash cam connection on this Pi"
+    }
+   ]
+  },
+  "gps-status.json": {
+   "action": "repin",
+   "result": "failed",
+   "message": "No GPS receiver recognised on USB (no USB serial device is plugged in)",
+   "time": 1793133850
+  },
+  "can-status.json": {
+   "action": "reset",
+   "result": "ok",
+   "message": "can0 taken down and up again",
+   "time": 1793134013
+  },
+  "wifi-status.json": null,
+  "screen-status.json": {
+   "connectors": [
+    {
+     "name": "HDMI-A-1",
+     "status": "connected",
+     "edid_bytes": 256,
+     "edid_ok": true,
+     "panel_1920x720": true,
+     "modes": [
+      "1920x720"
+     ],
+     "mode_count": 1
+    },
+    {
+     "name": "HDMI-A-2",
+     "status": "disconnected",
+     "edid_bytes": 0,
+     "edid_ok": false,
+     "panel_1920x720": false,
+     "modes": [],
+     "mode_count": 0
+    }
+   ],
+   "cmdline": "coherent_pool=1M 8250.nr_uarts=0 snd_bcm2835.enable_headphones=0 cgroup_disable=memory numa_policy=interleave nvme.max_host_mem_size_mb=32 snd_bcm2835.enable_headphones=1 snd_bcm2835.enable_hdmi=1 snd_bcm2835.enable_hdmi=0  numa=fake=2 system_heap.max_order=0 iommu_dma_numa_policy=interleave smsc95xx.macaddr=(hidden) vc_mem.mem_base=0x3ec00000 vc_mem.mem_size=0x40000000  console=ttyS0,115200 console=tty1 root=PARTUUID=05ea8c09-02 rootfstype=ext4 fsck.repair=yes rootwait cfg80211.ieee80211_regdom=GB drm.edid_firmware=edid/frogdash-1920x720.bin",
+   "config": [
+    "display_auto_detect=1",
+    "dtoverlay=vc4-kms-v3d",
+    "max_framebuffers=2",
+    "disable_fw_kms_setup=1",
+    "disable_overscan=1",
+    "[cm4]",
+    "[cm5]",
+    "[pi5]",
+    "[all]",
+    "[all]",
+    "[all]",
+    "disable_fw_kms_setup=1",
+    "hdmi_edid_file:0=1",
+    "hdmi_edid_filename:0=frogdash-1920x720.bin",
+    "hdmi_edid_file:1=1",
+    "hdmi_edid_filename:1=frogdash-1920x720.bin",
+    "hdmi_group:0=2",
+    "hdmi_mode:0=87",
+    "hdmi_timings:0=1920 1 48 32 80 720 0 3 10 8 0 0 0 60 0 92250000 8",
+    "hdmi_group:1=2",
+    "hdmi_mode:1=87",
+    "hdmi_timings:1=1920 1 48 32 80 720 0 3 10 8 0 0 0 60 0 92250000 8",
+    "[all]"
+   ],
+   "applied": true,
+   "boot_speedups": false,
+   "edid_installed": true,
+   "tryboot_now": false,
+   "boot_time": [
+    "Startup finished in 2.581s (kernel) + 27.346s (userspace) = 29.928s "
+   ],
+   "first_render": [
+    "[   61.386487] raspberrypi sh[2186]: Frogdash kiosk: first render heartbeat observed (boot+61.38s; 4.11s after browser launch)"
+   ],
+   "bootloader": [
+    "2025/05/08 16:21:35"
+   ],
+   "state": "idle",
+   "message": "",
+   "time": 1793133145
+  }
+ },
+ "update_failure_log": null,
+ "setup_log": "2026-10-27 20:30:47 Installing chrony (the clock from GPS)\nHit:1 http://deb.debian.org/debian trixie InRelease\nHit:2 http://deb.debian.org/debian trixie-updates InRelease\nHit:3 http://deb.debian.org/debian-security trixie-security InRelease\nHit:4 http://archive.raspberrypi.com/debian trixie InRelease\nReading package lists...\nReading package lists...\nBuilding dependency tree...\nReading state information...\nSuggested packages:\n  dnsutils networkd-dispatcher\nThe following packages will be REMOVED:\n  systemd-timesyncd\nThe following NEW packages will be installed:\n  chrony\n0 upgraded, 1 newly installed, 1 to remove and 16 not upgraded.\nNeed to get 300 kB of archives.\nAfter this operation, 517 kB of additional disk space will be used.\nGet:1 http://deb.debian.org/debian trixie/main arm64 chrony arm64 4.6.1-3+deb13u2 [300 kB]\nFetched 300 kB in 15s (19.7 kB/s)\n(Reading database ... \n(Reading database ... 5%\n(Reading database ... 10%\n(Reading database ... 15%\n(Reading database ... 20%\n(Reading database ... 25%\n(Reading database ... 30%\n(Reading database ... 35%\n(Reading database ... 40%\n(Reading database ... 45%\n(Reading database ... 50%\n(Reading database ... 55%\n(Reading database ... 60%\n(Reading database ... 65%\n(Reading database ... 70%\n(Reading database ... 75%\n(Reading database ... 80%\n(Reading database ... 85%\n(Reading database ... 90%\n(Reading database ... 95%\n(Reading database ... 100%\n(Reading database ... 85360 files and directories currently installed.)\nRemoving systemd-timesyncd (257.13-1~deb13u1) ...\nSelecting previously unselected package chrony.\n(Reading database ... \n(Reading database ... 5%\n(Reading database ... 10%\n(Reading database ... 15%\n(Reading database ... 20%\n(Reading database ... 25%\n(Reading database ... 30%\n(Reading database ... 35%\n(Reading database ... 40%\n(Reading database ... 45%\n(Reading database ... 50%\n(Reading database ... 55%\n(Reading database ... 60%\n(Reading database ... 65%\n(Reading database ... 70%\n(Reading database ... 75%\n(Reading database ... 80%\n(Reading database ... 85%\n(Reading database ... 90%\n(Reading database ... 95%\n(Reading database ... 100%\n(Reading database ... 85339 files and directories currently installed.)\nPreparing to unpack .../chrony_4.6.1-3+deb13u2_arm64.deb ...\nUnpacking chrony (4.6.1-3+deb13u2) ...\nSetting up chrony (4.6.1-3+deb13u2) ...\nCreating config file /etc/chrony/chrony.conf with new version\nCreating config file /etc/chrony/chrony.keys with new version\ndpkg-statoverride: warning: --update given but /var/log/chrony does not exist\nCreated symlink '/etc/systemd/system/chronyd.service' \u2192 '/usr/lib/systemd/system/chrony.service'.\n\nCreated symlink '/etc/systemd/system/multi-user.target.wants/chrony.service' \u2192 '/usr/lib/systemd/system/chrony.service'.\n\nProcessing triggers for dbus (1.16.2-2) ...\nProcessing triggers for man-db (2.13.1-1) ...\n2026-10-27 20:31:45 Gateway firmware file: looking for a newer build\n2026-10-27 20:32:26 Taillight firmware file: looking for a newer build\n2026-10-27 20:33:03 Water/meth firmware file: looking for a newer build\n2026-10-27 20:34:53 Gateway firmware file: looking for a newer build\n2026-10-27 20:35:14 Taillight firmware file: looking for a newer build\n2026-10-27 20:35:35 Water/meth firmware file: looking for a newer build\n2026-10-27 20:37:43 Gateway firmware file: looking for a newer build\n2026-10-27 20:37:59 Taillight firmware file: looking for a newer build\n2026-10-27 20:38:19 Water/meth firmware file: looking for a newer build\n2026-10-27 20:40:48 Gateway firmware file: looking for a newer build\n2026-10-27 20:41:08 Taillight firmware file: looking for a newer build\n2026-10-27 20:41:24 Water/meth firmware file: looking for a newer build\n",
+ "uptime_s": 941.67,
+ "throttled": "throttled=0x0",
+ "disk": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/mmcblk0p2  117G  5.9G  107G   6% /\n/dev/mmcblk0p2  117G  5.9G  107G   6% /"
+}
