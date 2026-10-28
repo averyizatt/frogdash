@@ -3,8 +3,8 @@ import argparse
 
 
 def overlay(oscillator, interrupt=25, cs=0):
-    if oscillator not in (8_000_000, 16_000_000, 20_000_000):
-        raise ValueError('Confirm the module oscillator: supported values are 8000000, 16000000, 20000000')
+    if oscillator not in (8_000_000, 12_000_000, 16_000_000, 20_000_000):
+        raise ValueError('Confirm the module oscillator: supported values are 8000000, 12000000, 16000000, 20000000')
     if cs not in (0, 1) or interrupt not in set(range(2, 28)) - {7, 8, 9, 10, 11}:
         raise ValueError('Select SPI0 CE0/CE1 and a free interrupt GPIO (not an SPI pin)')
     return ('# Frogdash MCP2515; verify 3.3 V-safe logic and board oscillator before wiring.\n'

@@ -47,7 +47,7 @@ It shows each step as it goes, `OK` or `FAIL` with what to do:
 
 1. Internet and system
 2. System packages: git, Python, gpsd, can-utils, Cage and Chromium
-3. SPI, I2C and the CAN board: the MCP2515 overlay for the car's board (8 MHz crystal,
+3. SPI, I2C and the CAN board: the MCP2515 overlay for the car's Waveshare RS485 CAN HAT (12 MHz crystal,
    interrupt GPIO 25) in `/boot/firmware/config.txt`
 4. The dash's code in `/opt/frogdash`
 5. Its Python environment

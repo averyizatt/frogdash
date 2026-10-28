@@ -10,7 +10,8 @@
 #   sudo sh /opt/frogdash/tools/frogdash_install.sh --check
 #
 # Options: --user NAME (the screen's user; default: the one running sudo)
-#          --oscillator HZ (the MCP2515 board's crystal; default 8000000, the car's board)
+#          --oscillator HZ (the MCP2515 board's crystal; default 12000000, the car's Waveshare
+#                           RS485 CAN HAT; 8000000 for the common blue MCP2515 + TJA1050 boards)
 #          --interrupt GPIO (default 25)
 #          --no-pisugar (skip installing the PiSugar 3 software)
 # Running it again is safe: each step looks first and changes only what is missing. From
@@ -18,7 +19,7 @@
 REPO=/opt/frogdash
 URL=https://github.com/averyizatt/frogdash.git
 LOG=/var/log/frogdash-install.log
-user=${SUDO_USER:-}; oscillator=8000000; interrupt=25; check=""; pisugar=1
+user=${SUDO_USER:-}; oscillator=12000000; interrupt=25; check=""; pisugar=1
 while [ $# -gt 0 ]; do
     case "$1" in
         --user) user=$2; shift;;
@@ -113,8 +114,16 @@ if command -v raspi-config >/dev/null 2>&1; then
     run raspi-config nonint do_spi 0; run raspi-config nonint do_i2c 0; ok "SPI and I2C on"
 fi
 overlay="dtoverlay=mcp2515-can0,oscillator=$oscillator,interrupt=$interrupt,spimaxfrequency=1000000"
-if grep -q '^dtoverlay=mcp2515' $BOOT/config.txt; then
-    grep -qx "$overlay" $BOOT/config.txt && ok "MCP2515 overlay already set" || warn "A different MCP2515 overlay is in $BOOT/config.txt: left as it is ($(grep '^dtoverlay=mcp2515' $BOOT/config.txt))"
+if grep -qx "$overlay" $BOOT/config.txt; then
+    ok "MCP2515 overlay already set ($oscillator Hz crystal, interrupt GPIO $interrupt)"
+elif grep -q '^#*dtoverlay=mcp2515' $BOOT/config.txt; then
+    # An earlier board's line, or one commented out while testing: this one replaces it.
+    cp $BOOT/config.txt $BOOT/config.txt.before-frogdash-can
+    sed -i "s|^#*dtoverlay=mcp2515.*|$overlay|" $BOOT/config.txt
+    sed -i 's|^# Frogdash MCP2515 (.*|# Frogdash MCP2515 ('"$oscillator"' Hz crystal, interrupt GPIO '"$interrupt"')|' $BOOT/config.txt
+    grep -q '^dtparam=spi=on' $BOOT/config.txt || sed -i "s|^$overlay|dtparam=spi=on
+$overlay|" $BOOT/config.txt
+    ok "MCP2515 overlay changed to a $oscillator Hz crystal, interrupt GPIO $interrupt (restart to use it); the old file is config.txt.before-frogdash-can"
 else
     cp $BOOT/config.txt $BOOT/config.txt.before-frogdash
     printf '\n[all]\n# Frogdash MCP2515 (%s Hz crystal, interrupt GPIO %s)\ndtparam=spi=on\n%s\n' "$oscillator" "$interrupt" "$overlay" >> $BOOT/config.txt
