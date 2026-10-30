@@ -100,6 +100,7 @@ class SetupScriptTests(unittest.TestCase):
         venv.chmod(0o755)
         self.env['FROGDASH_VENV_PY'] = venv.as_posix()
         self.env['FROGDASH_LIB'] = (base / 'lib').as_posix()
+        self.env['FROGDASH_CLOUD_DIR'] = (base / 'cloud').as_posix()   # Absent: no cloud-init (see its own test)
 
     def tearDown(self):
         self.folder.cleanup()
@@ -123,6 +124,22 @@ class SetupScriptTests(unittest.TestCase):
         self.assertEqual(steps['Python packages'], ('done', 'Installed: pyubx2 1.3.9'))
         self.assertIn('-m pip install --quiet --disable-pip-version-check --no-deps pyubx2==1.3.9', self.log('venv.log'))
         self.assertIn('restart frogdash.service', self.log('systemctl.log'))
+
+    def test_cloud_init_the_network_wait_and_bluetooth_are_switched_off_at_start(self):
+        # A Trixie card from Raspberry Pi Imager: cloud-init, the network wait and Bluetooth all on.
+        cloud = Path(self.env['FROGDASH_CLOUD_DIR']); cloud.mkdir()
+        for unit in ('NetworkManager-wait-online.service', 'bluetooth.service'):
+            (self.units / f'enabled-{unit}').write_text('')
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Start-up: first-boot settings (cloud-init)'][0], 'done')
+        self.assertTrue((cloud / 'cloud-init.disabled').is_file())
+        self.assertEqual(steps['Start-up: network wait'][0], 'done')
+        self.assertEqual(steps['Start-up: Bluetooth'][0], 'done')
+        self.assertIn('disable NetworkManager-wait-online.service', self.log('systemctl.log'))
+        self.assertIn('disable bluetooth.service', self.log('systemctl.log'))
+        said, status, steps = self.run_setup('offline')
+        for name in ('Start-up: first-boot settings (cloud-init)', 'Start-up: network wait', 'Start-up: Bluetooth'):
+            self.assertEqual(steps[name], ('ok', 'Off'))
 
     def test_the_bootloader_update_check_is_switched_off_at_start(self):
         (self.units / 'enabled-rpi-eeprom-update.service').write_text('')     # On by default in Raspberry Pi OS

@@ -310,6 +310,28 @@ elif systemctl disable e2scrub_reap.service >/dev/null 2>&1; then
 else
     step "Start-up: unused disk check" failed "Could not switch off e2scrub_reap"
 fi
+# Boot report from the Trixie card (October 2026): cloud-init held up the dash by 9-10 s at every
+# start, and NetworkManager-wait-online took 9.4 s. Neither is needed once the Pi is set up.
+start_off() {  # step name, unit, why
+    if ! systemctl is-enabled --quiet "$2" 2>/dev/null; then step "$1" ok "Off"
+    elif systemctl disable "$2" >/dev/null 2>&1; then step "$1" done "Switched off $2 ($3)"
+    else step "$1" failed "Could not switch off $2"
+    fi
+}
+# The updater checks for the internet itself; nothing in the car waits for it at start.
+start_off "Start-up: network wait" NetworkManager-wait-online.service "up to 9 s at every start"
+# Nothing in the dash uses Bluetooth.
+start_off "Start-up: Bluetooth" bluetooth.service "not used by the dash"
+# Raspberry Pi Imager's settings (user, Wi-Fi, SSH) are applied by cloud-init at the first start
+# and kept; after that it only re-checks them, 9-10 s at every start. Its own off switch is a file.
+CLOUD=${FROGDASH_CLOUD_DIR:-/etc/cloud}
+if [ -d "$CLOUD" ]; then
+    if [ -f "$CLOUD/cloud-init.disabled" ]; then step "Start-up: first-boot settings (cloud-init)" ok "Off"
+    elif touch "$CLOUD/cloud-init.disabled"; then
+        step "Start-up: first-boot settings (cloud-init)" done "Switched off: the Imager settings are kept (9-10 s at every start)"
+    else step "Start-up: first-boot settings (cloud-init)" failed "Could not write $CLOUD/cloud-init.disabled"
+    fi
+fi
 
 # --- Terminal tab with sudo: only while --terminal is in /etc/default/frogdash ---
 # A helper (tools/frogdash_terminal.py, socket-activated, root) runs each command as the
