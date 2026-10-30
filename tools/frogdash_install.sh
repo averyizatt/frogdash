@@ -10,8 +10,8 @@
 #   sudo sh /opt/frogdash/tools/frogdash_install.sh --check
 #
 # Options: --user NAME (the screen's user; default: the one running sudo)
-#          --oscillator HZ (the MCP2515 board's crystal; default 8000000, the car's Waveshare
-#                           RS485 CAN HAT; 12000000 for the HAT batches with a 12 MHz crystal)
+#          --oscillator HZ (the MCP2515 board's crystal; default 12000000, the car's Waveshare
+#                           RS485 CAN HAT; 8000000 for the common blue MCP2515 + TJA1050 boards)
 #          --interrupt GPIO (default 25)
 #          --no-pisugar (skip installing the PiSugar 3 software)
 # Running it again is safe: each step looks first and changes only what is missing. From
@@ -19,7 +19,7 @@
 REPO=/opt/frogdash
 URL=https://github.com/averyizatt/frogdash.git
 LOG=/var/log/frogdash-install.log
-user=${SUDO_USER:-}; oscillator=8000000; interrupt=25; check=""; pisugar=1
+user=${SUDO_USER:-}; oscillator=12000000; interrupt=25; check=""; pisugar=1
 while [ $# -gt 0 ]; do
     case "$1" in
         --user) user=$2; shift;;

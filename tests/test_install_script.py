@@ -26,9 +26,9 @@ class InstallScriptTests(unittest.TestCase):
         self.assertTrue((ROOT / 'requirements.lock').is_file())
 
     def test_the_can_overlay_matches_the_cars_board(self):
-        # The car's Waveshare RS485 CAN HAT: MCP2515 with an 8 MHz crystal, interrupt on GPIO 25.
+        # The car's Waveshare RS485 CAN HAT: MCP2515 with a 12 MHz crystal, interrupt on GPIO 25.
         text = SCRIPT.read_text(encoding='utf-8')
-        self.assertIn('oscillator=8000000', text)
+        self.assertIn('oscillator=12000000', text)
         self.assertIn('interrupt=25', text)
 
     @unittest.skipUnless(SHELL and hasattr(os, 'geteuid') and os.geteuid() != 0, 'needs sh, not root')

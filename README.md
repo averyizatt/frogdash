@@ -130,7 +130,7 @@ Everything works from five steering-wheel buttons, a touch screen or a keyboard.
 |---|---|
 | Raspberry Pi 4 | Runs the service and the screen (Raspberry Pi OS, Chromium kiosk under Cage) |
 | 12.3-inch 1920 × 720 bar display | The cluster; other screen sizes get responsive layouts |
-| Waveshare RS485 CAN HAT | MCP2515 (8 MHz) + 3.3 V transceiver: `can0` at 500 kbit/s through SocketCAN |
+| Waveshare RS485 CAN HAT | MCP2515 (12 MHz) + 3.3 V transceiver: `can0` at 500 kbit/s through SocketCAN |
 | MicroSquirt ECU | Engine data, broadcast over CAN |
 | ESP32 modules | Gateway, taillights and water/meth controllers on the same bus |
 | VK-162 USB GPS | Speed, position, lap timing and the clock (through `gpsd` and chrony) |
