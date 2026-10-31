@@ -365,12 +365,20 @@ def edid_files(boot):
     return changed
 
 
+# A clean start (owner, October 2026: "the color wheel and the boot text"): no rainbow square
+# from the firmware and no Linux messages, only errors. The boot delay stays: it is what the
+# panel needed (see BOOT_CONFIG), not the splash.
+NO_SPLASH = ['disable_splash=1']
+QUIET_BOOT = ['quiet', 'loglevel=3', 'logo.nologo', 'vt.global_cursor_default=0', 'systemd.show_status=false',
+              'rd.udev.log_level=3']
+
+
 def force(boot, changed):
     config = read(boot / 'config.txt')
     # The boot speed-ups are taken back out (the panel needs the boot delay), a trial left
     # behind is dropped, and the 1920 x 720 block is put in.
     wanted = with_block(with_block(with_block(config, 'boot', None), 'screen-trial', None), 'screen',
-                        ['[all]', *SCREEN_CONFIG, *firmware_mode(boot)])
+                        ['[all]', *SCREEN_CONFIG, *firmware_mode(boot), *NO_SPLASH])
     if wanted != config:
         write_atomic(boot / 'config.txt', wanted)
         changed.append('config.txt: the firmware uses 1920 x 720 too')
@@ -379,6 +387,7 @@ def force(boot, changed):
     words = [w for w in cmdline.split() if not w.startswith('drm.edid_firmware=') or w == token]
     if token not in words:
         words.append(token)
+    words += [w for w in QUIET_BOOT if w not in words]
     if ' '.join(words) != cmdline.strip():
         if not (boot / 'cmdline.txt.frogdash-before').exists():
             shutil.copy2(boot / 'cmdline.txt', boot / 'cmdline.txt.frogdash-before')
