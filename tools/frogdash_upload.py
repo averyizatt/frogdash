@@ -112,6 +112,9 @@ REFUSED = ("GitHub no longer accepts this Pi's login: press Connect GitHub again
 class GitHub:
     def __init__(self, repo, token, opener=None, branch=BRANCH):
         self.repo, self.token, self.branch = repo, token, branch
+        # When the login stops working, as GitHub says on every answer: only a token pasted on
+        # the phone page has one (7 to 90 days); Connect GitHub's login does not expire.
+        self.expires = None
         self.opener = opener or urllib.request.build_opener()
 
     def call(self, method, url, body=None, data=None, content_type='application/json', timeout=60):
@@ -126,6 +129,7 @@ class GitHub:
         request = urllib.request.Request(url, data=data, method=method, headers=headers)
         try:
             with self.opener.open(request, timeout=timeout) as response:
+                self.expires = response.headers.get('github-authentication-token-expiration') or self.expires
                 text = response.read()
                 return response.status, (json.loads(text) if text else None)
         except urllib.error.HTTPError as error:
@@ -273,9 +277,16 @@ def diagnostics(now):
             # /state is the screen's WebSocket: its contents come from /snapshot.
             'state': local('/snapshot'), 'display': local('/ui/display'), 'firmware': local('/firmware'),
             'gps': gps_evidence(), 'can': can_evidence(),
+            'upload_login': {**login(load(CONFIG, {})), 'expires': (load(STATUS, {}).get('login') or {}).get('expires')},
             'helpers': {name: read_json(name) for name in STATUS_FILES}, 'update_failure_log': failure, 'setup_log': setup_log,
             'uptime_s': float((Path('/proc/uptime').read_text().split() or ['0'])[0]) if Path('/proc/uptime').exists() else None,
             'throttled': text_of('vcgencmd', 'get_throttled').strip(), 'disk': text_of('df', '-h', '/', str(STATE)).strip()}
+
+
+def login(config, expires=None):
+    """How uploads are connected, without the token: for the dash and the reports."""
+    return {'via': 'Connect GitHub' if config.get('via') == 'device code' else 'token pasted on the phone page',
+            'account': config.get('account'), 'expires': expires}
 
 
 def secrets(config):
@@ -446,7 +457,7 @@ def run(now=None, github=None, wait=time.sleep, drives=True):
         keep(now, files)   # Sent next time, with its events.
         save_status({**status, 'events_until': until, 'held': len(held())})
         raise
-    status = {**status, 'events_until': until}
+    status = {**status, 'events_until': until, 'login': login(config, getattr(github, 'expires', None))}
     if not drives:   # By itself (auto): the report only
         result = 'Sent a report by itself' + (f', and {earlier} kept on the Pi' if earlier else '')
         save_status({**status, 'time': int(now), 'state': 'done', 'message': result, 'repo': repo,
@@ -489,7 +500,7 @@ def run(now=None, github=None, wait=time.sleep, drives=True):
     if skipped:
         result += f'; {skipped} more too large for one upload'
     save_status({'time': int(now), 'state': 'done', 'message': result, 'repo': repo, 'sent': sent, 'events_until': until,
-                 'held': len(held()), 'boot_reported': boot_id()})
+                 'held': len(held()), 'boot_reported': boot_id(), 'login': status['login']})
     return result
 
 

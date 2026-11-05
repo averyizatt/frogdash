@@ -77,7 +77,10 @@ class GitHubLink:
         link = dict(self.link)
         if link.get('state') == 'waiting' and self.wall() > link.get('expires_at', 0):
             link = self.link = {'state': 'failed', 'message': 'The code ran out before it was entered. Press Connect GitHub for a new one'}
+        login = status.get('login') if isinstance(status.get('login'), dict) else {}
         return {'configured': bool(config.get('token')), 'repo': config.get('repo') or None, 'account': config.get('account'),
+                'via': 'device code' if config.get('via') == 'device code' else ('token' if config.get('token') else None),
+                'expires': login.get('expires') if config.get('token') else None,
                 'ready': bool(self.client_id), 'last': last or None, 'held': held, 'link': link,
                 'sending': asked or status.get('state') == 'sending'}
 

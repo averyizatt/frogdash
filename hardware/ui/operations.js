@@ -260,7 +260,11 @@
   let uploadsTimer = null, disconnectArmed = false;
   function renderUploads(s) {
     const link = s.link || {}, waiting = link.state === 'waiting';
-    const [tone, label] = waiting ? ['busy', 'Enter the code'] : s.configured ? (s.sending ? ['busy', 'Sending…'] : s.last?.state === 'failed' ? ['bad', 'Upload failed'] : ['good', 'Connected'])
+    // A pasted token stops working on its date; Connect GitHub's login does not expire.
+    const ends = s.configured && s.expires ? new Date(String(s.expires).replace(' UTC', 'Z').replace(' ', 'T')) : null;
+    const soon = ends && !isNaN(ends) && ends - Date.now() < 7 * 86400e3;
+    const expiry = ends && !isNaN(ends) ? ` This login stops working on ${ends.toLocaleDateString()}: press Disconnect, then Connect GitHub for one that does not expire.` : '';
+    const [tone, label] = waiting ? ['busy', 'Enter the code'] : s.configured ? (s.sending ? ['busy', 'Sending…'] : s.last?.state === 'failed' ? ['bad', 'Upload failed'] : soon ? ['warn', 'Expires soon'] : ['good', 'Connected'])
       : link.state === 'failed' || s.last?.state === 'failed' ? ['bad', 'Not connected'] : ['warn', 'Not connected'];
     $('uploads-pill').dataset.tone = tone; $('uploads-pill').textContent = label;
     $('uploads-where').textContent = s.configured ? `To ${s.repo || 'GitHub'} (branch pi-logs)${s.account ? ' · as ' + s.account : ''} · by itself whenever the Pi has internet` : 'By itself whenever the Pi has internet';
@@ -271,7 +275,7 @@
       : link.state === 'failed' && !s.configured ? link.message + '.' + held
       : !s.configured && s.last?.state === 'failed' ? s.last.message + '.' + held   // GitHub refused the saved login: it was cleared
       : s.configured && s.sending ? 'Sending the reports to GitHub: a minute or two, longer with a drive to send.'
-      : s.configured ? `${s.last ? 'Last: ' + s.last.message + '.' : 'Nothing sent yet: it goes by itself once the Pi reaches the internet, or press Send now.'}${held} Drive recordings go with Update now and Send now.`
+      : s.configured ? `${s.last ? 'Last: ' + s.last.message + '.' : 'Nothing sent yet: it goes by itself once the Pi reaches the internet, or press Send now.'}${held} Drive recordings go with Update now and Send now.${expiry}`
       : !s.ready ? 'This dash does not have its GitHub app ID yet: it comes with an update.' + held
       : 'Press Connect GitHub (with internet), then type the code it shows on your phone. Once, and done.' + held;
     $('uploads-connect').hidden = s.configured || waiting; $('uploads-connect').disabled = !s.ready;

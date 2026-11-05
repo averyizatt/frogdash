@@ -218,6 +218,23 @@ class UploadTests(unittest.TestCase):
         self.up.main()
         self.assertTrue(any(name.endswith('-diagnostics.json') for name in github.files))
 
+    def test_when_a_pasted_token_stops_working_is_kept_and_shown(self):
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
+        github = FakeGitHub()
+        github.expires = '2026-11-12 18:00:00 UTC'        # GitHub's github-authentication-token-expiration
+        self.up.GitHub = lambda repo, token, **kw: github
+        self.up.print = lambda *a: None
+        self.up.main()
+        status = json.loads((self.state / 'upload-status.json').read_text())
+        self.assertEqual(status['login'], {'via': 'token pasted on the phone page', 'account': None, 'expires': '2026-11-12 18:00:00 UTC'})
+        from hardware.frogdash.github_link import GitHubLink
+        shown = GitHubLink(self.state, client_id='x').status()
+        self.assertEqual((shown['via'], shown['expires']), ('token', '2026-11-12 18:00:00 UTC'))
+        # The next report says how uploads are connected, never the token.
+        report = json.dumps(self.up.diagnostics(0))
+        self.assertIn('"expires": "2026-11-12 18:00:00 UTC"', report)
+        self.assertNotIn(TOKEN, report)
+
     def test_github_answering_401_is_a_refused_login(self):
         import io
         import urllib.error
