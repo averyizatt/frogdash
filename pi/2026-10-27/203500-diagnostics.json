@@ -1,0 +1,2161 @@
+{
+ "format": "pi-diagnostics",
+ "version": 1,
+ "created": "2026-10-27T20:35:00Z",
+ "version_installed": "aeec2c9 Install: make the systemd shutdown-hook folder (missing on Trixie) so the PiSugar turns off; the check looks for the hook",
+ "selftest": {
+  "lines": [
+   {
+    "group": "CAN bus",
+    "name": "CAN module (MCP2515)",
+    "status": "fail",
+    "detail": "Not detected at boot",
+    "fix": "Check SPI wiring, 3.3 V, the mcp2515 overlay and oscillator value"
+   },
+   {
+    "group": "CAN bus",
+    "name": "Traffic",
+    "status": "fail",
+    "detail": "0 frames received, 0 rejected",
+    "fix": "Nothing received: no other node is powered or the bus is not connected"
+   },
+   {
+    "group": "Modules",
+    "name": "Taillights",
+    "status": "fail",
+    "detail": "No messages received",
+    "fix": "Module off, not on the bus, or (MicroSquirt) broadcasting not enabled in TunerStudio"
+   },
+   {
+    "group": "Modules",
+    "name": "Comfort gateway",
+    "status": "fail",
+    "detail": "No messages received",
+    "fix": "Module off, not on the bus, or (MicroSquirt) broadcasting not enabled in TunerStudio"
+   },
+   {
+    "group": "Modules",
+    "name": "Water/meth",
+    "status": "fail",
+    "detail": "No messages received",
+    "fix": "Module off, not on the bus, or (MicroSquirt) broadcasting not enabled in TunerStudio"
+   },
+   {
+    "group": "Modules",
+    "name": "MicroSquirt",
+    "status": "fail",
+    "detail": "No messages received",
+    "fix": "Module off, not on the bus, or (MicroSquirt) broadcasting not enabled in TunerStudio"
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Engine RPM for water/meth (0x309)",
+    "status": "warn",
+    "detail": "listening for another 0x309 sender",
+    "fix": "Another node also sends 0x309, or nothing acknowledges frames from the Pi"
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Taillight settings link",
+    "status": "warn",
+    "detail": "No settings status (0x103)",
+    "fix": "Flash the taillight PCB firmware with CAN settings (esp32-s3-pcb)"
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Steering wheel buttons",
+    "status": "warn",
+    "detail": "No button reports (0x501)",
+    "fix": "Check the gateway is running and no button input is stuck (Sensors > CAN check, 0x501)"
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Interior lights",
+    "status": "warn",
+    "detail": "No interior light state (0x503)",
+    "fix": "Needs the comfort module sensor-gateway firmware"
+   },
+   {
+    "group": "GPS and time",
+    "name": "USB GPS",
+    "status": "ok",
+    "detail": "Fix with 9 satellites (/dev/ttyACM0)",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "Time to first position",
+    "status": "ok",
+    "detail": "3 s after the dash started",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "GPS recovery helper",
+    "status": "skip",
+    "detail": "Not needed yet",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "GPS broadcast to the bus (0x203)",
+    "status": "ok",
+    "detail": "CAN disconnected",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "Position without GPS",
+    "status": "warn",
+    "detail": "Now: gps \u00b7 wheel speed not calibrated yet",
+    "fix": "Drive above 20 mph with a GPS fix for a minute so wheel speed can be calibrated; needs the gateway speed sensor"
+   },
+   {
+    "group": "GPS and time",
+    "name": "Clock",
+    "status": "ok",
+    "detail": "2026-10-27 20:35",
+    "fix": ""
+   },
+   {
+    "group": "Cameras",
+    "name": "Reverse camera",
+    "status": "skip",
+    "detail": "Not enabled",
+    "fix": ""
+   },
+   {
+    "group": "Cameras",
+    "name": "Dash cam",
+    "status": "skip",
+    "detail": "Not enabled",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Power supply",
+    "status": "ok",
+    "detail": "No undervoltage",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Temperature",
+    "status": "ok",
+    "detail": "39 \u00b0C",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Storage",
+    "status": "ok",
+    "detail": "105.5 GiB free",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Data logging",
+    "status": "ok",
+    "detail": "recording",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Internet",
+    "status": "warn",
+    "detail": "Wi-Fi not checked yet",
+    "fix": "Controls > Wi-Fi > Internet: Scan and Connect (only needed for updates)"
+   },
+   {
+    "group": "Updates",
+    "name": "Last update",
+    "status": "ok",
+    "detail": "Pi setup finished \u00b7 version af4bf09",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Gateway firmware",
+    "status": "skip",
+    "detail": "The gateway is not answering. Firmware from before this feature must be replaced once by USB",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Taillight firmware",
+    "status": "skip",
+    "detail": "The taillight controller is not answering. Firmware from before this feature must be replaced once by USB",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Water/meth firmware",
+    "status": "skip",
+    "detail": "No answer. That is normal with the Nano board, which is updated by USB; the ESP32 board answers here once it is fitted",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Pi setup",
+    "status": "ok",
+    "detail": "Done for this version",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Recovery guard and rescue screen",
+    "status": "ok",
+    "detail": "Up to date",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "PiSugar power monitor",
+    "status": "ok",
+    "detail": "Up to date",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Python packages",
+    "status": "ok",
+    "detail": "All installed",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Dash helpers",
+    "status": "ok",
+    "detail": "All installed",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "GPS service",
+    "status": "warn",
+    "detail": "No GPS receiver recognised on USB (no USB serial device is plugged in). Done by itself once the receiver is plugged in",
+    "fix": "Dash management > Software & power > Update now, with internet connected, tries again"
+   },
+   {
+    "group": "Updates",
+    "name": "Clock from GPS",
+    "status": "ok",
+    "detail": "chrony sets the clock from the GPS",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "TunerStudio: Java and display",
+    "status": "ok",
+    "detail": "Installed",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "TunerStudio: program",
+    "status": "ok",
+    "detail": "In /home/foxbody/TunerStudioMS",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "TunerStudio: serial port",
+    "status": "ok",
+    "detail": "foxbody can open the tuning cable",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Screen and start-up",
+    "status": "ok",
+    "detail": "The screen gets exactly 1920 x 720, from start-up on",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Start-up: bootloader update check",
+    "status": "ok",
+    "detail": "Off",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Start-up: unused disk check",
+    "status": "ok",
+    "detail": "Off",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Terminal with sudo",
+    "status": "ok",
+    "detail": "Off (add --terminal to FROGDASH_ARGS in /etc/default/frogdash to turn on the Terminal tab)",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Gateway firmware file",
+    "status": "ok",
+    "detail": "Build a6fa0a6b is the newest",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Taillight firmware file",
+    "status": "ok",
+    "detail": "Build ea05500b is the newest",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Water/meth firmware file",
+    "status": "ok",
+    "detail": "Build 3a02a951 is the newest",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Phone hotspot",
+    "status": "ok",
+    "detail": "Ready: switch it on under Controls, Wi-Fi",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "System log kept",
+    "status": "ok",
+    "detail": "Kept across restarts, at most 150 MB",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Dash cam Wi-Fi",
+    "status": "skip",
+    "detail": "No dash cam connection on this Pi",
+    "fix": ""
+   }
+  ],
+  "counts": {
+   "ok": 27,
+   "warn": 7,
+   "fail": 6,
+   "skip": 7
+  },
+  "time_ms": 1793133300938
+ },
+ "health": {
+  "mode": "socketcan",
+  "transport": {
+   "connected": false,
+   "status": "can0: [Errno 19] No such device",
+   "received": 0,
+   "malformed": 0,
+   "ignored": 0,
+   "tx_full": 0
+  },
+  "modules": {
+   "taillights": "unavailable",
+   "comfort": "unavailable",
+   "watermeth": "unavailable",
+   "knock": "unavailable"
+  },
+  "gps": {
+   "status": "GPS fix",
+   "diagnosis": {
+    "state": "fix",
+    "text": "Fix with 9 satellites (/dev/ttyACM0)",
+    "fix": ""
+   },
+   "brief_losses": 0,
+   "receiver_setup": "Receiver set to the automotive model (/dev/ttyACM0)",
+   "hardware": {
+    "antenna": "ok",
+    "jamming": "unknown",
+    "jam_ind": 17,
+    "noise": 110,
+    "agc_pct": 58,
+    "seen": 155.862161583
+   },
+   "satellite_data": "Satellite data saved: 9 satellite orbits, 7 almanac entries",
+   "recovery": {
+    "kind": null,
+    "trying": null,
+    "tried": 0,
+    "helper": "unknown",
+    "exhausted": false,
+    "next_in_s": null,
+    "last": "No GPS receiver recognised on USB to reset (no USB serial device is plugged in)",
+    "first_fix_s": 2.7
+   },
+   "tx_status": "CAN disconnected",
+   "tx_count": 0,
+   "conflict": false,
+   "bad_reports": 0,
+   "last_bad": null
+  },
+  "recording": {
+   "enabled": true,
+   "state": "recording",
+   "file": "frogdash-live-20261027T203146Z-3e4c6c3ca7cb.mlg",
+   "rows": 3899,
+   "dropped": 0,
+   "error": null,
+   "hz": 20
+  },
+  "system": {
+   "status": "sampled",
+   "timestamp_ms": 1793133300845,
+   "cpu_c": 39.433,
+   "power": {
+    "raw": 0,
+    "undervoltage_now": false,
+    "throttled_now": false,
+    "undervoltage_since_boot": false,
+    "throttled_since_boot": false
+   },
+   "disk": {
+    "free_bytes": 113322815488,
+    "total_bytes": 125257437184
+   },
+   "can": null,
+   "notes": [
+    "CAN interface diagnostics unavailable"
+   ],
+   "ups": {
+    "available": true,
+    "battery_percent": 100.0,
+    "battery_volts": 4.1810665,
+    "charging": true,
+    "auto_power_on": true,
+    "input_present": true,
+    "state": "external_power",
+    "error": null,
+    "dry_run": false,
+    "remaining_seconds": null
+   },
+   "shutdown": {
+    "previous": {
+     "boot_id": "5ed325f5-213c-409f-a628-ee62a3ff537a",
+     "scope": "boot",
+     "run_id": "6fb33431c6734e17969b4e656ca1a3ac",
+     "started_ms": 1793133105598,
+     "ended_ms": 1793133239654,
+     "state": "saved",
+     "interruptions": 0,
+     "errors": [],
+     "recording_enabled": true,
+     "log_rows": 2677,
+     "dropped_samples": 0
+    },
+    "tracking": true,
+    "error": "",
+    "scope": "boot"
+   },
+   "can_module": {
+    "present": false,
+    "driver": null,
+    "spi": null,
+    "up": false,
+    "interrupts": null
+   }
+  },
+  "can_errors": {
+   "frames": 0,
+   "bus_off": 0,
+   "restarts": 0
+  },
+  "ui_clients": 1,
+  "engine_running": false
+ },
+ "logs": {
+  "recording": {
+   "enabled": true,
+   "state": "recording",
+   "file": "frogdash-live-20261027T203146Z-3e4c6c3ca7cb.mlg",
+   "rows": 3900,
+   "dropped": 0,
+   "error": null,
+   "hz": 20
+  },
+  "files": [
+   {
+    "name": "frogdash-live-20261027T211051Z-c4fc4ca3f1d8.mlg",
+    "bytes": 4107370,
+    "modified_ms": 1793135582507,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T210610Z-353de19f154c.mlg",
+    "bytes": 8650498,
+    "modified_ms": 1793135449696,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T204925Z-d7cce2ac6a07.mlg",
+    "bytes": 30976771,
+    "modified_ms": 1793135169305,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T204748Z-99aac3eec64d.mlg",
+    "bytes": 2843851,
+    "modified_ms": 1793134165110,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T204045Z-7892c84bd3aa.mlg",
+    "bytes": 13090513,
+    "modified_ms": 1793134068162,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203740Z-9ad0f4c877a7.mlg",
+    "bytes": 5703313,
+    "modified_ms": 1793133643456,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203410Z-967597c9d104.mlg",
+    "bytes": 10127938,
+    "modified_ms": 1793133577567,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203450Z-9d7a8c629f8e.mlg",
+    "bytes": 5241613,
+    "modified_ms": 1793133458845,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203146Z-3e4c6c3ca7cb.mlg",
+    "bytes": 6068056,
+    "modified_ms": 1793133301031,
+    "active": true
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-b776134fd63a.mlg",
+    "bytes": 5720242,
+    "modified_ms": 1793133289090,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203014Z-ea77a3b9419b.mlg",
+    "bytes": 7000690,
+    "modified_ms": 1793133239752,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-95649e3036b4.mlg",
+    "bytes": 4187398,
+    "modified_ms": 1793133239643,
+    "active": false
+   }
+  ]
+ },
+ "state": {
+  "type": "state",
+  "seq": 10135,
+  "timestamp_ms": 1793133301094,
+  "mode": "socketcan",
+  "values": {
+   "engine.rpm": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "engine.coolant_c": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "engine.afr": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "engine.ego_correction_pct": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "vehicle.battery_v": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "vehicle.fuel_pct": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "lighting.highbeam": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "engine.oil_temp_c": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "vehicle.speed_kph": {
+    "value": 0.09000000000000001,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793133300824
+   },
+   "gps.altitude_m": {
+    "value": 1410.2872,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793133300824
+   },
+   "gps.latitude": {
+    "value": 39.076024409,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793133300824
+   },
+   "gps.longitude": {
+    "value": -108.563909462,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793133300824
+   },
+   "gps.track_deg": {
+    "value": 7.2353,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793133300824
+   },
+   "gps.satellites": {
+    "value": 9,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793133300804
+   },
+   "gps.satellites_in_view": {
+    "value": 16,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793133300804
+   },
+   "nav.latitude": {
+    "value": 39.076024409,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793133301093
+   },
+   "nav.longitude": {
+    "value": -108.563909462,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793133301093
+   },
+   "nav.track_deg": {
+    "value": 0.0,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793133301093
+   },
+   "nav.source": {
+    "value": "gps",
+    "quality": "live",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793133301093
+   },
+   "nav.speed_source": {
+    "value": "gps",
+    "quality": "live",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793133301093
+   },
+   "nav.accuracy_m": {
+    "value": 5.0,
+    "quality": "live",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793133301093
+   },
+   "nav.since_fix_s": {
+    "value": 0.0,
+    "quality": "live",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793133301093
+   },
+   "nav.wheel_scale": {
+    "value": 1.0,
+    "quality": "unavailable",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793133301093
+   },
+   "meth.flow_ml_min": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "Water/meth estimate",
+    "source_id": null,
+    "timestamp_ms": 1793133301093
+   },
+   "meth.dose_pct": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "Water/meth estimate",
+    "source_id": null,
+    "timestamp_ms": 1793133301093
+   },
+   "meth.iat_change_c": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "Water/meth estimate",
+    "source_id": null,
+    "timestamp_ms": 1793133301093
+   },
+   "trip.a_km": {
+    "value": 0.0,
+    "quality": "live",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793133301094
+   },
+   "trip.b_km": {
+    "value": 0.0,
+    "quality": "live",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793133301094
+   },
+   "trip.total_km": {
+    "value": 0.0,
+    "quality": "live",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793133301094
+   },
+   "fuel.flow_lph": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793133301094
+   },
+   "fuel.remaining_l": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793133301094
+   },
+   "fuel.range_km": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793133301094
+   },
+   "fuel.instant_mpg": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793133301094
+   },
+   "fuel.average_mpg": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793133301094
+   },
+   "dash.bookmark_id": {
+    "value": 0,
+    "quality": "live",
+    "source_id": null,
+    "source": "Drive review",
+    "timestamp_ms": 1793133301094
+   },
+   "race.phase": {
+    "value": "idle",
+    "quality": "live",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793133301094
+   },
+   "race.elapsed_s": {
+    "value": 0.0,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793133301094
+   },
+   "race.distance_m": {
+    "value": 0.0,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793133301094
+   },
+   "race.lap_count": {
+    "value": 0,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793133301094
+   },
+   "race.best_lap_s": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793133301094
+   }
+  },
+  "modules": {
+   "taillights": "unavailable",
+   "comfort": "unavailable",
+   "watermeth": "unavailable",
+   "knock": "unavailable"
+  },
+  "transport": {
+   "connected": false,
+   "status": "can0: [Errno 19] No such device",
+   "received": 0,
+   "malformed": 0,
+   "ignored": 0,
+   "tx_full": 0
+  },
+  "runtime": {
+   "enabled": true,
+   "conflict": false,
+   "tx_count": 0,
+   "status": "listening for another 0x309 sender"
+  },
+  "nav": {
+   "source": "gps",
+   "speed_source": "gps",
+   "on_road": false,
+   "since_fix_m": 0,
+   "since_fix_s": 0,
+   "accuracy_m": 5.0,
+   "wheel_scale": 1.0,
+   "calibrated": false,
+   "map_loaded": false
+  },
+  "tune": {
+   "available": true,
+   "state": "idle",
+   "message": "Ready. Opens over the dash; needs a keyboard and mouse"
+  },
+  "gaps": [],
+  "summary": {
+   "current": null,
+   "last": null,
+   "shutting_down": false,
+   "remaining_s": null
+  },
+  "gps": {
+   "status": "GPS fix",
+   "diagnosis": {
+    "state": "fix",
+    "text": "Fix with 9 satellites (/dev/ttyACM0)",
+    "fix": ""
+   },
+   "brief_losses": 0,
+   "receiver_setup": "Receiver set to the automotive model (/dev/ttyACM0)",
+   "hardware": {
+    "antenna": "ok",
+    "jamming": "unknown",
+    "jam_ind": 17,
+    "noise": 110,
+    "agc_pct": 58,
+    "seen": 155.862161583
+   },
+   "satellite_data": "Satellite data saved: 9 satellite orbits, 7 almanac entries",
+   "recovery": {
+    "kind": null,
+    "trying": null,
+    "tried": 0,
+    "helper": "unknown",
+    "exhausted": false,
+    "next_in_s": null,
+    "last": "No GPS receiver recognised on USB to reset (no USB serial device is plugged in)",
+    "first_fix_s": 2.7
+   },
+   "tx_status": "CAN disconnected",
+   "tx_count": 0,
+   "conflict": false,
+   "bad_reports": 0,
+   "last_bad": null
+  },
+  "controls": {
+   "reasons": {
+    "meth.arm": "CAN is disconnected",
+    "meth.test": "CAN is disconnected",
+    "meth.stop": "CAN is disconnected",
+    "meth.boost": "CAN is disconnected",
+    "meth.clear_faults": "CAN is disconnected",
+    "meth.restart": "CAN is disconnected",
+    "meth.setting": "CAN is disconnected",
+    "meth.tune_action": "CAN is disconnected",
+    "knock.enable": "CAN is disconnected",
+    "knock.threshold": "CAN is disconnected",
+    "knock.multiplier": "CAN is disconnected",
+    "knock.min_rpm": "CAN is disconnected",
+    "knock.min_map": "CAN is disconnected",
+    "knock.hold": "CAN is disconnected",
+    "knock.level_gain": "CAN is disconnected",
+    "knock.center": "CAN is disconnected",
+    "knock.bandwidth": "CAN is disconnected",
+    "knock.auto_frequency": "CAN is disconnected",
+    "knock.clear_events": "CAN is disconnected",
+    "knock.amp_gain": "CAN is disconnected",
+    "knock.bore": "CAN is disconnected",
+    "knock.relearn": "CAN is disconnected",
+    "knock.refresh": "CAN is disconnected",
+    "lighting.brightness": "CAN is disconnected",
+    "lighting.mode": "CAN is disconnected",
+    "lighting.show": "CAN is disconnected",
+    "lighting.demo": "CAN is disconnected",
+    "lighting.override": "CAN is disconnected",
+    "lighting.clear": "CAN is disconnected",
+    "lighting.custom": "CAN is disconnected",
+    "lighting.setting": "CAN is disconnected",
+    "lighting.color": "CAN is disconnected",
+    "lighting.text": "CAN is disconnected",
+    "lighting.action": "CAN is disconnected",
+    "interior.light": "CAN is disconnected",
+    "meth.disarm": "CAN is disconnected"
+   },
+   "pending": null,
+   "interior": {
+    "upper": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "lower": [
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "lighting_active": false,
+   "test_active": false,
+   "last_result": null,
+   "meth_config_conflict": false,
+   "meth_remembered": false,
+   "meth_rearm": null
+  },
+  "taillight": {
+   "supported": false,
+   "complete": false,
+   "revision": null,
+   "unsaved": false,
+   "show": false,
+   "demo": false,
+   "custom": false,
+   "override": false,
+   "show_anim": null,
+   "phase_ms": null,
+   "profiles": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "settings": {},
+   "colors": {},
+   "text": null,
+   "last_ack": null
+  },
+  "meth_tune": {
+   "supported": false,
+   "complete": false,
+   "revision": null,
+   "unsaved": false,
+   "rpm_ok": false,
+   "pre_valid": false,
+   "post_valid": false,
+   "pump_on": false,
+   "early_start": false,
+   "hot_air": false,
+   "ecu_temp": false,
+   "hold": null,
+   "on_ms": null,
+   "period_ms": null,
+   "drive": "relay",
+   "duty_pct": null,
+   "settings": {},
+   "preset": null,
+   "fluid": null,
+   "last_spray": null,
+   "last_ack": null
+  },
+  "knock_detail": {
+   "supported": false,
+   "start_hz": 2000,
+   "step_hz": 300,
+   "normal": null,
+   "burst": null
+  },
+  "events": [],
+  "race": {
+   "mode": "accel",
+   "phase": "idle",
+   "message": "Choose acceleration or laps",
+   "elapsed": 0.0,
+   "distance_m": 0.0,
+   "splits": {},
+   "laps": [],
+   "lap_count": 0,
+   "best_lap": null,
+   "gate": null,
+   "fresh": true,
+   "gps_reason": "",
+   "interval": 1.0,
+   "warnings": [],
+   "history": [],
+   "storage_error": ""
+  },
+  "drive": {
+   "settings": {
+    "version": 2,
+    "chime": false,
+    "rules": {
+     "oil": {
+      "enabled": true,
+      "delay": 1.0,
+      "psi": 15,
+      "rpm": 1500
+     },
+     "oil_idle": {
+      "enabled": true,
+      "delay": 2.0,
+      "psi": 6,
+      "rpm": 1500
+     },
+     "overrev": {
+      "enabled": true,
+      "delay": 0.2,
+      "rpm": 6000
+     },
+     "knock": {
+      "enabled": true,
+      "delay": 0.2
+     },
+     "knock_retard": {
+      "enabled": true,
+      "delay": 0.5,
+      "deg": 3
+     },
+     "sync": {
+      "enabled": true,
+      "delay": 0.0
+     },
+     "fuel_low": {
+      "enabled": true,
+      "delay": 1.0,
+      "psi": 30
+     },
+     "fuel_boost": {
+      "enabled": true,
+      "delay": 0.5,
+      "base": 35,
+      "margin": 5,
+      "boost": 14
+     },
+     "fuel_level": {
+      "enabled": true,
+      "delay": 10.0,
+      "pct": 12
+     },
+     "trim": {
+      "enabled": true,
+      "delay": 5.0,
+      "pct": 9
+     },
+     "overboost": {
+      "enabled": true,
+      "delay": 0.3,
+      "boost": 76
+     },
+     "lean": {
+      "enabled": true,
+      "delay": 0.8,
+      "delta": 1,
+      "boost": 20,
+      "rpm": 1500
+     },
+     "rich": {
+      "enabled": true,
+      "delay": 1.0,
+      "afr": 10,
+      "boost": 34
+     },
+     "cold_boost": {
+      "enabled": true,
+      "delay": 0.5,
+      "c": 60,
+      "boost": 14
+     },
+     "coolant": {
+      "enabled": true,
+      "delay": 2.0,
+      "c": 112
+     },
+     "iat": {
+      "enabled": true,
+      "delay": 3.0,
+      "c": 60
+     },
+     "meth": {
+      "enabled": true,
+      "delay": 1.0
+     },
+     "meth_tank": {
+      "enabled": true,
+      "delay": 5.0,
+      "pct": 15
+     },
+     "meth_off": {
+      "enabled": false,
+      "delay": 1.0,
+      "boost": 34
+     },
+     "batt_low": {
+      "enabled": true,
+      "delay": 10.0,
+      "v": 12.6
+     },
+     "batt_high": {
+      "enabled": true,
+      "delay": 5.0,
+      "v": 15.2
+     },
+     "taillights": {
+      "enabled": true,
+      "delay": 10.0
+     },
+     "gateway": {
+      "enabled": true,
+      "delay": 5.0
+     },
+     "meth_module": {
+      "enabled": true,
+      "delay": 5.0
+     },
+     "pi_power": {
+      "enabled": true,
+      "delay": 2.0
+     },
+     "pi_heat": {
+      "enabled": true,
+      "delay": 10.0,
+      "c": 80
+     }
+    }
+   },
+   "alerts": [
+    {
+     "key": "oil",
+     "code": "OIL-01",
+     "title": "LOW OIL PRESSURE",
+     "severity": "critical",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "oil_idle",
+     "code": "OIL-02",
+     "title": "LOW OIL PRESSURE AT IDLE",
+     "severity": "critical",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "overrev",
+     "code": "RPM-01",
+     "title": "OVER-REV",
+     "severity": "critical",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "knock",
+     "code": "KNK-01",
+     "title": "KNOCK DETECTED",
+     "severity": "critical",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "knock_retard",
+     "code": "KNK-02",
+     "title": "ECU PULLING TIMING",
+     "severity": "warning",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "sync",
+     "code": "IGN-01",
+     "title": "IGNITION SYNC LOST",
+     "severity": "warning",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "fuel_low",
+     "code": "FUEL-01",
+     "title": "LOW FUEL PRESSURE",
+     "severity": "critical",
+     "group": "fuel",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "fuel_boost",
+     "code": "FUEL-02",
+     "title": "FUEL PRESSURE LOW IN BOOST",
+     "severity": "critical",
+     "group": "fuel",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "fuel_level",
+     "code": "FUEL-03",
+     "title": "FUEL LEVEL LOW",
+     "severity": "warning",
+     "group": "fuel",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "trim",
+     "code": "FUEL-04",
+     "title": "FUEL TRIM OFF",
+     "severity": "warning",
+     "group": "fuel",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "overboost",
+     "code": "BST-01",
+     "title": "OVERBOOST",
+     "severity": "critical",
+     "group": "boost",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "lean",
+     "code": "AFR-01",
+     "title": "LEAN UNDER BOOST",
+     "severity": "critical",
+     "group": "boost",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "rich",
+     "code": "AFR-02",
+     "title": "RICH UNDER BOOST",
+     "severity": "warning",
+     "group": "boost",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "cold_boost",
+     "code": "BST-02",
+     "title": "BOOST ON A COLD ENGINE",
+     "severity": "warning",
+     "group": "boost",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "coolant",
+     "code": "TMP-01",
+     "title": "COOLANT HIGH",
+     "severity": "critical",
+     "group": "temps",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "iat",
+     "code": "TMP-02",
+     "title": "INTAKE AIR HOT",
+     "severity": "warning",
+     "group": "temps",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "meth",
+     "code": "WMI-01",
+     "title": "WATER/METH FAULT",
+     "severity": "critical",
+     "group": "meth",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "meth_tank",
+     "code": "WMI-02",
+     "title": "WATER/METH TANK LOW",
+     "severity": "warning",
+     "group": "meth",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "meth_off",
+     "code": "WMI-03",
+     "title": "BOOST WITH WATER/METH OFF",
+     "severity": "warning",
+     "group": "meth",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "batt_low",
+     "code": "ELC-01",
+     "title": "NOT CHARGING",
+     "severity": "warning",
+     "group": "electrical",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "batt_high",
+     "code": "ELC-02",
+     "title": "CHARGING VOLTAGE HIGH",
+     "severity": "warning",
+     "group": "electrical",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "taillights",
+     "code": "MOD-01",
+     "title": "TAILLIGHTS NOT RESPONDING",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": "unavailable",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "gateway",
+     "code": "MOD-02",
+     "title": "SENSOR GATEWAY NOT RESPONDING",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": "unavailable",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "meth_module",
+     "code": "MOD-03",
+     "title": "WATER/METH CONTROLLER NOT RESPONDING",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": "unavailable",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "pi_power",
+     "code": "PI-01",
+     "title": "PI POWER LOW",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": "OK",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "pi_heat",
+     "code": "PI-02",
+     "title": "PI TOO HOT",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": 39.433,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    }
+   ],
+   "alert_seq": 0,
+   "marker_seq": 0,
+   "last_event": null,
+   "current": null,
+   "error": ""
+  },
+  "trip": {
+   "settings": {
+    "enabled": false,
+    "capacity_l": 58.2953414736,
+    "reserve_l": 3,
+    "injector_cc_min": 440,
+    "injectors": 4,
+    "pw2_injectors": 0,
+    "pulses_per_rev": 0.5,
+    "dead_ms": 0,
+    "correction": 1
+   },
+   "counters": {
+    "a": {
+     "km": 0.0,
+     "moving_s": 0.0,
+     "engine_s": 0.0,
+     "fuel_l": 0.0,
+     "paired_km": 0.0,
+     "paired_l": 0.0,
+     "missing_s": 3348.618801616999,
+     "mpg": null
+    },
+    "b": {
+     "km": 0.0,
+     "moving_s": 0.0,
+     "engine_s": 0.0,
+     "fuel_l": 0.0,
+     "paired_km": 0.0,
+     "paired_l": 0.0,
+     "missing_s": 3348.618801616999,
+     "mpg": null
+    },
+    "total": {
+     "km": 0.0,
+     "moving_s": 0.0,
+     "engine_s": 0.0,
+     "fuel_l": 0.0,
+     "paired_km": 0.0,
+     "paired_l": 0.0,
+     "missing_s": 3348.618801616999,
+     "mpg": null
+    }
+   },
+   "learned": {
+    "km": 0.0,
+    "litres": 0.0
+   },
+   "flow_lph": null,
+   "instant_mpg": null,
+   "average_mpg": null,
+   "range_km": null,
+   "remaining_l": null,
+   "last_manual_l": null,
+   "odometer_km": null,
+   "fuel_source": "No fuel amount",
+   "coasting": false,
+   "gps_live": true,
+   "fuel_live": false,
+   "error": "",
+   "estimated": true
+  },
+  "operations": {
+   "version": "0.4.0",
+   "os": "Debian GNU/Linux 13 (trixie)",
+   "model": "Raspberry Pi 4 Model B Rev 1.5",
+   "python": "3.13.5",
+   "parked": true,
+   "maintenance": [],
+   "checks": {},
+   "error": "",
+   "restore_pending": false,
+   "capabilities": [
+    {
+     "module": "Water / meth",
+     "command": "Acknowledged by 0x30A",
+     "readback": "Live mode/duty/faults",
+     "persistence": "Not guaranteed by current firmware"
+    },
+    {
+     "module": "Knock",
+     "command": "Acknowledged by 0x30A",
+     "readback": "Configuration refresh supported",
+     "persistence": "Not guaranteed by current firmware"
+    },
+    {
+     "module": "Taillights",
+     "command": "Sent only; no ACK defined",
+     "readback": "Lighting state and brightness telemetry",
+     "persistence": "Not confirmed"
+    }
+   ]
+  },
+  "system": {
+   "status": "sampled",
+   "timestamp_ms": 1793133300845,
+   "cpu_c": 39.433,
+   "power": {
+    "raw": 0,
+    "undervoltage_now": false,
+    "throttled_now": false,
+    "undervoltage_since_boot": false,
+    "throttled_since_boot": false
+   },
+   "disk": {
+    "free_bytes": 113322815488,
+    "total_bytes": 125257437184
+   },
+   "can": null,
+   "notes": [
+    "CAN interface diagnostics unavailable"
+   ],
+   "ups": {
+    "available": true,
+    "battery_percent": 100.0,
+    "battery_volts": 4.1810665,
+    "charging": true,
+    "auto_power_on": true,
+    "input_present": true,
+    "state": "external_power",
+    "error": null,
+    "dry_run": false,
+    "remaining_seconds": null
+   },
+   "shutdown": {
+    "previous": {
+     "boot_id": "5ed325f5-213c-409f-a628-ee62a3ff537a",
+     "scope": "boot",
+     "run_id": "6fb33431c6734e17969b4e656ca1a3ac",
+     "started_ms": 1793133105598,
+     "ended_ms": 1793133239654,
+     "state": "saved",
+     "interruptions": 0,
+     "errors": [],
+     "recording_enabled": true,
+     "log_rows": 2677,
+     "dropped_samples": 0
+    },
+    "tracking": true,
+    "error": "",
+    "scope": "boot"
+   },
+   "can_module": {
+    "present": false,
+    "driver": null,
+    "spi": null,
+    "up": false,
+    "interrupts": null
+   }
+  },
+  "can_errors": {
+   "frames": 0,
+   "bus_off": 0,
+   "restarts": 0
+  },
+  "can_watch": {
+   "silent_s": 195.2,
+   "resets": 2,
+   "tries": 2,
+   "helper": "ok",
+   "last_reset": 1793133166.023335,
+   "last_result": {
+    "action": "reset",
+    "result": "failed",
+    "message": "can0 is missing: the CAN modules driver did not load",
+    "time": 1793133166
+   }
+  },
+  "firmware": {
+   "gateway": {
+    "name": "gateway",
+    "label": "Gateway",
+    "title": "Gateway firmware",
+    "warning": "Speed, fuel, wheel buttons and interior lights pause for about a minute.",
+    "installed": null,
+    "can_restart": false,
+    "on_trial": false,
+    "available": "a6fa0a6b",
+    "can_install": false,
+    "new": false,
+    "note": "The gateway is not answering. Firmware from before this feature must be replaced once by USB",
+    "short": "not answering",
+    "job": {
+     "state": "idle",
+     "message": "",
+     "progress": 0.0
+    }
+   },
+   "taillights": {
+    "name": "taillights",
+    "label": "Taillight controller",
+    "title": "Taillight firmware",
+    "warning": "Lights off and foot off the brake: the taillights stay dark for a few minutes, and any light switched on stops the update.",
+    "installed": null,
+    "can_restart": false,
+    "on_trial": false,
+    "available": "ea05500b",
+    "can_install": false,
+    "new": false,
+    "note": "The taillight controller is not answering. Firmware from before this feature must be replaced once by USB",
+    "short": "not answering",
+    "job": {
+     "state": "idle",
+     "message": "",
+     "progress": 0.0
+    }
+   },
+   "watermeth": {
+    "name": "watermeth",
+    "label": "Water/meth controller",
+    "title": "Water/meth firmware",
+    "warning": "Engine off: injection is off for about a minute, and the controller stops the update if boost comes up.",
+    "installed": null,
+    "can_restart": false,
+    "on_trial": false,
+    "available": "3a02a951",
+    "can_install": false,
+    "new": false,
+    "note": "No answer. That is normal with the Nano board, which is updated by USB; the ESP32 board answers here once it is fitted",
+    "short": "no answer (normal with the Nano board)",
+    "job": {
+     "state": "idle",
+     "message": "",
+     "progress": 0.0
+    }
+   }
+  },
+  "updating": [],
+  "wheel": {
+   "session": "0e94d46a1384436caa3e30124884a62e",
+   "seq": 0,
+   "status": "unavailable",
+   "events": []
+  },
+  "recording": {
+   "enabled": true,
+   "state": "recording",
+   "file": "frogdash-live-20261027T203146Z-3e4c6c3ca7cb.mlg",
+   "rows": 3901,
+   "dropped": 0,
+   "error": null,
+   "hz": 20
+  },
+  "faults": {}
+ },
+ "display": {
+  "status": "fresh",
+  "age_seconds": 1.42,
+  "screen": [
+   1920,
+   720
+  ],
+  "viewport": [
+   1920,
+   720
+  ],
+  "visual": [
+   1920,
+   720,
+   1,
+   0,
+   0
+  ],
+  "pixel_ratio": 1,
+  "responsive": false,
+  "dashboard": [
+   0,
+   0,
+   1920,
+   720
+  ],
+  "position": "absolute",
+  "transform": "matrix(1, 0, 0, 1, 0, 0)",
+  "margin": "-360px 0px 0px -960px",
+  "body_overflow": "hidden",
+  "scroll": [
+   0,
+   0
+  ],
+  "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+  "responsive_css": true,
+  "first_frame_ms": 1615,
+  "others_loaded_ms": 6105
+ },
+ "firmware": {
+  "gateway": {
+   "name": "gateway",
+   "label": "Gateway",
+   "title": "Gateway firmware",
+   "warning": "Speed, fuel, wheel buttons and interior lights pause for about a minute.",
+   "installed": null,
+   "can_restart": false,
+   "on_trial": false,
+   "available": "a6fa0a6b",
+   "can_install": false,
+   "new": false,
+   "note": "The gateway is not answering. Firmware from before this feature must be replaced once by USB",
+   "short": "not answering",
+   "job": {
+    "state": "idle",
+    "message": "",
+    "progress": 0.0
+   }
+  },
+  "taillights": {
+   "name": "taillights",
+   "label": "Taillight controller",
+   "title": "Taillight firmware",
+   "warning": "Lights off and foot off the brake: the taillights stay dark for a few minutes, and any light switched on stops the update.",
+   "installed": null,
+   "can_restart": false,
+   "on_trial": false,
+   "available": "ea05500b",
+   "can_install": false,
+   "new": false,
+   "note": "The taillight controller is not answering. Firmware from before this feature must be replaced once by USB",
+   "short": "not answering",
+   "job": {
+    "state": "idle",
+    "message": "",
+    "progress": 0.0
+   }
+  },
+  "watermeth": {
+   "name": "watermeth",
+   "label": "Water/meth controller",
+   "title": "Water/meth firmware",
+   "warning": "Engine off: injection is off for about a minute, and the controller stops the update if boost comes up.",
+   "installed": null,
+   "can_restart": false,
+   "on_trial": false,
+   "available": "3a02a951",
+   "can_install": false,
+   "new": false,
+   "note": "No answer. That is normal with the Nano board, which is updated by USB; the ESP32 board answers here once it is fitted",
+   "short": "no answer (normal with the Nano board)",
+   "job": {
+    "state": "idle",
+    "message": "",
+    "progress": 0.0
+   }
+  }
+ },
+ "gps": {
+  "services": [
+   "active",
+   "active"
+  ],
+  "gpsd_config": "# Devices gpsd should collect to at boot time.\n# They need to be read/writeable, either by user gpsd or the group dialout.\nDEVICES=\"\"\n\n# Other options you want to pass to gpsd\nGPSD_OPTIONS=\"\"\n\n# Automatically hot add/remove USB GPS devices via gpsdctl\nUSBAUTO=\"true\"\n",
+  "serial_ports": "total 0\nlrwxrwxrwx 1 root root 13 Oct 27 20:31 usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00 -> ../../ttyACM0\n",
+  "usb": "Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub\nBus 001 Device 002: ID 2109:3431 VIA Labs, Inc. Hub\nBus 001 Device 003: ID 05e3:0610 Genesys Logic, Inc. Hub\nBus 001 Device 004: ID 1546:01a7 U-Blox AG [u-blox 7]\nBus 001 Device 005: ID 046d:c52f Logitech, Inc. Nano Receiver\nBus 001 Device 006: ID 0bda:c820 Realtek Semiconductor Corp. 802.11ac NIC\nBus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub\nBus 002 Device 002: ID 05e3:0626 Genesys Logic, Inc. Hub\n",
+  "gpspipe": "{\"class\":\"VERSION\",\"release\":\"3.25\",\"rev\":\"3.25\",\"proto_major\":3,\"proto_minor\":15}\n{\"class\":\"DEVICES\",\"devices\":[{\"class\":\"DEVICE\",\"path\":\"/dev/ttyACM0\",\"driver\":\"u-blox\",\"subtype\":\"SW 1.00 (59842),HW 00070000\",\"subtype1\":\"PROTVER 14.00,GPS;SBAS;GLO;QZSS\",\"activated\":\"2026-10-27T20:35:00.776Z\",\"flags\":1,\"native\":1,\"bps\":9600,\"parity\":\"N\",\"stopbits\":1,\"cycle\":1.00,\"mincycle\":0.02}]}\n{\"class\":\"WATCH\",\"enable\":true,\"json\":true,\"nmea\":false,\"raw\":0,\"scaled\":false,\"timing\":false,\"split24\":false,\"pps\":false}\n{\"class\":\"TPV\",\"device\":\"/dev/ttyACM0\",\"mode\":3,\"time\":\"2026-10-27T23:05:15.000Z\",\"ept\":0.005,\"lat\":39.076025259,\"lon\":-108.563909391,\"altHAE\":1391.3886,\"altMSL\":1410.2661,\"alt\":1410.2661,\"epx\":13.745,\"epy\":15.433,\"epv\":35.420,\"track\":346.9533,\"magtrack\":356.5340,\"magvar\":9.6,\"speed\":0.014,\"climb\":-0.001,\"eps\":0.29,\"epc\":70.84,\"ecefx\":-1578787.56,\"ecefy\":-4701065.82,\"ecefz\":3999749.70,\"ecefvx\":0.00,\"ecefvy\":0.01,\"ecefvz\":0.01,\"ecefpAcc\":4.42,\"ecefvAcc\":0.29,\"velN\":0.014,\"velE\":-0.003,\"velD\":0.001,\"geoidSep\":-18.877,\"eph\":19.000,\"sep\":34.960}\n{\"class\":\"SKY\",\"device\":\"/dev/ttyACM0\",\"time\":\"2026-10-27T23:05:14.000Z\",\"gdop\":2.09,\"hdop\":1.00,\"pdop\":1.84,\"tdop\":1.01,\"xdop\":0.92,\"ydop\":1.03,\"vdop\":1.54}\n{\"class\":\"SKY\",\"device\":\"/dev/ttyACM0\",\"time\":\"2026-10-27T23:05:15.000Z\",\"gdop\":2.09,\"hdop\":1.00,\"pdop\":1.84,\"tdop\":1.01,\"xdop\":0.92,\"ydop\":1.03,\"vdop\":1.54,\"nSat\":16,\"uSat\":9,\"satellites\":[{\"PRN\":1,\"gnssid\":0,\"svid\":1,\"az\":113.0,\"el\":13.0,\"ss\":37.0,\"used\":true,\"health\":1},{\"PRN\":2,\"gnssid\":0,\"svid\":2,\"az\":89.0,\"el\":22.0,\"ss\":31.0,\"used\":true,\"health\":1},{\"PRN\":5,\"gnssid\":0,\"svid\":5,\"az\":281.0,\"el\":2.0,\"ss\":18.0,\"used\":false,\"health\":1},{\"PRN\":7,\"gnssid\":0,\"svid\":7,\"az\":103.0,\"el\":62.0,\"ss\":34.0,\"used\":true,\"health\":1},{\"PRN\":8,\"gnssid\":0,\"svid\":8,\"az\":49.0,\"el\":32.0,\"ss\":30.0,\"used\":true,\"health\":1},{\"PRN\":14,\"gnssid\":0,\"svid\":14,\"az\":283.0,\"el\":60.0,\"ss\":36.0,\"used\":true,\"health\":1},{\"PRN\":17,\"gnssid\":0,\"svid\":17,\"az\":195.0,\"el\":31.0,\"ss\":36.0,\"used\":true,\"health\":1},{\"PRN\":20,\"gnssid\":0,\"svid\":20,\"az\":311.0,\"el\":26.0,\"ss\":34.0,\"used\":true,\"health\":1},{\"PRN\":22,\"gnssid\":0,\"svid\":22,\"az\":264.0,\"el\":41.0,\"ss\":36.0,\"used\":true,\"health\":1},{\"PRN\":30,\"gnssid\":0,\"svid\":30,\"az\":335.0,\"el\":76.0,\"ss\":34.0,\"used\":true,\"health\":1},{\"PRN\":46,\"gnssid\":1,\"svid\":133,\"az\":164.0,\"el\":43.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":48,\"gnssid\":1,\"svid\":135,\"az\":216.0,\"el\":38.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":51,\"gnssid\":1,\"svid\":138,\"az\":178.0,\"el\":45.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":193,\"gnssid\":5,\"svid\":1,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":196,\"gnssid\":5,\"svid\":4,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":197,\"gnssid\":5,\"svid\":5,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1}]}\n{\"class\":\"SKY\",\"device\":\"/dev/ttyACM0\",\"time\":\"2026-10-27T23:05:15.000Z\",\"gdop\":2.09,\"hdop\":1.00,\"pdop\":1.84,\"tdop\":1.01,\"xdop\":0.92,\"ydop\":1.03,\"vdop\":1.54}\n{\"class\":\"TPV\",\"device\":\"/dev/ttyACM0\",\"mode\":3,\"time\":\"2026-10-27T23:05:15.000Z\",\"ept\":0.005,\"lat\":39.076025259,\"lon\":-108.563909391,\"altHAE\":1391.3886,\"altMSL\":1410.2661,\"alt\":1410.2661,\"epx\":13.745,\"epy\":15.433,\"epv\":35.420,\"track\":346.9533,\"magtrack\":356.5340,\"magvar\":9.6,\"speed\":0.014,\"climb\":-0.001,\"eps\":30.87,\"epc\":70.84,\"ecefx\":-1578787.56,\"ecefy\":-4701065.82,\"ecefz\":3999749.70,\"ecefvx\":0.00,\"ecefvy\":0.01,\"ecefvz\":0.01,\"ecefpAcc\":4.42,\"ecefvAcc\":0.29,\"velN\":0.014,\"velE\":-0.003,\"velD\":0.001,\"geoidSep\":-18.877,\"eph\":19.000,\"sep\":34.960}\n{\"class\":\"TPV\",\"device\":\"/dev/ttyACM0\",\"mode\":3,\"time\":\"2026-10-27T23:05:16.000Z\",\"ept\":0.005,\"lat\":39.076026726,\"lon\":-108.563908553,\"altHAE\":1391.3943,\"altMSL\":1410.2718,\"alt\":1410.2718,\"epx\":13.745,\"epy\":15.433,\"epv\":35.420,\"track\":78.0473,\"magtrack\":87.6280,\"magvar\":9.6,\"speed\":0.010,\"climb\":-0.002,\"eps\":0.30,\"epc\":70.84,\"ecefx\":-1578787.46,\"ecefy\":-4701065.75,\"ecefz\":3999749.83,\"ecefvx\":0.01,\"ecefvy\":0.00,\"ecefvz\":0.00,\"ecefpAcc\":4.44,\"ecefvAcc\":0.30,\"velN\":0.002,\"velE\":0.009,\"velD\":0.002,\"geoidSep\":-18.877,\"eph\":19.000,\"sep\":35.720}\n{\"class\":\"SKY\",\"device\":\"/dev/ttyACM0\",\"time\":\"2026-10-27T23:05:15.000Z\",\"gdop\":2.09,\"hdop\":1.00,\"pdop\":1.88,\"tdop\":1.01,\"xdop\":0.92,\"ydop\":1.03,\"vdop\":1.54}\n{\"class\":\"SKY\",\"device\":\"/dev/ttyACM0\",\"time\":\"2026-10-27T23:05:16.000Z\",\"gdop\":2.09,\"hdop\":1.00,\"pdop\":1.88,\"tdop\":1.01,\"xdop\":0.92,\"ydop\":1.03,\"vdop\":1.54,\"nSat\":16,\"uSat\":8,\"satellites\":[{\"PRN\":1,\"gnssid\":0,\"svid\":1,\"az\":113.0,\"el\":13.0,\"ss\":37.0,\"used\":true,\"health\":1},{\"PRN\":2,\"gnssid\":0,\"svid\":2,\"az\":89.0,\"el\":22.0,\"ss\":30.0,\"used\":false,\"health\":1},{\"PRN\":5,\"gnssid\":0,\"svid\":5,\"az\":281.0,\"el\":2.0,\"ss\":17.0,\"used\":false,\"health\":1},{\"PRN\":7,\"gnssid\":0,\"svid\":7,\"az\":103.0,\"el\":62.0,\"ss\":34.0,\"used\":true,\"health\":1},{\"PRN\":8,\"gnssid\":0,\"svid\":8,\"az\":49.0,\"el\":32.0,\"ss\":30.0,\"used\":true,\"health\":1},{\"PRN\":14,\"gnssid\":0,\"svid\":14,\"az\":283.0,\"el\":60.0,\"ss\":36.0,\"used\":true,\"health\":1},{\"PRN\":17,\"gnssid\":0,\"svid\":17,\"az\":195.0,\"el\":31.0,\"ss\":37.0,\"used\":true,\"health\":1},{\"PRN\":20,\"gnssid\":0,\"svid\":20,\"az\":311.0,\"el\":26.0,\"ss\":34.0,\"used\":true,\"health\":1},{\"PRN\":22,\"gnssid\":0,\"svid\":22,\"az\":264.0,\"el\":41.0,\"ss\":35.0,\"used\":true,\"health\":1},{\"PRN\":30,\"gnssid\":0,\"svid\":30,\"az\":335.0,\"el\":76.0,\"ss\":34.0,\"used\":true,\"health\":1},{\"PRN\":46,\"gnssid\":1,\"svid\":133,\"az\":164.0,\"el\":43.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":48,\"gnssid\":1,\"svid\":135,\"az\":216.0,\"el\":38.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":51,\"gnssid\":1,\"svid\":138,\"az\":178.0,\"el\":45.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":193,\"gnssid\":5,\"svid\":1,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":196,\"gnssid\":5,\"svid\":4,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":197,\"gnssid\":5,\"svid\":5,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1}]}\n{\"class\":\"SKY\",\"device\":\"/dev/ttyACM0\",\"time\":\"2026-10-27T23:05:16.000Z\",\"gdop\":2.15,\"hdop\":1.03,\"pdop\":1.88,\"tdop\":1.05,\"xdop\":0.92,\"ydop\":1.03,\"vdop\":1.57}\n{\"class\":\"TPV\",\"device\":\"/dev/ttyACM0\",\"mode\":3,\"time\":\"2026-10-27T23:05:16.000Z\",\"ept\":0.005,\"lat\":39.076026726,\"lon\":-108.563908553,\"altHAE\":1391.3943,\"altMSL\":1410.2718,\"alt\":1410.2718,\"epx\":13.745,\"epy\":15.433,\"epv\":35.420,\"track\":78.0473,\"magtrack\":87.6280,\"magvar\":9.6,\"speed\":0.010,\"climb\":-0.002,\"eps\":30.87,\"epc\":70.84,\"ecefx\":-1578787.46,\"ecefy\":-4701065.75,\"ecefz\":3999749.83,\"ecefvx\":0.01,\"ecefvy\":0.00,\"ecefvz\":0.00,\"ecefpAcc\":4.44,\"ecefvAcc\":0.30,\"velN\":0.002,\"velE\":0.009,\"velD\":0.002,\"geoidSep\":-18.877,\"eph\":19.000,\"sep\":35.720}\n{\"class\":\"TPV\",\"device\":\"/dev/ttyACM0\",\"mode\":3,\"time\":\"2026-10-27T23:05:17.000Z\",\"ept\":0.005,\"lat\":39.076028050,\"lon\":-108.563908153,\"altHAE\":1391.4036,\"altMSL\":1410.2811,\"alt\":1410.2811,\"epx\":13.745,\"epy\":15.433,\"epv\":36.110,\"track\":123.3344,\"magtrack\":132.9151,\"magvar\":9.6,\"speed\":0.008,\"climb\":0.021,\"eps\":0.33,\"epc\":71.53,\"ecefx\":-1578787.40,\"ecefy\":-4701065.68,\"ecefz\":3999749.95,\"ecefvx\":0.00,\"ecefvy\":-0.02,\"ecefvz\":0.01,\"ecefpAcc\":4.46,\"ecefvAcc\":0.33,\"velN\":-0.004,\"velE\":0.006,\"velD\":-0.021,\"geoidSep\":-18.877,\"eph\":19.570,\"sep\":34.960}\n{\"class\":\"SKY\",\"device\":\"/dev/ttyACM0\",\"time\":\"2026-10-27T23:05:16.000Z\",\"gdop\":2.15,\"hdop\":1.03,\"pdop\":1.84,\"tdop\":1.05,\"xdop\":0.92,\"ydop\":1.03,\"vdop\":1.57}\n{\"class\":\"SKY\",\"device\":\"/dev/ttyACM0\",\"time\":\"2026-10-27T23:05:17.000Z\",\"gdop\":2.15,\"hdop\":1.03,\"pdop\":1.84,\"tdop\":1.05,\"xdop\":0.92,\"ydop\":1.03,\"vdop\":1.57,\"nSat\":16,\"uSat\":9,\"satellites\":[{\"PRN\":1,\"gnssid\":0,\"svid\":1,\"az\":113.0,\"el\":13.0,\"ss\":37.0,\"used\":true,\"health\":1},{\"PRN\":2,\"gnssid\":0,\"svid\":2,\"az\":89.0,\"el\":22.0,\"ss\":30.0,\"used\":true,\"health\":1},{\"PRN\":5,\"gnssid\":0,\"svid\":5,\"az\":281.0,\"el\":2.0,\"ss\":16.0,\"used\":false,\"health\":1},{\"PRN\":7,\"gnssid\":0,\"svid\":7,\"az\":103.0,\"el\":62.0,\"ss\":34.0,\"used\":true,\"health\":1},{\"PRN\":8,\"gnssid\":0,\"svid\":8,\"az\":49.0,\"el\":32.0,\"ss\":30.0,\"used\":true,\"health\":1},{\"PRN\":14,\"gnssid\":0,\"svid\":14,\"az\":283.0,\"el\":60.0,\"ss\":36.0,\"used\":true,\"health\":1},{\"PRN\":17,\"gnssid\":0,\"svid\":17,\"az\":195.0,\"el\":31.0,\"ss\":37.0,\"used\":true,\"health\":1},{\"PRN\":20,\"gnssid\":0,\"svid\":20,\"az\":311.0,\"el\":26.0,\"ss\":34.0,\"used\":true,\"health\":1},{\"PRN\":22,\"gnssid\":0,\"svid\":22,\"az\":264.0,\"el\":41.0,\"ss\":36.0,\"used\":true,\"health\":1},{\"PRN\":30,\"gnssid\":0,\"svid\":30,\"az\":335.0,\"el\":76.0,\"ss\":33.0,\"used\":true,\"health\":1},{\"PRN\":46,\"gnssid\":1,\"svid\":133,\"az\":164.0,\"el\":43.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":48,\"gnssid\":1,\"svid\":135,\"az\":216.0,\"el\":38.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":51,\"gnssid\":1,\"svid\":138,\"az\":178.0,\"el\":45.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":193,\"gnssid\":5,\"svid\":1,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":196,\"gnssid\":5,\"svid\":4,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":197,\"gnssid\":5,\"svid\":5,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1}]}\n{\"class\":\"SKY\",\"device\":\"/dev/ttyACM0\",\"time\":\"2026-10-27T23:05:17.000Z\",\"gdop\":2.09,\"hdop\":1.00,\"pdop\":1.84,\"tdop\":1.01,\"xdop\":0.92,\"ydop\":1.03,\"vdop\":1.54}\n{\"class\":\"TPV\",\"device\":\"/dev/ttyACM0\",\"mode\":3,\"time\":\"2026-10-27T23:05:17.000Z\",\"ept\":0.005,\"lat\":39.076028050,\"lon\":-108.563908153,\"altHAE\":1391.4036,\"altMSL\":1410.2811,\"alt\":1410.2811,\"epx\":13.745,\"epy\":15.433,\"epv\":36.110,\"track\":123.3344,\"magtrack\":132.9151,\"magvar\":9.6,\"speed\":0.008,\"climb\":0.021,\"eps\":30.87,\"epc\":71.53,\"ecefx\":-1578787.40,\"ecefy\":-4701065.68,\"ecefz\":3999749.95,\"ecefvx\":0.00,\"ecefvy\":-0.02,\"ecefvz\":0.01,\"ecefpAcc\":4.46,\"ecefvAcc\":0.33,\"velN\":-0.004,\"velE\":0.006,\"velD\":-0.021,\"geoidSep\":-18.877,\"eph\":19.570,\"sep\":34.960}\n{\"class\":\"TPV\",\"device\":\"/dev/ttyACM0\",\"mode\":3,\"time\":\"2026-10-27T23:05:18.000Z\",\"ept\":0.005,\"lat\":39.076029238,\"lon\":-108.563907608,\"altHAE\":1391.3681,\"altMSL\":1410.2455,\"alt\":1410.2455,\"epx\":13.745,\"epy\":15.433,\"epv\":35.420,\"track\":97.8369,\"magtrack\":107.4177,\"magvar\":9.6,\"speed\":0.016,\"climb\":0.019,\"eps\":0.32,\"epc\":71.53,\"ecefx\":-1578787.32,\"ecefy\":-4701065.59,\"ecefz\":3999750.03,\"ecefvx\":0.01,\"ecefvy\":-0.02,\"ecefvz\":0.01,\"ecefpAcc\":4.48,\"ecefvAcc\":0.32,\"velN\":-0.002,\"velE\":0.016,\"velD\":-0.019,\"geoidSep\":-18.877,\"eph\":19.000,\"sep\":34.960}\n{\"class\":\"SKY\",\"device\":\"/dev/ttyACM0\",\"time\":\"2026-10-27T23:05:17.000Z\",\"gdop\":2.09,\"hdop\":1.00,\"pdop\":1.84,\"tdop\":1.01,\"xdop\":0.92,\"ydop\":1.03,\"vdop\":1.54}\n{\"class\":\"SKY\",\"device\":\"/dev/ttyACM0\",\"time\":\"2026-10-27T23:05:18.000Z\",\"gdop\":2.09,\"hdop\":1.00,\"pdop\":1.84,\"tdop\":1.01,\"xdop\":0.92,\"ydop\":1.03,\"vdop\":1.54,\"nSat\":16,\"uSat\":9,\"satellites\":[{\"PRN\":1,\"gnssid\":0,\"svid\":1,\"az\":113.0,\"el\":13.0,\"ss\":37.0,\"used\":true,\"health\":1},{\"PRN\":2,\"gnssid\":0,\"svid\":2,\"az\":89.0,\"el\":22.0,\"ss\":30.0,\"used\":true,\"health\":1},{\"PRN\":5,\"gnssid\":0,\"svid\":5,\"az\":281.0,\"el\":2.0,\"ss\":15.0,\"used\":false,\"health\":1},{\"PRN\":7,\"gnssid\":0,\"svid\":7,\"az\":103.0,\"el\":62.0,\"ss\":34.0,\"used\":true,\"health\":1},{\"PRN\":8,\"gnssid\":0,\"svid\":8,\"az\":49.0,\"el\":32.0,\"ss\":29.0,\"used\":true,\"health\":1},{\"PRN\":14,\"gnssid\":0,\"svid\":14,\"az\":283.0,\"el\":60.0,\"ss\":37.0,\"used\":true,\"health\":1},{\"PRN\":17,\"gnssid\":0,\"svid\":17,\"az\":195.0,\"el\":31.0,\"ss\":37.0,\"used\":true,\"health\":1},{\"PRN\":20,\"gnssid\":0,\"svid\":20,\"az\":311.0,\"el\":26.0,\"ss\":33.0,\"used\":true,\"health\":1},{\"PRN\":22,\"gnssid\":0,\"svid\":22,\"az\":264.0,\"el\":41.0,\"ss\":36.0,\"used\":true,\"health\":1},{\"PRN\":30,\"gnssid\":0,\"svid\":30,\"az\":335.0,\"el\":76.0,\"ss\":33.0,\"used\":true,\"health\":1},{\"PRN\":46,\"gnssid\":1,\"svid\":133,\"az\":164.0,\"el\":43.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":48,\"gnssid\":1,\"svid\":135,\"az\":216.0,\"el\":38.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":51,\"gnssid\":1,\"svid\":138,\"az\":178.0,\"el\":45.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":193,\"gnssid\":5,\"svid\":1,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":196,\"gnssid\":5,\"svid\":4,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":197,\"gnssid\":5,\"svid\":5,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1}]}\n{\"class\":\"SKY\",\"device\":\"/dev/ttyACM0\",\"time\":\"2026-10-27T23:05:18.000Z\",\"gdop\":2.09,\"hdop\":1.00,\"pdop\":1.84,\"tdop\":1.01,\"xdop\":0.92,\"ydop\":1.03,\"vdop\":1.54}\n{\"class\":\"TPV\",\"device\":\"/dev/ttyACM0\",\"mode\":3,\"time\":\"2026-10-27T23:05:18.000Z\",\"ept\":0.005,\"lat\":39.076029238,\"lon\":-108.563907608,\"altHAE\":1391.3681,\"altMSL\":1410.2455,\"alt\":1410.2455,\"epx\":13.745,\"epy\":15.433,\"epv\":35.420,\"track\":97.8369,\"magtrack\":107.4177,\"magvar\":9.6,\"speed\":0.016,\"climb\":0.019,\"eps\":30.87,\"epc\":71.53,\"ecefx\":-1578787.32,\"ecefy\":-4701065.59,\"ecefz\":3999750.03,\"ecefvx\":0.01,\"ecefvy\":-0.02,\"ecefvz\":0.01,\"ecefpAcc\":4.48,\"ecefvAcc\":0.32,\"velN\":-0.002,\"velE\":0.016,\"velD\":-0.019,\"geoidSep\":-18.877,\"eph\":19.000,\"sep\":34.960}\n{\"class\":\"TPV\",\"device\":\"/dev/ttyACM0\",\"mode\":3,\"time\":\"2026-10-27T23:05:19.000Z\",\"ept\":0.005,\"lat\":39.076029963,\"lon\":-108.563907208,\"altHAE\":1391.3641,\"altMSL\":1410.2416,\"alt\":1410.2416,\"epx\":13.745,\"epy\":15.433,\"epv\":35.420,\"track\":240.6863,\"magtrack\":250.2670,\"magvar\":9.6,\"speed\":0.004,\"climb\":-0.014,\"eps\":0.30,\"epc\":70.84,\"ecefx\":-1578787.27,\"ecefy\":-4701065.55,\"ecefz\":3999750.09,\"ecefvx\":0.00,\"ecefvy\":0.01,\"ecefvz\":-0.01,\"ecefpAcc\":4.50,\"ecefvAcc\":0.30,\"velN\":-0.002,\"velE\":-0.003,\"velD\":0.014,\"geoidSep\":-18.877,\"eph\":19.000,\"sep\":34.960}\n{\"class\":\"SKY\",\"device\":\"/dev/ttyACM0\",\"time\":\"2026-10-27T23:05:18.000Z\",\"gdop\":2.09,\"hdop\":1.00,\"pdop\":1.84,\"tdop\":1.01,\"xdop\":0.92,\"ydop\":1.03,\"vdop\":1.54}\n"
+ },
+ "can": {
+  "link": "Device \"can0\" does not exist.\n",
+  "traffic_2s": "SIOCGIFINDEX: No such device\n"
+ },
+ "helpers": {
+  "update-status.json": {
+   "state": "current",
+   "message": "Pi setup finished",
+   "version": "af4bf09",
+   "previous": "",
+   "time": 1793133775,
+   "mode": "setup"
+  },
+  "setup-status.json": {
+   "stamp": "27b41a6c2089",
+   "running": false,
+   "time": 1793135511,
+   "now": "",
+   "steps": [
+    {
+     "name": "Recovery guard and rescue screen",
+     "result": "ok",
+     "detail": "Up to date"
+    },
+    {
+     "name": "PiSugar power monitor",
+     "result": "ok",
+     "detail": "Up to date"
+    },
+    {
+     "name": "Python packages",
+     "result": "ok",
+     "detail": "All installed"
+    },
+    {
+     "name": "Dash helpers",
+     "result": "ok",
+     "detail": "All installed"
+    },
+    {
+     "name": "GPS service",
+     "result": "waiting",
+     "detail": "No GPS receiver recognised on USB (no USB serial device is plugged in). Done by itself once the receiver is plugged in"
+    },
+    {
+     "name": "Clock from GPS",
+     "result": "ok",
+     "detail": "chrony sets the clock from the GPS"
+    },
+    {
+     "name": "TunerStudio: Java and display",
+     "result": "ok",
+     "detail": "Installed"
+    },
+    {
+     "name": "TunerStudio: program",
+     "result": "ok",
+     "detail": "In /home/foxbody/TunerStudioMS"
+    },
+    {
+     "name": "TunerStudio: serial port",
+     "result": "ok",
+     "detail": "foxbody can open the tuning cable"
+    },
+    {
+     "name": "Screen and start-up",
+     "result": "ok",
+     "detail": "The screen gets exactly 1920 x 720, from start-up on"
+    },
+    {
+     "name": "Start-up: bootloader update check",
+     "result": "ok",
+     "detail": "Off"
+    },
+    {
+     "name": "Start-up: unused disk check",
+     "result": "ok",
+     "detail": "Off"
+    },
+    {
+     "name": "Terminal with sudo",
+     "result": "ok",
+     "detail": "Off (add --terminal to FROGDASH_ARGS in /etc/default/frogdash to turn on the Terminal tab)"
+    },
+    {
+     "name": "Gateway firmware file",
+     "result": "ok",
+     "detail": "Build a6fa0a6b is the newest"
+    },
+    {
+     "name": "Taillight firmware file",
+     "result": "ok",
+     "detail": "Build ea05500b is the newest"
+    },
+    {
+     "name": "Water/meth firmware file",
+     "result": "ok",
+     "detail": "Build 3a02a951 is the newest"
+    },
+    {
+     "name": "Phone hotspot",
+     "result": "ok",
+     "detail": "Ready: switch it on under Controls, Wi-Fi"
+    },
+    {
+     "name": "System log kept",
+     "result": "ok",
+     "detail": "Kept across restarts, at most 150 MB"
+    },
+    {
+     "name": "Dash cam Wi-Fi",
+     "result": "skipped",
+     "detail": "No dash cam connection on this Pi"
+    }
+   ]
+  },
+  "gps-status.json": {
+   "action": "usb",
+   "result": "failed",
+   "message": "No GPS receiver recognised on USB to reset (no USB serial device is plugged in)",
+   "time": 1793133186
+  },
+  "can-status.json": {
+   "action": "reset",
+   "result": "failed",
+   "message": "can0 is missing: the CAN modules driver did not load",
+   "time": 1793133166
+  },
+  "wifi-status.json": null,
+  "screen-status.json": {
+   "connectors": [
+    {
+     "name": "HDMI-A-1",
+     "status": "connected",
+     "edid_bytes": 256,
+     "edid_ok": true,
+     "panel_1920x720": true,
+     "modes": [
+      "1920x720"
+     ],
+     "mode_count": 1
+    },
+    {
+     "name": "HDMI-A-2",
+     "status": "disconnected",
+     "edid_bytes": 0,
+     "edid_ok": false,
+     "panel_1920x720": false,
+     "modes": [],
+     "mode_count": 0
+    }
+   ],
+   "cmdline": "coherent_pool=1M 8250.nr_uarts=0 snd_bcm2835.enable_headphones=0 cgroup_disable=memory numa_policy=interleave nvme.max_host_mem_size_mb=32 snd_bcm2835.enable_headphones=1 snd_bcm2835.enable_hdmi=1 snd_bcm2835.enable_hdmi=0  numa=fake=2 system_heap.max_order=0 iommu_dma_numa_policy=interleave smsc95xx.macaddr=(hidden) vc_mem.mem_base=0x3ec00000 vc_mem.mem_size=0x40000000  console=ttyS0,115200 console=tty1 root=PARTUUID=05ea8c09-02 rootfstype=ext4 fsck.repair=yes rootwait cfg80211.ieee80211_regdom=GB drm.edid_firmware=edid/frogdash-1920x720.bin",
+   "config": [
+    "display_auto_detect=1",
+    "dtoverlay=vc4-kms-v3d",
+    "max_framebuffers=2",
+    "disable_fw_kms_setup=1",
+    "disable_overscan=1",
+    "[cm4]",
+    "[cm5]",
+    "[pi5]",
+    "[all]",
+    "[all]",
+    "[all]",
+    "disable_fw_kms_setup=1",
+    "hdmi_edid_file:0=1",
+    "hdmi_edid_filename:0=frogdash-1920x720.bin",
+    "hdmi_edid_file:1=1",
+    "hdmi_edid_filename:1=frogdash-1920x720.bin",
+    "hdmi_group:0=2",
+    "hdmi_mode:0=87",
+    "hdmi_timings:0=1920 1 48 32 80 720 0 3 10 8 0 0 0 60 0 92250000 8",
+    "hdmi_group:1=2",
+    "hdmi_mode:1=87",
+    "hdmi_timings:1=1920 1 48 32 80 720 0 3 10 8 0 0 0 60 0 92250000 8",
+    "[all]"
+   ],
+   "applied": true,
+   "boot_speedups": false,
+   "edid_installed": true,
+   "tryboot_now": false,
+   "boot_time": [
+    "Startup finished in 2.320s (kernel) + 24.797s (userspace) = 27.117s "
+   ],
+   "first_render": [
+    "[   28.287182] raspberrypi sh[1380]: Frogdash kiosk: first render heartbeat observed (boot+28.28s; 4.11s after browser launch)"
+   ],
+   "bootloader": [
+    "2025/05/08 16:21:35"
+   ],
+   "state": "idle",
+   "message": "",
+   "time": 1793133146
+  }
+ },
+ "update_failure_log": null,
+ "setup_log": ". 50%\n(Reading database ... 55%\n(Reading database ... 60%\n(Reading database ... 65%\n(Reading database ... 70%\n(Reading database ... 75%\n(Reading database ... 80%\n(Reading database ... 85%\n(Reading database ... 90%\n(Reading database ... 95%\n(Reading database ... 100%\n(Reading database ... 85339 files and directories currently installed.)\nPreparing to unpack .../chrony_4.6.1-3+deb13u2_arm64.deb ...\nUnpacking chrony (4.6.1-3+deb13u2) ...\nSetting up chrony (4.6.1-3+deb13u2) ...\nCreating config file /etc/chrony/chrony.conf with new version\nCreating config file /etc/chrony/chrony.keys with new version\ndpkg-statoverride: warning: --update given but /var/log/chrony does not exist\nCreated symlink '/etc/systemd/system/chronyd.service' \u2192 '/usr/lib/systemd/system/chrony.service'.\n\nCreated symlink '/etc/systemd/system/multi-user.target.wants/chrony.service' \u2192 '/usr/lib/systemd/system/chrony.service'.\n\nProcessing triggers for dbus (1.16.2-2) ...\nProcessing triggers for man-db (2.13.1-1) ...\n2026-10-27 20:31:45 Gateway firmware file: looking for a newer build\n2026-10-27 20:32:26 Taillight firmware file: looking for a newer build\n2026-10-27 20:33:03 Water/meth firmware file: looking for a newer build\n2026-10-27 20:34:53 Gateway firmware file: looking for a newer build\n2026-10-27 20:35:14 Taillight firmware file: looking for a newer build\n2026-10-27 20:35:35 Water/meth firmware file: looking for a newer build\n2026-10-27 20:37:43 Gateway firmware file: looking for a newer build\n2026-10-27 20:37:59 Taillight firmware file: looking for a newer build\n2026-10-27 20:38:19 Water/meth firmware file: looking for a newer build\n2026-10-27 20:40:48 Gateway firmware file: looking for a newer build\n2026-10-27 20:41:08 Taillight firmware file: looking for a newer build\n2026-10-27 20:41:24 Water/meth firmware file: looking for a newer build\n2026-10-27 20:47:34 Installing Java for TunerStudio: xwayland default-jre (a few hundred MB: 10-30 minutes on Wi-Fi)\nGet:1 http://archive.raspberrypi.com/debian trixie InRelease [54.9 kB]\nErr:1 http://archive.raspberrypi.com/debian trixie InRelease\n  Sub-process /usr/bin/sqv returned an error code (1), error message is: Signature by CF8A1AF502A2AA2D763BAE7E82B129927FA3303E was created after the --not-after date.\nHit:2 http://deb.debian.org/debian trixie InRelease\nGet:3 http://deb.debian.org/debian trixie-updates InRelease [47.3 kB]\nGet:4 http://deb.debian.org/debian-security trixie-security InRelease [43.4 kB]\nFetched 102 kB in 15s (6,695 B/s)\nReading package lists...\nW: An error occurred during the signature verification. The repository is not updated and the previous index files will be used. OpenPGP signature verification failed: http://archive.raspberrypi.com/debian trixie InRelease: Sub-process /usr/bin/sqv returned an error code (1), error message is: Signature by CF8A1AF502A2AA2D763BAE7E82B129927FA3303E was created after the --not-after date.\nW: Failed to fetch http://archive.raspberrypi.com/debian/dists/trixie/InRelease  Sub-process /usr/bin/sqv returned an error code (1), error message is: Signature by CF8A1AF502A2AA2D763BAE7E82B129927FA3303E was created after the --not-after date.\nW: Some index files failed to download. They have been ignored, or old ones used instead.\nReading package lists...\nBuilding dependency tree...\nReading state information...\nThe following additional packages will be installed:\n  ca-certificates-java default-jre-headless fonts-dejavu-extra java-common\n  libatk-wrapper-java libatk-wrapper-java-jni libdecor-0-0\n  libdecor-0-plugin-1-gtk libfontenc1 libgif7 libxcvt0 libxfont2\n  openjdk-21-jre openjdk-21-jre-headless x11-xkb-utils xfonts-base\n  xfonts-encodings xfonts-utils xserver-common\nSuggested packages:\n  fonts-ipafont-gothic fonts-ipafont-mincho fonts-wqy-microhei\n  | fonts-wqy-zenhei fonts-indic xfs | xserver\nThe following NEW packages will be installed:\n  ca-certificates-java default-jre default-jre-headless fonts-dejavu-extra\n  java-common libatk-wrapper-java libatk-wrapper-java-jni libdecor-0-0\n  libdecor-0-plugin-1-gtk libfontenc1 libgif7 libxcvt0 libxfont2\n  openjdk-21-jre openjdk-21-jre-headless x11-xkb-utils xfonts-base\n  xfonts-encodings xfonts-utils xserver-common xwayland\n0 upgraded, 21 newly installed, 0 to remove and 16 not upgraded.\nNeed to get 53.4 MB of archives.\nAfter this operation, 227 MB of additional disk space will be used.\nGet:1 http://deb.debian.org/debian trixie/main arm64 ca-certificates-java all 20240118 [11.6 kB]\nGet:2 http://deb.debian.org/debian trixie/main arm64 java-common all 0.76 [6,776 B]\nGet:3 http://deb.debian.org/debian-security trixie-security/main arm64 openjdk-21-jre-headless arm64 21.0.13+9-1~deb13u2 [40.8 MB]\nGet:4 http://archive.raspberrypi.com/debian trixie/main arm64 xserver-common all 2:21.1.16-1.3+rpt1+deb13u4 [2,416 kB]\nGet:5 http://deb.debian.org/debian trixie/main arm64 default-jre-headless arm64 2:1.21-76 [3,192 B]\nGet:6 http://deb.debian.org/debian trixie/main arm64 libgif7 arm64 5.2.2-1+deb13u1 [44.1 kB]\nGet:7 http://deb.debian.org/debian-security trixie-security/main arm64 openjdk-21-jre arm64 21.0.13+9-1~deb13u2 [197 kB]\nGet:8 http://deb.debian.org/debian trixie/main arm64 default-jre arm64 2:1.21-76 [1,068 B]\nGet:9 http://deb.debian.org/debian trixie/main arm64 fonts-dejavu-extra all 2.37-8 [1,792 kB]\nGet:10 http://deb.debian.org/debian trixie/main arm64 libatk-wrapper-java all 0.40.0-3 [63.4 kB]\nGet:11 http://deb.debian.org/debian trixie/main arm64 libatk-wrapper-java-jni arm64 0.40.0-3+b3 [48.7 kB]\nGet:12 http://deb.debian.org/debian trixie/main arm64 libdecor-0-0 arm64 0.2.2-2 [15.2 kB]\nGet:13 http://deb.debian.org/debian trixie/main arm64 libdecor-0-plugin-1-gtk arm64 0.2.2-2 [20.9 kB]\nGet:14 http://deb.debian.org/debian trixie/main arm64 libfontenc1 arm64 1:1.1.8-1+b2 [22.5 kB]\nGet:15 http://deb.debian.org/debian trixie/main arm64 libxcvt0 arm64 0.1.3-1 [5,496 B]\nGet:16 http://deb.debian.org/debian trixie/main arm64 libxfont2 arm64 1:2.0.6-1+deb13u1 [125 kB]\nGet:17 http://deb.debian.org/debian trixie/main arm64 x11-xkb-utils arm64 7.7+9 [149 kB]\nGet:18 http://deb.debian.org/debian trixie/main arm64 xfonts-encodings all 1:1.0.4-2.2 [577 kB]\nGet:19 http://deb.debian.org/debian trixie/main arm64 xfonts-utils arm64 1:7.7+7 [89.3 kB]\nGet:20 http://deb.debian.org/debian trixie/main arm64 xfonts-base all 1:1.0.5+nmu1 [5,895 kB]\nGet:21 http://archive.raspberrypi.com/debian trixie/main arm64 xwayland arm64 2:24.1.6-1+rpt1 [1,093 kB]\nFetched 53.4 MB in 17s (3,114 kB/s)\nSelecting previously unselected package ca-certificates-java.\n(Reading database ... \n(Reading database ... 5%\n(Reading database ... 10%\n(Reading database ... 15%\n(Reading database ... 20%\n(Reading database ... 25%\n(Reading database ... 30%\n(Reading database ... 35%\n(Reading database ... 40%\n(Reading database ... 45%\n(Reading database ... 50%\n(Reading database ... 55%\n(Reading database ... 60%\n(Reading database ... 65%\n(Reading database ... 70%\n(Reading database ... 75%\n(Reading database ... 80%\n(Reading database ... 85%\n(Reading database ... 90%\n(Reading database ... 95%\n(Reading database ... 100%\n(Reading database ... 85453 files and directories currently installed.)\nPreparing to unpack .../00-ca-certificates-java_20240118_all.deb ...\nUnpacking ca-certificates-java (20240118) ...\nSelecting previously unselected package java-common.\nPreparing to unpack .../01-java-common_0.76_all.deb ...\nUnpacking java-common (0.76) ...\nSelecting previously unselected package openjdk-21-jre-headless:arm64.\nPreparing to unpack .../02-openjdk-21-jre-headless_21.0.13+9-1~deb13u2_arm64.deb ...\nUnpacking openjdk-21-jre-headless:arm64 (21.0.13+9-1~deb13u2) ...\nSelecting previously unselected package default-jre-headless.\nPreparing to unpack .../03-default-jre-headless_2%3a1.21-76_arm64.deb ...\nUnpacking default-jre-headless (2:1.21-76) ...\nSelecting previously unselected package libgif7:arm64.\nPreparing to unpack .../04-libgif7_5.2.2-1+deb13u1_arm64.deb ...\nUnpacking libgif7:arm64 (5.2.2-1+deb13u1) ...\nSelecting previously unselected package openjdk-21-jre:arm64.\nPreparing to unpack .../05-openjdk-21-jre_21.0.13+9-1~deb13u2_arm64.deb ...\nUnpacking openjdk-21-jre:arm64 (21.0.13+9-1~deb13u2) ...\nSelecting previously unselected package default-jre.\nPreparing to unpack .../06-default-jre_2%3a1.21-76_arm64.deb ...\nUnpacking default-jre (2:1.21-76) ...\nSelecting previously unselected package fonts-dejavu-extra.\nPreparing to unpack .../07-fonts-dejavu-extra_2.37-8_all.deb ...\nUnpacking fonts-dejavu-extra (2.37-8) ...\nSelecting previously unselected package libatk-wrapper-java.\nPreparing to unpack .../08-libatk-wrapper-java_0.40.0-3_all.deb ...\nUnpacking libatk-wrapper-java (0.40.0-3) ...\nSelecting previously unselected package libatk-wrapper-java-jni:arm64.\nPreparing to unpack .../09-libatk-wrapper-java-jni_0.40.0-3+b3_arm64.deb ...\nUnpacking libatk-wrapper-java-jni:arm64 (0.40.0-3+b3) ...\nSelecting previously unselected package libdecor-0-0:arm64.\nPreparing to unpack .../10-libdecor-0-0_0.2.2-2_arm64.deb ...\nUnpacking libdecor-0-0:arm64 (0.2.2-2) ...\nSelecting previously unselected package libdecor-0-plugin-1-gtk:arm64.\nPreparing to unpack .../11-libdecor-0-plugin-1-gtk_0.2.2-2_arm64.deb ...\nUnpacking libdecor-0-plugin-1-gtk:arm64 (0.2.2-2) ...\nSelecting previously unselected package libfontenc1:arm64.\nPreparing to unpack .../12-libfontenc1_1%3a1.1.8-1+b2_arm64.deb ...\nUnpacking libfontenc1:arm64 (1:1.1.8-1+b2) ...\nSelecting previously unselected package libxcvt0:arm64.\nPreparing to unpack .../13-libxcvt0_0.1.3-1_arm64.deb ...\nUnpacking libxcvt0:arm64 (0.1.3-1) ...\nSelecting previously unselected package libxfont2:arm64.\nPreparing to unpack .../14-libxfont2_1%3a2.0.6-1+deb13u1_arm64.deb ...\nUnpacking libxfont2:arm64 (1:2.0.6-1+deb13u1) ...\nSelecting previously unselected package x11-xkb-utils.\nPreparing to unpack .../15-x11-xkb-utils_7.7+9_arm64.deb ...\nUnpacking x11-xkb-utils (7.7+9) ...\nSelecting previously unselected package xfonts-encodings.\nPreparing to unpack .../16-xfonts-encodings_1%3a1.0.4-2.2_all.deb ...\nUnpacking xfonts-encodings (1:1.0.4-2.2) ...\nSelecting previously unselected package xfonts-utils.\nPreparing to unpack .../17-xfonts-utils_1%3a7.7+7_arm64.deb ...\nUnpacking xfonts-utils (1:7.7+7) ...\nSelecting previously unselected package xfonts-base.\nPreparing to unpack .../18-xfonts-base_1%3a1.0.5+nmu1_all.deb ...\nUnpacking xfonts-base (1:1.0.5+nmu1) ...\nSelecting previously unselected package xserver-common.\nPreparing to unpack .../19-xserver-common_2%3a21.1.16-1.3+rpt1+deb13u4_all.deb ...\nUnpacking xserver-common (2:21.1.16-1.3+rpt1+deb13u4) ...\nSelecting previously unselected package xwayland.\nPreparing to unpack .../20-xwayland_2%3a24.1.6-1+rpt1_arm64.deb ...\nUnpacking xwayland (2:24.1.6-1+rpt1) ...\nSetting up java-common (0.76) ...\nSetting up x11-xkb-utils (7.7+9) ...\nSetting up libfontenc1:arm64 (1:1.1.8-1+b2) ...\nSetting up xfonts-encodings (1:1.0.4-2.2) ...\nSetting up libgif7:arm64 (5.2.2-1+deb13u1) ...\nSetting up fonts-dejavu-extra (2.37-8) ...\nSetting up libxcvt0:arm64 (0.1.3-1) ...\nSetting up libdecor-0-0:arm64 (0.2.2-2) ...\nSetting up libatk-wrapper-java (0.40.0-3) ...\nSetting up xserver-common (2:21.1.16-1.3+rpt1+deb13u4) ...\nSetting up ca-certificates-java (20240118) ...\nNo JRE found. Skipping Java certificates setup.\nSetting up libxfont2:arm64 (1:2.0.6-1+deb13u1) ...\nSetting up libdecor-0-plugin-1-gtk:arm64 (0.2.2-2) ...\nSetting up openjdk-21-jre-headless:arm64 (21.0.13+9-1~deb13u2) ...\nupdate-alternatives: using /usr/lib/jvm/java-21-openjdk-arm64/bin/java to provide /usr/bin/java (java) in auto mode\nupdate-alternatives: using /usr/lib/jvm/java-21-openjdk-arm64/bin/jpackage to provide /usr/bin/jpackage (jpackage) in auto mode\nupdate-alternatives: using /usr/lib/jvm/java-21-openjdk-arm64/bin/keytool to provide /usr/bin/keytool (keytool) in auto mode\nupdate-alternatives: using /usr/lib/jvm/java-21-openjdk-arm64/bin/rmiregistry to provide /usr/bin/rmiregistry (rmiregistry) in auto mode\nupdate-alternatives: using /usr/lib/jvm/java-21-openjdk-arm64/lib/jexec to provide /usr/bin/jexec (jexec) in auto mode\nSetting up xfonts-utils (1:7.7+7) ...\nSetting up libatk-wrapper-java-jni:arm64 (0.40.0-3+b3) ...\nSetting up xfonts-base (1:1.0.5+nmu1) ...\nSetting up xwayland (2:24.1.6-1+rpt1) ...\nProcessing triggers for man-db (2.13.1-1) ...\nProcessing triggers for fontconfig (2.15.0-2.3) ...\nProcessing triggers for hicolor-icon-theme (0.18-2) ...\nProcessing triggers for libc-bin (2.41-12+rpt1+deb13u4) ...\nProcessing triggers for ca-certificates-java (20240118) ...\nAdding debian:ACCVRAIZ1.pem\nAdding debian:AC_RAIZ_FNMT-RCM.pem\nAdding debian:AC_RAIZ_FNMT-RCM_SERVIDORES_SEGUROS.pem\nAdding debian:Actalis_Authentication_Root_CA.pem\nAdding debian:AffirmTrust_Commercial.pem\nAdding debian:AffirmTrust_Networking.pem\nAdding debian:AffirmTrust_Premium_ECC.pem\nAdding debian:AffirmTrust_Premium.pem\nAdding debian:Amazon_Root_CA_1.pem\nAdding debian:Amazon_Root_CA_2.pem\nAdding debian:Amazon_Root_CA_3.pem\nAdding debian:Amazon_Root_CA_4.pem\nAdding debian:ANF_Secure_Server_Root_CA.pem\nAdding debian:Atos_TrustedRoot_2011.pem\nAdding debian:Atos_TrustedRoot_Root_CA_ECC_TLS_2021.pem\nAdding debian:Atos_TrustedRoot_Root_CA_RSA_TLS_2021.pem\nAdding debian:Autoridad_de_Certificacion_Firmaprofesional_CIF_A62634068.pem\nAdding debian:Baltimore_CyberTrust_Root.pem\nAdding debian:BJCA_Global_Root_CA1.pem\nAdding debian:BJCA_Global_Root_CA2.pem\nAdding debian:Buypass_Class_2_Root_CA.pem\nAdding debian:Buypass_Class_3_Root_CA.pem\nAdding debian:CA_Disig_Root_R2.pem\nAdding debian:Certainly_Root_E1.pem\nAdding debian:Certainly_Root_R1.pem\nAdding debian:Certigna.pem\nAdding debian:Certigna_Root_CA.pem\nAdding debian:certSIGN_Root_CA_G2.pem\nAdding debian:certSIGN_ROOT_CA.pem\nAdding debian:Certum_EC-384_CA.pem\nAdding debian:Certum_Trusted_Network_CA_2.pem\nAdding debian:Certum_Trusted_Network_CA.pem\nAdding debian:Certum_Trusted_Root_CA.pem\nAdding debian:CFCA_EV_ROOT.pem\nAdding debian:CommScope_Public_Trust_ECC_Root-01.pem\nAdding debian:CommScope_Public_Trust_ECC_Root-02.pem\nAdding debian:CommScope_Public_Trust_RSA_Root-01.pem\nAdding debian:CommScope_Public_Trust_RSA_Root-02.pem\nAdding debian:Comodo_AAA_Services_root.pem\nAdding debian:COMODO_Certification_Authority.pem\nAdding debian:COMODO_ECC_Certification_Authority.pem\nAdding debian:COMODO_RSA_Certification_Authority.pem\nAdding debian:DigiCert_Assured_ID_Root_CA.pem\nAdding debian:DigiCert_Assured_ID_Root_G2.pem\nAdding debian:DigiCert_Assured_ID_Root_G3.pem\nAdding debian:DigiCert_Global_Root_CA.pem\nAdding debian:DigiCert_Global_Root_G2.pem\nAdding debian:DigiCert_Global_Root_G3.pem\nAdding debian:DigiCert_High_Assurance_EV_Root_CA.pem\nAdding debian:DigiCert_TLS_ECC_P384_Root_G5.pem\nAdding debian:DigiCert_TLS_RSA4096_Root_G5.pem\nAdding debian:DigiCert_Trusted_Root_G4.pem\nAdding debian:D-TRUST_BR_Root_CA_1_2020.pem\nAdding debian:D-TRUST_BR_Root_CA_2_2023.pem\nAdding debian:D-TRUST_EV_Root_CA_1_2020.pem\nAdding debian:D-TRUST_EV_Root_CA_2_2023.pem\nAdding debian:D-TRUST_Root_Class_3_CA_2_2009.pem\nAdding debian:D-TRUST_Root_Class_3_CA_2_EV_2009.pem\nAdding debian:emSign_ECC_Root_CA_-_C3.pem\nAdding debian:emSign_ECC_Root_CA_-_G3.pem\nAdding debian:emSign_Root_CA_-_C1.pem\nAdding debian:emSign_Root_CA_-_G1.pem\nAdding debian:Entrust.net_Premium_2048_Secure_Server_CA.pem\nAdding debian:Entrust_Root_Certification_Authority_-_EC1.pem\nAdding debian:Entrust_Root_Certification_Authority_-_G2.pem\nAdding debian:Entrust_Root_Certification_Authority.pem\nAdding debian:ePKI_Root_Certification_Authority.pem\nAdding debian:e-Szigno_Root_CA_2017.pem\nAdding debian:FIRMAPROFESIONAL_CA_ROOT-A_WEB.pem\nAdding debian:GDCA_TrustAUTH_R5_ROOT.pem\nAdding debian:GlobalSign_ECC_Root_CA_-_R4.pem\nAdding debian:GlobalSign_ECC_Root_CA_-_R5.pem\nAdding debian:GlobalSign_Root_CA.pem\nAdding debian:GlobalSign_Root_CA_-_R3.pem\nAdding debian:GlobalSign_Root_CA_-_R6.pem\nAdding debian:GlobalSign_Root_E46.pem\nAdding debian:GlobalSign_Root_R46.pem\nAdding debian:GLOBALTRUST_2020.pem\nAdding debian:Go_Daddy_Class_2_CA.pem\nAdding debian:Go_Daddy_Root_Certificate_Authority_-_G2.pem\nAdding debian:GTS_Root_R1.pem\nAdding debian:GTS_Root_R2.pem\nAdding debian:GTS_Root_R3.pem\nAdding debian:GTS_Root_R4.pem\nAdding debian:HARICA_TLS_ECC_Root_CA_2021.pem\nAdding debian:HARICA_TLS_RSA_Root_CA_2021.pem\nAdding debian:Hellenic_Academic_and_Research_Institutions_ECC_RootCA_2015.pem\nAdding debian:Hellenic_Academic_and_Research_Institutions_RootCA_2015.pem\nAdding debian:HiPKI_Root_CA_-_G1.pem\nAdding debian:Hongkong_Post_Root_CA_3.pem\nAdding debian:IdenTrust_Commercial_Root_CA_1.pem\nAdding debian:IdenTrust_Public_Sector_Root_CA_1.pem\nAdding debian:ISRG_Root_X1.pem\nAdding debian:ISRG_Root_X2.pem\nAdding debian:Izenpe.com.pem\nAdding debian:Microsec_e-Szigno_Root_CA_2009.pem\nAdding debian:Microsoft_ECC_Root_Certificate_Authority_2017.pem\nAdding debian:Microsoft_RSA_Root_Certificate_Authority_2017.pem\nAdding debian:NAVER_Global_Root_Certification_Authority.pem\nAdding debian:NetLock_Arany_=Class_Gold=_F\u0151tan\u00fas\u00edtv\u00e1ny.pem\nAdding debian:OISTE_WISeKey_Global_Root_GB_CA.pem\nAdding debian:OISTE_WISeKey_Global_Root_GC_CA.pem\nAdding debian:QuoVadis_Root_CA_1_G3.pem\nAdding debian:QuoVadis_Root_CA_2_G3.pem\nAdding debian:QuoVadis_Root_CA_2.pem\nAdding debian:QuoVadis_Root_CA_3_G3.pem\nAdding debian:QuoVadis_Root_CA_3.pem\nAdding debian:Sectigo_Public_Server_Authentication_Root_E46.pem\nAdding debian:Sectigo_Public_Server_Authentication_Root_R46.pem\nAdding debian:Secure_Global_CA.pem\nAdding debian:SecureSign_Root_CA12.pem\nAdding debian:SecureSign_Root_CA14.pem\nAdding debian:SecureSign_Root_CA15.pem\nAdding debian:SecureTrust_CA.pem\nAdding debian:Security_Communication_ECC_RootCA1.pem\nAdding debian:Security_Communication_RootCA2.pem\nAdding debian:SSL.com_EV_Root_Certification_Authority_ECC.pem\nAdding debian:SSL.com_EV_Root_Certification_Authority_RSA_R2.pem\nAdding debian:SSL.com_Root_Certification_Authority_ECC.pem\nAdding debian:SSL.com_Root_Certification_Authority_RSA.pem\nAdding debian:SSL.com_TLS_ECC_Root_CA_2022.pem\nAdding debian:SSL.com_TLS_RSA_Root_CA_2022.pem\nAdding debian:Starfield_Class_2_CA.pem\nAdding debian:Starfield_Root_Certificate_Authority_-_G2.pem\nAdding debian:Starfield_Services_Root_Certificate_Authority_-_G2.pem\nAdding debian:SwissSign_Gold_CA_-_G2.pem\nAdding debian:SZAFIR_ROOT_CA2.pem\nAdding debian:Telekom_Security_TLS_ECC_Root_2020.pem\nAdding debian:Telekom_Security_TLS_RSA_Root_2023.pem\nAdding debian:Telia_Root_CA_v2.pem\nAdding debian:TeliaSonera_Root_CA_v1.pem\nAdding debian:TrustAsia_Global_Root_CA_G3.pem\nAdding debian:TrustAsia_Global_Root_CA_G4.pem\nAdding debian:Trustwave_Global_Certification_Authority.pem\nAdding debian:Trustwave_Global_ECC_P256_Certification_Authority.pem\nAdding debian:Trustwave_Global_ECC_P384_Certification_Authority.pem\nAdding debian:T-TeleSec_GlobalRoot_Class_2.pem\nAdding debian:T-TeleSec_GlobalRoot_Class_3.pem\nAdding debian:TUBITAK_Kamu_SM_SSL_Kok_Sertifikasi_-_Surum_1.pem\nAdding debian:TunTrust_Root_CA.pem\nAdding debian:TWCA_CYBER_Root_CA.pem\nAdding debian:TWCA_Global_Root_CA.pem\nAdding debian:TWCA_Root_Certification_Authority.pem\nAdding debian:UCA_Extended_Validation_Root.pem\nAdding debian:UCA_Global_G2_Root.pem\nAdding debian:USERTrust_ECC_Certification_Authority.pem\nAdding debian:USERTrust_RSA_Certification_Authority.pem\nAdding debian:vTrus_ECC_Root_CA.pem\nAdding debian:vTrus_Root_CA.pem\nAdding debian:XRamp_Global_CA_Root.pem\ndone.\nSetting up openjdk-21-jre:arm64 (21.0.13+9-1~deb13u2) ...\nSetting up default-jre-headless (2:1.21-76) ...\nSetting up default-jre (2:1.21-76) ...\n2026-10-27 21:06:14 Downloading TunerStudio\n2026-10-27 21:06:32 Gateway firmware file: looking for a newer build\n2026-10-27 21:06:53 Taillight firmware file: looking for a newer build\n2026-10-27 21:07:13 Water/meth firmware file: looking for a newer build\n2026-10-27 21:10:54 Gateway firmware file: looking for a newer build\n2026-10-27 21:11:10 Taillight firmware file: looking for a newer build\n2026-10-27 21:11:30 Water/meth firmware file: looking for a newer build\n",
+ "uptime_s": 222.41,
+ "throttled": "throttled=0x0",
+ "disk": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/mmcblk0p2  117G  6.4G  106G   6% /\n/dev/mmcblk0p2  117G  6.4G  106G   6% /"
+}
