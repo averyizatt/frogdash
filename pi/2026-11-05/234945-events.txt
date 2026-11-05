@@ -1,0 +1,1084 @@
+2026-10-30 23:52:02 UTC  INFO   gps      GPS recovery: Looking for the receiver on the USB ports
+2026-10-30 23:52:06 UTC  WARN   can      CAN has received nothing since the dash started (60 s with the key on): resetting can0.
+2026-10-30 23:52:26 UTC  INFO   gps      GPS recovery: Resetting the receiver USB connection
+2026-10-30 23:54:15 UTC  INFO   dash     Dash stopping
+2026-10-30 23:54:26 UTC  INFO   dash     Dash started (b8e8c27)
+2026-10-30 23:54:30 UTC  ERROR  can      CAN bus lost: can0: [Errno 19] No such device
+2026-10-30 23:54:30 UTC  INFO   engine   Engine stopped
+2026-10-30 23:54:36 UTC  WARN   can      CAN has received nothing since the dash started (10 s with the key on): resetting can0.
+2026-10-30 23:54:54 UTC  ERROR  gps      No receiver is reporting (the GPS service is watching no port at all)  {"fix":"Receiver unplugged, or gpsd is watching the wrong port: ls -l /dev/serial/by-id/ and set DEVICES in /etc/default/gpsd to the GPS"}
+2026-10-30 23:55:06 UTC  INFO   gps      GPS recovery: Restarting the GPS service
+2026-10-30 23:55:30 UTC  INFO   gps      GPS recovery: Looking for the receiver on the USB ports
+2026-10-30 23:55:34 UTC  WARN   can      CAN has received nothing since the dash started (60 s with the key on): resetting can0.
+2026-10-30 23:55:55 UTC  INFO   dash     Dash stopping
+2026-10-30 23:56:49 UTC  INFO   can      CAN receiving again after the reset
+2026-10-30 23:56:52 UTC  INFO   can      CAN controller ERROR-ACTIVE
+2026-10-30 23:56:52 UTC  ERROR  gps      No receiver is reporting (the GPS service is watching no port at all)  {"fix":"Receiver unplugged, or gpsd is watching the wrong port: ls -l /dev/serial/by-id/ and set DEVICES in /etc/default/gpsd to the GPS"}
+2026-10-30 23:56:58 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":1}
+2026-10-30 23:56:59 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-30 23:57:01 UTC  INFO   can      CAN receiving again after the reset
+2026-10-30 23:57:02 UTC  INFO   gps      GPS recovery: Restarting the GPS service
+2026-10-30 23:57:11 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-30 23:57:15 UTC  INFO   can      CAN receiving again after the reset
+2026-10-30 23:57:18 UTC  INFO   can      CAN controller ERROR-ACTIVE
+2026-10-30 23:57:24 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":3}
+2026-10-30 23:57:25 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-30 23:57:28 UTC  INFO   gps      GPS recovery: Looking for the receiver on the USB ports
+2026-10-30 23:57:29 UTC  INFO   can      CAN receiving again after the reset
+2026-10-30 23:57:39 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-30 23:57:43 UTC  INFO   can      CAN receiving again after the reset
+2026-10-30 23:57:48 UTC  INFO   can      CAN controller ERROR-ACTIVE
+2026-10-30 23:57:54 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-30 23:57:54 UTC  INFO   gps      GPS recovery: Resetting the receiver USB connection
+2026-10-30 23:57:58 UTC  INFO   dash     Dash stopping
+2026-10-30 23:59:00 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":1}
+2026-10-30 23:59:01 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-30 23:59:03 UTC  INFO   can      CAN receiving again after the reset
+2026-10-30 23:59:04 UTC  INFO   gps      GPS recovery: Restarting the GPS service
+2026-10-30 23:59:13 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-30 23:59:17 UTC  INFO   can      CAN receiving again after the reset
+2026-10-30 23:59:27 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-30 23:59:30 UTC  INFO   gps      GPS recovery: Looking for the receiver on the USB ports
+2026-10-30 23:59:31 UTC  INFO   can      CAN receiving again after the reset
+2026-10-30 23:59:41 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-30 23:59:45 UTC  INFO   can      CAN receiving again after the reset
+2026-10-30 23:59:55 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-30 23:59:56 UTC  INFO   gps      GPS recovery: Resetting the receiver USB connection
+2026-10-30 23:59:59 UTC  INFO   can      CAN receiving again after the reset
+2026-10-31 00:00:00 UTC  INFO   can      CAN controller ERROR-ACTIVE
+2026-10-31 00:00:06 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":6}
+2026-10-31 00:00:09 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-31 00:00:13 UTC  INFO   can      CAN receiving again after the reset
+2026-10-31 00:00:16 UTC  INFO   can      CAN controller ERROR-ACTIVE
+2026-10-31 00:00:22 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":7}
+2026-10-31 00:00:23 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-31 00:00:27 UTC  INFO   can      CAN receiving again after the reset
+2026-10-31 00:00:37 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-31 00:00:41 UTC  INFO   can      CAN receiving again after the reset
+2026-10-31 00:00:51 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-31 00:00:55 UTC  INFO   can      CAN receiving again after the reset
+2026-10-31 00:00:56 UTC  INFO   can      CAN controller ERROR-ACTIVE
+2026-10-31 00:01:02 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":10}
+2026-10-31 00:01:05 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-31 00:01:09 UTC  INFO   can      CAN receiving again after the reset
+2026-10-31 00:01:12 UTC  INFO   can      CAN controller ERROR-ACTIVE
+2026-10-31 00:01:18 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":11}
+2026-10-31 00:01:19 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-31 00:01:23 UTC  INFO   can      CAN receiving again after the reset
+2026-10-31 00:01:33 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-31 00:01:35 UTC  INFO   can      CAN receiving again after the reset
+2026-10-31 00:01:45 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-31 00:01:49 UTC  INFO   can      CAN receiving again after the reset
+2026-10-31 00:01:52 UTC  INFO   can      CAN controller ERROR-ACTIVE
+2026-10-31 00:01:59 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":14}
+2026-10-31 00:01:59 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-31 00:02:03 UTC  INFO   can      CAN receiving again after the reset
+2026-10-31 00:02:13 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-31 00:02:17 UTC  INFO   can      CAN receiving again after the reset
+2026-10-31 00:02:19 UTC  INFO   can      CAN controller ERROR-ACTIVE
+2026-10-31 00:06:11 UTC  ERROR  gps      No receiver is reporting (the GPS service is watching no port at all)  {"fix":"Receiver unplugged, or gpsd is watching the wrong port: ls -l /dev/serial/by-id/ and set DEVICES in /etc/default/gpsd to the GPS"}
+2026-10-31 00:06:17 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":1}
+2026-10-31 00:06:18 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-31 00:06:20 UTC  INFO   can      CAN receiving again after the reset
+2026-10-31 00:06:21 UTC  INFO   gps      GPS recovery: Restarting the GPS service
+2026-10-31 00:06:30 UTC  WARN   can      CAN stopped receiving (10 s with the key on): resetting can0.
+2026-10-31 00:06:34 UTC  INFO   can      CAN receiving again after the reset
+2026-10-31 00:06:37 UTC  INFO   can      CAN controller ERROR-ACTIVE
+2026-10-31 00:06:43 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":3}
+2026-10-31 00:06:46 UTC  INFO   dash     Dash stopping
+2026-11-05 22:21:44 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:21:50 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:22:06 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:22:12 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:22:16 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:22:20 UTC  WARN   module   sensor gateway silent for 2.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:22:32 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 22:22:34 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:22:34 UTC  INFO   dash     Dash stopping
+2026-11-05 22:22:38 UTC  INFO   dash     Dash started (5bab88e)
+2026-11-05 22:22:38 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 22:22:40 UTC  INFO   gps      Receiver set to the automotive model (/dev/ttyACM0)
+2026-11-05 22:22:42 UTC  INFO   engine   Engine stopped
+2026-11-05 22:22:42 UTC  INFO   power    Ignition power on
+2026-11-05 22:22:48 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:23:02 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:23:05 UTC  WARN   module   water/meth silent for 1.8 s (0x300), then back: a restart of the module, or a dropout  {"id":"0x300"}
+2026-11-05 22:23:07 UTC  WARN   module   sensor gateway silent for 2.3 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:23:09 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:23:11 UTC  INFO   gps      Hears 12 satellites, strongest signal 36 dB; working out a position  {"fix":"A first fix after a long break can take a few minutes with a clear view of the sky"}
+2026-11-05 22:23:13 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:23:13 UTC  INFO   gps      Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-11-05 22:23:17 UTC  INFO   gps      Fix with 9 satellites (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-11-05 22:23:19 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:23:25 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:23:39 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:23:42 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:23:54 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:24:08 UTC  WARN   module   sensor gateway silent for 1.2 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:24:10 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:24:18 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:24:20 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:24:32 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:24:38 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:24:54 UTC  INFO   gps      Satellite data saved: 11 satellite orbits, 32 almanac entries
+2026-11-05 22:25:16 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:25:18 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:25:19 UTC  ERROR  firmware Taillight controller update failed: CAN send failed: the bus took no frames for half a second (is another module connected and on?)
+2026-11-05 22:25:24 UTC  WARN   module   taillights module not heard (stale)
+2026-11-05 22:25:24 UTC  WARN   module   watermeth module not heard (stale)
+2026-11-05 22:25:24 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 22:25:24 UTC  WARN   alert    Alert shown: WATER/METH CONTROLLER NOT RESPONDING  {"vehicle.speed_kph":0.061200000000000004,"engine.boost_kpa":1,"engine.afr":22.3,"ecu.afr_target":14.7,"engine.coolant_c":10.11111111111111,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":12.0,"vehicle.fuel_pct":44.5,"ecu.iat_c":11.61111111111111,"engine.ego_correction_pct":100.0}
+2026-11-05 22:25:26 UTC  WARN   module   sensor gateway silent for 6.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:25:26 UTC  WARN   module   water/meth silent for 6.3 s (0x300), then back: a restart of the module, or a dropout  {"id":"0x300"}
+2026-11-05 22:25:30 UTC  INFO   module   watermeth module answering
+2026-11-05 22:25:30 UTC  INFO   module   knock module answering
+2026-11-05 22:25:30 UTC  WARN   module   taillights silent for 152.6 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 22:25:30 UTC  INFO   module   taillights started (software restart): after its restart on settled power  {"frame":"0x102#08000301"}
+2026-11-05 22:25:32 UTC  INFO   gps      Satellite data restored: 11 satellite orbits from 1 min ago
+2026-11-05 22:25:34 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 22:25:34 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:25:38 UTC  INFO   module   taillights module answering
+2026-11-05 22:25:38 UTC  ERROR  gps      No receiver is reporting (the GPS service is watching /dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)  {"fix":"Receiver unplugged, or gpsd is watching the wrong port: ls -l /dev/serial/by-id/ and set DEVICES in /etc/default/gpsd to the GPS"}
+2026-11-05 22:25:40 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:25:48 UTC  WARN   module   sensor gateway silent for 1.0 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:25:50 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 22:25:50 UTC  INFO   gps      GPS recovery: Restarting the GPS service
+2026-11-05 22:25:58 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 22:25:58 UTC  INFO   module   taillights started (software restart)  {"frame":"0x102#08000300"}
+2026-11-05 22:26:04 UTC  INFO   gps      Fix with 11 satellites (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-11-05 22:26:10 UTC  WARN   module   taillights module not heard (stale)
+2026-11-05 22:26:10 UTC  WARN   module   watermeth module not heard (stale)
+2026-11-05 22:26:10 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 22:26:12 UTC  WARN   alert    Alert shown: WATER/METH CONTROLLER NOT RESPONDING  {"vehicle.speed_kph":0.036000000000000004,"engine.boost_kpa":2,"engine.afr":22.3,"ecu.afr_target":14.7,"engine.coolant_c":10.61111111111111,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":12.1,"vehicle.fuel_pct":45.0,"ecu.iat_c":11.666666666666664,"engine.ego_correction_pct":100.0}
+2026-11-05 22:26:14 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":1003,"tx_errors":0}
+2026-11-05 22:26:14 UTC  INFO   power    Ignition power off: on the battery
+2026-11-05 22:26:14 UTC  INFO   dash     Dash stopping
+2026-11-05 23:14:59 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:15:01 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:15:09 UTC  WARN   module   taillights module not heard (stale)
+2026-11-05 23:15:09 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:15:11 UTC  WARN   module   taillights silent for 4.8 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:15:11 UTC  INFO   module   taillights started (software restart): after its restart on settled power  {"frame":"0x102#08000301"}
+2026-11-05 23:15:11 UTC  INFO   engine   Engine started
+2026-11-05 23:15:15 UTC  INFO   module   taillights module answering
+2026-11-05 23:15:17 UTC  WARN   alert    Alert shown: NOT CHARGING  {"engine.rpm":1033,"vehicle.speed_kph":0.1404,"engine.boost_kpa":-56.2,"engine.afr":7.7,"ecu.afr_target":14.4,"engine.oil_pressure_psi":46.5,"engine.coolant_c":10.444444444444443,"engine.iat_c":11.11111111111111,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":11.5,"vehicle.fuel_pct":45.0,"ecu.iat_c":11.11111111111111,"engine.ego_correction_pct":100.0}
+2026-11-05 23:15:19 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:15:23 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:15:27 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:15:31 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:15:51 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:15:51 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:15:53 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:16:03 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:16:13 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:16:15 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:16:25 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:16:31 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:16:31 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:16:35 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:16:35 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:16:37 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:16:41 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:16:43 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:16:51 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:16:51 UTC  INFO   gps      Satellite data saved: 13 satellite orbits, 32 almanac entries
+2026-11-05 23:16:59 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:17:05 UTC  WARN   module   sensor gateway silent for 1.2 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:17:09 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:17:11 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:17:31 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:17:35 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:17:37 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:17:42 UTC  WARN   module   sensor gateway silent for 1.2 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:17:50 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:17:50 UTC  WARN   alert    Alert shown: LOW FUEL PRESSURE  {"engine.rpm":1185,"vehicle.speed_kph":0.0252,"engine.boost_kpa":-58.1,"engine.afr":15.4,"ecu.afr_target":14.6,"engine.oil_pressure_psi":45.5,"engine.coolant_c":18.0,"engine.iat_c":12.666666666666664,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":11.8,"vehicle.fuel_pct":45.8,"ecu.iat_c":12.666666666666664,"engine.ego_correction_pct":100.0}
+2026-11-05 23:17:54 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:17:58 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:18:10 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:18:18 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:18:38 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:18:44 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:18:58 UTC  WARN   module   sensor gateway silent for 2.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:19:00 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:19:02 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:19:08 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:19:10 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:19:12 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:19:14 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:19:14 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:19:20 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:19:22 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:19:22 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:19:22 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:19:24 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:19:26 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:19:30 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:19:30 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:19:36 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:19:38 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:19:42 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:19:44 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:19:48 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:19:52 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:19:52 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:19:58 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:02 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:06 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:08 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:10 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:20:12 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:20:12 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:16 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:24 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:26 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:30 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:32 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:34 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:20:38 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:40 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:20:40 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:42 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:20:44 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:20:46 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:54 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:20:54 UTC  WARN   sensors  sensors faults reported: bit 9, bit 11
+2026-11-05 23:20:56 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:20:56 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:20:58 UTC  INFO   sensors  sensors faults cleared
+2026-11-05 23:21:00 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:21:08 UTC  INFO   engine   Engine stopped
+2026-11-05 23:21:14 UTC  INFO   drive    Drive ended: 0.0 mi, 6 min, top 21 mph, peak boost 0.4 psi, meth 0 s  {"started":1793920508.1,"ended":1793920874.1,"duration_s":366,"distance_km":0.0,"top_speed_kph":33.2,"peak_boost_kpa":3,"max_rpm":2772,"max_coolant_c":35.3,"min_oil_psi":43.0,"meth_spray_s":0.0,"knock_events":0,"alerts":2,"problems":86,"ended_by":"ignition off"}
+2026-11-05 23:21:14 UTC  WARN   module   taillights module not heard (stale)
+2026-11-05 23:21:14 UTC  WARN   module   watermeth module not heard (stale)
+2026-11-05 23:21:14 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 23:21:14 UTC  WARN   alert    Alert shown: WATER/METH CONTROLLER NOT RESPONDING  {"engine.rpm":1417,"vehicle.speed_kph":0.5652,"engine.afr":15.9,"ecu.afr_target":14.7,"engine.coolant_c":35.333333333333336,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":11.5,"vehicle.fuel_pct":45.9,"ecu.iat_c":15.166666666666664,"engine.ego_correction_pct":100.0}
+2026-11-05 23:21:18 UTC  INFO   dash     Dash stopping
+2026-11-05 23:30:14 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:30:14 UTC  WARN   alert    Alert shown: NOT CHARGING  {"engine.rpm":1139,"vehicle.speed_kph":0.0756,"engine.boost_kpa":-56.6,"engine.afr":18.6,"ecu.afr_target":14.5,"engine.oil_pressure_psi":42.0,"engine.coolant_c":47.27777777777778,"engine.iat_c":25.72222222222222,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":11.9,"vehicle.fuel_pct":40.5,"ecu.iat_c":25.72222222222222,"engine.ego_correction_pct":100.0}
+2026-11-05 23:30:22 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:30:26 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:30:28 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:30:30 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:30:32 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:30:40 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:30:44 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:30:46 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:30:52 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:30:54 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:30:56 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:31:00 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:31:02 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:31:02 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:31:08 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:31:10 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:31:12 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:31:16 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:31:20 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:31:22 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:31:26 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:31:28 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:31:32 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:31:46 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:31:50 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:31:54 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:31:56 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:31:58 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:32:10 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:32:10 UTC  WARN   alert    Alert shown: FUEL PRESSURE LOW IN BOOST  {"engine.rpm":3554,"vehicle.speed_kph":43.9308,"engine.boost_kpa":32.400000000000006,"engine.afr":11.7,"ecu.afr_target":11.8,"engine.fuel_pressure_psi":5.5,"engine.oil_pressure_psi":53.0,"engine.coolant_c":50.44444444444445,"engine.iat_c":22.333333333333336,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":11.9,"vehicle.fuel_pct":42.8,"ecu.iat_c":22.333333333333336,"engine.ego_correction_pct":100.0}
+2026-11-05 23:32:10 UTC  WARN   alert    Alert shown: BOOST ON A COLD ENGINE  {"engine.rpm":3554,"vehicle.speed_kph":43.9308,"engine.boost_kpa":32.400000000000006,"engine.afr":11.7,"ecu.afr_target":11.8,"engine.fuel_pressure_psi":5.5,"engine.oil_pressure_psi":53.0,"engine.coolant_c":50.44444444444445,"engine.iat_c":22.333333333333336,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":11.9,"vehicle.fuel_pct":42.8,"ecu.iat_c":22.333333333333336,"engine.ego_correction_pct":100.0}
+2026-11-05 23:32:12 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:32:14 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:32:16 UTC  INFO   gps      Satellite data saved: 13 satellite orbits, 32 almanac entries
+2026-11-05 23:32:18 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:32:24 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:32:32 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:32:40 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:32:44 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:32:46 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:32:50 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:33:00 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:33:00 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:33:08 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:33:10 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:33:24 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:33:28 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:33:30 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:33:34 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:33:36 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:33:48 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:33:58 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:34:01 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:34:05 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:34:17 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:34:27 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:34:31 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:34:35 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:34:47 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:34:53 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:34:57 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:35:11 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:35:15 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:35:19 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:35:29 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:35:31 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:35:33 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:35:41 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:35:51 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:35:57 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:36:05 UTC  WARN   module   sensor gateway silent for 1.2 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:36:17 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:36:21 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:36:27 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:36:29 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:36:35 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:36:35 UTC  WARN   meth     meth faults reported: tank level low, overboost assist, overboost emergency
+2026-11-05 23:36:37 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:36:39 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:36:39 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-05 23:36:41 UTC  WARN   meth     meth faults reported: tank level low, overboost assist, overboost emergency
+2026-11-05 23:36:41 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:36:43 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:36:43 UTC  WARN   sensors  sensors faults reported: bit 8, bit 10
+2026-11-05 23:36:43 UTC  WARN   alert    Alert shown: FUEL PRESSURE LOW IN BOOST  {"engine.rpm":2847,"vehicle.speed_kph":56.16,"engine.boost_kpa":19.0,"engine.afr":12.7,"ecu.afr_target":12.6,"engine.fuel_pressure_psi":13.5,"engine.oil_pressure_psi":46.5,"engine.coolant_c":68.94444444444446,"engine.iat_c":23.666666666666664,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":14.1,"vehicle.fuel_pct":38.6,"ecu.iat_c":23.666666666666664,"engine.ego_correction_pct":100.0}
+2026-11-05 23:36:45 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:36:45 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:36:47 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:36:47 UTC  WARN   alert    Alert shown: FUEL PRESSURE LOW IN BOOST  {"engine.rpm":2247,"vehicle.speed_kph":69.1308,"engine.boost_kpa":19.200000000000003,"engine.afr":14.7,"ecu.afr_target":12.6,"engine.fuel_pressure_psi":10.5,"engine.oil_pressure_psi":46.0,"engine.coolant_c":69.72222222222223,"engine.iat_c":24.055555555555557,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":14.1,"vehicle.fuel_pct":38.1,"ecu.iat_c":24.055555555555557,"engine.ego_correction_pct":100.0}
+2026-11-05 23:36:49 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:36:49 UTC  WARN   alert    Alert shown: LEAN UNDER BOOST  {"engine.rpm":2396,"vehicle.speed_kph":72.4824,"engine.boost_kpa":27.599999999999994,"engine.afr":13.9,"ecu.afr_target":12.2,"engine.fuel_pressure_psi":6.0,"engine.oil_pressure_psi":45.0,"engine.coolant_c":69.72222222222223,"engine.iat_c":23.944444444444443,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":14.1,"vehicle.fuel_pct":38.0,"ecu.iat_c":23.944444444444443,"engine.ego_correction_pct":100.0}
+2026-11-05 23:36:51 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:36:51 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost emergency
+2026-11-05 23:36:53 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 23:36:53 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:36:55 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:36:55 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:36:55 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:36:55 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:36:57 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:37:01 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:37:03 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost emergency
+2026-11-05 23:37:03 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-05 23:37:05 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:37:05 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:37:07 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:37:11 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:37:11 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:37:11 UTC  WARN   sensors  sensors faults reported: bit 11
+2026-11-05 23:37:13 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:37:13 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:37:15 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:37:15 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost emergency
+2026-11-05 23:37:17 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:37:19 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:37:21 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:37:23 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:37:23 UTC  WARN   sensors  sensors faults reported: bit 9, bit 10
+2026-11-05 23:37:25 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:37:27 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:37:27 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:37:29 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:37:29 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:37:31 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost emergency
+2026-11-05 23:37:31 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:37:33 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:37:33 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:37:33 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:37:35 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:37:37 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:37:39 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:37:39 UTC  INFO   sensors  sensors faults cleared
+2026-11-05 23:37:42 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:37:42 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:37:44 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:37:44 UTC  WARN   sensors  sensors faults reported: bit 9, bit 10
+2026-11-05 23:37:46 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:37:46 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:37:48 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:37:50 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:37:50 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 11
+2026-11-05 23:37:52 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:37:52 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:37:54 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:37:56 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:37:58 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:37:58 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:37:58 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:38:00 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:38:00 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:38:02 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:38:04 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:38:06 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:38:06 UTC  WARN   sensors  sensors faults reported: bit 9, bit 10
+2026-11-05 23:38:08 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:38:08 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:38:12 UTC  INFO   module   knock module answering
+2026-11-05 23:38:12 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:38:12 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:38:12 UTC  WARN   sensors  sensors faults reported: bit 9, bit 10
+2026-11-05 23:38:14 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:38:14 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:38:14 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:38:16 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:38:16 UTC  WARN   sensors  sensors faults reported: bit 10
+2026-11-05 23:38:18 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:38:18 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:38:20 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:38:20 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:38:20 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:38:22 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 23:38:22 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:38:22 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:38:24 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:38:26 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:38:28 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:38:28 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:38:30 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:38:30 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:38:32 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:38:32 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:38:34 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:38:34 UTC  WARN   sensors  sensors faults reported: bit 8, bit 10
+2026-11-05 23:38:36 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:38:36 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:38:38 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:38:40 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:38:40 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:38:42 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost emergency
+2026-11-05 23:38:42 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:38:44 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:38:44 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:38:44 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:38:44 UTC  WARN   sensors  sensors faults reported: bit 8, bit 10, bit 11
+2026-11-05 23:38:46 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:38:46 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:38:48 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:38:48 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-05 23:38:50 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist, overboost emergency
+2026-11-05 23:38:50 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:38:52 UTC  INFO   module   knock module answering
+2026-11-05 23:38:52 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:38:52 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:38:54 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:38:54 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:38:54 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:38:56 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:38:58 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:39:02 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:39:02 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:39:02 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:39:04 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 23:39:04 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:39:04 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:39:04 UTC  WARN   alert    Alert shown: FUEL PRESSURE LOW IN BOOST  {"engine.rpm":3388,"vehicle.speed_kph":35.5968,"engine.boost_kpa":30.400000000000006,"engine.afr":12.0,"ecu.afr_target":11.9,"engine.fuel_pressure_psi":3.0,"engine.oil_pressure_psi":47.5,"engine.coolant_c":82.11111111111111,"engine.iat_c":28.72222222222222,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":14.0,"vehicle.fuel_pct":37.9,"ecu.iat_c":28.72222222222222,"engine.ego_correction_pct":100.0}
+2026-11-05 23:39:06 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:39:06 UTC  WARN   sensors  sensors faults reported: bit 11
+2026-11-05 23:39:08 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:39:08 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:39:10 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:39:10 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:39:12 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost emergency
+2026-11-05 23:39:14 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:39:14 UTC  WARN   alert    Alert shown: FUEL PRESSURE LOW IN BOOST  {"engine.rpm":3078,"vehicle.speed_kph":61.9956,"engine.boost_kpa":24.599999999999994,"engine.afr":12.3,"ecu.afr_target":12.3,"engine.fuel_pressure_psi":2.5,"engine.oil_pressure_psi":44.5,"engine.coolant_c":83.55555555555554,"engine.iat_c":28.27777777777778,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":14.0,"vehicle.fuel_pct":37.8,"ecu.iat_c":28.27777777777778,"engine.ego_correction_pct":100.0}
+2026-11-05 23:39:16 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:39:16 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:39:16 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 11
+2026-11-05 23:39:18 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:39:20 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost emergency
+2026-11-05 23:39:20 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-05 23:39:22 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:39:22 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:39:22 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:39:24 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:39:24 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:39:26 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:39:26 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:39:28 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:39:30 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:39:32 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:39:34 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:39:34 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:39:34 UTC  WARN   sensors  sensors faults reported: bit 10
+2026-11-05 23:39:36 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:39:36 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:39:36 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:39:38 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:39:40 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:39:42 UTC  INFO   module   knock module answering
+2026-11-05 23:39:42 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:39:42 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:39:46 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:39:48 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:39:48 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:39:50 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:39:50 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:39:52 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:39:52 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:39:54 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 23:39:54 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:39:56 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:39:56 UTC  INFO   sensors  sensors faults cleared
+2026-11-05 23:39:58 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:39:58 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:40:00 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:40:00 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:40:02 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:40:04 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:40:04 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:40:06 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:40:06 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:40:08 UTC  INFO   module   knock module answering
+2026-11-05 23:40:08 UTC  WARN   meth     meth faults reported: overboost assist, overboost emergency
+2026-11-05 23:40:10 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:40:10 UTC  WARN   sensors  sensors faults reported: bit 8, bit 10
+2026-11-05 23:40:12 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:40:12 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:40:12 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:40:14 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:40:14 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:40:16 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:40:16 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:40:18 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:40:18 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:40:20 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:40:20 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:40:22 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 23:40:22 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:40:22 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost emergency
+2026-11-05 23:40:22 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:40:24 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:40:24 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:40:26 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:40:26 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:40:26 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:40:28 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:40:28 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:40:28 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:40:30 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:40:32 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:40:32 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:40:34 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:40:34 UTC  WARN   sensors  sensors faults reported: bit 10
+2026-11-05 23:40:36 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:40:36 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost emergency
+2026-11-05 23:40:36 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:40:38 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:40:38 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:40:38 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:40:40 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:40:40 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:40:42 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:40:44 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:40:46 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:40:46 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:40:46 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:40:48 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:40:48 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:40:50 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:40:50 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:40:52 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:40:54 UTC  INFO   module   knock module answering
+2026-11-05 23:40:54 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:40:54 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:40:56 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:40:56 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:40:58 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:40:58 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:41:00 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost emergency
+2026-11-05 23:41:00 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:41:02 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:41:04 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:41:04 UTC  WARN   sensors  sensors faults reported: bit 8, bit 11
+2026-11-05 23:41:07 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 23:41:07 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:41:07 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:41:09 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:41:09 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:41:09 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:41:11 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:41:11 UTC  INFO   sensors  sensors faults cleared
+2026-11-05 23:41:13 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:41:13 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:41:15 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost emergency
+2026-11-05 23:41:15 UTC  WARN   sensors  sensors faults reported: bit 8, bit 11
+2026-11-05 23:41:17 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:41:17 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:41:19 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:41:19 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:41:21 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:41:21 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:41:23 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:41:23 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:41:25 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:41:25 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:41:27 UTC  WARN   meth     meth faults reported: overboost assist, overboost emergency
+2026-11-05 23:41:27 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:41:29 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:41:29 UTC  WARN   sensors  sensors faults reported: bit 9, bit 11
+2026-11-05 23:41:31 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:41:31 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:41:33 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:41:35 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:41:37 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:41:39 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:41:39 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-05 23:41:41 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:41:41 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:41:43 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:41:43 UTC  WARN   sensors  sensors faults reported: bit 10
+2026-11-05 23:41:45 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:41:45 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:41:47 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:41:47 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:41:47 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:41:49 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:41:49 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:41:51 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:41:51 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:41:53 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:41:53 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:41:55 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:41:57 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:41:57 UTC  INFO   sensors  sensors faults cleared
+2026-11-05 23:41:59 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:41:59 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:42:01 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:42:01 UTC  WARN   sensors  sensors faults reported: bit 10
+2026-11-05 23:42:03 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:42:03 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:42:05 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:42:05 UTC  WARN   sensors  sensors faults reported: bit 9, bit 10
+2026-11-05 23:42:07 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost emergency
+2026-11-05 23:42:07 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:42:09 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:42:11 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:42:11 UTC  WARN   sensors  sensors faults reported: bit 10
+2026-11-05 23:42:13 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:42:13 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:42:15 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:42:15 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:42:17 UTC  INFO   module   knock module answering
+2026-11-05 23:42:17 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:42:21 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:42:21 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:42:23 UTC  WARN   meth     meth faults reported: overboost assist, overboost emergency
+2026-11-05 23:42:25 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:42:25 UTC  WARN   sensors  sensors faults reported: bit 11
+2026-11-05 23:42:27 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:42:27 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:42:29 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:42:29 UTC  WARN   sensors  sensors faults reported: bit 9, bit 10
+2026-11-05 23:42:31 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:42:31 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:42:33 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:42:33 UTC  WARN   sensors  sensors faults reported: bit 10, bit 11
+2026-11-05 23:42:35 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:42:35 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:42:35 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:42:37 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:42:37 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:42:39 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:42:39 UTC  WARN   meth     meth faults reported: overboost assist, overboost emergency
+2026-11-05 23:42:39 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:42:41 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 23:42:41 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:42:41 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:42:43 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost emergency
+2026-11-05 23:42:43 UTC  WARN   sensors  sensors faults reported: bit 9, bit 11
+2026-11-05 23:42:45 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:42:45 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:42:45 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:42:47 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:42:47 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:42:47 UTC  WARN   sensors  sensors faults reported: bit 9, bit 10
+2026-11-05 23:42:49 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:42:49 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:42:51 UTC  INFO   module   knock module answering
+2026-11-05 23:42:51 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:42:53 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost emergency
+2026-11-05 23:42:55 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:42:55 UTC  WARN   alert    Alert shown: FUEL PRESSURE LOW IN BOOST  {"engine.rpm":3035,"vehicle.speed_kph":30.5352,"engine.boost_kpa":27.900000000000006,"engine.afr":12.7,"ecu.afr_target":12.1,"engine.fuel_pressure_psi":1.0,"engine.oil_pressure_psi":38.5,"engine.coolant_c":92.27777777777777,"engine.iat_c":34.72222222222222,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":14.0,"vehicle.fuel_pct":38.4,"ecu.iat_c":34.72222222222222,"engine.ego_correction_pct":100.0}
+2026-11-05 23:42:57 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 23:42:57 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:42:57 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-05 23:42:59 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:42:59 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:42:59 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:43:01 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:43:03 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:43:03 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:43:05 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:43:05 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:43:07 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:43:07 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:43:09 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:43:11 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:43:11 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:43:11 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:43:13 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:43:13 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:43:15 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:43:15 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:43:17 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:43:17 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:43:17 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:43:23 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:43:25 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:43:25 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 11
+2026-11-05 23:43:27 UTC  WARN   meth     meth faults reported: tank level low, overboost assist, overboost emergency
+2026-11-05 23:43:27 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:43:29 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:43:29 UTC  WARN   sensors  sensors faults reported: bit 8, bit 10
+2026-11-05 23:43:31 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:43:33 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:43:33 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:43:35 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:43:35 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:43:35 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:43:37 UTC  INFO   module   knock module answering
+2026-11-05 23:43:37 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:43:37 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:43:39 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:43:39 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:43:39 UTC  WARN   sensors  sensors faults reported: bit 10
+2026-11-05 23:43:41 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:43:41 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:43:41 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:43:43 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:43:43 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:43:45 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:43:45 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:43:47 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:43:47 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 11
+2026-11-05 23:43:49 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:43:49 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:43:51 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:43:53 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 23:43:53 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:43:55 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:43:55 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:43:57 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:43:57 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:43:59 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:43:59 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:44:01 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:44:01 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:44:03 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:44:03 UTC  WARN   alert    Alert shown: FUEL PRESSURE LOW IN BOOST  {"engine.rpm":3625,"vehicle.speed_kph":38.696400000000004,"engine.boost_kpa":27.799999999999997,"engine.afr":12.8,"ecu.afr_target":12.0,"engine.fuel_pressure_psi":11.0,"engine.oil_pressure_psi":43.5,"engine.coolant_c":87.27777777777777,"engine.iat_c":35.55555555555556,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":14.0,"vehicle.fuel_pct":38.2,"ecu.iat_c":35.55555555555556,"engine.ego_correction_pct":100.0}
+2026-11-05 23:44:05 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:44:05 UTC  WARN   sensors  sensors faults reported: bit 8, bit 11
+2026-11-05 23:44:07 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:44:07 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:44:09 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:44:11 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:44:11 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:44:14 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:44:14 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:44:14 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:44:16 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:44:16 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:44:18 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:44:18 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:44:20 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:44:20 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:44:22 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:44:22 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:44:24 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:44:24 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:44:26 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:44:26 UTC  WARN   alert    Alert shown: FUEL PRESSURE LOW IN BOOST  {"engine.rpm":3464,"vehicle.speed_kph":36.594,"engine.boost_kpa":37.400000000000006,"engine.afr":12.3,"ecu.afr_target":11.8,"engine.fuel_pressure_psi":12.5,"engine.oil_pressure_psi":43.0,"engine.coolant_c":88.77777777777777,"engine.iat_c":35.888888888888886,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":14.0,"vehicle.fuel_pct":40.1,"ecu.iat_c":35.888888888888886,"engine.ego_correction_pct":100.0}
+2026-11-05 23:44:28 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:44:30 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:44:30 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:44:32 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:44:32 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:44:34 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:44:34 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:44:36 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:44:36 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:44:38 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:44:38 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:44:40 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:44:42 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:44:42 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:44:44 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:44:44 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:44:44 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:44:46 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:44:46 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:44:48 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:44:50 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:44:52 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:44:52 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:44:52 UTC  WARN   sensors  sensors faults reported: bit 11
+2026-11-05 23:44:54 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:44:54 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:44:56 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:44:58 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:44:58 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:45:00 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:45:00 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:45:02 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:45:02 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:45:04 UTC  INFO   module   knock module answering
+2026-11-05 23:45:04 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:45:04 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:45:04 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:45:06 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:45:06 UTC  WARN   sensors  sensors faults reported: bit 8, bit 11
+2026-11-05 23:45:08 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:45:08 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:45:10 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:45:12 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 23:45:12 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:45:14 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:45:14 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:45:14 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:45:16 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:45:16 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:45:18 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:45:18 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:45:20 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:45:20 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:45:22 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:45:22 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:45:24 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:45:24 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:45:26 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:45:26 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:45:26 UTC  WARN   alert    Alert shown: FUEL PRESSURE LOW IN BOOST  {"engine.rpm":3221,"vehicle.speed_kph":34.3584,"engine.boost_kpa":32.599999999999994,"engine.afr":12.6,"ecu.afr_target":11.8,"engine.fuel_pressure_psi":16.5,"engine.oil_pressure_psi":41.0,"engine.coolant_c":92.94444444444446,"engine.iat_c":38.166666666666664,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":13.9,"vehicle.fuel_pct":41.0,"ecu.iat_c":38.166666666666664,"engine.ego_correction_pct":100.0}
+2026-11-05 23:45:28 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:45:30 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:45:30 UTC  INFO   sensors  sensors faults cleared
+2026-11-05 23:45:32 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:45:32 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:45:34 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:45:34 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:45:36 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:45:36 UTC  WARN   module   sensor gateway silent for 1.0 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:45:36 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:45:36 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:45:38 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:45:40 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:45:40 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:45:40 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:45:42 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:45:42 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:45:46 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:45:46 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:45:48 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:45:48 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-05 23:45:48 UTC  WARN   alert    Alert shown: FUEL PRESSURE LOW IN BOOST  {"engine.rpm":2219,"vehicle.speed_kph":43.2144,"engine.boost_kpa":18.299999999999997,"engine.afr":15.3,"ecu.afr_target":12.7,"engine.fuel_pressure_psi":17.5,"engine.oil_pressure_psi":38.0,"engine.coolant_c":92.22222222222223,"engine.iat_c":37.666666666666664,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":13.8,"vehicle.fuel_pct":42.2,"ecu.iat_c":37.666666666666664,"engine.ego_correction_pct":100.0}
+2026-11-05 23:45:50 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:45:50 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:45:52 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:45:52 UTC  WARN   sensors  sensors faults reported: bit 8, bit 10
+2026-11-05 23:45:54 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:45:54 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:45:56 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:45:58 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:45:58 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:46:00 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:46:02 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:46:02 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:46:02 UTC  WARN   sensors  sensors faults reported: bit 11
+2026-11-05 23:46:04 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:46:04 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:46:06 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:46:06 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:46:08 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:46:08 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:46:10 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:46:12 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:46:14 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:46:16 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:46:16 UTC  WARN   sensors  sensors faults reported: bit 11
+2026-11-05 23:46:18 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost emergency
+2026-11-05 23:46:18 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:46:20 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:46:20 UTC  WARN   sensors  sensors faults reported: bit 10, bit 11
+2026-11-05 23:46:22 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:46:22 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:46:24 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:46:24 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:46:26 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:46:28 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:46:30 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:46:30 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:46:30 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-05 23:46:32 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:46:32 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:46:34 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:46:34 UTC  WARN   sensors  sensors faults reported: bit 10
+2026-11-05 23:46:36 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:46:36 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:46:38 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist, overboost emergency
+2026-11-05 23:46:38 UTC  WARN   sensors  sensors faults reported: bit 8, bit 10
+2026-11-05 23:46:40 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost emergency
+2026-11-05 23:46:40 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:46:42 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:46:44 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:46:44 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:46:46 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:46:48 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:46:48 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:46:48 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:46:50 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:46:52 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:46:52 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-05 23:46:54 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:46:54 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:46:58 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:46:58 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:46:58 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:47:00 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:47:00 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:47:02 UTC  INFO   module   knock module answering
+2026-11-05 23:47:02 UTC  WARN   module   taillights silent for 1.2 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:47:02 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:47:02 UTC  WARN   sensors  sensors faults reported: bit 8, bit 10
+2026-11-05 23:47:04 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:47:04 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:47:06 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:47:06 UTC  WARN   sensors  sensors faults reported: bit 11
+2026-11-05 23:47:08 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:47:08 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:47:10 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:47:10 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:47:10 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-05 23:47:12 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:47:12 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:47:14 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:47:16 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:47:16 UTC  WARN   sensors  sensors faults reported: bit 9, bit 10
+2026-11-05 23:47:18 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 23:47:18 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:47:18 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:47:20 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:47:20 UTC  WARN   sensors  sensors faults reported: bit 11
+2026-11-05 23:47:23 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:47:23 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:47:23 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:47:25 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:47:25 UTC  WARN   sensors  sensors faults reported: bit 11
+2026-11-05 23:47:27 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:47:27 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:47:29 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:47:29 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:47:31 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:47:33 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:47:35 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:47:35 UTC  WARN   sensors  sensors faults reported: bit 10
+2026-11-05 23:47:37 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:47:37 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:47:39 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:47:39 UTC  WARN   sensors  sensors faults reported: bit 10
+2026-11-05 23:47:41 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:47:41 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:47:43 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:47:45 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:47:47 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:47:49 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:47:49 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:47:49 UTC  INFO   sensors  sensors faults cleared
+2026-11-05 23:47:51 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:47:51 UTC  WARN   sensors  sensors faults reported: oil pressure, fuel pressure, meth pressure, boost reference, bit 13, bit 15
+2026-11-05 23:47:53 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:47:53 UTC  WARN   sensors  sensors faults reported: bit 8, bit 10
+2026-11-05 23:47:55 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:47:55 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:47:57 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost emergency
+2026-11-05 23:47:57 UTC  WARN   sensors  sensors faults reported: bit 8, bit 11
+2026-11-05 23:47:59 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:47:59 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:48:01 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:48:03 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:48:03 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:48:03 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:48:05 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:48:05 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-05 23:48:05 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:48:05 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:48:07 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:48:07 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:48:09 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:48:09 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:48:11 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:48:11 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:48:11 UTC  WARN   sensors  sensors faults reported: bit 9, bit 10
+2026-11-05 23:48:13 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:48:13 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:48:15 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:48:17 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:48:17 UTC  WARN   sensors  sensors faults reported: bit 10
+2026-11-05 23:48:19 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:48:19 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:48:21 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:48:21 UTC  WARN   sensors  sensors faults reported: bit 8, bit 10
+2026-11-05 23:48:23 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:48:23 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:48:25 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:48:25 UTC  WARN   sensors  sensors faults reported: bit 9, bit 10
+2026-11-05 23:48:27 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:48:27 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:48:29 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:48:31 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:48:31 UTC  INFO   engine   Engine stopped
+2026-11-05 23:48:33 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:48:33 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:48:35 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:48:35 UTC  WARN   sensors  sensors faults reported: bit 8, bit 11
+2026-11-05 23:48:37 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost emergency
+2026-11-05 23:48:37 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:48:39 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:48:39 UTC  WARN   sensors  sensors faults reported: bit 8, bit 10
+2026-11-05 23:48:41 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:48:41 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:48:43 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:48:45 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:48:47 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:48:49 UTC  WARN   meth     meth faults reported: tank level low, overboost emergency
+2026-11-05 23:48:49 UTC  INFO   sensors  sensors faults cleared
+2026-11-05 23:48:51 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:48:51 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:48:53 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:48:53 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-05 23:48:55 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:48:55 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:48:57 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:48:59 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:49:01 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost assist
+2026-11-05 23:49:03 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:49:03 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:49:05 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:49:05 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:49:07 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:49:07 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:49:09 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:49:09 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:49:11 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:49:13 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:49:15 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:49:19 UTC  INFO   drive    Drive ended: 0.0 mi, 19 min, top 49 mph, peak boost 8.1 psi, meth 0 s  {"started":1793133104.6,"ended":1793922559.0,"duration_s":1155,"distance_km":0.0,"top_speed_kph":79.0,"peak_boost_kpa":56.1,"max_rpm":4550,"max_coolant_c":94.6,"min_oil_psi":19.0,"meth_spray_s":0.0,"knock_events":0,"alerts":17,"problems":184,"ended_by":"dash stopped"}
+2026-11-05 23:49:19 UTC  INFO   dash     Dash stopping
+2026-11-05 23:49:22 UTC  INFO   dash     Dash started (80d14f8)
+2026-11-05 23:49:22 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:49:24 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:49:24 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:49:24 UTC  INFO   gps      Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-11-05 23:49:26 UTC  WARN   module   knock module not heard (stale)
+2026-11-05 23:49:26 UTC  WARN   meth     meth faults reported: overboost assist
+2026-11-05 23:49:26 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:49:26 UTC  INFO   engine   Engine stopped
+2026-11-05 23:49:26 UTC  INFO   power    Ignition power on
+2026-11-05 23:49:28 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:49:28 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:49:30 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:49:34 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:49:36 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:49:36 UTC  INFO   sensors  sensors faults cleared
+2026-11-05 23:49:38 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:49:38 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:49:40 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:49:42 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:49:42 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:49:46 UTC  WARN   meth     meth faults reported: tank level low
