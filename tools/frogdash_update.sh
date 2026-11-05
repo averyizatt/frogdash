@@ -222,8 +222,10 @@ if [ -n "$free" ] && [ "$free" -lt "${FROGDASH_MIN_FREE_MB:-300}" ]; then
     report failed "Only $free MB free on the Pi: an update needs ${FROGDASH_MIN_FREE_MB:-300} MB. Delete old drives or dash cam clips, then try again"
     exit 1
 fi
-# With one usable Wi-Fi adapter, it is normally on the dash cam. If there is no internet,
-# borrow that adapter: join a saved Wi-Fi network, update, then return to the dash cam.
+# No internet: try every saved Wi-Fi network with every Wi-Fi adapter (wlan0, wlan1), the
+# ones the dash cam is not using first. In the car the built-in Wi-Fi could not join the
+# phone hotspot and wlan1 could (November 2026). When only the dash cam's adapter works it is
+# borrowed: join, update, then hand it back to the dash cam.
 borrowed=""
 restore() {
     rm -f /run/frogdash-wifi.lock
@@ -237,19 +239,31 @@ restore() {
 }
 trap 'restore; rm -f "$BUSY"' EXIT
 if ! timeout 30 git -C $REPO fetch --quiet origin; then
-    device=$(nmcli -g connection.interface-name con show dashcam 2>/dev/null)
-    [ -n "$device" ] || device=$(nmcli -t -f DEVICE,TYPE dev | awk -F: '$2=="wifi"{print $1; exit}')
-    report running "No internet: switching Wi-Fi from the dash cam to a saved network"
-    touch /run/frogdash-wifi.lock   # Tell the Wi-Fi keeper the adapter is borrowed.
-    nmcli con down dashcam >/dev/null 2>&1
-    nmcli dev wifi rescan ifname "$device" >/dev/null 2>&1; sleep 4
-    nmcli -t -f NAME,TYPE con show | awk -F: '$2=="802-11-wireless" && $1!="dashcam" && $1!="preconfigured"{print $1}' > /tmp/frogdash-wifi-names
-    while IFS= read -r name; do
-        if nmcli --wait 25 con up "$name" ifname "$device" >/dev/null 2>&1; then borrowed=$name; break; fi
-    done < /tmp/frogdash-wifi-names
-    rm -f /tmp/frogdash-wifi-names
-    if [ -z "$borrowed" ] || ! timeout 90 git -C $REPO fetch --quiet origin; then
-        report failed "No internet: no saved Wi-Fi network in range. Join one in Controls > Wi-Fi, or turn on your phone hotspot"
+    report running "No internet: trying the saved Wi-Fi networks with each Wi-Fi adapter"
+    rfkill unblock wifi >/dev/null 2>&1; nmcli radio wifi on >/dev/null 2>&1
+    camera=$(nmcli -g connection.interface-name con show dashcam 2>/dev/null)
+    names=${TMPDIR:-/tmp}/frogdash-wifi-names
+    nmcli -t -f NAME,TYPE con show | awk -F: '$2=="802-11-wireless" && $1!="dashcam"{print $1}' > "$names"
+    online=""
+    for device in $(nmcli -t -f DEVICE,TYPE dev | awk -F: -v cam="$camera" '$2=="wifi" && $1!=cam{print $1}') $camera; do
+        if [ "$device" = "$camera" ]; then
+            touch /run/frogdash-wifi.lock   # Tell the Wi-Fi keeper the adapter is borrowed.
+            nmcli con down dashcam >/dev/null 2>&1
+        fi
+        nmcli dev wifi rescan ifname "$device" >/dev/null 2>&1; sleep 4
+        while IFS= read -r name; do
+            # Saved on one adapter, usable on any: a profile tied to wlan0 cannot come up on wlan1.
+            nmcli con modify "$name" connection.interface-name "" >/dev/null 2>&1
+            nmcli --wait 25 con up "$name" ifname "$device" >/dev/null 2>&1 || continue
+            [ "$device" = "$camera" ] && borrowed=$name
+            if timeout 90 git -C $REPO fetch --quiet origin; then online=1; break; fi
+            nmcli con down "$name" >/dev/null 2>&1; borrowed=""
+        done < "$names"
+        [ -n "$online" ] && break
+    done
+    rm -f "$names"
+    if [ -z "$online" ]; then
+        report failed "No internet: no saved Wi-Fi network answered with wlan0 or wlan1. Join one in Controls > Wi-Fi, or turn on your phone hotspot"
         exit 1
     fi
 fi

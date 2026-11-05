@@ -165,6 +165,16 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((self.folder / 'received.bin').read_bytes(), self.image)
         self.assertEqual((self.firmware.burst, self.firmware.gap > .001), (1, True))   # It slowed down after the misses.
 
+    async def test_a_lost_answer_is_asked_for_again_not_paid_for_with_the_whole_block(self):
+        self.module.lose_replies = {4, 9}                     # Two block answers never reach the dash
+        job = await self.install()
+        self.assertEqual(job['state'], 'done', job)
+        self.assertEqual((self.folder / 'received.bin').read_bytes(), self.image)
+        blocks = -(-len(self.image) // 448)
+        data = [frame for frame in self.module.sent if frame[0] < 0x80]   # Data frames start with their index
+        self.assertEqual(len(data), len(data_frames(self.image[:448])) * (blocks - 1) + len(data_frames(self.image[(blocks - 1) * 448:])))
+        self.assertEqual(self.firmware.missed, {'resent': 0, 'asked again': 2, 'silent': 0})
+
     async def test_a_full_send_queue_is_waited_for_and_the_update_finishes(self):
         # The Pi's CAN queue fills while frames are sent faster than the controller puts
         # them on the bus: Linux says ENOBUFS. That must cost a wait, not the update.

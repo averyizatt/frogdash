@@ -99,6 +99,16 @@ def local(path, method='GET', timeout=10):
         return None
 
 
+class LoginRefused(Exception):
+    """GitHub answered 401: the saved login no longer works. It was revoked, or replaced:
+    GitHub keeps ten logins per app and account and drops the oldest (November 2026: the
+    car's uploads said "Bad credentials" on every try, and the dash still said Connected)."""
+
+
+REFUSED = ("GitHub no longer accepts this Pi's login: press Connect GitHub again. "
+           "The reports stay on the Pi and go up once it is connected")
+
+
 class GitHub:
     def __init__(self, repo, token, opener=None, branch=BRANCH):
         self.repo, self.token, self.branch = repo, token, branch
@@ -123,6 +133,8 @@ class GitHub:
                 detail = json.loads(error.read() or b'{}')
             except ValueError:
                 detail = {}
+            if error.code == 401:
+                raise LoginRefused(detail.get('message') or 'Bad credentials') from None
             return error.code, detail
 
     def put_file(self, path, content, message):
@@ -424,11 +436,11 @@ def run(now=None, github=None, wait=time.sleep, drives=True):
     sent = status.get('sent', [])
     # Reports kept from before (uploads not yet set up, or offline at the time) go first.
     earlier = 0
-    for folder, when in held():
-        send_report(github, when, {p.name: p.read_bytes() for p in folder.iterdir() if p.is_file()})
-        shutil.rmtree(folder, ignore_errors=True)
-        earlier += 1
     try:
+        for folder, when in held():
+            send_report(github, when, {p.name: p.read_bytes() for p in folder.iterdir() if p.is_file()})
+            shutil.rmtree(folder, ignore_errors=True)
+            earlier += 1
         send_report(github, now, files)
     except Exception:
         keep(now, files)   # Sent next time, with its events.
@@ -493,6 +505,11 @@ def main():
         lock = None
     try:
         said = auto() if '--auto' in sys.argv else run()
+    except LoginRefused:
+        # Forget it: the dash then offers Connect GitHub again, instead of failing for ever.
+        CONFIG.unlink(missing_ok=True)
+        said = REFUSED
+        save_status({**load(STATUS, {}), 'time': int(time.time()), 'state': 'failed', 'message': said, 'held': len(held())})
     except Exception as error:   # One line for the update message; the update itself carries on.
         said = f'Upload failed: {str(error)[:160]}'
         status = load(STATUS, {})

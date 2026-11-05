@@ -261,7 +261,7 @@
   function renderUploads(s) {
     const link = s.link || {}, waiting = link.state === 'waiting';
     const [tone, label] = waiting ? ['busy', 'Enter the code'] : s.configured ? (s.sending ? ['busy', 'Sending…'] : s.last?.state === 'failed' ? ['bad', 'Upload failed'] : ['good', 'Connected'])
-      : link.state === 'failed' ? ['bad', 'Not connected'] : ['warn', 'Not connected'];
+      : link.state === 'failed' || s.last?.state === 'failed' ? ['bad', 'Not connected'] : ['warn', 'Not connected'];
     $('uploads-pill').dataset.tone = tone; $('uploads-pill').textContent = label;
     $('uploads-where').textContent = s.configured ? `To ${s.repo || 'GitHub'} (branch pi-logs)${s.account ? ' · as ' + s.account : ''} · by itself whenever the Pi has internet` : 'By itself whenever the Pi has internet';
     $('uploads-code').hidden = !waiting;
@@ -269,6 +269,7 @@
     const held = s.held ? ` ${s.held} report${s.held === 1 ? '' : 's'} waiting on the Pi${s.configured ? '' : ': they go up once connected'}.` : '';
     $('uploads-status').textContent = waiting ? `Waiting for GitHub… the code works for ${Math.max(0, Math.round((link.expires_at - Date.now() / 1000) / 60))} more minutes.`
       : link.state === 'failed' && !s.configured ? link.message + '.' + held
+      : !s.configured && s.last?.state === 'failed' ? s.last.message + '.' + held   // GitHub refused the saved login: it was cleared
       : s.configured && s.sending ? 'Sending the reports to GitHub: a minute or two, longer with a drive to send.'
       : s.configured ? `${s.last ? 'Last: ' + s.last.message + '.' : 'Nothing sent yet: it goes by itself once the Pi reaches the internet, or press Send now.'}${held} Drive recordings go with Update now and Send now.`
       : !s.ready ? 'This dash does not have its GitHub app ID yet: it comes with an update.' + held

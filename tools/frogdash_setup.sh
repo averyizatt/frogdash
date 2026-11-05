@@ -322,6 +322,18 @@ start_off() {  # step name, unit, why
 start_off "Start-up: network wait" NetworkManager-wait-online.service "up to 9 s at every start"
 # Nothing in the dash uses Bluetooth.
 start_off "Start-up: Bluetooth" bluetooth.service "not used by the dash"
+# Wi-Fi radio on and a Wi-Fi country set. Without a country the built-in Wi-Fi stays blocked or
+# limited (no 5 GHz: an iPhone hotspot without "Maximize Compatibility" is 5 GHz), and in the car
+# it could not join the phone hotspot (November 2026). FROGDASH_WIFI_COUNTRY picks another country.
+if command -v iw >/dev/null 2>&1 && command -v raspi-config >/dev/null 2>&1; then
+    rfkill unblock wifi >/dev/null 2>&1
+    country=$(iw reg get 2>/dev/null | sed -n 's/^country \([A-Z0-9][A-Z0-9]\):.*/\1/p' | head -n 1)
+    if [ -n "$country" ] && [ "$country" != 00 ]; then step "Wi-Fi country" ok "$country"
+    elif raspi-config nonint do_wifi_country "${FROGDASH_WIFI_COUNTRY:-US}" >/dev/null 2>&1; then
+        step "Wi-Fi country" done "Set to ${FROGDASH_WIFI_COUNTRY:-US}: the built-in Wi-Fi can use every channel (5 GHz too)"
+    else step "Wi-Fi country" failed "Could not set the Wi-Fi country (raspi-config nonint do_wifi_country)"
+    fi
+fi
 # Raspberry Pi Imager's settings (user, Wi-Fi, SSH) are applied by cloud-init at the first start
 # and kept; after that it only re-checks them, 9-10 s at every start. Its own off switch is a file.
 CLOUD=${FROGDASH_CLOUD_DIR:-/etc/cloud}

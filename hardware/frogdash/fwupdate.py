@@ -54,6 +54,15 @@ BLOCK_TRIES = 8
 # dash restarted, at one frame per 8 ms, about ten times slower.)
 PACES = ((4, .001), (2, .001), (1, .001), (1, .002), (1, .004), (1, .008))
 START_PACE, CLEAN_TO_SPEED_UP = 1, 16
+# At most this many clean blocks before trying a faster pace again. It was 256: after a few
+# misses the taillight update (2,300 blocks) sat at the slowest pace, 0.6 KB/s and 30 minutes
+# for 1 MB (November 2026). A pace that is too fast costs one block now and then; one that is
+# too slow costs every block.
+MOST_CLEAN_TO_SPEED_UP = 32
+# A block end with no answer: asked again (one frame) after this long, before all 64 frames
+# go out again. The module answers a block it already has with OK, so a lost answer costs a
+# frame, not a block; a module still writing its flash gets the longer second wait.
+FIRST_ANSWER_S, SECOND_ANSWER_S = .4, 1.5
 
 
 def crc16(data, crc=0xFFFF):
@@ -153,7 +162,14 @@ class ModuleFirmware:
 
     def slower(self):
         self.pace, self.clean = min(self.pace + 1, len(PACES) - 1), 0
-        self.need = min(self.need * 2, 256)
+        self.need = min(self.need * 2, MOST_CLEAN_TO_SPEED_UP)
+
+    def trouble(self):
+        """For the event log: what slowed a transfer down, so a report shows where the time went."""
+        missed = {k: v for k, v in getattr(self, 'missed', {}).items() if v}
+        if not missed:
+            return ''
+        return ' · ' + ', '.join(f'{v} block{"s" if v != 1 else ""} {k}' for k, v in missed.items()) +             f' · ended at {PACES[self.pace][0]} frame(s) per {PACES[self.pace][1] * 1000:g} ms'
 
     def log(self, level, text):
         if self.state.eventlog:
@@ -336,6 +352,7 @@ class ModuleFirmware:
                 raise Failure(f'The {self.label.lower()} {STATUS.get(reply[3], "refused")}')
             blocks = -(-len(data) // BLOCK_BYTES)
             self.pace, self.clean, self.need = START_PACE, 0, CLEAN_TO_SPEED_UP
+            self.missed = {'resent': 0, 'asked again': 0, 'silent': 0}
             began = self.state.clock()
             for number in range(blocks):
                 if rolling(self.state):
@@ -373,10 +390,10 @@ class ModuleFirmware:
             self.flags &= ~ON_TRIAL   # Confirmed: it keeps this firmware.
             speed = f' (sent in {duration(self.took)}, {len(data) / 1024 / max(self.took, .001):.1f} KB/s)' if self.took else ''
             self.job = {'state': 'done', 'message': f'{self.label} updated to build {build}{speed}', 'progress': 1.0}
-            self.log('info', self.job['message'])
+            self.log('info', self.job['message'] + self.trouble())
         except Failure as failure:
             self.job = {'state': 'failed', 'message': str(failure), 'progress': self.job['progress']}
-            self.log('error', f'{self.label} update failed: {failure}')
+            self.log('error', f'{self.label} update failed: {failure}' + self.trouble())
             try:   # Tell the module to drop a transfer that is still open. Harmless otherwise.
                 await self.state.controls.sender(ID_COMMAND, command(ABORT, target))
             except (OSError, TypeError):
@@ -392,6 +409,8 @@ class ModuleFirmware:
         answered = lambda reply: reply[0] == ACK and (reply[3] == BUSY or (
             reply[2] == BLOCK_END and (reply[3] != OK or reply[4:6] == number.to_bytes(2, 'big'))))
         for _ in range(BLOCK_TRIES):
+            while not self.replies.empty():   # A late answer to an earlier block must not be read as this one's.
+                self.replies.get_nowait()
             burst, gap = self.burst, self.gap
             full = self.state.tx_full
             for index, frame in enumerate(frames, 1):
@@ -399,9 +418,14 @@ class ModuleFirmware:
                 if index % burst == 0:
                     await self.sleep(gap)
             await self.send(end)
-            reply = await self.expect(answered, 1.5)
+            reply = await self.expect(answered, FIRST_ANSWER_S)
             if reply is None:
-                self.slower()                 # Our frames or its answer were lost: sent again, a step slower.
+                self.missed['asked again'] += 1
+                await self.send(end)          # Its answer, or our block end, may be all that was lost.
+                reply = await self.expect(answered, SECOND_ANSWER_S)
+            if reply is None:
+                self.missed['silent'] += 1
+                self.slower()                 # Our frames or its answers were lost: sent again, a step slower.
                 continue
             if reply[3] == BUSY:
                 raise Failure(f'The {self.label.lower()} stopped the update because it was needed; its old firmware is still running. {self.warning}')
@@ -413,6 +437,7 @@ class ModuleFirmware:
                     self.pace, self.clean = self.pace - 1, 0
                 return
             if reply[3] == RESEND:            # It missed frames: a step slower.
+                self.missed['resent'] += 1
                 self.slower()
                 continue
             raise Failure(f'The {self.label.lower()} {STATUS.get(reply[3], "refused a block")} (block {number})')

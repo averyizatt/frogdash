@@ -50,6 +50,83 @@ class WifiInterfaceTests(unittest.TestCase):
                 self.assertEqual(helper.interface(), expected)
 
 
+class WifiFallbackTests(unittest.TestCase):
+    """The car: the built-in wlan0 could not join the phone hotspot, wlan1 could (November 2026)."""
+    def setUp(self):
+        self.folder = tempfile.TemporaryDirectory()
+        state = Path(self.folder.name)
+        self.calls = []
+        self.status = state / 'wifi-status.json'
+        self.patches = [patch.object(helper, 'STATUS', self.status), patch.object(helper, 'REQUEST', state / 'wifi-request.json'),
+                        patch.object(helper, 'LAST', state / 'wifi-adapter'), patch.object(helper, 'CHOICE', state / 'wifi-internet'),
+                        patch.object(helper, 'LOCK', state / 'lock'), patch.object(helper.time, 'sleep', lambda s: None),
+                        patch.object(helper, 'radio_on', lambda: self.calls.append(('radio on',))),
+                        patch.object(helper, 'adapters', lambda: helper.__dict__['_order'])]
+        helper._order = ['wlan0', 'wlan1']
+        for p in self.patches:
+            p.start()
+        self.state = state
+
+    def tearDown(self):
+        for p in self.patches:
+            p.stop()
+        self.folder.cleanup()
+
+    def run_helper(self, request, works_on=('wlan1',), wrong=False):
+        (self.state / 'wifi-request.json').write_text(json.dumps(request))
+        def nmcli(*args, timeout=45):
+            self.calls.append(args)
+            if args[:1] == ('--wait',) and 'ifname' in args:
+                device = args[args.index('ifname') + 1]
+                if wrong:
+                    return 4, '', 'Secrets were required, but not provided'
+                return (0, '', '') if device in works_on else (10, '', 'No network with SSID found')
+            if 'show' in args and 'dashcam' in args:
+                return 10, '', 'no such connection'
+            return 0, '', ''
+        with patch.object(helper, 'nmcli', nmcli):
+            helper.main()
+        return json.loads(self.status.read_text())
+
+    def test_join_falls_back_to_the_other_adapter_and_remembers_it(self):
+        status = self.run_helper({'action': 'connect', 'ssid': 'Phone', 'password': 'p' * 8})
+        self.assertEqual(status['state'], 'connected')
+        self.assertIn('with wlan1: wlan0 could not', status['message'])
+        self.assertEqual((self.state / 'wifi-adapter').read_text(), 'wlan1')
+        # Saved for any adapter, so the next start joins it on whichever one sees it.
+        self.assertIn(('con', 'modify', 'frogdash-Phone', 'connection.interface-name', ''), self.calls)
+        self.assertEqual(self.calls[0], ('radio on',))
+
+    def test_neither_adapter_says_so_and_a_wrong_password_stops_at_once(self):
+        status = self.run_helper({'action': 'connect', 'ssid': 'Phone', 'password': 'p' * 8}, works_on=())
+        self.assertEqual(status['state'], 'failed')
+        self.assertIn('with wlan0 or wlan1', status['message'])
+        self.calls.clear()
+        status = self.run_helper({'action': 'connect', 'ssid': 'Phone', 'password': 'p' * 8}, wrong=True)
+        self.assertEqual(status['message'], 'Wrong password')
+        self.assertFalse(any(call[:1] == ('--wait',) and 'wlan1' in call for call in self.calls))   # No join tried on wlan1
+
+    def test_scan_uses_both_adapters(self):
+        self.run_helper({'action': 'scan'})
+        rescans = [c[-1] for c in self.calls if c[:3] == ('dev', 'wifi', 'rescan')]
+        self.assertEqual(rescans, ['wlan0', 'wlan1'])
+
+    def test_order_the_owner_choice_then_the_last_that_worked_then_built_in(self):
+        class Fake:
+            def __init__(self, name): self.name = name
+        self.patches[-1].stop()
+        try:
+            with patch.object(helper, 'nmcli', lambda *a, **k: (0, '', '')), \
+                 patch.object(helper.Path, 'glob', lambda self, pattern: [Fake('wlan0'), Fake('wlan1')]):
+                self.assertEqual(helper.adapters(), ['wlan0', 'wlan1'])
+                (self.state / 'wifi-adapter').write_text('wlan1')
+                self.assertEqual(helper.adapters(), ['wlan1', 'wlan0'])
+                (self.state / 'wifi-internet').write_text('wlan0')
+                self.assertEqual(helper.adapters(), ['wlan0', 'wlan1'])
+        finally:
+            self.patches[-1].start()
+
+
 class WifiRouteTests(unittest.IsolatedAsyncioTestCase):
     async def test_requests_are_validated_and_written(self):
         with tempfile.TemporaryDirectory() as folder:

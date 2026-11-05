@@ -194,6 +194,40 @@ class UploadTests(unittest.TestCase):
         self.assertEqual(printed, ['Upload failed: GitHub refused it (401: Bad credentials)'])
         self.assertNotIn(TOKEN, (self.state / 'upload-status.json').read_text())
 
+    def test_a_login_github_no_longer_accepts_is_forgotten_and_the_report_kept(self):
+        # The car, November 2026: "Bad credentials" on every try while the dash said Connected.
+        config = self.state / 'log-upload.json'
+        config.write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
+        up = self.up
+
+        class Refused(FakeGitHub):
+            def put_file(self, path, content, message):
+                raise up.LoginRefused('Bad credentials')
+        self.up.GitHub = lambda repo, token, **kw: Refused()
+        printed = []
+        self.up.print = printed.append
+        self.up.main()
+        self.assertEqual(printed, [self.up.REFUSED])
+        self.assertFalse(config.exists())                        # The dash offers Connect GitHub again
+        status = json.loads((self.state / 'upload-status.json').read_text())
+        self.assertEqual((status['state'], status['held']), ('failed', 1))   # The report waits on the Pi
+        # Connected again: the kept report goes up.
+        config.write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
+        github = FakeGitHub()
+        self.up.GitHub = lambda repo, token, **kw: github
+        self.up.main()
+        self.assertTrue(any(name.endswith('-diagnostics.json') for name in github.files))
+
+    def test_github_answering_401_is_a_refused_login(self):
+        import io
+        import urllib.error
+
+        class Opener:
+            def open(self, request, timeout):
+                raise urllib.error.HTTPError(request.full_url, 401, 'Unauthorized', {}, io.BytesIO(b'{"message": "Bad credentials"}'))
+        with self.assertRaises(self.up.LoginRefused):
+            self.up.GitHub('owner/frogdash', TOKEN, opener=Opener()).call('GET', 'https://api.github.com/user')
+
 
 class PhonePageTests(unittest.IsolatedAsyncioTestCase):
     async def test_the_token_is_saved_and_never_sent_back(self):

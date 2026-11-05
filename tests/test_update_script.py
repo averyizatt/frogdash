@@ -136,6 +136,26 @@ class UpdateScriptTests(unittest.TestCase):
         path = self.state / name
         return path.read_text() if path.exists() else ''
 
+    def test_no_internet_tries_each_saved_network_with_each_wifi_adapter(self):
+        # The car: the phone hotspot is reachable only with wlan1, and the built-in wlan0 cannot join it.
+        newer = self.publish('dash.txt', 'version two')
+        offline = self.origin.with_name('origin-offline')
+        self.origin.rename(offline)
+        (Path(self.folder.name) / 'bin/nmcli').write_text(
+            '#!/bin/sh\necho "$@" >> "$FROGDASH_STATE/nmcli.log"\n'
+            'case "$*" in\n'
+            '  "-t -f DEVICE,TYPE dev") printf "eth0:ethernet\\nwlan0:wifi\\nwlan1:wifi\\n";;\n'
+            '  "-t -f NAME,TYPE con show") printf "Wired connection 1:802-3-ethernet\\npreconfigured:802-11-wireless\\nPhone:802-11-wireless\\n";;\n'
+            '  *"con up Phone ifname wlan1") mv "' + offline.as_posix() + '" "' + self.origin.as_posix() + '";;\n'
+            '  *"con up"*) exit 10;;\n'
+            'esac\nexit 0\n', newline='\n')
+        status = self.run_script()
+        self.assertEqual((status['state'], self.head()), ('updated', newer))
+        tried = [line for line in self.log('nmcli.log').splitlines() if 'con up' in line]
+        self.assertEqual(tried, ['--wait 25 con up preconfigured ifname wlan0', '--wait 25 con up Phone ifname wlan0',
+                                 '--wait 25 con up preconfigured ifname wlan1', '--wait 25 con up Phone ifname wlan1'])
+        self.assertIn('con modify Phone connection.interface-name ', self.log('nmcli.log'))
+
     def test_send_now_runs_the_uploader_alone(self):
         before = self.head()
         self.publish('dash.txt', 'version two')                    # A newer version is there: not installed by this
