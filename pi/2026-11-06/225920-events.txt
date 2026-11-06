@@ -1,0 +1,24 @@
+2026-11-06 21:24:07 UTC  WARN   module   taillights module not heard (stale)
+2026-11-06 21:24:07 UTC  WARN   module   watermeth module not heard (stale)
+2026-11-06 21:24:07 UTC  WARN   module   knock module not heard (stale)
+2026-11-06 21:24:07 UTC  WARN   alert    Alert shown: WATER/METH CONTROLLER NOT RESPONDING  {"vehicle.speed_kph":0.028800000000000003,"engine.boost_kpa":4,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.fuel_pct":42.2}
+2026-11-06 21:24:09 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":2,"tx_errors":0}
+2026-11-06 21:24:09 UTC  INFO   power    Ignition power off: on the battery
+2026-11-06 21:24:11 UTC  WARN   alert    Alert shown: TAILLIGHTS NOT RESPONDING  {"engine.boost_kpa":4,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.fuel_pct":42.2}
+2026-11-06 21:24:11 UTC  INFO   dash     Dash stopping
+2026-11-06 22:57:59 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-06 22:58:52 UTC  INFO   dash     Dash stopping
+2026-11-06 22:58:55 UTC  INFO   dash     Dash started (83c2cf4)
+2026-11-06 22:58:55 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-06 22:58:57 UTC  WARN   sensors  sensors faults reported: bit 8, bit 10
+2026-11-06 22:58:57 UTC  INFO   gps      Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-11-06 22:58:59 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-06 22:58:59 UTC  INFO   engine   Engine stopped
+2026-11-06 22:58:59 UTC  INFO   power    Ignition power on
+2026-11-06 22:59:01 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-06 22:59:03 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-06 22:59:05 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-06 22:59:07 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-06 22:59:15 UTC  WARN   sensors  sensors faults reported: bit 8, bit 10
+2026-11-06 22:59:18 UTC  INFO   dash     Dash stopping
+2026-11-06 22:59:19 UTC  INFO   dash     Dash started (83c2cf4)
