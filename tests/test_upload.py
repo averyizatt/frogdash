@@ -235,6 +235,32 @@ class UploadTests(unittest.TestCase):
         self.assertIn('"expires": "2026-11-12 18:00:00 UTC"', report)
         self.assertNotIn(TOKEN, report)
 
+    def test_a_moment_without_internet_is_waited_out(self):
+        # The car: "Temporary failure in name resolution" while the Wi-Fi came back.
+        import io
+        import urllib.error
+
+        class Response(io.BytesIO):
+            status, headers = 200, {}
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+
+        class Opener:
+            tries = 0
+            def open(self, request, timeout):
+                Opener.tries += 1
+                if Opener.tries <= 2:
+                    raise urllib.error.URLError(OSError(-3, 'Temporary failure in name resolution'))
+                return Response(b'{"ok": true}')
+        waits = []
+        github = self.up.GitHub('owner/frogdash', TOKEN, opener=Opener(), wait=waits.append)
+        self.assertEqual(github.call('GET', 'https://api.github.com/user'), (200, {'ok': True}))
+        self.assertEqual(waits, [5, 15])
+        # Gone for good: the error after the last wait, and the report stays on the Pi.
+        Opener.tries = -10
+        with self.assertRaises(urllib.error.URLError):
+            self.up.GitHub('owner/frogdash', TOKEN, opener=Opener(), wait=waits.append).call('GET', 'https://api.github.com/user')
+
     def test_github_answering_401_is_a_refused_login(self):
         import io
         import urllib.error

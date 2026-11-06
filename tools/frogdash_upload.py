@@ -109,15 +109,34 @@ REFUSED = ("GitHub no longer accepts this Pi's login: press Connect GitHub again
            "The reports stay on the Pi and go up once it is connected")
 
 
+# A connection that drops for a moment is waited out, not reported as a failed upload
+# (November 2026: the Wi-Fi reset by the update's Wi-Fi country step cut the report short
+# with "Temporary failure in name resolution" after its first file).
+RETRY_WAITS = (5, 15, 30)
+
+
 class GitHub:
-    def __init__(self, repo, token, opener=None, branch=BRANCH):
-        self.repo, self.token, self.branch = repo, token, branch
+    def __init__(self, repo, token, opener=None, branch=BRANCH, wait=time.sleep):
+        self.repo, self.token, self.branch, self.wait = repo, token, branch, wait
         # When the login stops working, as GitHub says on every answer: only a token pasted on
         # the phone page has one (7 to 90 days); Connect GitHub's login does not expire.
         self.expires = None
         self.opener = opener or urllib.request.build_opener()
 
     def call(self, method, url, body=None, data=None, content_type='application/json', timeout=60):
+        for pause in RETRY_WAITS + (None,):
+            if hasattr(data, 'seek'):
+                data.seek(0)   # A file being sent again starts from its beginning
+            try:
+                return self.call_once(method, url, body, data, content_type, timeout)
+            except LoginRefused:
+                raise
+            except (urllib.error.URLError, OSError):   # No answer at all (an HTTP error is an answer)
+                if pause is None:
+                    raise
+                self.wait(pause)
+
+    def call_once(self, method, url, body, data, content_type, timeout):
         headers = {'Authorization': f'Bearer {self.token}', 'Accept': 'application/vnd.github+json',
                    'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'fox-body-dash'}
         if body is not None:
