@@ -1,0 +1,45 @@
+2026-11-05 23:55:35 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:55:35 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:55:37 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:55:39 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:55:39 UTC  WARN   sensors  sensors faults reported: bit 11
+2026-11-05 23:55:41 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:55:45 UTC  WARN   meth     meth faults reported: tank level low, overboost assist, overboost emergency
+2026-11-05 23:55:47 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:55:47 UTC  INFO   sensors  sensors faults cleared
+2026-11-05 23:55:49 UTC  WARN   meth     meth faults reported: overboost assist, overboost emergency
+2026-11-05 23:55:49 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:55:51 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:55:53 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:55:55 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:55:57 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-05 23:55:57 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:55:57 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:55:59 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:55:59 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:56:01 UTC  WARN   meth     meth faults reported: no manifold pressure, overboost emergency
+2026-11-05 23:56:01 UTC  WARN   sensors  sensors faults reported: bit 9, bit 10
+2026-11-05 23:56:03 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:56:03 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:56:05 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:56:05 UTC  WARN   sensors  sensors faults reported: bit 9, bit 11
+2026-11-05 23:56:07 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:56:07 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:56:09 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:56:11 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:56:11 UTC  WARN   sensors  sensors faults reported: bit 8
+2026-11-05 23:56:13 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:56:13 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:56:15 UTC  WARN   meth     meth faults reported: overboost emergency
+2026-11-05 23:56:15 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9
+2026-11-05 23:56:18 UTC  WARN   meth     meth faults reported: tank level low, overboost assist
+2026-11-05 23:56:18 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:56:20 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure, overboost assist
+2026-11-05 23:56:20 UTC  WARN   sensors  sensors faults reported: bit 9
+2026-11-05 23:56:22 UTC  WARN   meth     meth faults reported: tank level low
+2026-11-05 23:56:22 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-05 23:56:24 UTC  WARN   meth     meth faults reported: tank level low, no manifold pressure
+2026-11-05 23:56:28 UTC  INFO   meth     meth faults cleared
+2026-11-05 23:56:30 UTC  WARN   sensors  sensors faults reported: bit 8, bit 9, bit 10
+2026-11-05 23:56:32 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-05 23:56:32 UTC  WARN   sensors  sensors faults reported: meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
