@@ -1,4 +1,4 @@
-"""The Log viewer (Drive > Log viewer, logview.js) in the preview, on its simulated drive: the
+"""The Log viewer (Drive > Log viewer, mlgplot.js) in the preview, on its simulated drive: the
 graphs appear, a drag zooms in, the cursor shows each channel, channels and graphs are added
 and removed and remembered, the keys move and zoom, and nothing goes to the network."""
 import argparse

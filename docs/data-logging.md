@@ -112,7 +112,7 @@ copying them anywhere:
 
 The Pi reads only the channels and the time on screen. A long stretch is thinned to each part's
 lowest and highest value, so a spike is never lost when the whole drive is shown; zooming in
-reads every sample again. (`hardware/frogdash/logview.py`, `hardware/ui/logview.js`.)
+reads every sample again. (`hardware/frogdash/logview.py`, `hardware/ui/mlgplot.js`.)
 
 ## Channels and compatibility
 

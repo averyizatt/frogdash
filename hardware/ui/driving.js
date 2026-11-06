@@ -192,7 +192,17 @@
     for (const button of document.querySelectorAll('[data-driver-tab]')) { const active = button.dataset.driverTab === name; button.setAttribute('aria-selected', String(active)); button.tabIndex = active ? 0 : -1; }
     for (const panel of document.querySelectorAll('[data-driver-panel]')) panel.hidden = panel.dataset.driverPanel !== name;
     if (name === 'review') review.load();
-    if (name === 'logs') window.FrogdashLogView?.open();   // Loaded after the first screens; it opens itself if it comes later
+    if (name === 'logs') {
+      // Loaded after the first screens: it starts by itself once it is here. Until then, ask
+      // for it now, and say so if it never comes.
+      if (window.FrogdashLogView) window.FrogdashLogView.open();
+      else {
+        window.frogdashLoadLater?.();
+        setTimeout(() => {
+          if (!window.FrogdashLogView && $('log-viewer')) $('log-viewer').textContent = 'The log viewer did not load: Refresh the page (Ctrl+F5). If it stays, the browser blocked mlgplot.js.';
+        }, 20000);
+      }
+    }
   }
   document.querySelector('.driver-tabs').setAttribute('role', 'tablist');
   document.querySelector('.driver-tabs').setAttribute('aria-orientation', 'vertical');

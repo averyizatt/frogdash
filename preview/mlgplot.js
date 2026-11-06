@@ -1,4 +1,6 @@
 /* Log viewer (Drive > Log viewer): the dash's MLG logs as graphs, MegaLogViewer style.
+   (Named mlgplot, not logview: blockers' privacy lists drop files named like logging, and the
+   owner's browser never loaded logview.js, November 2026.)
    Stacked graphs on one time line, each with up to four channels on their own scales; the
    cursor shows every channel at one moment; drag across a graph to zoom; min, average and
    max of what is on the screen; bookmarks and alerts as marks on the time line. The Pi reads
@@ -93,7 +95,10 @@
     const timer = setTimeout(done, 4000);
     window.addEventListener('frogdash-state', done);
   });
-  async function load(refresh = false) {
+  // One start at a time: the tab and the panel showing can ask together.
+  let starting = null;
+  const load = (refresh = false) => (starting ??= loadNow(refresh).finally(() => { starting = null; }));
+  async function loadNow(refresh = false) {
     if (!built) build();
     note('Opening the logs…');
     await firstState();
@@ -261,7 +266,16 @@
   }
 
   window.addEventListener('frogdash-state', ({detail}) => { latest = detail.snapshot || {}; });
-  window.FrogdashLogView = {open: () => load(), get info() { return info; }, get view() { return view; }, get panes() { return panes; }, zoom, move};
-  // Opened before this file had loaded: start now.
-  if (!host.closest('[hidden]')) load();
+  // Anything that goes wrong is said on the panel, not left as "Loading" (November 2026: the
+  // owner's browser kept "Loading the log viewer" and nothing said why).
+  const reporting = start => (...args) => start(...args).catch(error => {
+    if (!built) host.replaceChildren(el('p', '', 'control-note'));
+    (host.querySelector('#lv-note') || host.firstChild).textContent = `The log viewer stopped: ${error?.message || error}`;
+  });
+  const safeLoad = reporting(load);
+  window.FrogdashLogView = {open: () => safeLoad(), get info() { return info; }, get view() { return view; }, get panes() { return panes; }, zoom, move};
+  // It starts the moment its panel is on the screen, however it got there: the tab pressed,
+  // the workspace opened again on this tab, or this file arriving after the tab was opened.
+  new ResizeObserver(() => { if (!built && host.offsetWidth > 0) safeLoad(); }).observe(host);
+  if (!built && host.offsetWidth > 0) safeLoad();
 })();

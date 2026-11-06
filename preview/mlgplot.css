@@ -1,4 +1,4 @@
-/* Log viewer (logview.js): stacked graphs over one time line, the values under them. */
+/* Log viewer (mlgplot.js): stacked graphs over one time line, the values under them. */
 #log-viewer { height:100%; min-height:0; }
 .logview { display:flex; flex-direction:column; gap:8px; height:100%; min-height:0; }
 .lv-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; flex:none; }
