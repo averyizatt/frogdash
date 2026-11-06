@@ -6,6 +6,52 @@ from playwright.async_api import async_playwright
 from browser_layout import inspect
 ROOT = Path(__file__).resolve().parents[1]
 
+
+async def sensor_fault_rpm_gate(page):
+    await page.evaluate("""() => {
+      frogdashDemo.scenario('normal');
+      window.originalDemoEmit = FrogdashDemoSocket.prototype.emit;
+      FrogdashDemoSocket.prototype.emit = function(message) {
+        if (message.type === 'state' && window.sensorFaultCase) {
+          const c = sensorFaultCase;
+          Object.assign(message.values, c.values);
+          if (c.noRpm) delete message.values['engine.rpm'];
+        }
+        originalDemoEmit.call(this, message);
+      };
+    }""")
+
+    def sample(value, source, quality='fault'):
+        return {'value': value, 'source_id': source, 'quality': quality}
+
+    watermeth = {'meth.tank_pct': sample(255, 0x300),
+                'engine.oil_pressure_psi': sample(0, 0x303),
+                'engine.boost_ref_psi': sample(0, 0x303)}
+    cases = [
+        ({**watermeth, 'engine.rpm': sample(0, 0x5F0, 'live')}, False, False),
+        (watermeth, True, False),
+        ({**watermeth, 'engine.rpm': sample(900, 0x5F0, 'stale')}, False, False),
+        ({**watermeth, 'engine.rpm': sample(900, 0x5F0, 'fault')}, False, True),  # RPM fault itself remains.
+        ({**watermeth, 'engine.rpm': sample(900, 0x5F0, 'live')}, False, True),
+        ({**watermeth, 'engine.rpm': sample(0, 0x5F0, 'live')}, False, False),  # Stops again.
+        ({'knock.energy': sample(0, 0x307)}, True, True),
+        ({'ecu.iat_c': sample(0, 0x5F2)}, True, True),
+        ({'engine.boost_kpa': sample(0, 0x300),
+          'meth.fault_flags': sample(2, 0x300, 'live')}, True, True),  # Existing missing-MAP warning.
+    ]
+    for values, no_rpm, expected in cases:
+        rendered = await page.evaluate("""c => {
+          window.sensorFaultCase = c;
+          return window.frogdashRendered;
+        }""", {'values': values, 'noRpm': no_rpm})
+        await page.wait_for_function('(n) => window.frogdashRendered > n', arg=rendered)
+        banner = await page.locator('#warn-banner').text_content()
+        assert ('SENSOR FAULT' in banner) == expected, (values, banner)
+        if 'engine.oil_pressure_psi' in values:
+            assert await page.locator('[data-signal="engine.oil_pressure_psi"]').first.get_attribute('data-quality') == 'fault'
+    await page.evaluate("FrogdashDemoSocket.prototype.emit = originalDemoEmit; delete window.sensorFaultCase; frogdashDemo.scenario('drive')")
+
+
 async def main(executable):
     async with async_playwright() as p:
         browser = await p.chromium.launch(executable_path=executable)
@@ -14,6 +60,7 @@ async def main(executable):
         page.on('pageerror', lambda e: errors.append(str(e)))
         await page.goto((ROOT/'preview/dash.html').as_uri())
         await page.wait_for_function('window.frogdashRendered > 2')
+        await sensor_fault_rpm_gate(page)
         await page.locator('#appearance-launch').click()
         await page.locator('[data-collection-filter="retro"]').click()
         for look, kind in [('foxbody','foxbody'),('foxnight','foxbody'),('svo','analog'),('outrun','digital'),('terminal','digital'),('vector','analog')]:

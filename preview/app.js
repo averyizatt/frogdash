@@ -171,7 +171,16 @@
       if (flags || live('meth.state') === 'FAULT') warnings.push(methFaultTitle(flags));
       if (live('engine.coolant_c') !== null && live('engine.coolant_c') >= 112) warnings.push('COOLANT HIGH');
     }
-    const bad = Object.entries(snapshot.values).filter(([key, v]) => !key.startsWith('race.') && v.quality === 'fault').length;
+    const engineRunning = Number.isFinite(rpm) && rpm > 0;
+    const bad = Object.entries(snapshot.values).some(([key, v]) => {
+      if (key.startsWith('race.') || v.quality !== 'fault') return false;
+      // The water/meth controller's sensors need a running engine before they
+      // raise the generic banner. Keep their actual fault quality in diagnostics.
+      // Missing ECU MAP is separate: the Pi already gates that fault on GPS motion.
+      const missingMap = key === 'engine.boost_kpa' && (flags & 2);
+      const waterMethSensor = v.source_id === 0x300 || v.source_id === 0x303;
+      return !waterMethSensor || missingMap || engineRunning;
+    });
     if (bad) warnings.push('SENSOR FAULT');
     $('warn-banner').hidden = warnings.length === 0;
     $('warn-banner').textContent = warnings.join(' · ');

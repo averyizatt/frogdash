@@ -37,7 +37,7 @@ appearance preferences load without losing saved images or splash settings.
 
 Bars clamp to their drawn scales; live numeric readings retain their measured values. Scales are visual references, not new control thresholds. The UI never assumes that an AFR of 14.7 is the requested ECU target. Pressure, voltage, and fuel cards do not invent fault thresholds.
 
-Stale or unavailable readings show dashes and a quality label. Sensor faults, excessive coolant temperature, knock alerts, and water/meth faults appear in the warning banner. The lighting indicators follow received module states. The unused high-beam source remains unavailable.
+Stale or unavailable readings show dashes and a quality label. Sensor faults, excessive coolant temperature, knock alerts, and water/meth faults appear in the warning banner. Sensor faults from the water/meth controller's 0x300 and 0x303 readings trigger the generic SENSOR FAULT banner only with fresh RPM above zero; their diagnostic fault quality remains visible. The missing MicroSquirt MAP fault keeps its separate GPS-motion rule. The lighting indicators follow received module states. The unused high-beam source remains unavailable.
 
 Control inputs express requested settings; module telemetry and command feedback remain separate. The lighting controller cannot acknowledge mode changes. The design does not change backend command validation or controller ownership requirements; see [controls](controls.md).
 
