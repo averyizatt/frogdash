@@ -72,10 +72,14 @@ class WifiFallbackTests(unittest.TestCase):
             p.stop()
         self.folder.cleanup()
 
-    def run_helper(self, request, works_on=('wlan1',), wrong=False):
+    def run_helper(self, request, works_on=('wlan1',), wrong=False, sees=('wlan0', 'wlan1'), on=None):
         (self.state / 'wifi-request.json').write_text(json.dumps(request))
         def nmcli(*args, timeout=45):
             self.calls.append(args)
+            if args[:4] == ('-t', '-f', 'SSID', 'dev'):          # What an adapter's scan lists
+                return 0, 'Phone\n' if args[args.index('ifname') + 1] in sees else 'Other\n', ''
+            if args[:4] == ('-t', '-f', 'ACTIVE,SSID', 'dev'):   # What it is on now
+                return 0, 'yes:Phone\n' if args[args.index('ifname') + 1] == on else 'no:Phone\n', ''
             if args[:1] == ('--wait',) and 'ifname' in args:
                 device = args[args.index('ifname') + 1]
                 if wrong:
@@ -105,6 +109,21 @@ class WifiFallbackTests(unittest.TestCase):
         status = self.run_helper({'action': 'connect', 'ssid': 'Phone', 'password': 'p' * 8}, wrong=True)
         self.assertEqual(status['message'], 'Wrong password')
         self.assertFalse(any(call[:1] == ('--wait',) and 'wlan1' in call for call in self.calls))   # No join tried on wlan1
+
+    def test_an_adapter_that_cannot_see_the_network_is_skipped_at_once(self):
+        status = self.run_helper({'action': 'connect', 'ssid': 'Phone', 'password': 'p' * 8}, sees=('wlan1',))
+        self.assertEqual(status['state'], 'connected')
+        self.assertFalse(any(call[:1] == ('--wait',) and 'wlan0' in call for call in self.calls))   # No 30 s wait on wlan0
+        self.assertIn('wlan0 (does not see it) could not', status['message'])
+        self.calls.clear()
+        status = self.run_helper({'action': 'connect', 'ssid': 'Phone', 'password': 'p' * 8}, sees=())
+        self.assertIn('not in range of wlan0 or wlan1', status['message'])
+
+    def test_a_network_already_joined_is_left_alone(self):
+        # Typing the password again must not drop the connection that works.
+        status = self.run_helper({'action': 'connect', 'ssid': 'Phone', 'password': 'p' * 8}, on='wlan1')
+        self.assertEqual((status['state'], status['message']), ('connected', 'Joined Phone'))
+        self.assertFalse(any('delete' in call or call[:1] == ('--wait',) for call in self.calls))
 
     def test_scan_uses_both_adapters(self):
         self.run_helper({'action': 'scan'})

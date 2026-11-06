@@ -23,6 +23,8 @@ SHELL = shutil.which('sh')
 UBLOX = 'usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00'
 LAST = 'for a; do last=$a; done\n'
 SHIMS = {
+    # The time zone as the test says (zone file), else one chosen by hand: never the test machine's own.
+    'timedatectl': 'case "$1" in show) cat "$FAKE_ZONE" 2>/dev/null || echo America/Denver;; set-timezone) echo "$2" > "$FAKE_ZONE";; esac\n',
     'systemctl': 'echo "$@" >> "$FAKE/systemctl.log"\n' + LAST +
                  'case "$1" in is-enabled) [ -f "$FROGDASH_UNITS/enabled-$last" ] || exit 1;;\n'
                  'enable) touch "$FROGDASH_UNITS/enabled-$last";; disable) rm -f "$FROGDASH_UNITS/enabled-$last";; esac\nexit 0\n',
@@ -125,6 +127,18 @@ class SetupScriptTests(unittest.TestCase):
         self.assertEqual(steps['Python packages'], ('done', 'Installed: pyubx2 1.3.9'))
         self.assertIn('-m pip install --quiet --disable-pip-version-check --no-deps pyubx2==1.3.9', self.log('venv.log'))
         self.assertIn('restart frogdash.service', self.log('systemctl.log'))
+
+    def test_a_pi_still_on_utc_gets_the_cars_time_zone_and_a_chosen_one_stays(self):
+        zone = Path(self.folder.name) / 'zone'
+        self.env['FAKE_ZONE'] = zone.as_posix()
+        zone.write_text('Etc/UTC\n')                       # The car's card: the dash clock 7 hours ahead
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Time zone'], ('done', 'Set to America/Denver (was Etc/UTC)'))
+        self.assertEqual(zone.read_text().strip(), 'America/Denver')
+        zone.write_text('Europe/Berlin\n')                 # Chosen by hand: left alone
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Time zone'], ('ok', 'Europe/Berlin'))
+        self.assertEqual(zone.read_text().strip(), 'Europe/Berlin')
 
     def test_the_can_board_spi_clock_is_raised_once_and_only_that(self):
         boot = Path(self.env['FROGDASH_BOOT']); boot.mkdir()

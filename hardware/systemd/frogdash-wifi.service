@@ -5,4 +5,4 @@ After=NetworkManager.service
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/python3 /opt/frogdash/tools/frogdash_wifi.py
-TimeoutStartSec=120
+TimeoutStartSec=300

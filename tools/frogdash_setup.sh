@@ -345,6 +345,9 @@ start_off() {  # step name, unit, why
 start_off "Start-up: network wait" NetworkManager-wait-online.service "up to 9 s at every start"
 # Nothing in the dash uses Bluetooth.
 start_off "Start-up: Bluetooth" bluetooth.service "not used by the dash"
+# The login prompt on tty1 showed on the screen until the dash took over: the dash is on tty7.
+# A keyboard login is still there with Ctrl+Alt+F2 (logind starts one when it is asked for).
+start_off "Start-up: login text on the screen" getty@tty1.service "shown before the dash; Ctrl+Alt+F2 for a login"
 # Wi-Fi radio on and a Wi-Fi country set. Without a country the built-in Wi-Fi stays blocked or
 # limited (no 5 GHz: an iPhone hotspot without "Maximize Compatibility" is 5 GHz), and in the car
 # it could not join the phone hotspot (November 2026). FROGDASH_WIFI_COUNTRY picks another country.
@@ -355,6 +358,36 @@ if command -v iw >/dev/null 2>&1 && command -v raspi-config >/dev/null 2>&1; the
     elif raspi-config nonint do_wifi_country "${FROGDASH_WIFI_COUNTRY:-US}" >/dev/null 2>&1; then
         step "Wi-Fi country" done "Set to ${FROGDASH_WIFI_COUNTRY:-US}: the built-in Wi-Fi can use every channel (5 GHz too)"
     else step "Wi-Fi country" failed "Could not set the Wi-Fi country (raspi-config nonint do_wifi_country)"
+    fi
+fi
+# The time zone. A card from Raspberry Pi Imager can start on UTC (the car's showed GMT, so the
+# dash clock was hours ahead, November 2026). Only a Pi still on UTC is changed; another zone
+# chosen by hand stays. FROGDASH_TIMEZONE picks another one.
+if command -v timedatectl >/dev/null 2>&1; then
+    zone=$(timedatectl show -p Timezone --value 2>/dev/null)
+    case "$zone" in
+        ""|UTC|Etc/UTC|GMT|Etc/GMT|Universal|Zulu)
+            if timedatectl set-timezone "${FROGDASH_TIMEZONE:-America/Denver}" >/dev/null 2>&1; then
+                restart_screen=1; restart_dash=1
+                step "Time zone" done "Set to ${FROGDASH_TIMEZONE:-America/Denver} (was ${zone:-not set})"
+            else step "Time zone" failed "Could not set the time zone to ${FROGDASH_TIMEZONE:-America/Denver}"
+            fi;;
+        *) step "Time zone" ok "$zone";;
+    esac
+fi
+# Wi-Fi power saving off: the adapters doze between packets, and a phone hotspot drops a client
+# that does not answer, then the Pi joins again ("disconnects and comes back", November 2026).
+powersave="$ETC/NetworkManager/conf.d/frogdash-wifi-powersave.conf"
+if [ -d "$ETC/NetworkManager" ]; then
+    wanted_ps='# Frogdash: Wi-Fi power saving off (dropped and rejoined the phone hotspot)
+[connection]
+wifi.powersave = 2'
+    if [ "$(cat "$powersave" 2>/dev/null)" = "$wanted_ps" ]; then step "Wi-Fi power saving" ok "Off"
+    elif mkdir -p "$ETC/NetworkManager/conf.d" && printf '%s\n' "$wanted_ps" > "$powersave"; then
+        nmcli general reload conf >/dev/null 2>&1
+        for dev in $(ls /sys/class/net 2>/dev/null | grep '^wlan'); do iw dev "$dev" set power_save off >/dev/null 2>&1; done
+        step "Wi-Fi power saving" done "Switched off (from now on, every adapter)"
+    else step "Wi-Fi power saving" failed "Could not write $powersave"
     fi
 fi
 # Raspberry Pi Imager's settings (user, Wi-Fi, SSH) are applied by cloud-init at the first start

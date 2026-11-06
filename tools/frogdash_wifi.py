@@ -156,7 +156,17 @@ def connect(ssid, password, devices, dashcam):
     if not valid_ssid(ssid) or (password and not PASSWORD.fullmatch(password)):
         return write('failed', 'Invalid network name or password (8 to 63 characters)', devices)
     tried, error = [], ''
+    # Already on it with one of the adapters: nothing to change. (Deleting and joining again
+    # dropped a working connection whenever the password was typed once more.)
     for device in devices:
+        if device != dashcam and connected_to(device) == ssid:
+            return joined(device, ssid, False, [])
+    # Each adapter that can see the network, the others skipped at once: two adapters times
+    # three 30 s attempts outlasted the helper's time limit, and the menu waited for ever.
+    for device in devices:
+        if not sees(device, ssid):
+            tried.append(f'{device} (does not see it)')
+            continue
         borrowing = device == dashcam
         if borrowing:  # The dash cam's adapter: take it off the dash cam; the Wi-Fi keeper returns it.
             LOCK.touch()
@@ -171,18 +181,34 @@ def connect(ssid, password, devices, dashcam):
         if 'Secrets were required' in error or '802-11-wireless-security' in error:
             return write('failed', 'Wrong password', devices)   # Another adapter would not help.
         tried.append(device)
+    if not error:
+        return write('failed', f'{ssid} is not in range of {" or ".join(devices)}: is the phone hotspot on, and the phone unlocked?', devices)
     return write('failed', f'Could not join {ssid} with {" or ".join(tried)}: {error[:120]}', devices)
+
+
+def connected_to(device):
+    """The network an adapter is on now, or None."""
+    for line in nmcli('-t', '-f', 'ACTIVE,SSID', 'dev', 'wifi', 'list', 'ifname', device, '--rescan', 'no')[1].splitlines():
+        active, ssid = (split(line) + [''])[:2]
+        if active == 'yes':
+            return ssid
+    return None
+
+
+def sees(device, ssid):
+    """Whether an adapter's scan lists the network (a fresh scan first)."""
+    nmcli('dev', 'wifi', 'rescan', 'ifname', device)
+    time.sleep(2)
+    return ssid in {split(line)[0] for line in nmcli('-t', '-f', 'SSID', 'dev', 'wifi', 'list', 'ifname', device, '--rescan', 'no')[1].splitlines()}
 
 
 def join(device, ssid, password):
     """Join with one adapter: (0, '') when joined, else nmcli's exit code and error."""
     name = f'frogdash-{ssid}'
-    nmcli('dev', 'wifi', 'rescan', 'ifname', device)
-    time.sleep(2)
     if password:
         nmcli('con', 'delete', name)
         code, _, error = nmcli('--wait', '30', 'dev', 'wifi', 'connect', ssid, 'password', password, 'ifname', device, 'name', name)
-        if code:
+        if code and ('Secrets were required' in error or '802-11-wireless-security' in error or 'key-mgmt' in error):
             # "Secrets were required" with a correct password: nmcli guessed the wrong
             # security mode (WPA2/WPA3 mixed routers). Create the profile explicitly.
             for key_mgmt in ('wpa-psk', 'sae'):

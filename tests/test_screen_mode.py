@@ -168,7 +168,7 @@ class TrialTests(unittest.TestCase):
         self.assertIn('# frogdash-screen begin\n[all]\ndisable_fw_kms_setup=1\nhdmi_edid_file:0=1', pi.config())
         self.assertIn('hdmi_edid_filename:1=frogdash-1920x720.bin', pi.config())
         self.assertEqual((pi.boot / 'cmdline.txt').read_text(),
-                         CMDLINE.strip() + ' video=HDMI-A-2:1920x720@60 drm.edid_firmware=edid/frogdash-1920x720.bin'
+                         CMDLINE.strip().replace('console=tty1', 'console=tty3') + ' video=HDMI-A-2:1920x720@60 drm.edid_firmware=edid/frogdash-1920x720.bin'
                          ' loglevel=3 logo.nologo vt.global_cursor_default=0 systemd.show_status=false rd.udev.log_level=3\n')
         self.assertIn('\ndisable_splash=1\n[all]\n# frogdash-screen end', pi.config())    # No rainbow square at start
         self.assertEqual((pi.boot / 'cmdline.txt.frogdash-before').read_text(), own)

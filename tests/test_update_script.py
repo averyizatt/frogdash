@@ -21,6 +21,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / 'tools/frogdash_update.sh'
 SHELL = shutil.which('sh')
 SHIMS = {
+    # The time zone as the test says (zone file), else one chosen by hand: never the test machine's own.
+    'timedatectl': 'case "$1" in show) cat "$FAKE_ZONE" 2>/dev/null || echo America/Denver;; set-timezone) echo "$2" > "$FAKE_ZONE";; esac\n',
     'systemctl': 'echo "$@" >> "$FROGDASH_STATE/systemctl.log"\n'
                  'case "$1" in show) echo 0;;\n'
                  'is-enabled) [ -f "$FROGDASH_UNITS/enabled-$3" ] || exit 1;;\n'

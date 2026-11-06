@@ -31,6 +31,28 @@
       typeof value === 'number' ? value.toFixed(digits) : value;
     return value;
   }
+  // Speed on the screen, smoothed: a GPS receiver that does not see the sky well jumps several
+  // mph between fixes (November 2026). The logs and the race timer keep the receiver's own
+  // readings. A single wild reading is dropped (the middle of the last three), the needle moves
+  // no faster than a car can (about 20 km/h a second up, 35 down), and what is left is eased.
+  const speedo = {raw: [], value: null, at: 0};
+  function smoothSpeed(sample) {
+    if (!sample || sample.quality !== 'live' || typeof sample.value !== 'number' || !isFinite(sample.value)) {
+      speedo.raw = []; speedo.value = null;
+      return sample;
+    }
+    const now = performance.now();
+    speedo.raw = [...speedo.raw.slice(-2), sample.value];
+    const middle = [...speedo.raw].sort((a, b) => a - b)[Math.floor(speedo.raw.length / 2)];
+    if (speedo.value === null) speedo.value = middle;
+    else {
+      const dt = Math.min((now - speedo.at) / 1000, 1);
+      const target = clamp(middle, speedo.value - 35 * dt, speedo.value + 20 * dt);
+      speedo.value += (target - speedo.value) * (1 - Math.exp(-dt / .6));
+    }
+    speedo.at = now;
+    return {...sample, value: speedo.value < 2 ? 0 : speedo.value};
+  }
   function bar(id, value, min, max) {
     $(id).style.width = `${value === null ? 0 : clamp((value - min) / (max - min) * 100, 0, 100)}%`;
   }
@@ -231,6 +253,7 @@
           return;
         }
         if (next.type !== 'state' || !next.values || !next.transport) return;
+        if (next.values['vehicle.speed_kph']) next.values['vehicle.speed_kph'] = smoothSpeed(next.values['vehicle.speed_kph']);
         snapshot = next; connected = true; lastMessage = performance.now(); retry = 250;
         render();
       } catch { ws.close(); }

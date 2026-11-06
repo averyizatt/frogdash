@@ -388,6 +388,9 @@ def force(boot, changed):
     if token not in words:
         words.append(token)
     words += [w for w in QUIET_BOOT if w not in words]
+    # Linux's console on tty3, never shown: on tty1 its lines were still on the screen before
+    # the dash (November 2026). The dash is on tty7; the log keeps every message.
+    words = ['console=tty3' if w == 'console=tty1' else w for w in words]
     if ' '.join(words) != cmdline.strip():
         if not (boot / 'cmdline.txt.frogdash-before').exists():
             shutil.copy2(boot / 'cmdline.txt', boot / 'cmdline.txt.frogdash-before')
