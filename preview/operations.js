@@ -46,7 +46,7 @@
     '<p class="control-note">New builds arrive with Update now. Install one with the car stopped: two presses.</p></div>' +
     '<div class="software-card" id="uploads-card"><div class="sw-head"><div><span class="sw-title">Reports to GitHub</span><small id="uploads-where">By itself whenever the Pi has internet</small></div><span class="sw-pill" id="uploads-pill" data-tone="idle">Checking…</span></div>' +
     '<div class="sw-code" id="uploads-code" hidden><strong></strong><span>On your phone open <b>github.com/login/device</b>, type this code and press Authorize.</span></div>' +
-    '<p class="sw-message" id="uploads-status">What went wrong (GPS, CAN, modules, power), the diagnostics, the system log and the newest drive.</p>' +
+    '<p class="sw-message" id="uploads-status">What went wrong (GPS, CAN, modules, power), the diagnostics, the system log and all unsent drive recordings.</p>' +
     '<div class="sw-buttons"><button type="button" id="uploads-connect">Connect GitHub</button><button type="button" id="uploads-send" hidden>Send now</button><button type="button" id="uploads-disconnect" hidden>Disconnect</button></div></div></div></div></section>');
   // TunerStudio is a desktop program: the kiosk opens it over the dash (hardware/frogdash/tune.py).
   dialog.querySelector('[data-ops-panel="support"]').insertAdjacentHTML('afterend',
@@ -257,7 +257,7 @@
     }));
   }
   // Reports to GitHub (hardware/frogdash/github_link.py): linked once with a code typed on
-  // the phone; after that every update sends them. No token is copied anywhere.
+  // the phone; reports and drives then upload automatically. No token is copied anywhere.
   let uploadsTimer = null, disconnectArmed = false;
   function renderUploads(s) {
     const link = s.link || {}, waiting = link.state === 'waiting';
@@ -277,8 +277,8 @@
     $('uploads-status').textContent = waiting ? `Waiting for GitHub… the code works for ${Math.max(0, Math.round((link.expires_at - Date.now() / 1000) / 60))} more minutes.`
       : link.state === 'failed' && !s.configured ? link.message + '.' + held
       : !s.configured && s.last?.state === 'failed' ? s.last.message + '.' + held   // GitHub refused the saved login: it was cleared
-      : s.configured && s.sending ? 'Sending the reports to GitHub: a minute or two, longer with a drive to send.'
-      : s.configured ? `${s.last ? 'Last: ' + s.last.message + '.' : 'Nothing sent yet: it goes by itself once the Pi reaches the internet, or press Send now.'}${held} Drive recordings go with Update now and Send now.${expiry}`
+      : s.configured && s.sending ? 'Sending reports and drive recordings to GitHub. Larger drives can take several minutes.'
+      : s.configured ? `${s.last ? 'Last: ' + s.last.message + '.' : 'Nothing sent yet.'}${held} Send now uploads reports and all unsent drive recordings together. Automatic uploads check every five minutes when the Pi has internet and no update is running.${expiry}`
       : !s.ready ? 'This dash does not have its GitHub app ID yet: it comes with an update.' + held
       : 'Press Connect GitHub (with internet), then type the code it shows on your phone. Once, and done.' + held;
     $('uploads-connect').hidden = s.configured || waiting; $('uploads-connect').disabled = !s.ready;

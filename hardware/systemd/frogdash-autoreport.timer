@@ -1,5 +1,5 @@
 [Unit]
-Description=Look every few minutes whether a Frogdash report should go to GitHub
+Description=Check every five minutes for Frogdash reports and drive recordings to upload
 
 [Timer]
 OnBootSec=3min

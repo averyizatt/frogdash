@@ -135,7 +135,7 @@ class GitHubLinkTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual({c for _, c in asked}, {'Ov23test'})
             # The reports waiting on the Pi go at once, not at the next update.
             self.assertEqual((Path(folder) / 'update-request').read_text(), 'upload')
-            self.assertIn('sending the reports now', status['link']['message'])
+            self.assertIn('sending reports and drives now', status['link']['message'])
             self.assertTrue(status['sending'])
             link.disconnect()
             self.assertFalse(link.status()['configured'])

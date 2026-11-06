@@ -85,7 +85,7 @@ setup() {  # $1 = online when GitHub was just reached. Leaves what it did in $no
     [ -z "$note" ] || note=". $note"
     return 0
 }
-upload() {  # Diagnostics and the newest drive to the owner's private repository, while online.
+upload() {  # Diagnostics and all unsent drives to the owner's repository, while online.
     said=""
     [ -f "$REPO/tools/frogdash_upload.py" ] || return 0
     said=$(FROGDASH_STATE=$STATE FROGDASH_REPO=$REPO FROGDASH_UNITS=$UNITS timeout 600 python3 "$REPO/tools/frogdash_upload.py" 2>/dev/null | tail -n 1 | tr -cd 'A-Za-z0-9 .,:;()/_-')
@@ -186,7 +186,7 @@ if [ "$action" = setup ] || [ "$action" = helpers ]; then  # From the dash at st
     if [ -n "$last" ]; then mv "$STATUS.last" "$STATUS"; else report current "Pi setup finished$note"; fi
     exit 0
 fi
-if [ "$action" = upload ]; then  # Send now, or GitHub just connected: the reports only.
+if [ "$action" = upload ]; then  # Send now, or GitHub just connected: reports and all unsent drives.
     [ -f "$REPO/tools/frogdash_upload.py" ] && FROGDASH_STATE=$STATE FROGDASH_REPO=$REPO FROGDASH_UNITS=$UNITS \
         timeout 1200 python3 "$REPO/tools/frogdash_upload.py" >/dev/null 2>&1
     exit 0

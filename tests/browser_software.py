@@ -123,6 +123,8 @@ async def main(browser_path):
             await page.wait_for_function("document.getElementById('uploads-pill').textContent === 'Connected'", timeout=10000)
             assert 'and 1 earlier report' in await page.locator('#uploads-status').inner_text()
             assert 'renews automatically' in await page.locator('#uploads-status').inner_text()
+            assert 'all unsent drive recordings together' in await page.locator('#uploads-status').inner_text()
+            assert 'no update is running' in await page.locator('#uploads-status').inner_text()
             assert 'expires' not in await page.locator('#uploads-status').inner_text()
             # Send now: asks again.
             await page.locator('#uploads-send').click()

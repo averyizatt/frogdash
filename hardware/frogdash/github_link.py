@@ -1,4 +1,4 @@
-"""Connect the dash to GitHub with a short code, so reports upload after every update
+"""Connect the dash to GitHub with a short code, so reports and drives upload automatically
 without a token being copied anywhere (GitHub's device flow).
 
 The driver presses Connect GitHub (Dash management > Software & power). The dash asks
@@ -152,8 +152,8 @@ class GitHubLink:
                 'sending': asked or status.get('state') == 'sending'}
 
     def send_now(self):
-        """Ask the updater (root, frogdash-update.path) to send the reports now: the ones kept
-        on the Pi and a fresh one. An error text, or None when asked."""
+        """Ask the updater (root, frogdash-update.path) to send saved reports, a fresh report,
+        and all unsent drive recordings. An error text, or None when asked."""
         if not (self.read('log-upload.json') or {}).get('token'):
             return 'Connect GitHub first'
         request = self.folder / 'update-request'
@@ -227,5 +227,5 @@ class GitHubLink:
             # waited after connecting, because nothing sent them until an update).
             sent = await asyncio.to_thread(self.send_now) is None
             self.link = {'state': 'connected', 'message': f'Connected{" as " + account if account else ""}: '
-                         + ('sending the reports now; after that they go up after every update' if sent else 'reports go up after every update')}
+                         + ('sending reports and drives now; after that they upload automatically' if sent else 'reports and drives upload automatically')}
             return

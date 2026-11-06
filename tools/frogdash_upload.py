@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""After an update: the dash's diagnostics and its newest drive, to the owner's GitHub
+"""After an update or Send now: diagnostics and all unsent drives, to the owner's GitHub
 repository (run as root by tools/frogdash_update.sh while the Pi is online).
 
 And by itself (--auto, every few minutes from frogdash-autoreport.timer): whenever the Pi
 can reach GitHub (home Wi-Fi or a phone hotspot: the dash cam's Wi-Fi has no internet),
-a report goes up once after every start, and again when new events have been recorded,
-at most every AUTO_EVERY_S. Reports only: the drive recordings, which can be large on a
-phone's data, go with Update now and Send now. Nothing new, no internet, uploads not set
+a report goes up with unsent recordings, once after every start, and again when new
+events have been recorded, at most every AUTO_EVERY_S for events alone.
+Nothing new, no internet, uploads not set
 up, or an update running: it does nothing.
 
 By the owner's choice this is the public frogdash repository itself, on its own branch
@@ -34,7 +34,7 @@ What goes up, every time, whatever the connection:
   - pi/<date>/<time>-can-<when>.log: CAN recordings made on the dash since the last
     report (Sensors > Raw CAN > Record), in candump log format: open them in SavvyCAN or
     cantools with hardware/can_contract/frogdash.dbc (docs/savvycan.md);
-  - the newest drive's recordings, gzip-compressed, as files of a GitHub release named
+  - each unsent drive's recordings, gzip-compressed, as files of a GitHub release named
     after the drive, so the repository's history does not grow with them.
 
 The reports are made after every update even with uploads not set up, and kept on the Pi
@@ -223,14 +223,33 @@ def started(name):
 def newest_drive(files, active=(), gap=DRIVE_GAP_S):
     """The recordings of the most recent drive: (name, start, end, bytes), oldest first.
     `files` is (name, end time, bytes); a file still being written is left out."""
+    groups = drive_groups(files, active, gap)
+    return groups[-1] if groups else []
+
+
+def drive_groups(files, active=(), gap=DRIVE_GAP_S):
+    """All finished recordings grouped by drive, including already sent files for stable tags."""
     done = sorted(((name, started(name), end, size) for name, end, size in files
                    if name not in active and started(name) is not None), key=lambda f: f[1])
-    drive = []
-    for item in reversed(done):
-        if drive and drive[0][1] - item[2] > gap:
-            break
-        drive.insert(0, item)
-    return drive
+    groups = []
+    for item in done:
+        if not groups or item[1] - groups[-1][-1][2] > gap:
+            groups.append([])
+        groups[-1].append(item)
+    return groups
+
+
+def recordings():
+    files = []
+    for path in LOGS.glob('frogdash-*.mlg'):
+        try:
+            if path.is_symlink() or not path.is_file() or started(path.name) is None:
+                continue
+            stat = path.stat()
+            files.append((path.name, stat.st_mtime, stat.st_size))
+        except FileNotFoundError:   # Recorder retention can remove an old file during a scan.
+            continue
+    return files
 
 
 def text_of(*args, timeout=30):
@@ -437,11 +456,12 @@ def held():
     return found
 
 
-def send_report(github, when, files):
+def send_report(github, when, files, check=lambda: None):
     stamp = time.strftime('%Y-%m-%d/%H%M%S', time.gmtime(when))
     message = f'Pi report {time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(when))}'
     # The record of what went wrong first: small, and the most useful.
     for name in sorted(files, key=lambda n: (n != 'events.txt', n != 'diagnostics.json', n)):
+        check()
         github.put_file(f'pi/{stamp}-{name}', files[name], message)
 
 
@@ -461,14 +481,28 @@ def can_reach_github(timeout=5):
         return False
 
 
-def auto(now=None, github=None, reach=can_reach_github, boot=boot_id):
-    """One look (frogdash-autoreport.timer): send a report if there is something new and
+class UploadDeferred(Exception):
+    """An update started or was requested while an automatic upload was running."""
+
+
+def update_busy():
+    # A long update still owns BUSY; do not assume it finished after twenty minutes.
+    if BUSY.exists():
+        return True
+    try:
+        return bool((STATE / 'update-request').read_text().strip())
+    except OSError:
+        return False
+
+
+def auto(now=None, github=None, reach=can_reach_github, boot=boot_id, wait=time.sleep):
+    """One look (frogdash-autoreport.timer): send reports and drives if anything is new and
     GitHub can be reached. Returns what it did, in a few words."""
     now = now or time.time()
     config = load(CONFIG, {})
     if not config.get('repo') or not config.get('token'):
         return 'Uploads not set up'
-    if BUSY.exists() and now - BUSY.stat().st_mtime < 20 * 60:
+    if update_busy():
         return 'An update or recovery is running'
     status = load(STATUS, {})
     if status.get('state') == 'failed' and now - float(status.get('time') or 0) < AUTO_EVERY_S / 3:
@@ -476,21 +510,30 @@ def auto(now=None, github=None, reach=can_reach_github, boot=boot_id):
     current = boot()
     new_boot = current != status.get('boot_reported')
     events, _ = events_since(status.get('events_until') or now - FIRST_EVENTS_S)
-    due = new_boot or (events and now - float(status.get('time') or 0) >= AUTO_EVERY_S)
+    pending = any(name not in status.get('sent', []) for name, _, _ in recordings())
+    due = new_boot or held() or pending or (events and now - float(status.get('time') or 0) >= AUTO_EVERY_S)
     if not due:
         return 'Nothing new to send'
     if not reach():
         return 'No internet'
-    said = run(now, github, drives=False)
+    def check():
+        if update_busy():
+            raise UploadDeferred('Waiting for the update to finish; remaining uploads will resume automatically')
+    try:
+        said = run(now, github, wait=wait, check=check)
+    except UploadDeferred as error:
+        save_status({**load(STATUS, {}), 'state': 'held', 'message': str(error), 'held': len(held())})
+        return str(error)
     save_status({**load(STATUS, {}), 'boot_reported': current})   # This start has gone up
     return said
 
 
-def run(now=None, github=None, wait=time.sleep, drives=True):
+def run(now=None, github=None, wait=time.sleep, drives=True, check=lambda: None):
     now = now or time.time()
     config = load(CONFIG, {})
     repo, token = config.get('repo', ''), config.get('token', '')
     status = load(STATUS, {})
+    check()
     since = status.get('events_until') or now - FIRST_EVENTS_S
     files, until = make_report(now, config, since)
     if not repo or not token:
@@ -511,58 +554,78 @@ def run(now=None, github=None, wait=time.sleep, drives=True):
     earlier = 0
     try:
         for folder, when in held():
-            send_report(github, when, {p.name: p.read_bytes() for p in folder.iterdir() if p.is_file()})
+            send_report(github, when, {p.name: p.read_bytes() for p in folder.iterdir() if p.is_file()}, check)
             shutil.rmtree(folder, ignore_errors=True)
             earlier += 1
-        send_report(github, now, files)
+        send_report(github, now, files, check)
     except Exception:
         keep(now, files)   # Sent next time, with its events.
         save_status({**status, 'events_until': until, 'held': len(held())})
         raise
     status = {**status, 'events_until': until, 'login': login(config, getattr(github, 'expires', None))}
-    if not drives:   # By itself (auto): the report only
+    save_status({**status, 'state': 'sending', 'held': len(held())})
+    if not drives:   # Report-only callers, including diagnostic tests.
         result = 'Sent a report by itself' + (f', and {earlier} kept on the Pi' if earlier else '')
         save_status({**status, 'time': int(now), 'state': 'done', 'message': result, 'repo': repo,
                      'held': len(held()), 'boot_reported': boot_id()})
         return result
 
-    # Then the newest drive. The file being recorded is finished first, so a drive that
-    # has just ended is complete.
+    # Close the current chunk; the recorder starts another on its next sample.
+    check()
     local('/logs/finish', 'POST')
     wait(3)
-    listing = local('/logs') or {}
+    # Scan before asking which file is active: a new file created after that answer
+    # must not sneak into this batch while the recorder is still writing it.
+    files = recordings()
+    listing = local('/logs')
+    if not isinstance(listing, dict) or not isinstance(listing.get('files'), list):
+        raise RuntimeError('Reports sent; waiting for the recorder to identify finished drive files')
     active = {f['name'] for f in listing.get('files', []) if f.get('active')}
-    files = [(p.name, p.stat().st_mtime, p.stat().st_size) for p in LOGS.glob('frogdash-*.mlg')] if LOGS.is_dir() else []
-    drive = [f for f in newest_drive(files, active) if f[0] not in sent]
-    uploaded, skipped = [], 0
-    if drive:
-        first = drive[0][1]
-        tag = 'drive-' + time.strftime('%Y%m%d-%H%M', time.gmtime(first))
+    retained = {name for name, _, _ in files}
+    sent = [name for name in sent if name in retained]
+    tags = {name: tag for name, tag in status.get('drive_tags', {}).items() if name in retained}
+    uploaded, skipped, total = [], 0, 0
+    for group in drive_groups(files, active):
+        drive = [f for f in group if f[0] not in sent]
+        if not drive:
+            continue
+        check()
+        first = group[0][1]
+        tag = next((tags[f[0]] for f in group if f[0] in tags),
+                   'drive-' + time.strftime('%Y%m%d-%H%M', time.gmtime(first)))
         release = github.release(tag, 'Drive ' + time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime(first)),
                                  f'Recordings from the dash, uploaded {time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(now))}. '
                                  'Each file is a gzip-compressed MLG: gunzip, then open it in MegaLogViewer.')
-        total = 0
         with tempfile.TemporaryDirectory() as work:
             for name, _, _, size in drive:
+                check()
                 packed = Path(work) / (name + '.gz')
                 with open(LOGS / name, 'rb') as source, gzip.open(packed, 'wb', compresslevel=6) as target:
                     shutil.copyfileobj(source, target, 1 << 20)
-                total += packed.stat().st_size
-                if total > MAX_DRIVE_BYTES:
+                packed_size = packed.stat().st_size
+                if total + packed_size > MAX_DRIVE_BYTES:
                     skipped += 1
+                    packed.unlink()
                     continue
+                check()
                 github.upload_asset(release, packed.name, packed)
+                total += packed_size
                 uploaded.append(name)
+                sent.append(name)
+                tags[name] = tag
+                # Persist each success: a disconnect or shutdown resumes the remaining files.
+                status = {**status, 'sent': sent, 'drive_tags': tags,
+                          'login': login(config, getattr(github, 'expires', None))}
+                save_status({**status, 'state': 'sending', 'held': len(held())})
                 packed.unlink()
-    sent = (sent + uploaded)[-500:]
-    result = (f'Uploaded the diagnostics and {len(uploaded)} recording{"" if len(uploaded) == 1 else "s"} of the newest drive'
+    result = (f'Uploaded the diagnostics and {len(uploaded)} drive recording{"" if len(uploaded) == 1 else "s"}'
               if uploaded else 'Uploaded the diagnostics (no new drive to send)')
     if earlier:
         result += f', and {earlier} earlier report{"" if earlier == 1 else "s"} kept on the Pi'
     if skipped:
         result += f'; {skipped} more too large for one upload'
     save_status({'time': int(now), 'state': 'done', 'message': result, 'repo': repo, 'sent': sent, 'events_until': until,
-                 'held': len(held()), 'boot_reported': boot_id(), 'login': status['login']})
+                 'held': len(held()), 'boot_reported': boot_id(), 'login': status['login'], 'drive_tags': tags})
     return result
 
 

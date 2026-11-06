@@ -1,5 +1,5 @@
 [Unit]
-Description=Send a Frogdash report to GitHub when the Pi can reach it and there is something new
+Description=Send Frogdash reports and drive recordings to GitHub when online and not updating
 After=network.target
 
 [Service]

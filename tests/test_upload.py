@@ -195,10 +195,10 @@ class UploadTests(unittest.TestCase):
         self.assertEqual(list((self.state / 'reports').iterdir()), [])
         self.assertEqual(json.loads((self.state / 'upload-status.json').read_text())['held'], 0)
 
-    def test_reports_and_the_newest_drive_go_up_once(self):
+    def test_reports_and_all_unsent_drives_go_up_once(self):
         (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
         (self.state / 'screen-status.json').write_text('{"state": "original"}')
-        self.log('20261014T170000Z', 30, b'yesterday')
+        older = self.log('20261014T170000Z', 30, b'yesterday')
         first = self.log('20261015T120000Z', 30, b'drive part one' * 100)
         second = self.log('20261015T123200Z', 10, b'drive part two' * 100)
         # A CAN recording made on the dash: goes up with this report, once.
@@ -208,7 +208,7 @@ class UploadTests(unittest.TestCase):
         os.utime(recording, (1792065300, 1792065300))
         hub = FakeGitHub()
         said = self.up.run(now=1792065600, github=hub, wait=lambda s: None)
-        self.assertEqual(said, 'Uploaded the diagnostics and 2 recordings of the newest drive')
+        self.assertEqual(said, 'Uploaded the diagnostics and 3 drive recordings')
         self.assertIn(b'can0 300#', next(v for p, v in hub.files.items() if p.endswith('can-20261015-120500.log')))
         hub.files = {p: v for p, v in hub.files.items() if not p.endswith('.log')}
         self.assertEqual(sorted(p.rsplit('-', 1)[1] for p in hub.files), ['boot.txt', 'diagnostics.json', 'events.txt', 'journal.txt'])
@@ -218,9 +218,9 @@ class UploadTests(unittest.TestCase):
         self.assertEqual(diagnostics['gps']['gpspipe'], '(output of timeout)\n')   # What gpsd hears, raw
         self.assertEqual(diagnostics['state'], self.snapshot)                        # The dash's live picture
         self.assertIn('The start before this one', next(v for p, v in hub.files.items() if p.endswith('journal.txt')).decode())
-        self.assertEqual(list(hub.releases), ['drive-20261015-1200'])
+        self.assertEqual(list(hub.releases), ['drive-20261014-1700', 'drive-20261015-1200'])
         self.assertEqual([(name, body[:14]) for _, name, body in hub.assets],
-                         [(first + '.gz', b'drive part one'), (second + '.gz', b'drive part two')])
+                         [(older + '.gz', b'yesterday'), (first + '.gz', b'drive part one'), (second + '.gz', b'drive part two')])
         status = (self.state / 'upload-status.json').read_text()
         self.assertNotIn(TOKEN, status)
         # The next update: the reports again, the same drive not again.
@@ -230,32 +230,128 @@ class UploadTests(unittest.TestCase):
 
     def test_reports_go_by_themselves_when_github_can_be_reached(self):
         boot, online, hub = ['boot-1'], [False], FakeGitHub()
-        go = lambda now: self.up.auto(now=now, github=hub, reach=lambda: online[0], boot=lambda: boot[0])
+        go = lambda now: self.up.auto(now=now, github=hub, reach=lambda: online[0], boot=lambda: boot[0], wait=lambda s: None)
         self.assertEqual(go(1792065600), 'Uploads not set up')
         (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
         self.log('20261015T120000Z', 30, b'a drive')
         self.assertEqual(go(1792065600), 'No internet')                   # The dash cam's Wi-Fi: nothing goes
         self.assertEqual(hub.files, {})
         online[0] = True                                                 # Home Wi-Fi or the phone hotspot
-        self.assertEqual(go(1792065660), 'Sent a report by itself')
+        self.assertEqual(go(1792065660), 'Uploaded the diagnostics and 1 drive recording')
         self.assertTrue(any(p.endswith('events.txt') for p in hub.files))
-        self.assertEqual((hub.releases, hub.assets), ({}, []))            # Drives go with Update now / Send now
+        self.assertEqual(len(hub.assets), 1)                            # Automatic uploads include drives too.
         count = len(hub.files)
         self.assertEqual(go(1792065960), 'Nothing new to send')           # Same start, nothing new
         events = self.state / 'events'
         events.mkdir(exist_ok=True)
         (events / '2026-10-15.jsonl').write_text(json.dumps({'t': 1792065900, 'level': 'warn', 'area': 'gps', 'text': 'GPS lost'}) + '\n')
         self.assertEqual(go(1792066200), 'Nothing new to send')           # New events, but not 30 minutes yet
-        self.assertIn('Sent a report', go(1792065660 + self.up.AUTO_EVERY_S + 1))
+        self.assertIn('Uploaded the diagnostics', go(1792065660 + self.up.AUTO_EVERY_S + 1))
         self.assertGreater(len(hub.files), count)
         boot[0] = 'boot-2'                                               # The next start goes up at once
-        self.assertIn('Sent a report', go(1792065660 + self.up.AUTO_EVERY_S + 60))
+        self.assertIn('Uploaded the diagnostics', go(1792065660 + self.up.AUTO_EVERY_S + 60))
         # While an update or recovery runs, it waits.
         boot[0] = 'boot-3'
         busy = self.state / 'busy'
         busy.write_text('')
         self.up.BUSY = busy
         self.assertEqual(go(1792065660 + self.up.AUTO_EVERY_S + 120), 'An update or recovery is running')
+
+    def test_auto_sends_new_drives_and_queued_reports_without_new_events_or_a_reboot(self):
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
+        self.up.save_status({'boot_reported': 'same-boot', 'events_until': 1792065600, 'time': 1792065600})
+        hub = FakeGitHub()
+        go = lambda now: self.up.auto(now, hub, reach=lambda: True, boot=lambda: 'same-boot', wait=lambda s: None)
+        name = self.log('20261015T120000Z', 10, b'new drive without faults')
+        self.assertIn('1 drive recording', go(1792066200))
+        self.assertEqual(hub.assets[0][1], name + '.gz')
+        self.up.keep(1792065600, {'events.txt': b'queued offline'})
+        self.assertIn('1 earlier report', go(1792066500))
+        self.assertEqual(len(hub.assets), 1)
+        self.assertEqual(go(1792066800), 'Nothing new to send')
+
+    def test_auto_waits_for_pending_and_long_running_updates_before_network_work(self):
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
+        reach = Mock(return_value=True)
+        request = self.state / 'update-request'
+        request.write_text('update')
+        self.assertEqual(self.up.auto(reach=reach), 'An update or recovery is running')
+        request.unlink()
+        self.up.BUSY = self.state / 'busy'
+        self.up.BUSY.touch()
+        os.utime(self.up.BUSY, (1, 1))  # Even an old marker still belongs to the updater.
+        self.assertEqual(self.up.auto(reach=reach), 'An update or recovery is running')
+        reach.assert_not_called()
+
+    def test_partial_drive_upload_resumes_in_the_same_release_without_resending_successes(self):
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
+        first = self.log('20261015T120000Z', 30, b'first')
+        second = self.log('20261015T123200Z', 10, b'second')
+        hub = FakeGitHub()
+        upload = hub.upload_asset
+        def drop(release, name, path):
+            if name == second + '.gz':
+                raise OSError('Wi-Fi disconnected')
+            upload(release, name, path)
+        hub.upload_asset = drop
+        with self.assertRaisesRegex(OSError, 'Wi-Fi disconnected'):
+            self.up.run(github=hub, wait=lambda s: None)
+        self.assertEqual(json.loads(self.up.STATUS.read_text())['sent'], [first])
+        hub.upload_asset = upload
+        self.up.run(github=hub, wait=lambda s: None)
+        self.assertEqual([name for _, name, _ in hub.assets], [first + '.gz', second + '.gz'])
+        self.assertEqual(list(hub.releases), ['drive-20261015-1200'])
+
+    def test_auto_yields_between_drive_files_if_an_update_is_requested(self):
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
+        first = self.log('20261015T120000Z', 30, b'first')
+        second = self.log('20261015T123200Z', 10, b'second')
+        hub = FakeGitHub()
+        upload = hub.upload_asset
+        def request_update(release, name, path):
+            upload(release, name, path)
+            (self.state / 'update-request').write_text('update')
+        hub.upload_asset = request_update
+        said = self.up.auto(github=hub, reach=lambda: True, wait=lambda s: None)
+        self.assertIn('Waiting for the update', said)
+        self.assertEqual(json.loads(self.up.STATUS.read_text())['state'], 'held')
+        self.assertEqual([name for _, name, _ in hub.assets], [first + '.gz'])
+        (self.state / 'update-request').unlink()
+        hub.upload_asset = upload
+        self.up.auto(github=hub, reach=lambda: True, wait=lambda s: None)
+        self.assertEqual([name for _, name, _ in hub.assets], [first + '.gz', second + '.gz'])
+
+    def test_active_file_is_closed_before_upload_and_unknown_active_state_defers_drives(self):
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
+        first = self.log('20261015T120000Z', 30, b'just finished')
+        active = self.log('20261015T123000Z', 1, b'still writing')
+        calls = []
+        def local(path, method='GET', timeout=10):
+            calls.append((path, method))
+            if path == '/logs':
+                return {'files': [{'name': first, 'active': ('/logs/finish', 'POST') not in calls},
+                                  {'name': active, 'active': True}]}
+        self.up.local = local
+        hub = FakeGitHub()
+        self.up.run(github=hub, wait=lambda s: None)
+        self.assertIn(('/logs/finish', 'POST'), calls)
+        self.assertEqual([name for _, name, _ in hub.assets], [first + '.gz'])
+        self.up.local = lambda *a: None
+        with self.assertRaisesRegex(RuntimeError, 'identify finished drive files'):
+            self.up.run(github=hub, wait=lambda s: None)
+        self.assertEqual(len(hub.assets), 1)
+
+    def test_upload_size_limit_leaves_remaining_files_for_the_next_automatic_pass(self):
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
+        self.log('20261015T120000Z', 30, os.urandom(200))
+        self.log('20261015T123200Z', 10, os.urandom(200))
+        self.up.MAX_DRIVE_BYTES = 350  # One compressed file fits, two do not.
+        hub = FakeGitHub()
+        go = lambda: self.up.auto(github=hub, reach=lambda: True, wait=lambda s: None)
+        self.assertIn('1 more too large for one upload', go())
+        self.assertEqual(len(hub.assets), 1)
+        self.assertIn('1 drive recording', go())
+        self.assertEqual(len(hub.assets), 2)
 
     def test_wifi_passwords_and_names_are_blanked_before_anything_goes_up(self):
         (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
