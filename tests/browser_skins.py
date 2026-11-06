@@ -63,6 +63,9 @@ async def main(path):
         await page.evaluate("frogdashDemo.scenario('warning')")
         await page.wait_for_function("document.querySelector('[data-lamp=\"check\"]').dataset.on === 'true'")
         await page.wait_for_function("!document.querySelector('.skin-warning').hidden && document.querySelector('.skin-warning').textContent.includes('COOLANT HIGH')")
+        # Above the indicator row, never over the top of its boxes.
+        gap = await page.evaluate("document.querySelector('.indicators').getBoundingClientRect().top - document.querySelector('.skin-warning').getBoundingClientRect().bottom")
+        assert gap >= 2, gap
         await page.locator('[data-lamp="check"]').click()
         await page.wait_for_function("document.getElementById('drive-dialog').open")
         assert not await page.locator('[data-driver-panel="alerts"]').is_hidden()
