@@ -79,7 +79,8 @@ class UpdateScriptTests(unittest.TestCase):
                     'GIT_AUTHOR_NAME': 't', 'GIT_AUTHOR_EMAIL': 't@t', 'GIT_COMMITTER_NAME': 't', 'GIT_COMMITTER_EMAIL': 't@t',
                     'FROGDASH_BUSY': (self.state / 'busy').as_posix(), 'FROGDASH_VENV_PY': Path(sys.executable).as_posix(),
                     'FROGDASH_TRIAL_PORT': str(free_port()), 'FROGDASH_TRIAL_WAIT': '30', 'TMPDIR': base.as_posix(),
-                    'FROGDASH_CLOUD_DIR': (base / 'cloud').as_posix()}   # Not the test machine's own cloud-init
+                    'FROGDASH_CLOUD_DIR': (base / 'cloud').as_posix(),   # Not the test machine's own cloud-init
+                    'FROGDASH_BOOT': (base / 'boot').as_posix()}
         self.git(self.origin, 'init', '--quiet', '--initial-branch=main')
         self.first = self.publish('dash.txt', 'version one')
         subprocess.run(['git', 'clone', '--quiet', self.origin.as_posix(), self.repo.as_posix()], check=True, env=self.env, capture_output=True)

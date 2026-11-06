@@ -101,6 +101,7 @@ class SetupScriptTests(unittest.TestCase):
         self.env['FROGDASH_VENV_PY'] = venv.as_posix()
         self.env['FROGDASH_LIB'] = (base / 'lib').as_posix()
         self.env['FROGDASH_CLOUD_DIR'] = (base / 'cloud').as_posix()   # Absent: no cloud-init (see its own test)
+        self.env['FROGDASH_BOOT'] = (base / 'boot').as_posix()     # No boot files unless a test makes them
 
     def tearDown(self):
         self.folder.cleanup()
@@ -124,6 +125,23 @@ class SetupScriptTests(unittest.TestCase):
         self.assertEqual(steps['Python packages'], ('done', 'Installed: pyubx2 1.3.9'))
         self.assertIn('-m pip install --quiet --disable-pip-version-check --no-deps pyubx2==1.3.9', self.log('venv.log'))
         self.assertIn('restart frogdash.service', self.log('systemctl.log'))
+
+    def test_the_can_board_spi_clock_is_raised_once_and_only_that(self):
+        boot = Path(self.env['FROGDASH_BOOT']); boot.mkdir()
+        before = ('dtparam=audio=on\n[all]\n# Frogdash MCP2515\ndtparam=spi=on\n'
+                  'dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=1000000\n')
+        (boot / 'config.txt').write_text(before, newline='\n')
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['CAN board: SPI speed'], ('done', '8 MHz from the next start (was 1 MHz)'))
+        self.assertEqual((boot / 'config.txt').read_text(), before.replace('spimaxfrequency=1000000', 'spimaxfrequency=8000000'))
+        self.assertEqual((boot / 'config.txt.before-frogdash-spi').read_text(), before)
+        self.assertIn('Restart the Pi', said)
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['CAN board: SPI speed'], ('ok', '8 MHz'))
+        # No CAN line, no step: the Pi without the board is left alone.
+        (boot / 'config.txt').write_text('dtparam=audio=on\n', newline='\n')
+        said, status, steps = self.run_setup('offline')
+        self.assertNotIn('CAN board: SPI speed', steps)
 
     def test_cloud_init_the_network_wait_and_bluetooth_are_switched_off_at_start(self):
         # A Trixie card from Raspberry Pi Imager: cloud-init, the network wait and Bluetooth all on.

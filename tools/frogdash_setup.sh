@@ -292,6 +292,29 @@ else
         *) step "Screen and start-up" failed "The screen helper did not finish";;
     esac
 fi
+# --- CAN board: the MCP2515's SPI clock ---
+# 1 MHz suited the old 5 V module behind a level shifter. The Waveshare RS485 CAN HAT sits on
+# the header at 3.3 V; the MCP2515 is rated to 10 MHz. With two receive buffers, a slow read
+# loses frames when the bus is busy: after the HAT went in, every module dropped out for about
+# a second, 227 times on one drive (November 2026). Only the speed in the line is changed.
+CAN_SPI_HZ=${FROGDASH_CAN_SPI_HZ:-8000000}
+BOOT_DIR=${FROGDASH_BOOT:-/boot/firmware}; [ -f "$BOOT_DIR/config.txt" ] || BOOT_DIR=${FROGDASH_BOOT:-/boot}
+can_line=$(grep '^dtoverlay=mcp2515' "$BOOT_DIR/config.txt" 2>/dev/null | head -n 1)
+if [ -n "$can_line" ]; then
+    if printf '%s\n' "$can_line" | grep -q "spimaxfrequency=$CAN_SPI_HZ\(,\|\$\)"; then
+        step "CAN board: SPI speed" ok "$((CAN_SPI_HZ / 1000000)) MHz"
+    elif { [ -f "$BOOT_DIR/config.txt.before-frogdash-spi" ] || cp "$BOOT_DIR/config.txt" "$BOOT_DIR/config.txt.before-frogdash-spi"; } &&
+            awk -v hz="$CAN_SPI_HZ" '/^dtoverlay=mcp2515/ && !done {
+                if ($0 ~ /spimaxfrequency=[0-9]+/) sub(/spimaxfrequency=[0-9]+/, "spimaxfrequency=" hz); else $0 = $0 ",spimaxfrequency=" hz
+                done = 1 } { print }' "$BOOT_DIR/config.txt" > "$BOOT_DIR/config.txt.frogdash-tmp" &&
+            sync && mv "$BOOT_DIR/config.txt.frogdash-tmp" "$BOOT_DIR/config.txt" && sync; then
+        step "CAN board: SPI speed" done "$((CAN_SPI_HZ / 1000000)) MHz from the next start (was $(printf '%s\n' "$can_line" | sed -n 's/.*spimaxfrequency=\([0-9]*\).*/\1/p' | awk '{printf "%g", $1 / 1000000}') MHz)"
+        reboot_note=". Restart the Pi to apply the new boot settings"
+    else
+        rm -f "$BOOT_DIR/config.txt.frogdash-tmp"
+        step "CAN board: SPI speed" failed "Could not change $BOOT_DIR/config.txt"
+    fi
+fi
 # rpi-eeprom-update checks for and applies a bootloader update at every start: 1.2 s of SD
 # card reads while Chromium is reading its own (boot reports, October 2026). The bootloader
 # works as it is; an update can still be applied by hand (sudo rpi-eeprom-update -a).

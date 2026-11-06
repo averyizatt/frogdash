@@ -113,7 +113,7 @@ step "3/9 SPI, I2C and the CAN board"
 if command -v raspi-config >/dev/null 2>&1; then
     run raspi-config nonint do_spi 0; run raspi-config nonint do_i2c 0; ok "SPI and I2C on"
 fi
-overlay="dtoverlay=mcp2515-can0,oscillator=$oscillator,interrupt=$interrupt,spimaxfrequency=1000000"
+overlay="dtoverlay=mcp2515-can0,oscillator=$oscillator,interrupt=$interrupt,spimaxfrequency=8000000"
 if grep -qx "$overlay" $BOOT/config.txt; then
     ok "MCP2515 overlay already set ($oscillator Hz crystal, interrupt GPIO $interrupt)"
 elif grep -q '^#*dtoverlay=mcp2515' $BOOT/config.txt; then
