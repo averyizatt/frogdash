@@ -21,14 +21,47 @@
 .lv-file span:first-child { font-weight:800; }
 .lv-live { color:var(--accent); font-weight:800; font-size:14px; }
 
-/* One log: the graph takes the room; the channels sit beside it. */
+/* One log: six ways to see it, one at a time. */
+.lv-modes { display:flex; gap:0; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+.lv-toolbar .lv-modes button { border:0; border-radius:0; border-right:1px solid var(--line); background:transparent; color:var(--muted); }
+.lv-toolbar .lv-modes button:last-child { border-right:0; }
+.lv-toolbar .lv-modes button[aria-pressed="true"] { background:var(--accent); color:#071014; }
+.lv-mode { flex:1; min-height:0; display:flex; flex-direction:column; gap:6px; }
+.lv-mode[hidden] { display:none; }
+.lv-tools { gap:6px; font-size:14px; }
+.lv-tools label { display:flex; align-items:center; gap:6px; color:var(--muted); white-space:nowrap; }
+.lv-toolbar select, .driver-panel .lv-toolbar select { width:auto; max-width:230px; min-height:38px; padding:0 8px; font-size:14px; }
+.lv-tools input[type="text"], .lv-calc input { min-height:38px; box-sizing:border-box; padding:0 10px; font-size:14px; background:#0a1116; color:var(--text); border:1px solid #536d7a; border-radius:7px; }
+.lv-tools input[type="text"] { width:150px; }
+.lv-tools #lv-cond { width:340px; }
+.lv-filter input[type="text"] { width:230px; }
+.lv-toolbar button[aria-pressed="true"] { background:color-mix(in srgb,var(--accent) 30%,var(--raised)); border-color:var(--accent); }
+.lv-toolbar button:disabled, .lv-toolbar select:disabled { opacity:.5; }
+
+/* Graph: the graph takes the room; the channels sit beside it. */
 .lv-body { flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 470px; gap:10px; }
 .lv-graph { display:flex; flex-direction:column; gap:4px; min-height:0; min-width:0; }
-.lv-plot { flex:1; min-height:0; position:relative; overflow:hidden; border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb,var(--surface) 70%,transparent); outline:none; }
+.lv-plot { flex:1; min-height:0; position:relative; overflow:hidden; display:flex; flex-direction:column; border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb,var(--surface) 70%,transparent); outline:none; }
+.lv-pane { flex:1 1 0; min-height:0; position:relative; overflow:hidden; }
+.lv-pane > .uplot { position:absolute; inset:0; }
+.lv-stacked .lv-pane + .lv-pane { border-top:1px solid var(--line); }
 .lv-plot:focus-visible, .lv-plot.wheel-editing { box-shadow:0 0 0 2px var(--accent); }
 .lv-plot .u-select { background:color-mix(in srgb,var(--accent) 25%,transparent); }
 .lv-graph .control-note { margin:0; flex:none; }
 .lv-side { display:flex; flex-direction:column; gap:6px; min-height:0; }
+.lv-side-list { flex:1; min-height:0; display:flex; flex-direction:column; gap:6px; }
+.lv-side-list[hidden], .lv-calc[hidden] { display:none; }
+.lv-side-tools { display:flex; gap:6px; flex:none; }
+.lv-side-tools select, .driver-panel .lv-side-tools select { flex:1; min-height:36px; font-size:14px; padding:0 8px; }
+.lv-side-tools button, #lv-new-calc, .lv-calc button, .lv-scroll button, .lv-mode .control-note button { min-height:36px; padding:0 12px; border:1px solid var(--line); border-radius:8px; background:var(--raised); color:var(--text); font:inherit; font-size:14px; font-weight:700; }
+.lv-calc { flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding:8px; border:1px solid var(--line); border-radius:8px; }
+.lv-calc label { display:flex; flex-direction:column; gap:3px; font-size:13px; color:var(--muted); }
+.lv-calc-row { display:grid; grid-template-columns:minmax(0,1fr) 110px; gap:8px; }
+.lv-calc input { width:100%; }
+.lv-calc select, .driver-panel .lv-calc select { min-height:36px; font-size:14px; }
+.lv-examples { display:flex; flex-wrap:wrap; gap:6px; }
+.lv-examples button { min-height:30px; font-size:13px; font-weight:400; }
+.lv-with-a .lv-channel { grid-template-columns:minmax(0,1fr) 58px 58px 46px 46px 46px; }
 .lv-side input[type="search"] { min-height:36px; font-size:15px; padding:0 10px; box-sizing:border-box; width:100%; }
 .lv-channels { flex:1; min-height:0; overflow-y:auto; border:1px solid var(--line); border-radius:8px; }
 .lv-channel { display:grid; grid-template-columns:minmax(0,1fr) 62px 50px 50px 50px; align-items:center; gap:4px; width:100%; min-height:34px;
@@ -45,6 +78,43 @@
 .lv-swatch { flex:none; width:11px; height:11px; border-radius:3px; border:1px solid var(--line); box-sizing:border-box; }
 .lv-channel[aria-pressed="true"] .lv-swatch { border:0; }
 .lv-group { margin:0; padding:8px 11px 3px; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); position:sticky; top:0; background:var(--surface); }
+/* Scatter and Track: a canvas filling the room, with a reading of the point under the pointer. */
+.lv-canvas { flex:1; min-height:0; position:relative; overflow:hidden; border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb,var(--surface) 70%,transparent); }
+.lv-canvas canvas { position:absolute; inset:0; cursor:crosshair; }
+.lv-readout { position:absolute; top:8px; right:100px; max-width:60%; padding:4px 8px; border-radius:6px; background:color-mix(in srgb,var(--surface) 85%,transparent); color:var(--text); font-size:14px; pointer-events:none; font-variant-numeric:tabular-nums; }
+.lv-readout:empty { display:none; }
+
+/* Table, Data and Summary: scrolling tables. */
+.lv-scroll { flex:1; min-height:0; overflow:auto; border:1px solid var(--line); border-radius:8px; outline:none; }
+.lv-scroll table { border-collapse:collapse; font-variant-numeric:tabular-nums; font-size:14px; }
+.lv-scroll th, .lv-scroll td { font-size:14px; font-weight:400; padding:0 8px; height:30px; white-space:nowrap; border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent); }
+.lv-scroll thead th { position:sticky; top:0; z-index:1; background:var(--surface); color:var(--muted); font-size:13px; font-weight:800; }
+.lv-scroll th small, .lv-scroll td small { color:var(--muted); font-weight:400; }
+.lv-hist { margin:0 auto; }
+.lv-hist td { min-width:44px; text-align:center; color:#fff; cursor:pointer; border:1px solid color-mix(in srgb,var(--line) 50%,transparent); }
+.lv-hist tbody th { position:sticky; left:0; background:var(--surface); color:var(--muted); text-align:right; }
+.lv-hist .lv-corner { left:0; z-index:2; text-align:left; color:var(--text); }
+.lv-hist td.lv-at { outline:2px solid #fff; outline-offset:-2px; }
+.lv-hist td.lv-chosen { outline:3px solid var(--accent); outline-offset:-3px; }
+.lv-rows-table { width:100%; }
+.lv-rows-table td { text-align:right; }
+.lv-rows-table thead th { text-align:right; }
+.lv-rows-table .lv-time { text-align:left; color:var(--muted); font-weight:400; }
+.lv-rows-table tbody tr { cursor:pointer; }
+.lv-rows-table tbody tr:hover { background:color-mix(in srgb,var(--accent) 10%,transparent); }
+.lv-rows-table tr.lv-chosen { background:color-mix(in srgb,var(--accent) 25%,transparent); }
+#lv-summary { padding:0 12px 12px; }
+#lv-summary .lv-group { position:static; padding:14px 0 6px; background:none; }
+.lv-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px; }
+.lv-card { display:flex; flex-direction:column; gap:3px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb,var(--raised) 50%,transparent); }
+.lv-card h5 { margin:0; font-size:13px; color:var(--muted); font-weight:700; }
+.lv-card strong { font-size:24px; font-variant-numeric:tabular-nums; }
+.lv-card small { color:var(--muted); font-size:13px; flex:1; }
+.lv-card button { align-self:flex-start; min-height:32px; margin-top:4px; }
+.lv-stats { width:100%; }
+.lv-stats tbody th { text-align:left; font-weight:700; }
+.lv-stats td { text-align:right; }
+.lv-stats td button { min-height:28px; padding:0 8px; font-variant-numeric:tabular-nums; }
 @media (max-width:1200px) {
   .lv-body { grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) 220px; }
   .lv-file { grid-template-columns:1.4fr 1fr 1fr 1fr; font-size:15px; }

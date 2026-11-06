@@ -350,16 +350,18 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def log_series(request):
         path = viewed_log(request)
-        names = [n for n in request.query.get('channels', '').split(',') if n][:16]
+        names = [n for n in request.query.get('channels', '').split(',') if n][:24]
         try:
             start = float(request.query['start']) if request.query.get('start') else None
             end = float(request.query['end']) if request.query.get('end') else None
             points = int(request.query.get('points', 2000))
         except ValueError:
             raise web.HTTPBadRequest(text='start, end and points are numbers')
+        # mode=sample: whole rows, for the scatter plot, the tables and the track.
+        read = 'samples' if request.query.get('mode') == 'sample' else 'series'
         try:
             log = await asyncio.to_thread(log_cache.open, path)
-            series = await asyncio.to_thread(log.series, names, start, end, points)
+            series = await asyncio.to_thread(getattr(log, read), names, start, end, points)
             series['stats'] = await asyncio.to_thread(log.stats, names, start, end)
         except (OSError, LogError) as exc:
             raise web.HTTPUnprocessableEntity(text=str(exc))

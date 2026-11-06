@@ -92,28 +92,81 @@ still need to be checked on the target installations.
 
 ## Log viewer on the dash
 
-**Drive workspace → Log viewer** shows any of these logs as a graph, MegaLogViewer style, without
-copying them anywhere:
+**Drive workspace → Log viewer** shows any of these logs MegaLogViewer style, without copying
+them anywhere. First the logs: one row each, newest first, with its day, start time, length and
+size (the one being recorded says so). Tap one to open it; **‹ Logs** goes back. An open log has
+six views, chosen at the top right:
 
-- **First the logs**: one row each, newest first, with its day, start time, length and size (the
-  one being recorded says so). Tap one to open it; **‹ Logs** goes back.
-- **One graph** of the channels chosen, each on its own scale (the first two have theirs drawn).
+**Graph**
+- The channels chosen, each on its own scale: on **one graph**, or **Stacked**, a strip each on
+  one time line. Scales fit the time on screen, or **the whole log** (they then stay put while
+  zooming).
 - **The channels beside it**: every channel in the log, the ones on the graph first, then the
   rest by group. Tap one to put it on the graph or take it off (up to eight); the search box
   finds one by name. The choice is kept for the next log.
+- **Layouts…**: ready-made sets (Fueling, Boost, Ignition, Temperatures and pressures,
+  Water/meth, Driving), and **Save** keeps the channels on the graph as one of your own.
+  **Clear** takes them all off.
 - **The cursor**: each channel on the graph shows its value at that moment, beside its lowest,
-  average and highest over the time on the screen.
+  average and highest over the time on screen. Off the graph the cursor stays where it was.
+- **Mark A**: tap the graph (without dragging) to put A there. Each channel then shows its
+  change from A, and the bar says how long from A the cursor is. **Clear A** takes it away.
 - **Zoom**: drag across the graph, or Zoom in / Zoom out, ◀ ▶ to go earlier or later, Whole log.
   With the steering wheel or the arrow keys: highlight the graph, press ON, then left/right move
   in time and up/down zoom; ON again to leave.
+- **Play** runs the cursor through the drive at 1× to 32×, with the graph following it.
+- **Find**: type a condition, e.g. `RPM > 6000 and AFR > 13`, and **Find ▶ / ◀ Find** jump to
+  each time it comes true ("3 of 12").
 - **Marks**: each bookmark (B, from the log's Bookmark ID channel) and the drive's alerts and
-  bookmarks, as dashed lines across the graph.
-- Readings that were not live (a sensor with no signal) are gaps, not zeros.
+  bookmarks are dashed lines across the graph; **Marks…** jumps to one.
+- **+ Calculated field**: a channel worked out from others, e.g. `[AFR] - [AFR Target 1]`, with
+  a name and units. One tap fills in an example: AFR error, Lambda, Boost from baro, Injector
+  duty. Calculated fields can be graphed and used in every view, and are kept for every log
+  that has the channels they use.
 
-The Pi reads only the channels and the time on screen. A long stretch is thinned to each part's
-lowest and highest value, so a spike is never lost when the whole drive is shown; zooming in
-reads every sample again. (`hardware/frogdash/logview.py`, `hardware/ui/mlgplot.js`.) The live
-preview has simulated drives to try it on.
+**Scatter**: one channel across, one up, coloured by a third (RPM, MAP and AFR to start with).
+Point at a dot to read it; tap it to see that moment on the graph.
+
+**Table**: a third channel in cells of two others, like a VE table. A cell shows the average,
+lowest or highest value, the number of samples, or the time spent there. Columns and rows are 12
+round values across what the log reached; type another number, or the values themselves
+(`500, 1000, 1500, …`) to match your own table. The graph cursor's cell is outlined. Tap a cell
+for its samples, time, lowest and highest, and to see the first time on the graph.
+
+**Data**: the rows themselves for the time on the graph, of the channels on it (every row once
+zoomed in far enough). Tap a row to choose it; **Show the chosen row on the graph**.
+
+**Track**: the GPS position (the dead-reckoned position if the GPS had none), coloured by a
+channel, with a scale bar. Green is the start, red the end, white the graph cursor, yellow A.
+Tap the line to see that moment on the graph.
+
+**Summary**: the drive's peaks, each with **Show** to open the graph there:
+- the drive's length and distance, top speed, highest RPM, peak boost (and its RPM);
+- time at wide open throttle and in boost;
+- lean moments under boost, hottest coolant and intake air;
+- lowest oil pressure above 2500 RPM, lowest battery while running;
+- water/meth spraying, bookmarks and alerts.
+
+Below the peaks, every main channel's lowest, average and highest for the whole log, with when
+the lowest and highest were.
+
+**Only when**: Scatter and Table can take only the rows where a condition holds: a warm engine,
+under boost, wide open, cruising, or your own (`[CLT] > 160 and [TPS] > 50`). Scatter, Table and
+Track can show the whole log or only the time on the graph.
+
+**Formulas** (calculated fields, Find, Only when): channels go in `[brackets]`, or bare if the
+name has no spaces (`RPM`). They can use numbers, `+ - * / % ^` and `> < >= <= == !=`, `and or
+not`, and `abs min max sqrt round floor ceil log exp if(test, then, else)`. A formula is read,
+never run as code.
+
+Readings that were not live (a sensor with no signal) are gaps, not zeros.
+
+The Pi reads only the channels and the time asked for. For the graph, a long stretch is thinned
+to each part's lowest and highest value, so a spike is never lost when the whole drive is shown;
+zooming in reads every sample again. Where one channel is paired with another (Scatter, Table,
+Track, calculated fields, Find), whole rows are read: every row, or every nth of a long log, up
+to 20,000. The Summary's lowest and highest come from every row. (`hardware/frogdash/logview.py`,
+`hardware/ui/mlgplot.js`.) The live preview has four simulated drives to try it on.
 
 ## Channels and compatibility
 

@@ -8,7 +8,9 @@ the same as hardware/frogdash/mlg.py writes and tools/inspect_mlg.py checks.
 
 A long range is thinned for the screen: each stretch of samples becomes its lowest and its
 highest value, so a spike is never lost when the whole drive is shown (MegaLogViewer does
-the same). Non-live readings are NaN in the log and come back as gaps (None).
+the same). Non-live readings are NaN in the log and come back as gaps (None). What pairs one
+channel with another (a scatter plot, a table, the GPS track) is read as whole rows instead,
+every nth row of a long log (samples).
 """
 from array import array
 from bisect import bisect_left, bisect_right
@@ -21,6 +23,7 @@ import struct
 FORMATS = {0: 'B', 1: 'b', 2: 'H', 3: 'h', 4: 'I', 5: 'i', 6: 'q', 7: 'f', 10: 'B', 11: 'H', 12: 'I'}
 MARKER_BYTES = 53          # A marker block after its type byte: counter, timestamp, 50 bytes of text
 MAX_POINTS = 4000
+SAMPLE_POINTS = 20000      # Whole rows for the scatter plot, the tables and the track
 # Recorder bookkeeping and each channel's quality flag: in the file, not worth a graph.
 HIDDEN_CATEGORIES = {'Quality', 'Recorder'}
 
@@ -166,15 +169,20 @@ class Log:
                 'markers': [{'t': round(times[min(row, self.rows - 1)] - times[0], 3), 'text': message}
                             for row, message in self.markers if self.rows] + self.bookmarks()}
 
-    def series(self, names, start=None, end=None, points=2000):
-        """Time (seconds from the start) and each channel between start and end, at most about
-        `points` samples: thinned to each stretch's lowest and highest value."""
+    def span(self, start=None, end=None):
+        """The log's times, its first time, and the rows from start to end (seconds from the start)."""
         times = self.times()
-        if not self.rows:
-            return {'t': [], 'series': {name: [] for name in names}, 'thinned': False}
         origin = times[0]
         lo = bisect_left(times, origin + start) if start is not None else 0
         hi = bisect_right(times, origin + end) if end is not None else self.rows
+        return times, origin, lo, hi
+
+    def series(self, names, start=None, end=None, points=2000):
+        """Time (seconds from the start) and each channel between start and end, at most about
+        `points` samples: thinned to each stretch's lowest and highest value."""
+        if not self.rows:
+            return {'t': [], 'series': {name: [] for name in names}, 'thinned': False}
+        times, origin, lo, hi = self.span(start, end)
         lo, hi = max(0, lo - 1), min(self.rows, hi + 1)          # One beyond each edge: lines reach the sides
         columns = [self.column(name) for name in names]
         points = max(10, min(int(points), MAX_POINTS))
@@ -195,18 +203,40 @@ class Log:
                 series[name] += [round(min(values), 4), round(max(values), 4)] if values else [None, None]
         return {'t': t, 'series': series, 'thinned': True}
 
+    def samples(self, names, start=None, end=None, points=SAMPLE_POINTS):
+        """Whole rows, every channel from the same moments: every row, or every nth when there
+        are more than `points`. For what pairs one channel with another (the scatter plot, the
+        tables, the track, calculated fields), where the thinned lowest and highest would not."""
+        if not self.rows:
+            return {'t': [], 'series': {name: [] for name in names}, 'step': 1}
+        times, origin, lo, hi = self.span(start, end)
+        points = max(10, min(int(points), SAMPLE_POINTS))
+        step = max(1, -(-(hi - lo) // points))
+        clean = lambda v: None if math.isnan(v) or math.isinf(v) else round(v, 4)
+        return {'t': [round(v - origin, 3) for v in times[lo:hi:step]],
+                'series': {name: [clean(v) for v in self.column(name)[lo:hi:step]] for name in names}, 'step': step}
+
     def stats(self, names, start=None, end=None):
-        """Lowest, average and highest of each channel in a range, from every sample."""
-        times = self.times()
+        """Lowest, average and highest of each channel in a range, from every sample, and when
+        the lowest and the highest were (the first time, in seconds from the start)."""
         if not self.rows:
             return {}
-        origin = times[0]
-        lo = bisect_left(times, origin + start) if start is not None else 0
-        hi = bisect_right(times, origin + end) if end is not None else self.rows
+        times, origin, lo, hi = self.span(start, end)
         result = {}
         for name in names:
-            values = [v for v in self.column(name)[lo:hi] if not math.isnan(v) and not math.isinf(v)]
-            result[name] = {'min': round(min(values), 4), 'avg': round(sum(values) / len(values), 4), 'max': round(max(values), 4)} if values else None
+            column, low, high, total, count = self.column(name), None, None, 0.0, 0
+            for index in range(lo, hi):
+                v = column[index]
+                if math.isnan(v) or math.isinf(v):
+                    continue
+                total += v
+                count += 1
+                if low is None or v < column[low]:
+                    low = index
+                if high is None or v > column[high]:
+                    high = index
+            result[name] = {'min': round(column[low], 4), 'avg': round(total / count, 4), 'max': round(column[high], 4),
+                            'min_t': round(times[low] - origin, 3), 'max_t': round(times[high] - origin, 3)} if count else None
         return result
 
 
