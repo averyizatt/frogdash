@@ -92,27 +92,28 @@ still need to be checked on the target installations.
 
 ## Log viewer on the dash
 
-**Drive workspace → Log viewer** shows any of these logs as graphs, MegaLogViewer style, without
+**Drive workspace → Log viewer** shows any of these logs as a graph, MegaLogViewer style, without
 copying them anywhere:
 
-- **Pick a log** from the list (newest first, with its size; the one being recorded says so and
-  Refresh brings in its newest minutes).
-- **Up to four stacked graphs on one time line**, each with up to four channels, every channel on
-  its own scale. **+ Channel** adds one from the log's channels (grouped like MegaLogViewer's);
-  a channel's chip removes it; **+ Graph** and **Remove graph** change the graphs. The choice is
-  kept for the next time.
-- **The cursor**: the values of every channel at one moment, beside each channel's lowest,
+- **First the logs**: one row each, newest first, with its day, start time, length and size (the
+  one being recorded says so). Tap one to open it; **‹ Logs** goes back.
+- **One graph** of the channels chosen, each on its own scale (the first two have theirs drawn).
+- **The channels beside it**: every channel in the log, the ones on the graph first, then the
+  rest by group. Tap one to put it on the graph or take it off (up to eight); the search box
+  finds one by name. The choice is kept for the next log.
+- **The cursor**: each channel on the graph shows its value at that moment, beside its lowest,
   average and highest over the time on the screen.
-- **Zoom**: drag across a graph, or Zoom in / Zoom out, ◀ ▶ to go earlier or later, Whole log.
-  With the steering wheel or the arrow keys: highlight the graphs, press ON, then left/right move
+- **Zoom**: drag across the graph, or Zoom in / Zoom out, ◀ ▶ to go earlier or later, Whole log.
+  With the steering wheel or the arrow keys: highlight the graph, press ON, then left/right move
   in time and up/down zoom; ON again to leave.
 - **Marks**: each bookmark (B, from the log's Bookmark ID channel) and the drive's alerts and
-  bookmarks, as dashed lines across the graphs.
+  bookmarks, as dashed lines across the graph.
 - Readings that were not live (a sensor with no signal) are gaps, not zeros.
 
 The Pi reads only the channels and the time on screen. A long stretch is thinned to each part's
 lowest and highest value, so a spike is never lost when the whole drive is shown; zooming in
-reads every sample again. (`hardware/frogdash/logview.py`, `hardware/ui/mlgplot.js`.)
+reads every sample again. (`hardware/frogdash/logview.py`, `hardware/ui/mlgplot.js`.) The live
+preview has simulated drives to try it on.
 
 ## Channels and compatibility
 

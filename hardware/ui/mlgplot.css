@@ -1,30 +1,52 @@
-/* Log viewer (mlgplot.js): stacked graphs over one time line, the values under them. */
+/* Log viewer (mlgplot.js): the list of logs, then one log as a graph with its channels beside it. */
 #log-viewer { height:100%; min-height:0; }
-.logview { display:flex; flex-direction:column; gap:8px; height:100%; min-height:0; }
+.logview { height:100%; min-height:0; }
+.lv-browser, .lv-viewer { display:flex; flex-direction:column; gap:8px; height:100%; min-height:0; }
+.lv-browser[hidden], .lv-viewer[hidden] { display:none; }
 .lv-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; flex:none; }
-.lv-toolbar select { width:auto; min-width:240px; max-width:380px; min-height:38px; font-size:16px; }
-/* The graphs take the height; the values sit beside them, as in MegaLogViewer. */
-.lv-body { flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 450px; gap:10px; }
-.lv-side { display:flex; flex-direction:column; gap:6px; min-height:0; }
+.lv-toolbar h3 { margin:0; font-size:18px; }
 .lv-toolbar button { min-height:38px; padding:0 14px; border:1px solid var(--line); border-radius:8px; background:var(--raised); color:var(--text); font-weight:700; }
-.lv-toolbar button:disabled { opacity:.45; }
+.lv-title { font-size:16px; }
 .lv-gap { flex:1; }
-.lv-range { min-width:150px; color:var(--muted); font-variant-numeric:tabular-nums; text-align:right; }
-.lv-panes { min-height:0; display:flex; flex-direction:column; gap:6px; outline:none; }
-.lv-panes:focus-visible { box-shadow:0 0 0 2px var(--accent); border-radius:8px; }
-.lv-pane { flex:1 1 0; min-height:0; display:flex; flex-direction:column; border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb,var(--surface) 70%,transparent); }
-.lv-pane header { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:3px 6px; flex:none; }
-.lv-chip { display:inline-flex; align-items:center; gap:6px; min-height:26px; padding:0 9px; font-size:13px; border:1px solid var(--chip); border-radius:14px; background:transparent; color:var(--chip); font-weight:700; }
-.lv-chip small { color:var(--muted); font-weight:600; }
-.lv-chip b { color:var(--muted); }
-.lv-add { width:auto; min-height:26px; max-width:200px; font-size:13px; }
-.lv-remove { margin-left:auto; min-height:26px; font-size:13px; padding:0 10px; border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--muted); }
-.lv-plot { flex:1; min-height:0; position:relative; overflow:hidden; }
+.lv-range { color:var(--muted); font-variant-numeric:tabular-nums; }
+
+/* The list of logs: one row each, newest first. */
+.lv-files { flex:1; min-height:0; overflow-y:auto; border:1px solid var(--line); border-radius:8px; }
+.lv-file { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); align-items:center; gap:12px;
+  width:100%; min-height:54px; padding:0 18px; border:0; border-bottom:1px solid var(--line); background:transparent; color:var(--text);
+  font:inherit; font-size:17px; text-align:left; cursor:pointer; font-variant-numeric:tabular-nums; }
+.lv-file:hover, .lv-file:focus-visible { background:color-mix(in srgb,var(--accent) 12%,transparent); outline:none; }
+.lv-file-head { min-height:34px; position:sticky; top:0; z-index:1; background:var(--surface); color:var(--muted); font-size:13px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; cursor:default; }
+.lv-file-head:hover { background:var(--surface); }
+.lv-file span:first-child { font-weight:800; }
+.lv-live { color:var(--accent); font-weight:800; font-size:14px; }
+
+/* One log: the graph takes the room; the channels sit beside it. */
+.lv-body { flex:1; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) 470px; gap:10px; }
+.lv-graph { display:flex; flex-direction:column; gap:4px; min-height:0; min-width:0; }
+.lv-plot { flex:1; min-height:0; position:relative; overflow:hidden; border:1px solid var(--line); border-radius:8px; background:color-mix(in srgb,var(--surface) 70%,transparent); outline:none; }
+.lv-plot:focus-visible, .lv-plot.wheel-editing { box-shadow:0 0 0 2px var(--accent); }
 .lv-plot .u-select { background:color-mix(in srgb,var(--accent) 25%,transparent); }
-.lv-stats { flex:1; min-height:0; overflow:auto; border:1px solid var(--line); border-radius:8px; }
-.lv-stats table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
-.lv-stats th, .lv-stats td { padding:5px 8px; font-size:14px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; }
-.lv-stats th:first-child, .lv-stats td:first-child { text-align:left; max-width:190px; overflow:hidden; text-overflow:ellipsis; }
-.lv-stats th { position:sticky; top:0; background:var(--surface); color:var(--muted); font-size:13px; }
-.lv-swatch { display:inline-block; width:10px; height:10px; margin-right:8px; border-radius:2px; vertical-align:middle; }
-@media (max-width:1200px) { .lv-body { grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) 160px; } }
+.lv-graph .control-note { margin:0; flex:none; }
+.lv-side { display:flex; flex-direction:column; gap:6px; min-height:0; }
+.lv-side input[type="search"] { min-height:36px; font-size:15px; padding:0 10px; box-sizing:border-box; width:100%; }
+.lv-channels { flex:1; min-height:0; overflow-y:auto; border:1px solid var(--line); border-radius:8px; }
+.lv-channel { display:grid; grid-template-columns:minmax(0,1fr) 62px 50px 50px 50px; align-items:center; gap:4px; width:100%; min-height:34px;
+  padding:0 10px; border:0; border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent); background:transparent; color:var(--muted);
+  font:inherit; font-size:14px; text-align:right; cursor:pointer; font-variant-numeric:tabular-nums; }
+.lv-channel[aria-pressed="true"] { color:var(--text); background:color-mix(in srgb,var(--raised) 70%,transparent); }
+.lv-channel:hover, .lv-channel:focus-visible { background:color-mix(in srgb,var(--accent) 12%,transparent); outline:none; }
+.lv-channel-head { min-height:26px; border:0; cursor:default; color:var(--muted); font-size:12px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; padding:0 11px; }
+.lv-channel-head:hover { background:transparent; }
+.lv-name { display:flex; align-items:center; gap:7px; min-width:0; text-align:left; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.lv-name > span { overflow:hidden; text-overflow:ellipsis; }
+.lv-name small { color:var(--muted); flex:none; }
+.lv-channel b { color:var(--text); font-size:15px; }
+.lv-swatch { flex:none; width:11px; height:11px; border-radius:3px; border:1px solid var(--line); box-sizing:border-box; }
+.lv-channel[aria-pressed="true"] .lv-swatch { border:0; }
+.lv-group { margin:0; padding:8px 11px 3px; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); position:sticky; top:0; background:var(--surface); }
+@media (max-width:1200px) {
+  .lv-body { grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) 220px; }
+  .lv-file { grid-template-columns:1.4fr 1fr 1fr 1fr; font-size:15px; }
+  .lv-file > span:last-child { display:none; }
+}
