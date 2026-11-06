@@ -15,6 +15,11 @@ shown on the dash under **Knock**. The page works with both controllers:
 The dash finds out by itself which one is fitted. With the Nano, the parts it cannot
 send say so and the rest works as before.
 
+**Off on the Nano for now** (November 2026, to free its flash and RAM): the Nano
+firmware is built without knock listening, reports knock as *Disabled*, and refuses
+knock settings. Building it with `-DNANO_KNOCK=1` (in `platformio.ini`) brings it back
+as described here. The ESP32 board is not affected.
+
 ## The page
 
 **LIVE** and **SETTINGS** are at the top right. From Controls → Knock monitor,
