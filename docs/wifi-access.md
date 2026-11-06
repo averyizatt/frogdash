@@ -13,8 +13,8 @@ own autoconnect off so only the keeper decides.
 
 ## Terminal tab
 
-**Dash management > Terminal**, with `--terminal` in `FROGDASH_ARGS`
-(`/etc/default/frogdash`). After one **Update now** the helper is installed and the tab
+**Dash management > Terminal**, with a `--terminal` line in `config/frogdash-options`
+(on since November 2026). After one **Update now** the helper is installed and the tab
 is a live shell as the screen user (`tools/frogdash_terminal.py`): `sudo` works, and a
 prompt (a Wi-Fi password from `nmcli --ask`, a yes/no) waits for the answer. Tick
 **Hide typing** before entering a password. **Ctrl+C** stops what is running; **New

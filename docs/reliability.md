@@ -165,9 +165,10 @@ updater runs the script and does nothing else). That covers an update installed 
 older updater.
 
 Still by hand, because they are choices or need a password, not requirements of an
-update: the first install of the Pi, options in `/etc/default/frogdash` (`--terminal`,
-`--camera`, `--dashcam`), the dash cam's Wi-Fi profile, the time zone, and flashing the
-ESP32 and the Nano.
+update: the first install of the Pi, the dash cam's Wi-Fi profile, the time zone, and
+flashing the ESP32 and the Nano. The dash's options (`--terminal`, `--camera`,
+`--dashcam` ...) are not among them since November 2026: they are the list in
+`config/frogdash-options`, applied by every update (step *Dash options*).
 
 The Pi needs internet on its built-in Wi-Fi. Join a network from the dash:
 **Controls → Wi-Fi → Internet (for updates)**: Scan, pick the network, type the

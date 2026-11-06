@@ -190,7 +190,7 @@ class GPS:
                     'fix': 'sudo systemctl status gpsd; check python3-gps is installed'}
         if self.device_fixed and now - self.other_seen <= QUIET_S and now - self.device_seen > QUIET_S:
             return {'state': 'silent', 'text': f'gpsd hears a receiver at {self.other_device}, but the dash is set to use only {self.device}',
-                    'fix': 'Remove --gps-device from FROGDASH_ARGS in /etc/default/frogdash (the dash then follows the receiver), and restart frogdash'}
+                    'fix': 'Remove the --gps-device line from config/frogdash-options (the dash then follows the receiver); it applies at the next Update now'}
         if now - self.report_seen > QUIET_S:
             if self.started is not None and now - self.started <= QUIET_S:
                 return {'state': 'starting', 'text': 'Waiting for the receiver to report', 'fix': ''}

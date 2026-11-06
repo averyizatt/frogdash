@@ -62,8 +62,9 @@ sudo nmcli con modify dashcam ipv4.never-default yes ipv6.method ignore ipv4.dhc
 sudo apt install -y ffmpeg
 ```
 
-Add `--dashcam` to `FROGDASH_ARGS` in `/etc/default/frogdash` and restart
-`frogdash.service`. A **Dashcam** button appears next to Mark log. Options:
+Turn it on with a `--dashcam` line in `config/frogdash-options` (the `#` in front of
+it taken away); the next **Update now** applies it. A **Dashcam** button appears next to
+Mark log. Options, each on its own line after it:
 `--dashcam-host` (default `192.168.169.1`) and `--dashcam-width` (default 1280; the
 stream is scaled down to this). Close the phone app while using the dash view: the
 camera serves one viewer at a time.

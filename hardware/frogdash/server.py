@@ -1051,7 +1051,8 @@ def create_app(state, adapter=None, connectivity=None):
     return app
 
 
-def main():
+def arguments():
+    """The dash's options. Setup checks config/frogdash-options against these before using them."""
     parser = argparse.ArgumentParser(description="Frogdash CAN dashboard with optional USB GPS broadcast")
     parser.add_argument("--interface", default="can0")
     parser.add_argument("--port", type=int, default=8080)
@@ -1083,7 +1084,14 @@ def main():
     parser.add_argument('--dashcam-width', type=int, default=1280, help='Displayed width; the stream is scaled down to this (default 1280)')
     parser.add_argument('--camera-keep-warm', action='store_true', help='Keep the camera running between views for instant display')
     parser.add_argument('--backlight-name', help='Explicit Linux /sys/class/backlight device; requires write permission')
-    args = parser.parse_args()
+    return parser
+
+
+def options(argv=None):
+    """The options, with the combinations that cannot work refused: (args, parser).
+    tools/frogdash_setup.sh runs this on config/frogdash-options before using them."""
+    parser = arguments()
+    args = parser.parse_args(argv)
     if args.loop and not args.replay:
         parser.error("--loop requires --replay")
     if args.replay and args.gpsd:
@@ -1092,6 +1100,13 @@ def main():
         parser.error('--hotspot-socket cannot be combined with replay')
     if (args.gps_device or args.gps_no_transmit) and not args.gpsd:
         parser.error("GPS options require --gpsd")
+    if (args.camera_keep_warm or args.camera_size != '1024x768' or args.camera_quality != 'high' or args.camera_fps != 30 or args.camera_rotate) and not args.camera:
+        parser.error('Camera options require --camera')
+    return args, parser
+
+
+def main():
+    args, parser = options()
     state = State("replay" if args.replay else "socketcan")
     state.terminal_enabled = args.terminal and not args.replay
     if args.no_engine_runtime:
@@ -1120,8 +1135,6 @@ def main():
         except ValueError as exc:
             parser.error(str(exc))
         state.recorder = Recorder(state, config)
-    if (args.camera_keep_warm or args.camera_size != '1024x768' or args.camera_quality != 'high' or args.camera_fps != 30 or args.camera_rotate) and not args.camera:
-        parser.error('Camera options require --camera')
     if args.dashcam:
         from .dashcam import Dashcam
         try:

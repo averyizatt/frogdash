@@ -1,0 +1,17 @@
+# The options the dash runs with, one per line (a value goes after a space).
+# Every Update now puts exactly these into FROGDASH_ARGS in /etc/default/frogdash and
+# restarts the dash if they changed (tools/frogdash_setup.sh, step "Dash options"):
+# nothing has to be typed on the Pi. They are checked first; a list the dash would
+# refuse is not used, and System check names the problem.
+# Turn one off by deleting its line or putting # in front. All of them:
+#   python -m hardware.frogdash.server --help
+--interface can0
+--gpsd
+--log-dir /var/lib/frogdash/logs
+# The Terminal tab under Dash management, with sudo (November 2026, the owner's choice).
+--terminal
+# Reverse camera on the Pi's camera connector (docs/reverse-camera.md); its own options
+# (--camera-rotate 180, --camera-keep-warm ...) go on lines after it.
+# --camera
+# Wi-Fi dash cam view (docs/dashcam.md).
+# --dashcam

@@ -15,16 +15,11 @@ The supplied systemd service and `config/frogdash.env` enable recording at start
 FROGDASH_ARGS="--interface can0 --gpsd --log-dir /var/lib/frogdash/logs"
 ```
 
-After installing this checkout at `/opt/frogdash`, update both the unit and your
-environment file, preserving any GPS/ownership settings you already use:
-
-```sh
-sudo cp hardware/systemd/frogdash.service /etc/systemd/system/
-sudo nano /etc/default/frogdash
-sudo systemctl daemon-reload
-sudo systemctl restart frogdash
-curl http://127.0.0.1:8080/health
-```
+The options the dash runs with are the list in `config/frogdash-options`: every
+**Update now** writes them into `FROGDASH_ARGS` in `/etc/default/frogdash` and restarts
+the dash if they changed, after checking that the dash takes them (step *Dash options*
+in System check). Change recording there, for example a `--log-hz 50` line; nothing is
+typed on the Pi.
 
 `StateDirectory=frogdash` gives the service a writable persistent directory under
 its existing sandbox. Recording runs inside the Frogdash daemon, independently

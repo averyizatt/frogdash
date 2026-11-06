@@ -401,6 +401,38 @@ if [ -d "$CLOUD" ]; then
     fi
 fi
 
+# --- Dash options: config/frogdash-options becomes FROGDASH_ARGS, after a check ---
+# The list in the repository is what the dash runs with, so an option is turned on or off
+# by an update, never by editing /etc/default/frogdash on the Pi. A list the dash would
+# refuse (a typo, a camera option without --camera) is not used: the dash keeps what it
+# had. The file as it was before the first change is kept as frogdash.before-options.
+OPTIONS=${FROGDASH_OPTIONS:-$REPO/config/frogdash-options}
+DEFAULTS=$ETC/default/frogdash
+if [ -f "$OPTIONS" ]; then
+    wanted=$(sed -e 's/#.*//' "$OPTIONS" | tr -s ' \t\r\n' ' ' | sed 's/^ //; s/ $//')
+    current=$(sed -n 's/^FROGDASH_ARGS="\(.*\)"[[:space:]]*$/\1/p' "$DEFAULTS" 2>/dev/null | tail -n 1)
+    if [ "$wanted" = "$current" ]; then
+        step "Dash options" ok "$wanted"
+    elif printf '%s' "$wanted" | grep -q '[^A-Za-z0-9 ._/:=,-]'; then
+        step "Dash options" failed "Not used: config/frogdash-options has a character no option has"
+    elif ! problem=$(cd "$REPO" && "$VENV_PY" -c 'import sys; from hardware.frogdash.server import options; options(sys.argv[1:])' $wanted 2>&1 >/dev/null); then
+        step "Dash options" failed "Not used, the dash would refuse them: $(printf '%s' "$problem" | tail -n 1 | sed 's/^.*error: //')"
+    else
+        added=""; removed=""
+        for word in $wanted; do case "$word" in --*) case " $current " in *" $word "*) ;; *) added="$added $word";; esac;; esac; done
+        for word in $current; do case "$word" in --*) case " $wanted " in *" $word "*) ;; *) removed="$removed $word";; esac;; esac; done
+        [ -f "$DEFAULTS.before-options" ] || [ ! -f "$DEFAULTS" ] || cp "$DEFAULTS" "$DEFAULTS.before-options"
+        if { grep -v '^FROGDASH_ARGS=' "$DEFAULTS" 2>/dev/null; printf 'FROGDASH_ARGS="%s"\n' "$wanted"; } > "$DEFAULTS.tmp" &&
+            chmod 644 "$DEFAULTS.tmp" && mv "$DEFAULTS.tmp" "$DEFAULTS"; then
+            restart_dash=1
+            step "Dash options" done "${added:+On:$added. }${removed:+Off:$removed. }Now: $wanted"
+        else
+            rm -f "$DEFAULTS.tmp"
+            step "Dash options" failed "Could not write $DEFAULTS"
+        fi
+    fi
+fi
+
 # --- Terminal tab with sudo: only while --terminal is in /etc/default/frogdash ---
 # A helper (tools/frogdash_terminal.py, socket-activated, root) runs each command as the
 # screen user, so sudo works as at the keyboard. The dash service gets the group that may
@@ -432,7 +464,7 @@ elif [ -f "$dropin" ]; then
     systemctl daemon-reload; restart_dash=1
     step "Terminal with sudo" done "Off, as --terminal is no longer set"
 else
-    step "Terminal with sudo" ok "Off (add --terminal to FROGDASH_ARGS in /etc/default/frogdash to turn on the Terminal tab)"
+    step "Terminal with sudo" ok "Off (a --terminal line in config/frogdash-options turns on the Terminal tab at the next Update now)"
 fi
 
 # --- Module firmware: the newest published builds, kept ready to install over the CAN bus ---

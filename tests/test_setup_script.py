@@ -104,6 +104,7 @@ class SetupScriptTests(unittest.TestCase):
         self.env['FROGDASH_LIB'] = (base / 'lib').as_posix()
         self.env['FROGDASH_CLOUD_DIR'] = (base / 'cloud').as_posix()   # Absent: no cloud-init (see its own test)
         self.env['FROGDASH_BOOT'] = (base / 'boot').as_posix()     # No boot files unless a test makes them
+        self.env['FROGDASH_OPTIONS'] = (base / 'options').as_posix()  # No options list unless a test makes one
 
     def tearDown(self):
         self.folder.cleanup()
@@ -203,6 +204,42 @@ class SetupScriptTests(unittest.TestCase):
         self.assertEqual(steps['Terminal with sudo'], ('done', 'Off, as --terminal is no longer set'))
         self.assertFalse((self.units / 'frogdash.service.d/terminal.conf').exists())
         self.assertIn('disable --now frogdash-terminal.socket', self.log('systemctl.log'))
+
+    def test_the_dash_options_come_from_the_list_in_the_repository(self):
+        options = Path(self.env['FROGDASH_OPTIONS'])
+        options.write_text('# The options\n--interface can0\n--gpsd   # GPS\n--terminal\n', newline='\n')
+        defaults = self.etc / 'default/frogdash'
+        defaults.write_text('# Set by hand once\nFROGDASH_ARGS="--interface can0 --gpsd"\n', newline='\n')
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Dash options'], ('done', 'On: --terminal. Now: --interface can0 --gpsd --terminal'))
+        self.assertEqual(defaults.read_text(), '# Set by hand once\nFROGDASH_ARGS="--interface can0 --gpsd --terminal"\n')
+        self.assertEqual((self.etc / 'default/frogdash.before-options').read_text(), '# Set by hand once\nFROGDASH_ARGS="--interface can0 --gpsd"\n')
+        self.assertIn('options(sys.argv[1:]) --interface can0 --gpsd --terminal', self.log('venv.log'))
+        self.assertEqual(steps['Terminal with sudo'][0], 'done')       # Read from the file just written
+        self.assertIn('restart frogdash.service', self.log('systemctl.log'))
+        self.assertEqual(self.run_setup('offline')[2]['Dash options'], ('ok', '--interface can0 --gpsd --terminal'))
+        # A list the dash would refuse is not used: it keeps running with what it had.
+        (self.fake / 'venv-python').write_text('#!/bin/sh\necho "$@" >> "$FAKE/venv.log"\n'
+                        'case "$*" in *--bogus*) echo "-c: error: unrecognized arguments: --bogus" >&2; exit 2;; esac\n', newline='\n')
+        options.write_text('--interface can0\n--gpsd\n--bogus\n', newline='\n')
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Dash options'], ('failed', 'Not used, the dash would refuse them: unrecognized arguments: --bogus'))
+        self.assertIn('--terminal"', defaults.read_text())
+        options.write_text('--interface can0 --gpsd; reboot\n', newline='\n')
+        self.assertEqual(self.run_setup('offline')[2]['Dash options'][0], 'failed')
+        self.assertIn('--terminal"', defaults.read_text())
+        # Taken out of the list: off at the next update, and the Terminal goes with it.
+        options.write_text('--interface can0\n--gpsd\n# --terminal\n', newline='\n')
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Dash options'], ('done', 'Off: --terminal. Now: --interface can0 --gpsd'))
+        self.assertEqual(steps['Terminal with sudo'], ('done', 'Off, as --terminal is no longer set'))
+
+    def test_the_options_in_the_repository_are_ones_the_dash_takes(self):
+        from hardware.frogdash.server import options
+        words = ' '.join(line.split('#')[0] for line in (ROOT / 'config/frogdash-options').read_text().splitlines()).split()
+        args, parser = options(words)
+        self.assertEqual(args.interface, 'can0')
+        self.assertTrue(args.gpsd and args.log_dir)
 
     def test_first_run_without_internet_does_all_it_can_and_names_what_waits(self):
         said, status, steps = self.run_setup('offline')

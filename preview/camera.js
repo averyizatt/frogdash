@@ -176,7 +176,7 @@
       let s = null;
       try { s = await (await fetch('/camera/status', {cache: 'no-store', signal: AbortSignal.timeout(1500)})).json(); } catch { /* Reported below. */ }
       if (!s) [state, text, detail] = ['warning', 'Service unreachable', 'The dash service did not answer.'];
-      else if (!s.enabled) [state, text, detail] = ['off', 'Not enabled', 'Add --camera to FROGDASH_ARGS in /etc/default/frogdash, then restart frogdash.service. See docs/reverse-camera.md.'];
+      else if (!s.enabled) [state, text, detail] = ['off', 'Not enabled', 'Turned on by a --camera line in config/frogdash-options, from the next Update now. See docs/reverse-camera.md.'];
       else if (s.error && !s.running) [state, text, detail] = ['warning', 'Camera error', s.error];
       else if (s.running) [state, text, detail] = ['good', `Running · ${Math.round(s.fps)} fps`, `${s.width}×${s.height}${s.rotate ? ' · rotated 180°' : ''} · ${s.viewers} viewer${s.viewers === 1 ? '' : 's'}`];
       else [state, text, detail] = ['good', 'Ready', `${s.width}×${s.height} · starts when a view opens`];
