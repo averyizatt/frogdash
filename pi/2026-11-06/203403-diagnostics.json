@@ -1,0 +1,3071 @@
+{
+ "format": "pi-diagnostics",
+ "version": 1,
+ "created": "2026-11-06T20:34:03Z",
+ "version_installed": "52aac16 Dash options from a list in the repository, applied by every Update now; Terminal on",
+ "selftest": {
+  "lines": [
+   {
+    "group": "CAN bus",
+    "name": "CAN module (MCP2515)",
+    "status": "ok",
+    "detail": "spi0.0 \u00b7 can0 up at 500000 bit/s",
+    "fix": ""
+   },
+   {
+    "group": "CAN bus",
+    "name": "Bus health",
+    "status": "ok",
+    "detail": "ERROR-ACTIVE \u00b7 TX err ?, RX err ?",
+    "fix": ""
+   },
+   {
+    "group": "CAN bus",
+    "name": "Traffic",
+    "status": "ok",
+    "detail": "336 frames received, 0 rejected",
+    "fix": ""
+   },
+   {
+    "group": "Modules",
+    "name": "Taillights",
+    "status": "ok",
+    "detail": "2 of 2 messages arriving",
+    "fix": ""
+   },
+   {
+    "group": "Modules",
+    "name": "Comfort gateway",
+    "status": "ok",
+    "detail": "4 of 4 messages arriving",
+    "fix": ""
+   },
+   {
+    "group": "Modules",
+    "name": "Water/meth",
+    "status": "ok",
+    "detail": "4 of 4 messages arriving",
+    "fix": ""
+   },
+   {
+    "group": "Modules",
+    "name": "MicroSquirt",
+    "status": "fail",
+    "detail": "No messages received",
+    "fix": "Module off, not on the bus, or (MicroSquirt) broadcasting not enabled in TunerStudio"
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Engine RPM for water/meth (0x309)",
+    "status": "warn",
+    "detail": "listening for another 0x309 sender",
+    "fix": "Another node also sends 0x309, or nothing acknowledges frames from the Pi"
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Taillight settings link",
+    "status": "ok",
+    "detail": "Settings read back from the taillights",
+    "fix": ""
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Steering wheel buttons",
+    "status": "ok",
+    "detail": "Receiving button reports",
+    "fix": ""
+   },
+   {
+    "group": "Dash on the bus",
+    "name": "Interior lights",
+    "status": "ok",
+    "detail": "Gateway reports both light zones",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "USB GPS",
+    "status": "ok",
+    "detail": "Fix with 6 satellites (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "Time to first position",
+    "status": "ok",
+    "detail": "0 s after the dash started",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "GPS recovery helper",
+    "status": "skip",
+    "detail": "Not needed yet",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "GPS broadcast to the bus (0x203)",
+    "status": "ok",
+    "detail": "waiting for CAN",
+    "fix": ""
+   },
+   {
+    "group": "GPS and time",
+    "name": "Position without GPS",
+    "status": "warn",
+    "detail": "Now: gps \u00b7 wheel speed not calibrated yet",
+    "fix": "Drive above 20 mph with a GPS fix for a minute so wheel speed can be calibrated; needs the gateway speed sensor"
+   },
+   {
+    "group": "GPS and time",
+    "name": "Clock",
+    "status": "ok",
+    "detail": "2026-11-06 20:34",
+    "fix": ""
+   },
+   {
+    "group": "Cameras",
+    "name": "Reverse camera",
+    "status": "skip",
+    "detail": "Not enabled",
+    "fix": ""
+   },
+   {
+    "group": "Cameras",
+    "name": "Dash cam",
+    "status": "skip",
+    "detail": "Not enabled",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Power supply",
+    "status": "ok",
+    "detail": "No undervoltage",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Temperature",
+    "status": "ok",
+    "detail": "48 \u00b0C",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Storage",
+    "status": "ok",
+    "detail": "105.0 GiB free",
+    "fix": ""
+   },
+   {
+    "group": "Pi",
+    "name": "Data logging",
+    "status": "ok",
+    "detail": "recording",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Internet",
+    "status": "warn",
+    "detail": "Not connected \u00b7 no internet",
+    "fix": "Controls > Wi-Fi > Internet: Scan and Connect (only needed for updates)"
+   },
+   {
+    "group": "Updates",
+    "name": "Last update",
+    "status": "ok",
+    "detail": "Updated (15 changes). The dash restarted and passed its check. Set up: Screen and start-up, CAN board: SPI speed, Start-up: login text on the screen, Wi-Fi power saving, Dash options, Terminal with sudo, Taillight firmware file, Water/meth firmware file. Restart the Pi to apply the new boot settings \u00b7 version 52aac16",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Gateway firmware",
+    "status": "skip",
+    "detail": "The gateway is not answering. Firmware from before this feature must be replaced once by USB",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Taillight firmware",
+    "status": "skip",
+    "detail": "The taillight controller is not answering. Firmware from before this feature must be replaced once by USB",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Water/meth firmware",
+    "status": "skip",
+    "detail": "No answer. That is normal with the Nano board, which is updated by USB; the ESP32 board answers here once it is fitted",
+    "fix": ""
+   },
+   {
+    "group": "Updates",
+    "name": "Pi setup",
+    "status": "skip",
+    "detail": "Not checked yet",
+    "fix": ""
+   }
+  ],
+  "counts": {
+   "ok": 18,
+   "warn": 3,
+   "fail": 1,
+   "skip": 7
+  },
+  "time_ms": 1793997244474
+ },
+ "health": {
+  "mode": "socketcan",
+  "transport": {
+   "connected": true,
+   "status": "listening on can0",
+   "received": 345,
+   "malformed": 0,
+   "ignored": 0,
+   "tx_full": 0
+  },
+  "modules": {
+   "taillights": "live",
+   "comfort": "live",
+   "watermeth": "live",
+   "knock": "live"
+  },
+  "gps": {
+   "status": "GPS fix",
+   "diagnosis": {
+    "state": "fix",
+    "text": "Fix with 6 satellites (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)",
+    "fix": ""
+   },
+   "brief_losses": 0,
+   "receiver_setup": "Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)",
+   "hardware": null,
+   "satellite_data": null,
+   "recovery": {
+    "kind": null,
+    "trying": null,
+    "tried": 0,
+    "helper": "unknown",
+    "exhausted": false,
+    "next_in_s": null,
+    "last": "GPS service restarted",
+    "first_fix_s": 0.2
+   },
+   "tx_status": "waiting for CAN",
+   "tx_count": 0,
+   "conflict": false,
+   "bad_reports": 0,
+   "last_bad": null
+  },
+  "recording": {
+   "enabled": true,
+   "state": "recording",
+   "file": "frogdash-live-20261106T203403Z-dfb289b10bc1.mlg",
+   "rows": 30,
+   "dropped": 0,
+   "error": null,
+   "hz": 20
+  },
+  "system": {
+   "status": "sampled",
+   "timestamp_ms": 1793997242980,
+   "cpu_c": 47.712,
+   "power": {
+    "raw": 0,
+    "undervoltage_now": false,
+    "throttled_now": false,
+    "undervoltage_since_boot": false,
+    "throttled_since_boot": false
+   },
+   "disk": {
+    "free_bytes": 112761532416,
+    "total_bytes": 125257437184
+   },
+   "can": {
+    "interface": "can0",
+    "state": "ERROR-ACTIVE",
+    "bitrate": 500000,
+    "error_counters": null,
+    "rx_errors": 4,
+    "tx_errors": 0,
+    "rx_dropped": 2039,
+    "tx_dropped": 0,
+    "rx_packets": 16601,
+    "tx_packets": 1464
+   },
+   "notes": [],
+   "ups": {
+    "available": true,
+    "battery_percent": 100.0,
+    "battery_volts": 4.128733,
+    "charging": true,
+    "auto_power_on": true,
+    "input_present": true,
+    "state": "external_power",
+    "error": null,
+    "dry_run": false,
+    "remaining_seconds": null
+   },
+   "shutdown": {
+    "previous": {
+     "boot_id": "2158d9ca-84b9-49e1-bcb1-858e1ccda566",
+     "scope": "boot",
+     "run_id": "1baa45e8570e4098a15eb2078c274d52",
+     "started_ms": 1793922562182,
+     "ended_ms": 1793923108502,
+     "state": "saved",
+     "interruptions": 0,
+     "errors": [],
+     "recording_enabled": true,
+     "log_rows": 10905,
+     "dropped_samples": 19
+    },
+    "tracking": true,
+    "error": "",
+    "scope": "boot"
+   },
+   "can_module": {
+    "present": true,
+    "driver": "mcp251x",
+    "spi": "spi0.0",
+    "up": true,
+    "interrupts": null
+   }
+  },
+  "can_errors": {
+   "frames": 0,
+   "bus_off": 0,
+   "restarts": 0
+  },
+  "ui_clients": 0,
+  "engine_running": false
+ },
+ "logs": {
+  "recording": {
+   "enabled": true,
+   "state": "recording",
+   "file": "frogdash-live-20261106T203403Z-dfb289b10bc1.mlg",
+   "rows": 31,
+   "dropped": 0,
+   "error": null,
+   "hz": 20
+  },
+  "files": [
+   {
+    "name": "frogdash-live-20261106T203403Z-dfb289b10bc1.mlg",
+    "bytes": 112126,
+    "modified_ms": 1793997244509,
+    "active": true
+   },
+   {
+    "name": "frogdash-live-20261106T203318Z-a62e573b7fa0.mlg",
+    "bytes": 1334092,
+    "modified_ms": 1793997240527,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203143Z-5a0c21781c77.mlg",
+    "bytes": 1158646,
+    "modified_ms": 1793997196280,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261105T234922Z-64b2f82d71f6.mlg",
+    "bytes": 16850290,
+    "modified_ms": 1793923108494,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261105T234812Z-be93497baf08.mlg",
+    "bytes": 2078968,
+    "modified_ms": 1793922558999,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203143Z-c27121501b90.mlg",
+    "bytes": 33553057,
+    "modified_ms": 1793922492157,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203143Z-e491fe809651.mlg",
+    "bytes": 12390268,
+    "modified_ms": 1793920878380,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261105T222238Z-ce0de8cfcfc8.mlg",
+    "bytes": 6668266,
+    "modified_ms": 1793917574787,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T204950Z-ccb9368419f6.mlg",
+    "bytes": 5744866,
+    "modified_ms": 1793917354538,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203142Z-a07fb4147e40.mlg",
+    "bytes": 1757317,
+    "modified_ms": 1793405206628,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203142Z-9ccd38ed32d8.mlg",
+    "bytes": 1304851,
+    "modified_ms": 1793405103272,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203142Z-cddc9c5fc0e0.mlg",
+    "bytes": 7804048,
+    "modified_ms": 1793404965939,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203142Z-d08a1fd93932.mlg",
+    "bytes": 2699185,
+    "modified_ms": 1793404677950,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261030T235425Z-f10458f77c5e.mlg",
+    "bytes": 2552980,
+    "modified_ms": 1793404555328,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-2d9b6ac054d1.mlg",
+    "bytes": 5723320,
+    "modified_ms": 1793404454995,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T211051Z-c4fc4ca3f1d8.mlg",
+    "bytes": 4107370,
+    "modified_ms": 1793135582507,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T210610Z-353de19f154c.mlg",
+    "bytes": 8650498,
+    "modified_ms": 1793135449696,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T204925Z-d7cce2ac6a07.mlg",
+    "bytes": 30976771,
+    "modified_ms": 1793135169305,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T204953Z-7aea3ac5581d.mlg",
+    "bytes": 14566414,
+    "modified_ms": 1793134664796,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-cd5a2f16e96a.mlg",
+    "bytes": 33553057,
+    "modified_ms": 1793134193770,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203142Z-aaf2f2ea604e.mlg",
+    "bytes": 33553057,
+    "modified_ms": 1793134190844,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T204748Z-99aac3eec64d.mlg",
+    "bytes": 2843851,
+    "modified_ms": 1793134165110,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T204045Z-7892c84bd3aa.mlg",
+    "bytes": 13090513,
+    "modified_ms": 1793134068162,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-361d255baaf2.mlg",
+    "bytes": 16908772,
+    "modified_ms": 1793133652949,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203740Z-9ad0f4c877a7.mlg",
+    "bytes": 5703313,
+    "modified_ms": 1793133643456,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203410Z-967597c9d104.mlg",
+    "bytes": 10127938,
+    "modified_ms": 1793133577567,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203450Z-9d7a8c629f8e.mlg",
+    "bytes": 5241613,
+    "modified_ms": 1793133458845,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203146Z-3e4c6c3ca7cb.mlg",
+    "bytes": 9376906,
+    "modified_ms": 1793133409423,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-601fea0fc445.mlg",
+    "bytes": 7020697,
+    "modified_ms": 1793133331728,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-5277808308b4.mlg",
+    "bytes": 6064978,
+    "modified_ms": 1793133300778,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-b776134fd63a.mlg",
+    "bytes": 5720242,
+    "modified_ms": 1793133289090,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-c5b25570d9c1.mlg",
+    "bytes": 5012302,
+    "modified_ms": 1793133266332,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203142Z-45254fdd18b9.mlg",
+    "bytes": 4955359,
+    "modified_ms": 1793133262599,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-920c6ed568bf.mlg",
+    "bytes": 4809154,
+    "modified_ms": 1793133259690,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203014Z-ea77a3b9419b.mlg",
+    "bytes": 7000690,
+    "modified_ms": 1793133239752,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-95649e3036b4.mlg",
+    "bytes": 4187398,
+    "modified_ms": 1793133239643,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-d9c8ad6ff8c5.mlg",
+    "bytes": 3756478,
+    "modified_ms": 1793133225754,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203143Z-8bb7cf17e970.mlg",
+    "bytes": 2232868,
+    "modified_ms": 1793133174412,
+    "active": false
+   },
+   {
+    "name": "frogdash-live-20261027T203145Z-c6d3dc26b02b.mlg",
+    "bytes": 1066306,
+    "modified_ms": 1793133138258,
+    "active": false
+   }
+  ]
+ },
+ "state": {
+  "type": "state",
+  "seq": 70,
+  "timestamp_ms": 1793997244634,
+  "mode": "socketcan",
+  "values": {
+   "wheel.cruise_pressed": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 1281,
+    "timestamp_ms": 1793997244578
+   },
+   "wheel.cruise_enabled": {
+    "value": 31,
+    "quality": "live",
+    "source_id": 1281,
+    "timestamp_ms": 1793997244578
+   },
+   "wheel.cruise_sequence": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 1281,
+    "timestamp_ms": 1793997244578
+   },
+   "tach.rpm": {
+    "value": 0,
+    "quality": "unavailable",
+    "source_id": 514,
+    "timestamp_ms": 1793997244622
+   },
+   "tach.generated_hz": {
+    "value": 0.0,
+    "quality": "live",
+    "source_id": 514,
+    "timestamp_ms": 1793997244622
+   },
+   "tach.source": {
+    "value": 1,
+    "quality": "live",
+    "source_id": 514,
+    "timestamp_ms": 1793997244622
+   },
+   "tach.status_flags": {
+    "value": 2,
+    "quality": "live",
+    "source_id": 514,
+    "timestamp_ms": 1793997244622
+   },
+   "tach.pulses_per_rev": {
+    "value": 2.0,
+    "quality": "live",
+    "source_id": 514,
+    "timestamp_ms": 1793997244622
+   },
+   "meth.state": {
+    "value": "OFF",
+    "quality": "live",
+    "source_id": 768,
+    "timestamp_ms": 1793997244581
+   },
+   "meth.duty_pct": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 768,
+    "timestamp_ms": 1793997244581
+   },
+   "meth.tank_pct": {
+    "value": 100,
+    "quality": "live",
+    "source_id": 768,
+    "timestamp_ms": 1793997244581
+   },
+   "meth.flow": {
+    "value": "UNKNOWN",
+    "quality": "live",
+    "source_id": 768,
+    "timestamp_ms": 1793997244581
+   },
+   "engine.boost_kpa": {
+    "value": 2,
+    "quality": "live",
+    "source_id": 768,
+    "timestamp_ms": 1793997244581
+   },
+   "engine.iat_c": {
+    "value": 0,
+    "quality": "fault",
+    "source_id": 768,
+    "timestamp_ms": 1793997244581
+   },
+   "engine.bay_c": {
+    "value": 0,
+    "quality": "fault",
+    "source_id": 768,
+    "timestamp_ms": 1793997244581
+   },
+   "meth.fault_flags": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 768,
+    "timestamp_ms": 1793997244581,
+    "raw": 0
+   },
+   "knock.status_flags": {
+    "value": 19,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.energy": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.baseline": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.threshold": {
+    "value": 8,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.event_count": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.last_rpm": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.last_boost_kpa": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.reserved": {
+    "value": 5,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.band_share_pct": {
+    "value": 2,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.enabled": {
+    "value": true,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.signal_valid": {
+    "value": true,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.warning": {
+    "value": false,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.critical": {
+    "value": false,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.learned": {
+    "value": true,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.sensor_fault": {
+    "value": false,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.clipping": {
+    "value": false,
+    "quality": "live",
+    "source_id": 775,
+    "timestamp_ms": 1793997244581
+   },
+   "knock.hook.flags": {
+    "value": 131,
+    "quality": "live",
+    "source_id": 779,
+    "timestamp_ms": 1793997244582
+   },
+   "knock.hook.rms": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 779,
+    "timestamp_ms": 1793997244582
+   },
+   "knock.hook.threshold": {
+    "value": 8,
+    "quality": "live",
+    "source_id": 779,
+    "timestamp_ms": 1793997244582
+   },
+   "knock.hook.baseline": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 779,
+    "timestamp_ms": 1793997244582
+   },
+   "knock.hook.event_count": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 779,
+    "timestamp_ms": 1793997244582
+   },
+   "knock.hook.bias_adc": {
+    "value": 528,
+    "quality": "live",
+    "source_id": 779,
+    "timestamp_ms": 1793997244582
+   },
+   "knock.hook.raw_adc": {
+    "value": 528,
+    "quality": "live",
+    "source_id": 779,
+    "timestamp_ms": 1793997244582
+   },
+   "knock.hook.envelope": {
+    "value": 1,
+    "quality": "live",
+    "source_id": 779,
+    "timestamp_ms": 1793997244582
+   },
+   "interior.upper.color": {
+    "value": "#000000",
+    "quality": "live",
+    "source_id": 1283,
+    "timestamp_ms": 1793997244595
+   },
+   "interior.upper.brightness": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 1283,
+    "timestamp_ms": 1793997244595
+   },
+   "interior.upper.commanded": {
+    "value": false,
+    "quality": "live",
+    "source_id": 1283,
+    "timestamp_ms": 1793997244595
+   },
+   "interior.lower.color": {
+    "value": "#000000",
+    "quality": "live",
+    "source_id": 1283,
+    "timestamp_ms": 1793997244614
+   },
+   "interior.lower.brightness": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 1283,
+    "timestamp_ms": 1793997244614
+   },
+   "interior.lower.commanded": {
+    "value": false,
+    "quality": "live",
+    "source_id": 1283,
+    "timestamp_ms": 1793997244614
+   },
+   "lighting.left_state": {
+    "value": "OFF",
+    "quality": "live",
+    "source_id": 256,
+    "timestamp_ms": 1793997244578
+   },
+   "lighting.turn_left": {
+    "value": false,
+    "quality": "live",
+    "source_id": 256,
+    "timestamp_ms": 1793997244578
+   },
+   "lighting.right_state": {
+    "value": "OFF",
+    "quality": "live",
+    "source_id": 256,
+    "timestamp_ms": 1793997244578
+   },
+   "lighting.turn_right": {
+    "value": false,
+    "quality": "live",
+    "source_id": 256,
+    "timestamp_ms": 1793997244578
+   },
+   "lighting.driver_inputs": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 256,
+    "timestamp_ms": 1793997244578
+   },
+   "lighting.passenger_inputs": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 256,
+    "timestamp_ms": 1793997244578
+   },
+   "lighting.brightness": {
+    "value": 198,
+    "quality": "live",
+    "source_id": 256,
+    "timestamp_ms": 1793997244578
+   },
+   "lighting.die_c": {
+    "value": 24,
+    "quality": "live",
+    "source_id": 256,
+    "timestamp_ms": 1793997244578
+   },
+   "lighting.thermal_derate": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 256,
+    "timestamp_ms": 1793997244578
+   },
+   "lighting.brake": {
+    "value": false,
+    "quality": "live",
+    "source_id": 256,
+    "timestamp_ms": 1793997244578
+   },
+   "lighting.running": {
+    "value": false,
+    "quality": "live",
+    "source_id": 256,
+    "timestamp_ms": 1793997244578
+   },
+   "lighting.reverse": {
+    "value": false,
+    "quality": "live",
+    "source_id": 256,
+    "timestamp_ms": 1793997244578
+   },
+   "meth.pre_temp_c": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": 783,
+    "timestamp_ms": 1793997244489
+   },
+   "meth.post_temp_c": {
+    "value": 175.5,
+    "quality": "live",
+    "source_id": 783,
+    "timestamp_ms": 1793997244489
+   },
+   "meth.temp_drop_c": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": 783,
+    "timestamp_ms": 1793997244489
+   },
+   "vehicle.speed_kph": {
+    "value": 0.036000000000000004,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793997244200
+   },
+   "gateway.rpm": {
+    "value": 0,
+    "quality": "unavailable",
+    "source_id": 1280,
+    "timestamp_ms": 1793997244632
+   },
+   "gateway.fuel_raw": {
+    "value": 1653,
+    "quality": "live",
+    "source_id": 1280,
+    "timestamp_ms": 1793997244632
+   },
+   "vehicle.fuel_pct": {
+    "value": 42.0,
+    "quality": "live",
+    "source_id": 1280,
+    "timestamp_ms": 1793997244632
+   },
+   "engine.oil_pressure_psi": {
+    "value": 0.0,
+    "quality": "live",
+    "source_id": 771,
+    "timestamp_ms": 1793997244489
+   },
+   "engine.fuel_pressure_psi": {
+    "value": 0.0,
+    "quality": "fault",
+    "source_id": 771,
+    "timestamp_ms": 1793997244489
+   },
+   "meth.pressure_psi": {
+    "value": 0.0,
+    "quality": "fault",
+    "source_id": 771,
+    "timestamp_ms": 1793997244489
+   },
+   "engine.boost_ref_psi": {
+    "value": 0.0,
+    "quality": "fault",
+    "source_id": 771,
+    "timestamp_ms": 1793997244489
+   },
+   "environment.ambient_c": {
+    "value": 0,
+    "quality": "fault",
+    "source_id": 771,
+    "timestamp_ms": 1793997244489
+   },
+   "environment.cabin_c": {
+    "value": 0,
+    "quality": "fault",
+    "source_id": 771,
+    "timestamp_ms": 1793997244489
+   },
+   "sensors.fault_flags": {
+    "value": 254,
+    "quality": "live",
+    "source_id": 771,
+    "timestamp_ms": 1793997244489,
+    "raw": 254
+   },
+   "meth.hold": {
+    "value": "DISARMED",
+    "quality": "live",
+    "source_id": 783,
+    "timestamp_ms": 1793997244547
+   },
+   "meth.on_ms": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 783,
+    "timestamp_ms": 1793997244547
+   },
+   "meth.period_ms": {
+    "value": 4000,
+    "quality": "live",
+    "source_id": 783,
+    "timestamp_ms": 1793997244547
+   },
+   "meth.pump_on": {
+    "value": false,
+    "quality": "live",
+    "source_id": 783,
+    "timestamp_ms": 1793997244547
+   },
+   "taillight.report_kind": {
+    "value": 5,
+    "quality": "live",
+    "source_id": 259,
+    "timestamp_ms": 1793997244599
+   },
+   "taillight.revision": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 259,
+    "timestamp_ms": 1793997244599
+   },
+   "taillight.flags": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 259,
+    "timestamp_ms": 1793997244599
+   },
+   "taillight.show_anim": {
+    "value": 22,
+    "quality": "live",
+    "source_id": 259,
+    "timestamp_ms": 1793997244599
+   },
+   "taillight.profiles": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 259,
+    "timestamp_ms": 1793997244599
+   },
+   "taillight.phase_ms": {
+    "value": 118720,
+    "quality": "live",
+    "source_id": 259,
+    "timestamp_ms": 1793997244599
+   },
+   "knock.config.flags": {
+    "value": 3,
+    "quality": "live",
+    "source_id": 780,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.threshold_offset": {
+    "value": 8,
+    "quality": "live",
+    "source_id": 780,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.multiplier": {
+    "value": 2.5,
+    "quality": "live",
+    "source_id": 780,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.min_rpm": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 780,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.min_map_kpa": {
+    "value": 100,
+    "quality": "live",
+    "source_id": 780,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.debounce_ms": {
+    "value": 250,
+    "quality": "live",
+    "source_id": 780,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.gain": {
+    "value": 1.0,
+    "quality": "live",
+    "source_id": 780,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.center_hz": {
+    "value": 6000,
+    "quality": "live",
+    "source_id": 780,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.bandwidth_hz": {
+    "value": 1800,
+    "quality": "live",
+    "source_id": 781,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.sample_rate_hz": {
+    "value": 19200,
+    "quality": "live",
+    "source_id": 781,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.samples_per_update": {
+    "value": 64,
+    "quality": "live",
+    "source_id": 781,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.bias_alpha": {
+    "value": 0.002,
+    "quality": "live",
+    "source_id": 781,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.rms_alpha": {
+    "value": 0.12,
+    "quality": "live",
+    "source_id": 781,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.envelope_alpha": {
+    "value": 0.2,
+    "quality": "live",
+    "source_id": 781,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.bore_mm": {
+    "value": 96,
+    "quality": "live",
+    "source_id": 781,
+    "timestamp_ms": 1793997244545
+   },
+   "knock.config.reserved": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 781,
+    "timestamp_ms": 1793997244545
+   },
+   "taillight.ack_command": {
+    "value": 9,
+    "quality": "live",
+    "source_id": 259,
+    "timestamp_ms": 1793997244138
+   },
+   "taillight.ack_status": {
+    "value": 0,
+    "quality": "live",
+    "source_id": 259,
+    "timestamp_ms": 1793997244138
+   },
+   "engine.rpm": {
+    "value": 0,
+    "quality": "unavailable",
+    "source_id": 514,
+    "timestamp_ms": 1793997244622
+   },
+   "engine.coolant_c": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "engine.afr": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "engine.ego_correction_pct": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "vehicle.battery_v": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "lighting.highbeam": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "engine.oil_temp_c": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "timestamp_ms": null
+   },
+   "fuel.sender_pct": {
+    "value": 42,
+    "quality": "live",
+    "source_id": 1280,
+    "timestamp_ms": 1793997244632,
+    "source": "Fuel sender (undamped)"
+   },
+   "gps.altitude_m": {
+    "value": 1422.1569,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793997244200
+   },
+   "gps.latitude": {
+    "value": 39.076033666,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793997244200
+   },
+   "gps.longitude": {
+    "value": -108.563909495,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793997244200
+   },
+   "gps.track_deg": {
+    "value": 320.1518,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793997244200
+   },
+   "gps.satellites": {
+    "value": 6,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793997244193
+   },
+   "gps.satellites_in_view": {
+    "value": 17,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793997244193
+   },
+   "nav.latitude": {
+    "value": 39.076033666,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793997244633
+   },
+   "nav.longitude": {
+    "value": -108.563909495,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793997244633
+   },
+   "nav.track_deg": {
+    "value": 359.6,
+    "quality": "live",
+    "source": "gpsd",
+    "source_id": null,
+    "timestamp_ms": 1793997244633
+   },
+   "nav.source": {
+    "value": "gps",
+    "quality": "live",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793997244633
+   },
+   "nav.speed_source": {
+    "value": "gps",
+    "quality": "live",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793997244633
+   },
+   "nav.accuracy_m": {
+    "value": 5.0,
+    "quality": "live",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793997244633
+   },
+   "nav.since_fix_s": {
+    "value": 0.0,
+    "quality": "live",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793997244633
+   },
+   "nav.wheel_scale": {
+    "value": 1.0,
+    "quality": "unavailable",
+    "source": "Navigation",
+    "source_id": null,
+    "timestamp_ms": 1793997244633
+   },
+   "meth.flow_ml_min": {
+    "value": 0.0,
+    "quality": "live",
+    "source": "Water/meth estimate",
+    "source_id": null,
+    "timestamp_ms": 1793997244633
+   },
+   "meth.dose_pct": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "Water/meth estimate",
+    "source_id": null,
+    "timestamp_ms": 1793997244633
+   },
+   "meth.iat_change_c": {
+    "value": null,
+    "quality": "unavailable",
+    "source": "Water/meth estimate",
+    "source_id": null,
+    "timestamp_ms": 1793997244633
+   },
+   "trip.a_km": {
+    "value": 9.24974819770366,
+    "quality": "live",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793997244634
+   },
+   "trip.b_km": {
+    "value": 9.24974819770366,
+    "quality": "live",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793997244634
+   },
+   "trip.total_km": {
+    "value": 9.24974819770366,
+    "quality": "live",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793997244634
+   },
+   "fuel.flow_lph": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793997244634
+   },
+   "fuel.remaining_l": {
+    "value": 24.484043418911998,
+    "quality": "live",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793997244634
+   },
+   "fuel.range_km": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793997244634
+   },
+   "fuel.instant_mpg": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793997244634
+   },
+   "fuel.average_mpg": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "Trip computer (fuel estimated)",
+    "timestamp_ms": 1793997244634
+   },
+   "dash.bookmark_id": {
+    "value": 0,
+    "quality": "live",
+    "source_id": null,
+    "source": "Drive review",
+    "timestamp_ms": 1793997244634
+   },
+   "race.phase": {
+    "value": "idle",
+    "quality": "live",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793997244634
+   },
+   "race.elapsed_s": {
+    "value": 0.0,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793997244634
+   },
+   "race.distance_m": {
+    "value": 0.0,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793997244634
+   },
+   "race.lap_count": {
+    "value": 0,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793997244634
+   },
+   "race.best_lap_s": {
+    "value": null,
+    "quality": "unavailable",
+    "source_id": null,
+    "source": "GPS timer",
+    "timestamp_ms": 1793997244634
+   }
+  },
+  "modules": {
+   "taillights": "live",
+   "comfort": "live",
+   "watermeth": "live",
+   "knock": "live"
+  },
+  "transport": {
+   "connected": true,
+   "status": "listening on can0",
+   "received": 368,
+   "malformed": 0,
+   "ignored": 0,
+   "tx_full": 0
+  },
+  "runtime": {
+   "enabled": true,
+   "conflict": false,
+   "tx_count": 0,
+   "status": "listening for another 0x309 sender"
+  },
+  "nav": {
+   "source": "gps",
+   "speed_source": "gps",
+   "on_road": false,
+   "since_fix_m": 0,
+   "since_fix_s": 0,
+   "accuracy_m": 5.0,
+   "wheel_scale": 1.0,
+   "calibrated": false,
+   "map_loaded": false
+  },
+  "tune": {
+   "available": true,
+   "state": "idle",
+   "message": "Ready. Opens over the dash; needs a keyboard and mouse"
+  },
+  "gaps": [],
+  "summary": {
+   "current": null,
+   "last": {
+    "started": 1793923048.7,
+    "ended": 1793923101.6,
+    "duration_s": 53,
+    "distance_km": 0.0,
+    "top_speed_kph": 9.4,
+    "peak_boost_kpa": 1,
+    "max_rpm": 1583,
+    "max_coolant_c": 100.9,
+    "min_oil_psi": 30.5,
+    "meth_spray_s": 0.0,
+    "knock_events": 0,
+    "alerts": 5,
+    "problems": 10,
+    "ended_by": "ignition off"
+   },
+   "shutting_down": false,
+   "remaining_s": null
+  },
+  "gps": {
+   "status": "GPS fix",
+   "diagnosis": {
+    "state": "fix",
+    "text": "Fix with 6 satellites (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)",
+    "fix": ""
+   },
+   "brief_losses": 0,
+   "receiver_setup": "Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)",
+   "hardware": null,
+   "satellite_data": null,
+   "recovery": {
+    "kind": null,
+    "trying": null,
+    "tried": 0,
+    "helper": "unknown",
+    "exhausted": false,
+    "next_in_s": null,
+    "last": "GPS service restarted",
+    "first_fix_s": 0.2
+   },
+   "tx_status": "waiting for CAN",
+   "tx_count": 0,
+   "conflict": false,
+   "bad_reports": 0,
+   "last_bad": null
+  },
+  "controls": {
+   "reasons": {
+    "meth.arm": "Checking CAN control ownership",
+    "meth.test": "Checking CAN control ownership",
+    "meth.stop": null,
+    "meth.boost": "Checking CAN control ownership",
+    "meth.clear_faults": "Checking CAN control ownership",
+    "meth.restart": "Checking CAN control ownership",
+    "meth.setting": "Checking CAN control ownership",
+    "meth.tune_action": "Checking CAN control ownership",
+    "knock.enable": "Checking CAN control ownership",
+    "knock.threshold": "Checking CAN control ownership",
+    "knock.multiplier": "Checking CAN control ownership",
+    "knock.min_rpm": "Checking CAN control ownership",
+    "knock.min_map": "Checking CAN control ownership",
+    "knock.hold": "Checking CAN control ownership",
+    "knock.level_gain": "Checking CAN control ownership",
+    "knock.center": "Checking CAN control ownership",
+    "knock.bandwidth": "Checking CAN control ownership",
+    "knock.auto_frequency": "Checking CAN control ownership",
+    "knock.clear_events": "Checking CAN control ownership",
+    "knock.amp_gain": "Checking CAN control ownership",
+    "knock.bore": "Checking CAN control ownership",
+    "knock.relearn": "Checking CAN control ownership",
+    "knock.refresh": "Checking CAN control ownership",
+    "lighting.brightness": "Checking CAN control ownership",
+    "lighting.mode": "Checking CAN control ownership",
+    "lighting.show": "Checking CAN control ownership",
+    "lighting.demo": "Checking CAN control ownership",
+    "lighting.override": "Checking CAN control ownership",
+    "lighting.clear": "Checking CAN control ownership",
+    "lighting.custom": "Checking CAN control ownership",
+    "lighting.setting": "Checking CAN control ownership",
+    "lighting.color": "Checking CAN control ownership",
+    "lighting.text": "Checking CAN control ownership",
+    "lighting.action": "Checking CAN control ownership",
+    "interior.light": "Checking CAN control ownership",
+    "meth.disarm": null
+   },
+   "pending": null,
+   "interior": {
+    "upper": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "lower": [
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "lighting_active": false,
+   "test_active": false,
+   "last_result": null,
+   "meth_config_conflict": false,
+   "meth_remembered": false,
+   "meth_rearm": null
+  },
+  "taillight": {
+   "supported": true,
+   "complete": true,
+   "revision": 0,
+   "unsaved": false,
+   "show": false,
+   "demo": false,
+   "custom": false,
+   "override": false,
+   "show_anim": 22,
+   "phase_ms": 118720,
+   "profiles": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ],
+   "settings": {
+    "brightness": 198,
+    "brightness_dim": 25,
+    "turn_blink_ms": 600,
+    "turn_custom": 0,
+    "turn_sweep_ms": 300,
+    "turn_hold_ms": 0,
+    "turn_off_ms": 300,
+    "brake_speed": 100,
+    "reverse_speed": 100,
+    "run_speed": 100,
+    "frame_ms": 20,
+    "brake_anim": 4,
+    "turn_anim": 2,
+    "reverse_anim": 0,
+    "run_anim": 0,
+    "lens_preset": 0,
+    "startup_anim": 1,
+    "rest_mode": 0,
+    "show_speed": 100,
+    "show_anim": 22,
+    "show_mode": 0
+   },
+   "colors": {
+    "brake": "#ff0000",
+    "turn": "#ff6400",
+    "reverse": "#ffffff",
+    "running": "#1e0000"
+   },
+   "text": "FOXBODY MUSTANG",
+   "last_ack": {
+    "command": 9,
+    "status": 0,
+    "subject": 3,
+    "value": 0,
+    "revision": 0
+   }
+  },
+  "meth_tune": {
+   "supported": true,
+   "complete": true,
+   "revision": 0,
+   "unsaved": false,
+   "rpm_ok": false,
+   "pre_valid": false,
+   "post_valid": false,
+   "pump_on": false,
+   "early_start": false,
+   "hot_air": false,
+   "ecu_temp": false,
+   "hold": "DISARMED",
+   "on_ms": 0,
+   "period_ms": 4000,
+   "drive": "relay",
+   "duty_pct": null,
+   "settings": {
+    "period_ms": 4000,
+    "min_on_ms": 1000,
+    "max_on_ms": 2000,
+    "start_psi_x10": 50,
+    "full_psi_x10": 100,
+    "min_rpm": 2500,
+    "max_spray_s": 12,
+    "rest_s": 6,
+    "ramp_ms": 500,
+    "min_pre_temp_c": 0,
+    "overboost_assist": 0,
+    "meth_pct": 0,
+    "nozzle_ml_min": 60,
+    "max_dose_pct": 10,
+    "early_rpm": 3500,
+    "hot_start_c": 0,
+    "hot_full_c": 70,
+    "min_duty_pct": 25,
+    "max_duty_pct": 50
+   },
+   "preset": null,
+   "fluid": "Water",
+   "last_spray": null,
+   "last_ack": {
+    "command": 17,
+    "status": 0,
+    "subject": 3,
+    "value": 0,
+    "revision": 0
+   }
+  },
+  "knock_detail": {
+   "supported": false,
+   "start_hz": 2000,
+   "step_hz": 300,
+   "normal": null,
+   "burst": null
+  },
+  "events": [],
+  "race": {
+   "mode": "accel",
+   "phase": "idle",
+   "message": "Choose acceleration or laps",
+   "elapsed": 0.0,
+   "distance_m": 0.0,
+   "splits": {},
+   "laps": [],
+   "lap_count": 0,
+   "best_lap": null,
+   "gate": null,
+   "fresh": true,
+   "gps_reason": "",
+   "interval": 1.0,
+   "warnings": [],
+   "history": [],
+   "storage_error": ""
+  },
+  "drive": {
+   "settings": {
+    "version": 2,
+    "chime": false,
+    "rules": {
+     "oil": {
+      "enabled": true,
+      "delay": 1.0,
+      "psi": 15,
+      "rpm": 1500
+     },
+     "oil_idle": {
+      "enabled": true,
+      "delay": 2.0,
+      "psi": 6,
+      "rpm": 1500
+     },
+     "overrev": {
+      "enabled": true,
+      "delay": 0.2,
+      "rpm": 6000
+     },
+     "knock": {
+      "enabled": true,
+      "delay": 0.2
+     },
+     "knock_retard": {
+      "enabled": true,
+      "delay": 0.5,
+      "deg": 3
+     },
+     "sync": {
+      "enabled": true,
+      "delay": 0.0
+     },
+     "fuel_low": {
+      "enabled": true,
+      "delay": 1.0,
+      "psi": 30
+     },
+     "fuel_boost": {
+      "enabled": true,
+      "delay": 0.5,
+      "base": 35,
+      "margin": 5,
+      "boost": 14
+     },
+     "fuel_level": {
+      "enabled": true,
+      "delay": 10.0,
+      "pct": 12
+     },
+     "trim": {
+      "enabled": true,
+      "delay": 5.0,
+      "pct": 9
+     },
+     "overboost": {
+      "enabled": true,
+      "delay": 0.3,
+      "boost": 76
+     },
+     "lean": {
+      "enabled": true,
+      "delay": 0.8,
+      "delta": 1,
+      "boost": 20,
+      "rpm": 1500
+     },
+     "rich": {
+      "enabled": true,
+      "delay": 1.0,
+      "afr": 10,
+      "boost": 34
+     },
+     "cold_boost": {
+      "enabled": true,
+      "delay": 0.5,
+      "c": 60,
+      "boost": 14
+     },
+     "coolant": {
+      "enabled": true,
+      "delay": 2.0,
+      "c": 112
+     },
+     "iat": {
+      "enabled": true,
+      "delay": 3.0,
+      "c": 60
+     },
+     "meth": {
+      "enabled": true,
+      "delay": 1.0
+     },
+     "meth_tank": {
+      "enabled": true,
+      "delay": 5.0,
+      "pct": 15
+     },
+     "meth_off": {
+      "enabled": false,
+      "delay": 1.0,
+      "boost": 34
+     },
+     "batt_low": {
+      "enabled": true,
+      "delay": 10.0,
+      "v": 12.6,
+      "grace": 10
+     },
+     "batt_high": {
+      "enabled": true,
+      "delay": 5.0,
+      "v": 15.2
+     },
+     "taillights": {
+      "enabled": true,
+      "delay": 10.0
+     },
+     "gateway": {
+      "enabled": true,
+      "delay": 5.0
+     },
+     "meth_module": {
+      "enabled": true,
+      "delay": 5.0
+     },
+     "pi_power": {
+      "enabled": true,
+      "delay": 2.0
+     },
+     "pi_heat": {
+      "enabled": true,
+      "delay": 10.0,
+      "c": 80
+     }
+    }
+   },
+   "alerts": [
+    {
+     "key": "oil",
+     "code": "OIL-01",
+     "title": "LOW OIL PRESSURE",
+     "severity": "critical",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": 0.0,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "oil_idle",
+     "code": "OIL-02",
+     "title": "LOW OIL PRESSURE AT IDLE",
+     "severity": "critical",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": 0.0,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "overrev",
+     "code": "RPM-01",
+     "title": "OVER-REV",
+     "severity": "critical",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "knock",
+     "code": "KNK-01",
+     "title": "KNOCK DETECTED",
+     "severity": "critical",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "knock_retard",
+     "code": "KNK-02",
+     "title": "ECU PULLING TIMING",
+     "severity": "warning",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "sync",
+     "code": "IGN-01",
+     "title": "IGNITION SYNC LOST",
+     "severity": "warning",
+     "group": "engine",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "fuel_low",
+     "code": "FUEL-01",
+     "title": "LOW FUEL PRESSURE",
+     "severity": "critical",
+     "group": "fuel",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": 0.0,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "fuel_boost",
+     "code": "FUEL-02",
+     "title": "FUEL PRESSURE LOW IN BOOST",
+     "severity": "critical",
+     "group": "fuel",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": 0.0,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "fuel_level",
+     "code": "FUEL-03",
+     "title": "FUEL LEVEL LOW",
+     "severity": "warning",
+     "group": "fuel",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": 42.0,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "trim",
+     "code": "FUEL-04",
+     "title": "FUEL TRIM OFF",
+     "severity": "warning",
+     "group": "fuel",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "overboost",
+     "code": "BST-01",
+     "title": "OVERBOOST",
+     "severity": "critical",
+     "group": "boost",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": 0,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "lean",
+     "code": "AFR-01",
+     "title": "LEAN UNDER BOOST",
+     "severity": "critical",
+     "group": "boost",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "rich",
+     "code": "AFR-02",
+     "title": "RICH UNDER BOOST",
+     "severity": "warning",
+     "group": "boost",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "cold_boost",
+     "code": "BST-02",
+     "title": "BOOST ON A COLD ENGINE",
+     "severity": "warning",
+     "group": "boost",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "coolant",
+     "code": "TMP-01",
+     "title": "COOLANT HIGH",
+     "severity": "critical",
+     "group": "temps",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "iat",
+     "code": "TMP-02",
+     "title": "INTAKE AIR HOT",
+     "severity": "warning",
+     "group": "temps",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "meth",
+     "code": "WMI-01",
+     "title": "WATER/METH FAULT",
+     "severity": "critical",
+     "group": "meth",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": "OFF",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "meth_tank",
+     "code": "WMI-02",
+     "title": "WATER/METH TANK LOW",
+     "severity": "warning",
+     "group": "meth",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": 100,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "meth_off",
+     "code": "WMI-03",
+     "title": "BOOST WITH WATER/METH OFF",
+     "severity": "warning",
+     "group": "meth",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": "OFF",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "batt_low",
+     "code": "ELC-01",
+     "title": "NOT CHARGING",
+     "severity": "warning",
+     "group": "electrical",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "batt_high",
+     "code": "ELC-02",
+     "title": "CHARGING VOLTAGE HIGH",
+     "severity": "warning",
+     "group": "electrical",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "unknown",
+     "since_ms": null,
+     "value": null,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "taillights",
+     "code": "MOD-01",
+     "title": "TAILLIGHTS NOT RESPONDING",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": "live",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "gateway",
+     "code": "MOD-02",
+     "title": "SENSOR GATEWAY NOT RESPONDING",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": "live",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "meth_module",
+     "code": "MOD-03",
+     "title": "WATER/METH CONTROLLER NOT RESPONDING",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": "live",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "pi_power",
+     "code": "PI-01",
+     "title": "PI POWER LOW",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": "OK",
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    },
+    {
+     "key": "pi_heat",
+     "code": "PI-02",
+     "title": "PI TOO HOT",
+     "severity": "warning",
+     "group": "modules",
+     "active": false,
+     "latched": false,
+     "acknowledged": false,
+     "condition": "normal",
+     "since_ms": null,
+     "value": 47.712,
+     "count": 0,
+     "last_ms": null,
+     "context": {}
+    }
+   ],
+   "alert_seq": 0,
+   "marker_seq": 0,
+   "last_event": null,
+   "current": null,
+   "error": ""
+  },
+  "trip": {
+   "settings": {
+    "enabled": false,
+    "capacity_l": 58.2953414736,
+    "reserve_l": 3,
+    "injector_cc_min": 440,
+    "injectors": 4,
+    "pw2_injectors": 0,
+    "pulses_per_rev": 0.5,
+    "dead_ms": 0,
+    "correction": 1
+   },
+   "counters": {
+    "a": {
+     "km": 9.24974819770366,
+     "moving_s": 1047.5679176690003,
+     "engine_s": 1516.864874000001,
+     "fuel_l": 0.0,
+     "paired_km": 0.0,
+     "paired_l": 0.0,
+     "missing_s": 9382.752780459967,
+     "mpg": null
+    },
+    "b": {
+     "km": 9.24974819770366,
+     "moving_s": 1047.5679176690003,
+     "engine_s": 1516.864874000001,
+     "fuel_l": 0.0,
+     "paired_km": 0.0,
+     "paired_l": 0.0,
+     "missing_s": 9382.752780459967,
+     "mpg": null
+    },
+    "total": {
+     "km": 9.24974819770366,
+     "moving_s": 1047.5679176690003,
+     "engine_s": 1516.864874000001,
+     "fuel_l": 0.0,
+     "paired_km": 0.0,
+     "paired_l": 0.0,
+     "missing_s": 9382.752780459967,
+     "mpg": null
+    }
+   },
+   "learned": {
+    "km": 0.0,
+    "litres": 0.0
+   },
+   "flow_lph": null,
+   "instant_mpg": null,
+   "average_mpg": null,
+   "range_km": null,
+   "remaining_l": 24.484043418911998,
+   "last_manual_l": null,
+   "odometer_km": null,
+   "fuel_source": "CAN fuel level",
+   "coasting": false,
+   "gps_live": true,
+   "fuel_live": false,
+   "error": "",
+   "estimated": true
+  },
+  "operations": {
+   "version": "0.4.0",
+   "os": "Debian GNU/Linux 13 (trixie)",
+   "model": "Raspberry Pi 4 Model B Rev 1.5",
+   "python": "3.13.5",
+   "parked": true,
+   "maintenance": [],
+   "checks": {},
+   "error": "",
+   "restore_pending": false,
+   "capabilities": [
+    {
+     "module": "Water / meth",
+     "command": "Acknowledged by 0x30A",
+     "readback": "Live mode/duty/faults",
+     "persistence": "Not guaranteed by current firmware"
+    },
+    {
+     "module": "Knock",
+     "command": "Acknowledged by 0x30A",
+     "readback": "Configuration refresh supported",
+     "persistence": "Not guaranteed by current firmware"
+    },
+    {
+     "module": "Taillights",
+     "command": "Sent only; no ACK defined",
+     "readback": "Lighting state and brightness telemetry",
+     "persistence": "Not confirmed"
+    }
+   ]
+  },
+  "system": {
+   "status": "sampled",
+   "timestamp_ms": 1793997242980,
+   "cpu_c": 47.712,
+   "power": {
+    "raw": 0,
+    "undervoltage_now": false,
+    "throttled_now": false,
+    "undervoltage_since_boot": false,
+    "throttled_since_boot": false
+   },
+   "disk": {
+    "free_bytes": 112761532416,
+    "total_bytes": 125257437184
+   },
+   "can": {
+    "interface": "can0",
+    "state": "ERROR-ACTIVE",
+    "bitrate": 500000,
+    "error_counters": null,
+    "rx_errors": 4,
+    "tx_errors": 0,
+    "rx_dropped": 2039,
+    "tx_dropped": 0,
+    "rx_packets": 16601,
+    "tx_packets": 1464
+   },
+   "notes": [],
+   "ups": {
+    "available": true,
+    "battery_percent": 100.0,
+    "battery_volts": 4.128733,
+    "charging": true,
+    "auto_power_on": true,
+    "input_present": true,
+    "state": "external_power",
+    "error": null,
+    "dry_run": false,
+    "remaining_seconds": null
+   },
+   "shutdown": {
+    "previous": {
+     "boot_id": "2158d9ca-84b9-49e1-bcb1-858e1ccda566",
+     "scope": "boot",
+     "run_id": "1baa45e8570e4098a15eb2078c274d52",
+     "started_ms": 1793922562182,
+     "ended_ms": 1793923108502,
+     "state": "saved",
+     "interruptions": 0,
+     "errors": [],
+     "recording_enabled": true,
+     "log_rows": 10905,
+     "dropped_samples": 19
+    },
+    "tracking": true,
+    "error": "",
+    "scope": "boot"
+   },
+   "can_module": {
+    "present": true,
+    "driver": "mcp251x",
+    "spi": "spi0.0",
+    "up": true,
+    "interrupts": null
+   }
+  },
+  "can_errors": {
+   "frames": 0,
+   "bus_off": 0,
+   "restarts": 0
+  },
+  "can_watch": {
+   "silent_s": 0.7,
+   "resets": 0,
+   "tries": 0,
+   "helper": "unknown",
+   "last_reset": null,
+   "last_result": null
+  },
+  "firmware": {
+   "gateway": {
+    "name": "gateway",
+    "label": "Gateway",
+    "title": "Gateway firmware",
+    "warning": "Speed, fuel, wheel buttons and interior lights pause for about a minute.",
+    "installed": null,
+    "can_restart": false,
+    "on_trial": false,
+    "available": "a6fa0a6b",
+    "can_install": false,
+    "new": false,
+    "note": "The gateway is not answering. Firmware from before this feature must be replaced once by USB",
+    "short": "not answering",
+    "job": {
+     "state": "idle",
+     "message": "",
+     "progress": 0.0
+    }
+   },
+   "taillights": {
+    "name": "taillights",
+    "label": "Taillight controller",
+    "title": "Taillight firmware",
+    "warning": "Lights off and foot off the brake: the taillights stay dark for a few minutes, and any light switched on stops the update.",
+    "installed": null,
+    "can_restart": false,
+    "on_trial": false,
+    "available": "d9b1686a",
+    "can_install": false,
+    "new": false,
+    "note": "The taillight controller is not answering. Firmware from before this feature must be replaced once by USB",
+    "short": "not answering",
+    "job": {
+     "state": "idle",
+     "message": "",
+     "progress": 0.0
+    }
+   },
+   "watermeth": {
+    "name": "watermeth",
+    "label": "Water/meth controller",
+    "title": "Water/meth firmware",
+    "warning": "Engine off: injection is off for about a minute, and the controller stops the update if boost comes up.",
+    "installed": null,
+    "can_restart": true,
+    "on_trial": false,
+    "available": "ed2a1550",
+    "can_install": false,
+    "new": false,
+    "note": "No answer. That is normal with the Nano board, which is updated by USB; the ESP32 board answers here once it is fitted",
+    "short": "no answer (normal with the Nano board)",
+    "job": {
+     "state": "idle",
+     "message": "",
+     "progress": 0.0
+    },
+    "nano": true
+   }
+  },
+  "updating": [],
+  "wheel": {
+   "session": "92949f1ba32b449c8c56d7c1af84cee0",
+   "seq": 0,
+   "status": "ready",
+   "events": []
+  },
+  "recording": {
+   "enabled": true,
+   "state": "recording",
+   "file": "frogdash-live-20261106T203403Z-dfb289b10bc1.mlg",
+   "rows": 32,
+   "dropped": 0,
+   "error": null,
+   "hz": 20
+  },
+  "faults": {}
+ },
+ "display": {
+  "status": "fresh",
+  "age_seconds": 1.58,
+  "screen": [
+   1920,
+   720
+  ],
+  "viewport": [
+   1920,
+   720
+  ],
+  "visual": [
+   1920,
+   720,
+   1,
+   0,
+   0
+  ],
+  "pixel_ratio": 1,
+  "responsive": false,
+  "dashboard": [
+   0,
+   0,
+   1920,
+   720
+  ],
+  "position": "absolute",
+  "transform": "matrix(1, 0, 0, 1, 0, 0)",
+  "margin": "-360px 0px 0px -960px",
+  "body_overflow": "hidden",
+  "scroll": [
+   0,
+   0
+  ],
+  "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+  "responsive_css": true,
+  "first_frame_ms": 1060,
+  "others_loaded_ms": 6131
+ },
+ "firmware": {
+  "gateway": {
+   "name": "gateway",
+   "label": "Gateway",
+   "title": "Gateway firmware",
+   "warning": "Speed, fuel, wheel buttons and interior lights pause for about a minute.",
+   "installed": null,
+   "can_restart": false,
+   "on_trial": false,
+   "available": "a6fa0a6b",
+   "can_install": false,
+   "new": false,
+   "note": "The gateway is not answering. Firmware from before this feature must be replaced once by USB",
+   "short": "not answering",
+   "job": {
+    "state": "idle",
+    "message": "",
+    "progress": 0.0
+   }
+  },
+  "taillights": {
+   "name": "taillights",
+   "label": "Taillight controller",
+   "title": "Taillight firmware",
+   "warning": "Lights off and foot off the brake: the taillights stay dark for a few minutes, and any light switched on stops the update.",
+   "installed": null,
+   "can_restart": false,
+   "on_trial": false,
+   "available": "d9b1686a",
+   "can_install": false,
+   "new": false,
+   "note": "The taillight controller is not answering. Firmware from before this feature must be replaced once by USB",
+   "short": "not answering",
+   "job": {
+    "state": "idle",
+    "message": "",
+    "progress": 0.0
+   }
+  },
+  "watermeth": {
+   "name": "watermeth",
+   "label": "Water/meth controller",
+   "title": "Water/meth firmware",
+   "warning": "Engine off: injection is off for about a minute, and the controller stops the update if boost comes up.",
+   "installed": null,
+   "can_restart": true,
+   "on_trial": false,
+   "available": "ed2a1550",
+   "can_install": false,
+   "new": false,
+   "note": "No answer. That is normal with the Nano board, which is updated by USB; the ESP32 board answers here once it is fitted",
+   "short": "no answer (normal with the Nano board)",
+   "job": {
+    "state": "idle",
+    "message": "",
+    "progress": 0.0
+   },
+   "nano": true
+  }
+ },
+ "gps": {
+  "services": [
+   "active",
+   "active"
+  ],
+  "gpsd_config": "# Devices gpsd should collect to at boot time.\n# They need to be read/writeable, either by user gpsd or the group dialout.\n\n# Other options you want to pass to gpsd\n\n# Automatically hot add/remove USB GPS devices via gpsdctl\nDEVICES=\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\"\nGPSD_OPTIONS=\"-n\"\nUSBAUTO=\"false\"\n",
+  "serial_ports": "total 0\nlrwxrwxrwx 1 root root 13 Oct 27 20:31 usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00 -> ../../ttyACM0\n",
+  "usb": "Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub\nBus 001 Device 002: ID 2109:3431 VIA Labs, Inc. Hub\nBus 001 Device 003: ID 05e3:0610 Genesys Logic, Inc. Hub\nBus 001 Device 004: ID 1546:01a7 U-Blox AG [u-blox 7]\nBus 001 Device 005: ID 046d:c52f Logitech, Inc. Nano Receiver\nBus 001 Device 006: ID 0bda:c820 Realtek Semiconductor Corp. 802.11ac NIC\nBus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub\nBus 002 Device 002: ID 05e3:0626 Genesys Logic, Inc. Hub\n",
+  "gpspipe": "{\"class\":\"VERSION\",\"release\":\"3.25\",\"rev\":\"3.25\",\"proto_major\":3,\"proto_minor\":15}\n{\"class\":\"DEVICES\",\"devices\":[{\"class\":\"DEVICE\",\"path\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"driver\":\"u-blox\",\"subtype\":\"SW 1.00 (59842),HW 00070000\",\"subtype1\":\"PROTVER 14.00,GPS;SBAS;GLO;QZSS\",\"activated\":\"2026-11-06T20:34:04.184Z\",\"flags\":1,\"native\":1,\"bps\":9600,\"parity\":\"N\",\"stopbits\":1,\"cycle\":1.00,\"mincycle\":0.02}]}\n{\"class\":\"WATCH\",\"enable\":true,\"json\":true,\"nmea\":false,\"raw\":0,\"scaled\":false,\"timing\":false,\"split24\":false,\"pps\":false}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-11-06T20:34:05.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.076029705,\"lon\":-108.563917042,\"altHAE\":1403.6941,\"altMSL\":1422.5716,\"alt\":1422.5716,\"epx\":45.726,\"epy\":41.377,\"epv\":48.300,\"track\":201.7948,\"magtrack\":211.3755,\"magvar\":9.6,\"speed\":0.034,\"climb\":0.007,\"eps\":0.46,\"epc\":96.60,\"ecefx\":-1578791.13,\"ecefy\":-4701074.37,\"ecefz\":3999757.84,\"ecefvx\":-0.02,\"ecefvy\":-0.02,\"ecefvz\":-0.02,\"ecefpAcc\":21.93,\"ecefvAcc\":0.46,\"velN\":-0.031,\"velE\":-0.013,\"velD\":-0.007,\"geoidSep\":-18.877,\"eph\":25.080,\"sep\":47.120}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-11-06T20:34:04.000Z\",\"gdop\":2.87,\"hdop\":1.32,\"pdop\":2.48,\"tdop\":1.45,\"xdop\":3.05,\"ydop\":2.76,\"vdop\":2.10}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-11-06T20:34:05.000Z\",\"gdop\":2.87,\"hdop\":1.32,\"pdop\":2.48,\"tdop\":1.45,\"xdop\":3.05,\"ydop\":2.76,\"vdop\":2.10,\"nSat\":17,\"uSat\":6,\"satellites\":[{\"PRN\":4,\"gnssid\":0,\"svid\":4,\"az\":150.0,\"el\":37.0,\"ss\":38.0,\"used\":true,\"health\":1},{\"PRN\":5,\"gnssid\":0,\"svid\":5,\"az\":324.0,\"el\":6.0,\"ss\":22.0,\"used\":false,\"health\":1},{\"PRN\":7,\"gnssid\":0,\"svid\":7,\"az\":327.0,\"el\":65.0,\"ss\":30.0,\"used\":true,\"health\":1},{\"PRN\":8,\"gnssid\":0,\"svid\":8,\"az\":113.0,\"el\":48.0,\"ss\":28.0,\"used\":false,\"health\":1},{\"PRN\":9,\"gnssid\":0,\"svid\":9,\"az\":181.0,\"el\":69.0,\"ss\":30.0,\"used\":true,\"health\":1},{\"PRN\":14,\"gnssid\":0,\"svid\":14,\"az\":234.0,\"el\":22.0,\"ss\":20.0,\"used\":false,\"health\":1},{\"PRN\":16,\"gnssid\":0,\"svid\":16,\"az\":48.0,\"el\":15.0,\"ss\":26.0,\"used\":false,\"health\":1},{\"PRN\":21,\"gnssid\":0,\"svid\":21,\"az\":296.0,\"el\":21.0,\"ss\":28.0,\"used\":true,\"health\":1},{\"PRN\":22,\"gnssid\":0,\"svid\":22,\"az\":229.0,\"el\":1.0,\"ss\":15.0,\"used\":false,\"health\":1},{\"PRN\":27,\"gnssid\":0,\"svid\":27,\"az\":62.0,\"el\":33.0,\"ss\":30.0,\"used\":true,\"health\":1},{\"PRN\":30,\"gnssid\":0,\"svid\":30,\"az\":295.0,\"el\":34.0,\"ss\":33.0,\"used\":true,\"health\":1},{\"PRN\":46,\"gnssid\":1,\"svid\":133,\"az\":211.0,\"el\":40.0,\"ss\":34.0,\"used\":false,\"health\":1},{\"PRN\":48,\"gnssid\":1,\"svid\":135,\"az\":216.0,\"el\":38.0,\"ss\":31.0,\"used\":false,\"health\":1},{\"PRN\":51,\"gnssid\":1,\"svid\":138,\"az\":178.0,\"el\":45.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":193,\"gnssid\":5,\"svid\":1,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":194,\"gnssid\":5,\"svid\":2,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":196,\"gnssid\":5,\"svid\":4,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1}]}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-11-06T20:34:05.000Z\",\"gdop\":2.87,\"hdop\":1.32,\"pdop\":2.48,\"tdop\":1.45,\"xdop\":3.05,\"ydop\":2.76,\"vdop\":2.10}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-11-06T20:34:05.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.076029705,\"lon\":-108.563917042,\"altHAE\":1403.6941,\"altMSL\":1422.5716,\"alt\":1422.5716,\"epx\":45.726,\"epy\":41.377,\"epv\":48.300,\"track\":201.7948,\"magtrack\":211.3755,\"magvar\":9.6,\"speed\":0.034,\"climb\":0.007,\"eps\":91.45,\"epc\":96.60,\"ecefx\":-1578791.13,\"ecefy\":-4701074.37,\"ecefz\":3999757.84,\"ecefvx\":-0.02,\"ecefvy\":-0.02,\"ecefvz\":-0.02,\"ecefpAcc\":21.93,\"ecefvAcc\":0.46,\"velN\":-0.031,\"velE\":-0.013,\"velD\":-0.007,\"geoidSep\":-18.877,\"eph\":25.080,\"sep\":47.120}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-11-06T20:34:06.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.076029335,\"lon\":-108.563919941,\"altHAE\":1403.0626,\"altMSL\":1421.9401,\"alt\":1421.9401,\"epx\":45.726,\"epy\":41.377,\"epv\":48.300,\"track\":220.6188,\"magtrack\":230.1995,\"magvar\":9.6,\"speed\":0.034,\"climb\":0.016,\"eps\":0.47,\"epc\":96.60,\"ecefx\":-1578791.22,\"ecefy\":-4701073.85,\"ecefz\":3999757.41,\"ecefvx\":-0.03,\"ecefvy\":-0.02,\"ecefvz\":-0.01,\"ecefpAcc\":20.90,\"ecefvAcc\":0.47,\"velN\":-0.026,\"velE\":-0.022,\"velD\":-0.016,\"geoidSep\":-18.877,\"eph\":25.080,\"sep\":47.120}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-11-06T20:34:05.000Z\",\"gdop\":2.87,\"hdop\":1.32,\"pdop\":2.48,\"tdop\":1.45,\"xdop\":3.05,\"ydop\":2.76,\"vdop\":2.10}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-11-06T20:34:06.000Z\",\"gdop\":2.87,\"hdop\":1.32,\"pdop\":2.48,\"tdop\":1.45,\"xdop\":3.05,\"ydop\":2.76,\"vdop\":2.10,\"nSat\":17,\"uSat\":6,\"satellites\":[{\"PRN\":4,\"gnssid\":0,\"svid\":4,\"az\":150.0,\"el\":37.0,\"ss\":38.0,\"used\":true,\"health\":1},{\"PRN\":5,\"gnssid\":0,\"svid\":5,\"az\":324.0,\"el\":6.0,\"ss\":22.0,\"used\":false,\"health\":1},{\"PRN\":7,\"gnssid\":0,\"svid\":7,\"az\":327.0,\"el\":65.0,\"ss\":30.0,\"used\":true,\"health\":1},{\"PRN\":8,\"gnssid\":0,\"svid\":8,\"az\":113.0,\"el\":48.0,\"ss\":29.0,\"used\":false,\"health\":1},{\"PRN\":9,\"gnssid\":0,\"svid\":9,\"az\":181.0,\"el\":69.0,\"ss\":23.0,\"used\":true,\"health\":1},{\"PRN\":14,\"gnssid\":0,\"svid\":14,\"az\":234.0,\"el\":22.0,\"ss\":20.0,\"used\":false,\"health\":1},{\"PRN\":16,\"gnssid\":0,\"svid\":16,\"az\":48.0,\"el\":15.0,\"ss\":27.0,\"used\":false,\"health\":1},{\"PRN\":21,\"gnssid\":0,\"svid\":21,\"az\":296.0,\"el\":21.0,\"ss\":28.0,\"used\":true,\"health\":1},{\"PRN\":22,\"gnssid\":0,\"svid\":22,\"az\":229.0,\"el\":1.0,\"ss\":15.0,\"used\":false,\"health\":1},{\"PRN\":27,\"gnssid\":0,\"svid\":27,\"az\":62.0,\"el\":33.0,\"ss\":31.0,\"used\":true,\"health\":1},{\"PRN\":30,\"gnssid\":0,\"svid\":30,\"az\":295.0,\"el\":34.0,\"ss\":33.0,\"used\":true,\"health\":1},{\"PRN\":46,\"gnssid\":1,\"svid\":133,\"az\":211.0,\"el\":40.0,\"ss\":33.0,\"used\":false,\"health\":1},{\"PRN\":48,\"gnssid\":1,\"svid\":135,\"az\":216.0,\"el\":38.0,\"ss\":31.0,\"used\":false,\"health\":1},{\"PRN\":51,\"gnssid\":1,\"svid\":138,\"az\":178.0,\"el\":45.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":193,\"gnssid\":5,\"svid\":1,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":194,\"gnssid\":5,\"svid\":2,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":196,\"gnssid\":5,\"svid\":4,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1}]}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-11-06T20:34:06.000Z\",\"gdop\":2.87,\"hdop\":1.32,\"pdop\":2.48,\"tdop\":1.45,\"xdop\":3.05,\"ydop\":2.76,\"vdop\":2.10}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-11-06T20:34:06.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.076029335,\"lon\":-108.563919941,\"altHAE\":1403.0626,\"altMSL\":1421.9401,\"alt\":1421.9401,\"epx\":45.726,\"epy\":41.377,\"epv\":48.300,\"track\":220.6188,\"magtrack\":230.1995,\"magvar\":9.6,\"speed\":0.034,\"climb\":0.016,\"eps\":91.45,\"epc\":96.60,\"ecefx\":-1578791.22,\"ecefy\":-4701073.85,\"ecefz\":3999757.41,\"ecefvx\":-0.03,\"ecefvy\":-0.02,\"ecefvz\":-0.01,\"ecefpAcc\":20.90,\"ecefvAcc\":0.47,\"velN\":-0.026,\"velE\":-0.022,\"velD\":-0.016,\"geoidSep\":-18.877,\"eph\":25.080,\"sep\":47.120}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-11-06T20:34:07.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.076028913,\"lon\":-108.563923619,\"altHAE\":1401.8035,\"altMSL\":1420.6810,\"alt\":1420.6810,\"epx\":45.726,\"epy\":41.377,\"epv\":48.300,\"track\":141.7248,\"magtrack\":151.3055,\"magvar\":9.6,\"speed\":0.021,\"climb\":0.036,\"eps\":0.41,\"epc\":96.60,\"ecefx\":-1578791.22,\"ecefy\":-4701072.85,\"ecefz\":3999756.58,\"ecefvx\":0.00,\"ecefvy\":-0.04,\"ecefvz\":0.01,\"ecefpAcc\":19.91,\"ecefvAcc\":0.41,\"velN\":-0.016,\"velE\":0.013,\"velD\":-0.036,\"geoidSep\":-18.877,\"eph\":25.080,\"sep\":47.120}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-11-06T20:34:06.000Z\",\"gdop\":2.87,\"hdop\":1.32,\"pdop\":2.48,\"tdop\":1.45,\"xdop\":3.05,\"ydop\":2.76,\"vdop\":2.10}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-11-06T20:34:07.000Z\",\"gdop\":2.87,\"hdop\":1.32,\"pdop\":2.48,\"tdop\":1.45,\"xdop\":3.05,\"ydop\":2.76,\"vdop\":2.10,\"nSat\":17,\"uSat\":6,\"satellites\":[{\"PRN\":4,\"gnssid\":0,\"svid\":4,\"az\":150.0,\"el\":37.0,\"ss\":39.0,\"used\":true,\"health\":1},{\"PRN\":5,\"gnssid\":0,\"svid\":5,\"az\":324.0,\"el\":6.0,\"ss\":22.0,\"used\":false,\"health\":1},{\"PRN\":7,\"gnssid\":0,\"svid\":7,\"az\":327.0,\"el\":65.0,\"ss\":32.0,\"used\":true,\"health\":1},{\"PRN\":8,\"gnssid\":0,\"svid\":8,\"az\":113.0,\"el\":48.0,\"ss\":29.0,\"used\":false,\"health\":1},{\"PRN\":9,\"gnssid\":0,\"svid\":9,\"az\":181.0,\"el\":69.0,\"ss\":23.0,\"used\":true,\"health\":1},{\"PRN\":14,\"gnssid\":0,\"svid\":14,\"az\":234.0,\"el\":22.0,\"ss\":21.0,\"used\":false,\"health\":1},{\"PRN\":16,\"gnssid\":0,\"svid\":16,\"az\":48.0,\"el\":15.0,\"ss\":26.0,\"used\":false,\"health\":1},{\"PRN\":21,\"gnssid\":0,\"svid\":21,\"az\":296.0,\"el\":21.0,\"ss\":27.0,\"used\":true,\"health\":1},{\"PRN\":22,\"gnssid\":0,\"svid\":22,\"az\":229.0,\"el\":1.0,\"ss\":15.0,\"used\":false,\"health\":1},{\"PRN\":27,\"gnssid\":0,\"svid\":27,\"az\":62.0,\"el\":33.0,\"ss\":32.0,\"used\":true,\"health\":1},{\"PRN\":30,\"gnssid\":0,\"svid\":30,\"az\":295.0,\"el\":34.0,\"ss\":33.0,\"used\":true,\"health\":1},{\"PRN\":46,\"gnssid\":1,\"svid\":133,\"az\":211.0,\"el\":40.0,\"ss\":32.0,\"used\":false,\"health\":1},{\"PRN\":48,\"gnssid\":1,\"svid\":135,\"az\":216.0,\"el\":38.0,\"ss\":32.0,\"used\":false,\"health\":1},{\"PRN\":51,\"gnssid\":1,\"svid\":138,\"az\":178.0,\"el\":45.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":193,\"gnssid\":5,\"svid\":1,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":194,\"gnssid\":5,\"svid\":2,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":196,\"gnssid\":5,\"svid\":4,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1}]}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-11-06T20:34:07.000Z\",\"gdop\":2.87,\"hdop\":1.32,\"pdop\":2.48,\"tdop\":1.45,\"xdop\":3.05,\"ydop\":2.76,\"vdop\":2.10}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"mode\":3,\"time\":\"2026-11-06T20:34:07.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.076028913,\"lon\":-108.563923619,\"altHAE\":1401.8035,\"altMSL\":1420.6810,\"alt\":1420.6810,\"epx\":45.726,\"epy\":41.377,\"epv\":48.300,\"track\":141.7248,\"magtrack\":151.3055,\"magvar\":9.6,\"speed\":0.021,\"climb\":0.036,\"eps\":91.45,\"epc\":96.60,\"ecefx\":-1578791.22,\"ecefy\":-4701072.85,\"ecefz\":3999756.58,\"ecefvx\":0.00,\"ecefvy\":-0.04,\"ecefvz\":0.01,\"ecefpAcc\":19.91,\"ecefvAcc\":0.41,\"velN\":-0.016,\"velE\":0.013,\"velD\":-0.036,\"geoidSep\":-18.877,\"eph\":25.080,\"sep\":47.120}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"status\":2,\"mode\":3,\"time\":\"2026-11-06T20:34:08.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.076027397,\"lon\":-108.563928379,\"altHAE\":1401.1384,\"altMSL\":1420.0159,\"alt\":1420.0159,\"epx\":11.431,\"epy\":10.344,\"epv\":12.075,\"track\":34.1473,\"magtrack\":43.7281,\"magvar\":9.6,\"speed\":0.056,\"climb\":0.038,\"eps\":0.47,\"epc\":60.37,\"ecefx\":-1578791.48,\"ecefy\":-4701072.33,\"ecefz\":3999756.03,\"ecefvx\":0.03,\"ecefvy\":-0.01,\"ecefvz\":0.06,\"ecefpAcc\":19.13,\"ecefvAcc\":0.47,\"velN\":0.047,\"velE\":0.032,\"velD\":-0.038,\"geoidSep\":-18.877,\"eph\":6.270,\"sep\":11.780}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-11-06T20:34:07.000Z\",\"gdop\":2.87,\"hdop\":1.32,\"pdop\":2.48,\"tdop\":1.45,\"xdop\":3.05,\"ydop\":2.76,\"vdop\":2.10}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-11-06T20:34:08.000Z\",\"gdop\":2.87,\"hdop\":1.32,\"pdop\":2.48,\"tdop\":1.45,\"xdop\":3.05,\"ydop\":2.76,\"vdop\":2.10,\"nSat\":17,\"uSat\":6,\"satellites\":[{\"PRN\":4,\"gnssid\":0,\"svid\":4,\"az\":150.0,\"el\":37.0,\"ss\":37.0,\"used\":true,\"health\":1},{\"PRN\":5,\"gnssid\":0,\"svid\":5,\"az\":324.0,\"el\":6.0,\"ss\":22.0,\"used\":false,\"health\":1},{\"PRN\":7,\"gnssid\":0,\"svid\":7,\"az\":327.0,\"el\":65.0,\"ss\":33.0,\"used\":true,\"health\":1},{\"PRN\":8,\"gnssid\":0,\"svid\":8,\"az\":113.0,\"el\":48.0,\"ss\":28.0,\"used\":false,\"health\":1},{\"PRN\":9,\"gnssid\":0,\"svid\":9,\"az\":181.0,\"el\":69.0,\"ss\":21.0,\"used\":true,\"health\":1},{\"PRN\":14,\"gnssid\":0,\"svid\":14,\"az\":234.0,\"el\":22.0,\"ss\":21.0,\"used\":false,\"health\":1},{\"PRN\":16,\"gnssid\":0,\"svid\":16,\"az\":48.0,\"el\":15.0,\"ss\":25.0,\"used\":false,\"health\":1},{\"PRN\":21,\"gnssid\":0,\"svid\":21,\"az\":296.0,\"el\":21.0,\"ss\":24.0,\"used\":true,\"health\":1},{\"PRN\":22,\"gnssid\":0,\"svid\":22,\"az\":229.0,\"el\":1.0,\"ss\":7.0,\"used\":false,\"health\":1},{\"PRN\":27,\"gnssid\":0,\"svid\":27,\"az\":62.0,\"el\":33.0,\"ss\":32.0,\"used\":true,\"health\":1},{\"PRN\":30,\"gnssid\":0,\"svid\":30,\"az\":295.0,\"el\":34.0,\"ss\":30.0,\"used\":true,\"health\":1},{\"PRN\":46,\"gnssid\":1,\"svid\":133,\"az\":211.0,\"el\":40.0,\"ss\":31.0,\"used\":false,\"health\":1},{\"PRN\":48,\"gnssid\":1,\"svid\":135,\"az\":216.0,\"el\":38.0,\"ss\":31.0,\"used\":false,\"health\":1},{\"PRN\":51,\"gnssid\":1,\"svid\":138,\"az\":178.0,\"el\":45.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":193,\"gnssid\":5,\"svid\":1,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":194,\"gnssid\":5,\"svid\":2,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1},{\"PRN\":196,\"gnssid\":5,\"svid\":4,\"az\":0.0,\"ss\":0.0,\"used\":false,\"health\":1}]}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-11-06T20:34:08.000Z\",\"gdop\":2.87,\"hdop\":1.32,\"pdop\":2.48,\"tdop\":1.45,\"xdop\":3.05,\"ydop\":2.76,\"vdop\":2.10}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"status\":2,\"mode\":3,\"time\":\"2026-11-06T20:34:08.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.076027397,\"lon\":-108.563928379,\"altHAE\":1401.1384,\"altMSL\":1420.0159,\"alt\":1420.0159,\"epx\":11.431,\"epy\":10.344,\"epv\":12.075,\"track\":34.1473,\"magtrack\":43.7281,\"magvar\":9.6,\"speed\":0.056,\"climb\":0.038,\"eps\":57.16,\"epc\":60.37,\"ecefx\":-1578791.48,\"ecefy\":-4701072.33,\"ecefz\":3999756.03,\"ecefvx\":0.03,\"ecefvy\":-0.01,\"ecefvz\":0.06,\"ecefpAcc\":19.13,\"ecefvAcc\":0.47,\"velN\":0.047,\"velE\":0.032,\"velD\":-0.038,\"geoidSep\":-18.877,\"eph\":6.270,\"sep\":11.780}\n{\"class\":\"TPV\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"status\":2,\"mode\":3,\"time\":\"2026-11-06T20:34:09.000Z\",\"leapseconds\":18,\"ept\":0.005,\"lat\":39.076025584,\"lon\":-108.563930713,\"altHAE\":1401.2118,\"altMSL\":1420.0893,\"alt\":1420.0893,\"epx\":11.431,\"epy\":10.344,\"epv\":12.075,\"track\":29.3174,\"magtrack\":38.8981,\"magvar\":9.6,\"speed\":0.013,\"climb\":0.034,\"eps\":0.47,\"epc\":24.15,\"ecefx\":-1578791.73,\"ecefy\":-4701072.44,\"ecefz\":3999755.92,\"ecefvx\":0.00,\"ecefvy\":-0.02,\"ecefvz\":0.03,\"ecefpAcc\":18.58,\"ecefvAcc\":0.47,\"velN\":0.011,\"velE\":0.006,\"velD\":-0.034,\"geoidSep\":-18.877,\"eph\":6.270,\"sep\":11.780}\n{\"class\":\"SKY\",\"device\":\"/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00\",\"time\":\"2026-11-06T20:34:08.000Z\",\"gdop\":2.87,\"hdop\":1.32,\"pdop\":2.48,\"tdop\":1.45,\"xdop\":3.05,\"ydop\":2.76,\"vdop\":2.10}\n"
+ },
+ "can": {
+  "link": "3: can0: <NOARP,UP,LOWER_UP,ECHO> mtu 16 qdisc pfifo_fast state UP mode DEFAULT group default qlen 10\n    link/can  promiscuity 0 allmulti 0 minmtu 16 maxmtu 16 \n    can state ERROR-ACTIVE restart-ms 100 \n\t  bitrate 500000 sample-point 0.833\n\t  tq 166 prop-seg 4 phase-seg1 5 phase-seg2 2 sjw 1 brp 1\n\t  mcp251x: tseg1 3..16 tseg2 2..8 sjw 1..4 brp 1..64 brp_inc 1\n\t  clock 6000000 \n\t  re-started bus-errors arbit-lost error-warn error-pass bus-off\n\t  0          0          0          0          0          0         numtxqueues 1 numrxqueues 1 gso_max_size 65536 gso_max_segs 65535 tso_max_size 65536 tso_max_segs 65535 gro_max_size 65536 gso_ipv4_max_size 65536 gro_ipv4_max_size 65536 parentbus spi parentdev spi0.0 \n    RX:  bytes packets errors dropped  missed   mcast           \n        133361   17741      4    2039       0       0 \n    TX:  bytes packets errors dropped carrier collsns           \n          6877    1554      0       0       0       0 \n",
+  "traffic_2s": " (1793997249.091152)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997249.091490)  can0  307   [8]  13 00 00 08 00 00 00 09\n (1793997249.091918)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997249.092732)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.102744)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997249.110408)  can0  303   [8]  00 00 00 00 28 28 FE 00\n (1793997249.112781)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.122786)  can0  500   [8]  00 00 00 00 06 7C 2A 04\n (1793997249.125391)  can0  309   [4]  00 00 00 00\n (1793997249.132756)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.140968)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997249.142592)  can0  501   [4]  00 1F 00 01\n (1793997249.150790)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997249.151208)  can0  307   [8]  13 00 00 08 00 00 00 04\n (1793997249.151652)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997249.152703)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.162767)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997249.172791)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.182719)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997249.184013)  can0  309   [4]  00 00 00 00\n (1793997249.192732)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.202854)  can0  500   [8]  00 00 00 00 06 AB 2A 04\n (1793997249.211351)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997249.211731)  can0  307   [8]  13 00 00 08 00 00 00 00\n (1793997249.212170)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997249.212757)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.222622)  can0  501   [4]  00 1F 00 01\n (1793997249.230543)  can0  30F   [8]  04 00 00 00 00 00 00 00\n (1793997249.232756)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.241826)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997249.242756)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997249.243862)  can0  309   [4]  00 00 00 00\n (1793997249.252744)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.262710)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997249.272724)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.273032)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997249.273472)  can0  307   [8]  13 00 00 08 00 00 00 0A\n (1793997249.273915)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997249.282829)  can0  500   [8]  00 00 00 00 06 A7 2A 04\n (1793997249.292765)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.293881)  can0  309   [4]  00 00 00 00\n (1793997249.302666)  can0  501   [4]  00 1F 00 01\n (1793997249.312798)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.322717)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997249.331514)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997249.331922)  can0  307   [8]  13 00 00 08 00 00 00 00\n (1793997249.332345)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997249.332710)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.342605)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997249.342845)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997249.344246)  can0  309   [4]  00 00 00 00\n (1793997249.352738)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.362739)  can0  500   [8]  00 00 00 00 06 CC 2A 04\n (1793997249.371303)  can0  303   [8]  00 00 00 00 28 28 FE 00\n (1793997249.372720)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.382671)  can0  501   [4]  00 1F 00 01\n (1793997249.392127)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997249.392530)  can0  307   [8]  13 00 00 08 00 00 00 06\n (1793997249.392787)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.393048)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997249.397934)  can0  309   [4]  00 00 00 00\n (1793997249.402856)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997249.412738)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.422713)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997249.431919)  can0  30F   [8]  04 00 00 00 00 00 00 00\n (1793997249.432701)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.442754)  can0  500   [8]  00 00 00 00 06 AD 2A 04\n (1793997249.443364)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997249.452261)  can0  300   [8]  00 00 64 00 00 28 28 00\n (1793997249.452663)  can0  307   [8]  11 00 00 08 00 00 00 06\n (1793997249.452941)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.453187)  can0  30B   [8]  81 00 08 00 00 21 21 01\n (1793997249.453704)  can0  309   [4]  00 00 00 00\n (1793997249.462733)  can0  501   [4]  00 1F 00 01\n (1793997249.472760)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.482765)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997249.484361)  can0  203   [8]  00 00 05 8C 06 03 1B 11\n (1793997249.492066)  can0  30C   [8]  03 08 19 00 64 19 0A 3C\n (1793997249.492446)  can0  30D   [8]  12 C0 40 02 0C 14 60 00\n (1793997249.492739)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.493011)  can0  30F   [8]  03 00 08 01 00 00 0F A0\n (1793997249.502790)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997249.504664)  can0  309   [4]  00 00 00 00\n (1793997249.512794)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997249.513032)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.513239)  can0  307   [8]  13 00 00 08 00 00 00 00\n (1793997249.513660)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997249.522844)  can0  500   [8]  00 00 00 00 06 AD 2A 04\n (1793997249.532788)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.542671)  can0  501   [4]  00 1F 00 01\n (1793997249.544261)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997249.552815)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.562830)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997249.569244)  can0  309   [4]  00 00 00 00\n (1793997249.569578)  can0  103   [8]  05 00 00 16 00 1E 37 00\n (1793997249.572165)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997249.572534)  can0  307   [8]  13 00 00 08 00 00 00 00\n (1793997249.572818)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.573039)  can0  30B   [8]  83 00 08 00 00 21 21 00\n (1793997249.582705)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997249.592716)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.602761)  can0  500   [8]  00 00 00 00 06 84 2A 04\n (1793997249.612752)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.622625)  can0  501   [4]  00 1F 00 01\n (1793997249.623995)  can0  309   [4]  00 00 00 00\n (1793997249.632704)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.632938)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997249.633460)  can0  303   [8]  00 00 00 00 28 28 FE 00\n (1793997249.633883)  can0  307   [8]  13 00 00 08 00 00 00 00\n (1793997249.634322)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997249.634746)  can0  30F   [8]  04 00 00 00 00 00 00 00\n (1793997249.642679)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997249.645191)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997249.652702)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.662778)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997249.672794)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.674188)  can0  309   [4]  00 00 00 00\n (1793997249.682778)  can0  500   [8]  00 00 00 00 06 B5 2A 04\n (1793997249.692433)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997249.692757)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.693043)  can0  307   [8]  13 00 00 08 00 00 00 02\n (1793997249.693412)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997249.702725)  can0  501   [4]  00 1F 00 01\n (1793997249.712765)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.722753)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997249.727919)  can0  309   [4]  00 00 00 00\n (1793997249.732738)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.742702)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997249.746018)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997249.752730)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.753049)  can0  300   [8]  00 00 64 00 00 28 28 00\n (1793997249.753486)  can0  307   [8]  11 00 00 08 00 00 00 05\n (1793997249.753926)  can0  30B   [8]  81 00 08 00 00 21 21 03\n (1793997249.762736)  can0  500   [8]  00 00 00 00 06 AF 2A 04\n (1793997249.772748)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.782614)  can0  501   [4]  00 1F 00 01\n (1793997249.783699)  can0  309   [4]  00 00 00 00\n (1793997249.792755)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.802720)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997249.812755)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.813728)  can0  300   [8]  00 00 64 00 00 28 28 00\n (1793997249.814143)  can0  307   [8]  11 00 00 08 00 00 00 06\n (1793997249.814581)  can0  30B   [8]  81 00 08 00 00 21 21 01\n (1793997249.822709)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997249.832483)  can0  30F   [8]  04 00 00 06 87 02 00 00\n (1793997249.832746)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.842715)  can0  500   [8]  00 00 00 00 06 AF 2A 04\n (1793997249.843579)  can0  309   [4]  00 00 00 00\n (1793997249.846887)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997249.852771)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.862835)  can0  501   [4]  00 1F 00 01\n (1793997249.872850)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.873227)  can0  300   [8]  00 00 64 00 00 28 28 00\n (1793997249.873552)  can0  307   [8]  11 00 00 08 00 00 00 01\n (1793997249.874049)  can0  30B   [8]  81 00 08 00 00 21 21 04\n (1793997249.882811)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997249.892914)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.893706)  can0  303   [8]  00 00 00 00 28 28 FE 00\n (1793997249.897070)  can0  309   [4]  00 00 00 00\n (1793997249.902868)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997249.912865)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.923004)  can0  500   [8]  00 00 00 00 06 AF 2A 04\n (1793997249.932851)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.933954)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997249.934348)  can0  307   [8]  13 00 00 08 00 00 00 02\n (1793997249.934797)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997249.942707)  can0  501   [4]  00 1F 00 01\n (1793997249.947723)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997249.949191)  can0  309   [4]  00 00 00 00\n (1793997249.952793)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.962712)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997249.972715)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.982711)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997249.985301)  can0  203   [8]  00 00 05 8C 06 03 1B 11\n (1793997249.992768)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997249.993739)  can0  300   [8]  00 00 64 00 00 28 28 00\n (1793997249.994140)  can0  307   [8]  11 00 00 08 00 00 00 00\n (1793997249.994570)  can0  30B   [8]  81 00 08 00 00 21 21 04\n (1793997249.995008)  can0  30F   [8]  03 00 08 01 00 00 0F A0\n (1793997250.002813)  can0  500   [8]  00 00 00 00 06 9E 2A 04\n (1793997250.007657)  can0  309   [4]  00 00 00 00\n (1793997250.012841)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.022726)  can0  501   [4]  00 1F 00 01\n (1793997250.032839)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.034108)  can0  30F   [8]  04 00 00 06 AF 02 00 00\n (1793997250.042739)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997250.048482)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997250.052751)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.056538)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997250.056960)  can0  307   [8]  11 00 00 08 00 00 00 00\n (1793997250.057408)  can0  30B   [8]  81 00 08 00 00 21 21 01\n (1793997250.059794)  can0  309   [4]  00 00 00 00\n (1793997250.062872)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997250.072783)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.073851)  can0  103   [8]  05 00 00 16 00 1E 56 00\n (1793997250.082864)  can0  500   [8]  00 00 00 00 06 99 2A 04\n (1793997250.092787)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.102630)  can0  501   [4]  00 1F 00 01\n (1793997250.112733)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.113994)  can0  309   [4]  00 00 00 00\n (1793997250.114930)  can0  300   [8]  00 00 64 00 01 28 28 00\n (1793997250.115376)  can0  307   [8]  11 00 00 08 00 00 00 01\n (1793997250.115833)  can0  30B   [8]  81 00 08 00 00 21 21 01\n (1793997250.122693)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997250.132774)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.142734)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997250.149492)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997250.152844)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.154673)  can0  303   [8]  00 00 00 00 28 28 FE 00\n (1793997250.162724)  can0  500   [8]  00 00 00 00 06 9B 2A 04\n (1793997250.172722)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.173677)  can0  309   [4]  00 00 00 00\n (1793997250.174032)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997250.174473)  can0  307   [8]  13 00 00 08 00 00 00 02\n (1793997250.174914)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997250.182590)  can0  501   [4]  00 1F 00 01\n (1793997250.192727)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.202710)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997250.212823)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.222861)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997250.227686)  can0  309   [4]  00 00 00 00\n (1793997250.232773)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.234905)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997250.235317)  can0  307   [8]  13 00 00 08 00 00 00 01\n (1793997250.235743)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997250.236157)  can0  30F   [8]  04 00 00 00 00 00 00 00\n (1793997250.242814)  can0  500   [8]  00 00 00 00 06 B7 2A 04\n (1793997250.250291)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997250.252819)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.262646)  can0  501   [4]  00 1F 00 01\n (1793997250.272786)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.282718)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997250.284211)  can0  309   [4]  00 00 00 00\n (1793997250.292777)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.294503)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997250.294886)  can0  307   [8]  11 00 00 08 00 00 00 05\n (1793997250.295339)  can0  30B   [8]  81 00 08 00 00 21 21 01\n (1793997250.302717)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997250.312809)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.322784)  can0  500   [8]  00 00 00 00 06 B7 2A 04\n (1793997250.332759)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.342606)  can0  501   [4]  00 1F 00 01\n (1793997250.343831)  can0  309   [4]  00 00 00 00\n (1793997250.351112)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997250.352815)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.355211)  can0  300   [8]  00 00 64 00 00 28 28 00\n (1793997250.355575)  can0  307   [8]  11 00 00 08 00 00 00 02\n (1793997250.355967)  can0  30B   [8]  81 00 08 00 00 21 21 01\n (1793997250.362736)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997250.372748)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.382705)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997250.392700)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.402702)  can0  500   [8]  00 00 00 00 06 93 2A 04\n (1793997250.403569)  can0  309   [4]  00 00 00 00\n (1793997250.412716)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.415724)  can0  300   [8]  00 00 64 00 00 28 28 00\n (1793997250.416227)  can0  303   [8]  00 00 00 00 28 28 FE 00\n (1793997250.416654)  can0  307   [8]  11 00 00 08 00 00 00 02\n (1793997250.417081)  can0  30B   [8]  81 00 08 00 00 21 21 01\n (1793997250.422581)  can0  501   [4]  00 1F 00 01\n (1793997250.432777)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.434963)  can0  30F   [8]  04 00 00 00 00 00 00 00\n (1793997250.442753)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997250.451922)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997250.452771)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.459752)  can0  309   [4]  00 00 00 00\n (1793997250.462742)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997250.472778)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.475826)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997250.476188)  can0  307   [8]  13 00 00 08 00 00 00 04\n (1793997250.476558)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997250.482798)  can0  500   [8]  00 00 00 00 06 67 2A 04\n (1793997250.492727)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.494360)  can0  203   [8]  00 02 05 8B 06 03 1B 11\n (1793997250.495956)  can0  30C   [8]  03 08 19 00 64 19 0A 3C\n (1793997250.496370)  can0  30D   [8]  12 C0 40 02 0C 14 60 00\n (1793997250.496805)  can0  30F   [8]  03 00 08 01 00 00 0F A0\n (1793997250.502695)  can0  501   [4]  00 1F 00 01\n (1793997250.512734)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.514050)  can0  309   [4]  00 00 00 00\n (1793997250.522673)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997250.532729)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.535774)  can0  300   [8]  00 00 64 00 00 28 28 00\n (1793997250.536172)  can0  307   [8]  11 00 00 08 00 00 00 05\n (1793997250.536595)  can0  30B   [8]  81 00 08 00 00 21 21 01\n (1793997250.542822)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997250.552880)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997250.553185)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.562828)  can0  500   [8]  00 00 00 00 06 64 2A 04\n (1793997250.568709)  can0  309   [4]  00 00 00 00\n (1793997250.572748)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.578129)  can0  103   [8]  05 00 00 16 00 1E 76 00\n (1793997250.582734)  can0  501   [4]  00 1F 00 01\n (1793997250.592839)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.595600)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997250.596018)  can0  307   [8]  13 00 00 08 00 00 00 02\n (1793997250.596434)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997250.602728)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997250.612748)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.622830)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997250.628030)  can0  309   [4]  00 00 00 00\n (1793997250.632806)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.635437)  can0  30F   [8]  04 00 00 00 00 00 00 00\n (1793997250.642755)  can0  500   [8]  00 00 00 00 06 89 2A 04\n (1793997250.652801)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.653753)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997250.656465)  can0  300   [8]  00 00 64 00 00 28 28 00\n (1793997250.656900)  can0  307   [8]  11 00 00 08 00 00 00 00\n (1793997250.657307)  can0  30B   [8]  81 00 08 00 00 21 21 00\n (1793997250.662613)  can0  501   [4]  00 1F 00 01\n (1793997250.672860)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.676385)  can0  303   [8]  00 00 00 00 28 28 FE 00\n (1793997250.678108)  can0  309   [4]  00 00 00 00\n (1793997250.682701)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997250.692713)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.702751)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997250.712821)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.716942)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997250.717352)  can0  307   [8]  13 00 00 08 00 00 00 06\n (1793997250.717804)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997250.722769)  can0  500   [8]  00 00 00 00 06 89 2A 04\n (1793997250.732713)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.733724)  can0  309   [4]  00 00 00 00\n (1793997250.742572)  can0  501   [4]  00 1F 00 01\n (1793997250.752759)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.754476)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997250.762728)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997250.772719)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.776501)  can0  300   [8]  00 00 64 00 00 28 28 00\n (1793997250.776921)  can0  307   [8]  11 00 00 08 00 00 00 07\n (1793997250.777356)  can0  30B   [8]  81 00 08 00 00 21 21 01\n (1793997250.782734)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997250.785640)  can0  309   [4]  00 00 00 00\n (1793997250.792777)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.802795)  can0  500   [8]  00 00 00 00 06 BB 2A 04\n (1793997250.812807)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.822671)  can0  501   [4]  00 1F 00 01\n (1793997250.832731)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.839026)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997250.839470)  can0  307   [8]  13 00 00 08 00 00 00 0B\n (1793997250.839851)  can0  30B   [8]  83 00 08 00 00 21 21 01\n (1793997250.840276)  can0  30F   [8]  04 00 00 00 00 00 00 00\n (1793997250.840385)  can0  309   [4]  00 00 00 00\n (1793997250.842681)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997250.852730)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.855348)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997250.862707)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997250.872727)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.882786)  can0  500   [8]  00 00 00 00 06 9D 2A 04\n (1793997250.892787)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.894373)  can0  309   [4]  00 00 00 00\n (1793997250.896932)  can0  300   [8]  00 00 64 00 00 28 28 00\n (1793997250.897367)  can0  307   [8]  11 00 00 08 00 00 00 05\n (1793997250.897793)  can0  30B   [8]  81 00 08 00 00 21 21 01\n (1793997250.902757)  can0  501   [4]  00 1F 00 01\n (1793997250.912747)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.922676)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997250.932747)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.936349)  can0  303   [8]  00 00 00 00 28 28 FE 00\n (1793997250.942705)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997250.952700)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.953561)  can0  309   [4]  00 00 00 00\n (1793997250.956104)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997250.957224)  can0  300   [8]  00 00 64 00 01 28 28 00\n (1793997250.957656)  can0  307   [8]  11 00 00 08 00 00 00 05\n (1793997250.958075)  can0  30B   [8]  81 00 08 00 00 21 21 01\n (1793997250.962731)  can0  500   [8]  00 00 00 00 06 C7 2A 04\n (1793997250.972784)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.982611)  can0  501   [4]  00 1F 00 01\n (1793997250.992709)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997250.996902)  can0  30F   [8]  03 00 00 01 00 00 0F A0\n (1793997250.999014)  can0  203   [8]  00 02 05 8B 06 03 1B 11\n (1793997251.002748)  can0  503   [7]  01 00 00 00 00 01 00\n (1793997251.004613)  can0  309   [4]  00 00 00 00\n (1793997251.012763)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997251.017885)  can0  300   [8]  00 00 64 00 01 28 28 00\n (1793997251.018274)  can0  307   [8]  11 00 00 08 00 00 00 00\n (1793997251.018720)  can0  30B   [8]  81 00 08 00 00 21 21 00\n (1793997251.022736)  can0  503   [7]  02 00 00 00 00 01 00\n (1793997251.032740)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997251.036924)  can0  30F   [8]  04 00 00 00 00 00 00 00\n (1793997251.042680)  can0  500   [8]  00 00 00 00 06 95 2A 04\n (1793997251.052806)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997251.056966)  can0  100   [7]  00 00 00 00 C6 18 00\n (1793997251.062676)  can0  501   [4]  00 1F 00 01\n (1793997251.064389)  can0  309   [4]  00 00 00 00\n (1793997251.072734)  can0  202   [8]  00 00 00 00 01 02 14 00\n (1793997251.077450)  can0  300   [8]  00 00 64 00 02 28 28 00\n (1793997251.077863)  can0  307   [8]  13 00 00 08 00 00 00 00\n (1793997251.078293)  can0  30B   [8]  83 00 08 00 00 21 21 00\n"
+ },
+ "upload_login": {
+  "via": "Connect GitHub",
+  "account": "averyizatt",
+  "expires": null
+ },
+ "helpers": {
+  "update-status.json": {
+   "state": "updated",
+   "message": "Updated (15 changes). The dash restarted and passed its check. Set up: Screen and start-up, CAN board: SPI speed, Start-up: login text on the screen, Wi-Fi power saving, Dash options, Terminal with sudo, Taillight firmware file, Water/meth firmware file. Restart the Pi to apply the new boot settings",
+   "version": "52aac16",
+   "previous": "80d14f8",
+   "time": 1793997242,
+   "mode": "update"
+  },
+  "setup-status.json": {
+   "stamp": "bee613a86cba",
+   "running": false,
+   "time": 1793997232,
+   "now": "",
+   "steps": [
+    {
+     "name": "Recovery guard and rescue screen",
+     "result": "ok",
+     "detail": "Up to date"
+    },
+    {
+     "name": "PiSugar power monitor",
+     "result": "ok",
+     "detail": "Up to date"
+    },
+    {
+     "name": "Python packages",
+     "result": "ok",
+     "detail": "All installed"
+    },
+    {
+     "name": "Dash helpers",
+     "result": "ok",
+     "detail": "All installed"
+    },
+    {
+     "name": "GPS service",
+     "result": "ok",
+     "detail": "Starts with the Pi and opens only the GPS receiver"
+    },
+    {
+     "name": "Clock from GPS",
+     "result": "ok",
+     "detail": "chrony sets the clock from the GPS"
+    },
+    {
+     "name": "TunerStudio: Java and display",
+     "result": "ok",
+     "detail": "Installed"
+    },
+    {
+     "name": "TunerStudio: program",
+     "result": "ok",
+     "detail": "In /home/foxbody/TunerStudioMS"
+    },
+    {
+     "name": "TunerStudio: serial port",
+     "result": "ok",
+     "detail": "foxbody can open the tuning cable"
+    },
+    {
+     "name": "Screen and start-up",
+     "result": "done",
+     "detail": "The screen gets exactly 1920 x 720, from start-up on. Takes effect at the next start"
+    },
+    {
+     "name": "CAN board: SPI speed",
+     "result": "done",
+     "detail": "8 MHz from the next start (was 1 MHz)"
+    },
+    {
+     "name": "Start-up: bootloader update check",
+     "result": "ok",
+     "detail": "Off"
+    },
+    {
+     "name": "Start-up: unused disk check",
+     "result": "ok",
+     "detail": "Off"
+    },
+    {
+     "name": "Start-up: network wait",
+     "result": "ok",
+     "detail": "Off"
+    },
+    {
+     "name": "Start-up: Bluetooth",
+     "result": "ok",
+     "detail": "Off"
+    },
+    {
+     "name": "Start-up: login text on the screen",
+     "result": "done",
+     "detail": "Switched off gettytty1.service (shown before the dash; Ctrl+Alt+F2 for a login)"
+    },
+    {
+     "name": "Wi-Fi country",
+     "result": "ok",
+     "detail": "GB"
+    },
+    {
+     "name": "Time zone",
+     "result": "ok",
+     "detail": "Europe/London"
+    },
+    {
+     "name": "Wi-Fi power saving",
+     "result": "done",
+     "detail": "Switched off (from now on, every adapter)"
+    },
+    {
+     "name": "Start-up: first-boot settings (cloud-init)",
+     "result": "ok",
+     "detail": "Off"
+    },
+    {
+     "name": "Dash options",
+     "result": "done",
+     "detail": "On: --terminal. Now: --interface can0 --gpsd --log-dir /var/lib/frogdash/logs --terminal"
+    },
+    {
+     "name": "Terminal with sudo",
+     "result": "done",
+     "detail": "Commands from the Terminal tab now run as foxbody, so sudo works"
+    },
+    {
+     "name": "Gateway firmware file",
+     "result": "ok",
+     "detail": "Build a6fa0a6b is the newest"
+    },
+    {
+     "name": "Taillight firmware file",
+     "result": "done",
+     "detail": "Downloaded build d9b1686a: install it under Dash management, Software and power"
+    },
+    {
+     "name": "Water/meth firmware file",
+     "result": "done",
+     "detail": "Downloaded build ed2a1550: install it under Dash management, Software and power"
+    },
+    {
+     "name": "Phone hotspot",
+     "result": "ok",
+     "detail": "Ready: switch it on under Controls, Wi-Fi"
+    },
+    {
+     "name": "System log kept",
+     "result": "ok",
+     "detail": "Kept across restarts, at most 150 MB"
+    },
+    {
+     "name": "Dash cam Wi-Fi",
+     "result": "skipped",
+     "detail": "No dash cam connection on this Pi"
+    }
+   ]
+  },
+  "gps-status.json": {
+   "action": "restart",
+   "result": "ok",
+   "message": "GPS service restarted",
+   "time": 1793917557
+  },
+  "can-status.json": {
+   "action": "reset",
+   "result": "ok",
+   "message": "can0 taken down and up again",
+   "time": 1793405190
+  },
+  "wifi-status.json": {
+   "state": "failed",
+   "message": "Wrong password",
+   "time": 1793922966,
+   "interface": "wlan1",
+   "connected": null,
+   "address": null,
+   "internet": false,
+   "networks": [
+    {
+     "ssid": "(Wi-Fi network)",
+     "signal": 80,
+     "secure": true,
+     "saved": true,
+     "connected": false
+    },
+    {
+     "ssid": "PB PALACE",
+     "signal": 77,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "Poodytang",
+     "signal": 77,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "Lake Laogai",
+     "signal": 77,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "Spectrum Mobile",
+     "signal": 74,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "AuntiesCrib381",
+     "signal": 69,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "Ba Sing Se",
+     "signal": 60,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "PuddleJumper2",
+     "signal": 57,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "KEANE",
+     "signal": 57,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "SpectrumSetup-F73E",
+     "signal": 54,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "(Wi-Fi network)",
+     "signal": 50,
+     "secure": true,
+     "saved": true,
+     "connected": false
+    },
+    {
+     "ssid": "DIRECT-roku-M8J-6FBB9E",
+     "signal": 42,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "(Wi-Fi network)",
+     "signal": 40,
+     "secure": true,
+     "saved": true,
+     "connected": false
+    },
+    {
+     "ssid": "SpectrumSetup-5B",
+     "signal": 37,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "WagonWheel",
+     "signal": 30,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "SpectrumSetup-61",
+     "signal": 27,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "CHQ25",
+     "signal": 27,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "#1speedy",
+     "signal": 27,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "Chromecast9290.b,",
+     "signal": 24,
+     "secure": false,
+     "saved": false,
+     "connected": false
+    },
+    {
+     "ssid": "Infusion",
+     "signal": 24,
+     "secure": true,
+     "saved": false,
+     "connected": false
+    }
+   ]
+  },
+  "screen-status.json": {
+   "connectors": [
+    {
+     "name": "HDMI-A-1",
+     "status": "connected",
+     "edid_bytes": 256,
+     "edid_ok": true,
+     "panel_1920x720": true,
+     "modes": [
+      "1920x720"
+     ],
+     "mode_count": 1
+    },
+    {
+     "name": "HDMI-A-2",
+     "status": "disconnected",
+     "edid_bytes": 0,
+     "edid_ok": false,
+     "panel_1920x720": false,
+     "modes": [],
+     "mode_count": 0
+    }
+   ],
+   "cmdline": "coherent_pool=1M 8250.nr_uarts=0 snd_bcm2835.enable_headphones=0 cgroup_disable=memory numa_policy=interleave nvme.max_host_mem_size_mb=32 snd_bcm2835.enable_headphones=1 snd_bcm2835.enable_hdmi=1 snd_bcm2835.enable_hdmi=0  numa=fake=2 system_heap.max_order=0 iommu_dma_numa_policy=interleave smsc95xx.macaddr=(hidden) vc_mem.mem_base=0x3ec00000 vc_mem.mem_size=0x40000000  console=ttyS0,115200 console=tty1 root=PARTUUID=05ea8c09-02 rootfstype=ext4 fsck.repair=yes rootwait cfg80211.ieee80211_regdom=GB drm.edid_firmware=edid/frogdash-1920x720.bin quiet loglevel=3 logo.nologo vt.global_cursor_default=0 systemd.show_status=false rd.udev.log_level=3",
+   "config": [
+    "display_auto_detect=1",
+    "dtoverlay=vc4-kms-v3d",
+    "max_framebuffers=2",
+    "disable_fw_kms_setup=1",
+    "disable_overscan=1",
+    "[cm4]",
+    "[cm5]",
+    "[pi5]",
+    "[all]",
+    "[all]",
+    "[all]",
+    "disable_fw_kms_setup=1",
+    "hdmi_edid_file:0=1",
+    "hdmi_edid_filename:0=frogdash-1920x720.bin",
+    "hdmi_edid_file:1=1",
+    "hdmi_edid_filename:1=frogdash-1920x720.bin",
+    "hdmi_group:0=2",
+    "hdmi_mode:0=87",
+    "hdmi_timings:0=1920 1 48 32 80 720 0 3 10 8 0 0 0 60 0 92250000 8",
+    "hdmi_group:1=2",
+    "hdmi_mode:1=87",
+    "hdmi_timings:1=1920 1 48 32 80 720 0 3 10 8 0 0 0 60 0 92250000 8",
+    "disable_splash=1",
+    "[all]"
+   ],
+   "applied": true,
+   "boot_speedups": false,
+   "edid_installed": true,
+   "tryboot_now": false,
+   "boot_time": [
+    "Startup finished in 2.285s (kernel) + 17.773s (userspace) = 20.058s "
+   ],
+   "first_render": [
+    "[   25.529483] raspberrypi sh[1349]: Frogdash kiosk: first render heartbeat observed (boot+25.52s; 4.20s after browser launch)"
+   ],
+   "bootloader": [
+    "2025/05/08 16:21:35"
+   ],
+   "state": "idle",
+   "message": "",
+   "time": 1793997194
+  }
+ },
+ "update_failure_log": null,
+ "setup_log": "\n2026-10-27 20:35:14 Taillight firmware file: looking for a newer build\n2026-10-27 20:35:35 Water/meth firmware file: looking for a newer build\n2026-10-27 20:37:43 Gateway firmware file: looking for a newer build\n2026-10-27 20:37:59 Taillight firmware file: looking for a newer build\n2026-10-27 20:38:19 Water/meth firmware file: looking for a newer build\n2026-10-27 20:40:48 Gateway firmware file: looking for a newer build\n2026-10-27 20:41:08 Taillight firmware file: looking for a newer build\n2026-10-27 20:41:24 Water/meth firmware file: looking for a newer build\n2026-10-27 20:47:34 Installing Java for TunerStudio: xwayland default-jre (a few hundred MB: 10-30 minutes on Wi-Fi)\nGet:1 http://archive.raspberrypi.com/debian trixie InRelease [54.9 kB]\nErr:1 http://archive.raspberrypi.com/debian trixie InRelease\n  Sub-process /usr/bin/sqv returned an error code (1), error message is: Signature by CF8A1AF502A2AA2D763BAE7E82B129927FA3303E was created after the --not-after date.\nHit:2 http://deb.debian.org/debian trixie InRelease\nGet:3 http://deb.debian.org/debian trixie-updates InRelease [47.3 kB]\nGet:4 http://deb.debian.org/debian-security trixie-security InRelease [43.4 kB]\nFetched 102 kB in 15s (6,695 B/s)\nReading package lists...\nW: An error occurred during the signature verification. The repository is not updated and the previous index files will be used. OpenPGP signature verification failed: http://archive.raspberrypi.com/debian trixie InRelease: Sub-process /usr/bin/sqv returned an error code (1), error message is: Signature by CF8A1AF502A2AA2D763BAE7E82B129927FA3303E was created after the --not-after date.\nW: Failed to fetch http://archive.raspberrypi.com/debian/dists/trixie/InRelease  Sub-process /usr/bin/sqv returned an error code (1), error message is: Signature by CF8A1AF502A2AA2D763BAE7E82B129927FA3303E was created after the --not-after date.\nW: Some index files failed to download. They have been ignored, or old ones used instead.\nReading package lists...\nBuilding dependency tree...\nReading state information...\nThe following additional packages will be installed:\n  ca-certificates-java default-jre-headless fonts-dejavu-extra java-common\n  libatk-wrapper-java libatk-wrapper-java-jni libdecor-0-0\n  libdecor-0-plugin-1-gtk libfontenc1 libgif7 libxcvt0 libxfont2\n  openjdk-21-jre openjdk-21-jre-headless x11-xkb-utils xfonts-base\n  xfonts-encodings xfonts-utils xserver-common\nSuggested packages:\n  fonts-ipafont-gothic fonts-ipafont-mincho fonts-wqy-microhei\n  | fonts-wqy-zenhei fonts-indic xfs | xserver\nThe following NEW packages will be installed:\n  ca-certificates-java default-jre default-jre-headless fonts-dejavu-extra\n  java-common libatk-wrapper-java libatk-wrapper-java-jni libdecor-0-0\n  libdecor-0-plugin-1-gtk libfontenc1 libgif7 libxcvt0 libxfont2\n  openjdk-21-jre openjdk-21-jre-headless x11-xkb-utils xfonts-base\n  xfonts-encodings xfonts-utils xserver-common xwayland\n0 upgraded, 21 newly installed, 0 to remove and 16 not upgraded.\nNeed to get 53.4 MB of archives.\nAfter this operation, 227 MB of additional disk space will be used.\nGet:1 http://deb.debian.org/debian trixie/main arm64 ca-certificates-java all 20240118 [11.6 kB]\nGet:2 http://deb.debian.org/debian trixie/main arm64 java-common all 0.76 [6,776 B]\nGet:3 http://deb.debian.org/debian-security trixie-security/main arm64 openjdk-21-jre-headless arm64 21.0.13+9-1~deb13u2 [40.8 MB]\nGet:4 http://archive.raspberrypi.com/debian trixie/main arm64 xserver-common all 2:21.1.16-1.3+rpt1+deb13u4 [2,416 kB]\nGet:5 http://deb.debian.org/debian trixie/main arm64 default-jre-headless arm64 2:1.21-76 [3,192 B]\nGet:6 http://deb.debian.org/debian trixie/main arm64 libgif7 arm64 5.2.2-1+deb13u1 [44.1 kB]\nGet:7 http://deb.debian.org/debian-security trixie-security/main arm64 openjdk-21-jre arm64 21.0.13+9-1~deb13u2 [197 kB]\nGet:8 http://deb.debian.org/debian trixie/main arm64 default-jre arm64 2:1.21-76 [1,068 B]\nGet:9 http://deb.debian.org/debian trixie/main arm64 fonts-dejavu-extra all 2.37-8 [1,792 kB]\nGet:10 http://deb.debian.org/debian trixie/main arm64 libatk-wrapper-java all 0.40.0-3 [63.4 kB]\nGet:11 http://deb.debian.org/debian trixie/main arm64 libatk-wrapper-java-jni arm64 0.40.0-3+b3 [48.7 kB]\nGet:12 http://deb.debian.org/debian trixie/main arm64 libdecor-0-0 arm64 0.2.2-2 [15.2 kB]\nGet:13 http://deb.debian.org/debian trixie/main arm64 libdecor-0-plugin-1-gtk arm64 0.2.2-2 [20.9 kB]\nGet:14 http://deb.debian.org/debian trixie/main arm64 libfontenc1 arm64 1:1.1.8-1+b2 [22.5 kB]\nGet:15 http://deb.debian.org/debian trixie/main arm64 libxcvt0 arm64 0.1.3-1 [5,496 B]\nGet:16 http://deb.debian.org/debian trixie/main arm64 libxfont2 arm64 1:2.0.6-1+deb13u1 [125 kB]\nGet:17 http://deb.debian.org/debian trixie/main arm64 x11-xkb-utils arm64 7.7+9 [149 kB]\nGet:18 http://deb.debian.org/debian trixie/main arm64 xfonts-encodings all 1:1.0.4-2.2 [577 kB]\nGet:19 http://deb.debian.org/debian trixie/main arm64 xfonts-utils arm64 1:7.7+7 [89.3 kB]\nGet:20 http://deb.debian.org/debian trixie/main arm64 xfonts-base all 1:1.0.5+nmu1 [5,895 kB]\nGet:21 http://archive.raspberrypi.com/debian trixie/main arm64 xwayland arm64 2:24.1.6-1+rpt1 [1,093 kB]\nFetched 53.4 MB in 17s (3,114 kB/s)\nSelecting previously unselected package ca-certificates-java.\n(Reading database ... \n(Reading database ... 5%\n(Reading database ... 10%\n(Reading database ... 15%\n(Reading database ... 20%\n(Reading database ... 25%\n(Reading database ... 30%\n(Reading database ... 35%\n(Reading database ... 40%\n(Reading database ... 45%\n(Reading database ... 50%\n(Reading database ... 55%\n(Reading database ... 60%\n(Reading database ... 65%\n(Reading database ... 70%\n(Reading database ... 75%\n(Reading database ... 80%\n(Reading database ... 85%\n(Reading database ... 90%\n(Reading database ... 95%\n(Reading database ... 100%\n(Reading database ... 85453 files and directories currently installed.)\nPreparing to unpack .../00-ca-certificates-java_20240118_all.deb ...\nUnpacking ca-certificates-java (20240118) ...\nSelecting previously unselected package java-common.\nPreparing to unpack .../01-java-common_0.76_all.deb ...\nUnpacking java-common (0.76) ...\nSelecting previously unselected package openjdk-21-jre-headless:arm64.\nPreparing to unpack .../02-openjdk-21-jre-headless_21.0.13+9-1~deb13u2_arm64.deb ...\nUnpacking openjdk-21-jre-headless:arm64 (21.0.13+9-1~deb13u2) ...\nSelecting previously unselected package default-jre-headless.\nPreparing to unpack .../03-default-jre-headless_2%3a1.21-76_arm64.deb ...\nUnpacking default-jre-headless (2:1.21-76) ...\nSelecting previously unselected package libgif7:arm64.\nPreparing to unpack .../04-libgif7_5.2.2-1+deb13u1_arm64.deb ...\nUnpacking libgif7:arm64 (5.2.2-1+deb13u1) ...\nSelecting previously unselected package openjdk-21-jre:arm64.\nPreparing to unpack .../05-openjdk-21-jre_21.0.13+9-1~deb13u2_arm64.deb ...\nUnpacking openjdk-21-jre:arm64 (21.0.13+9-1~deb13u2) ...\nSelecting previously unselected package default-jre.\nPreparing to unpack .../06-default-jre_2%3a1.21-76_arm64.deb ...\nUnpacking default-jre (2:1.21-76) ...\nSelecting previously unselected package fonts-dejavu-extra.\nPreparing to unpack .../07-fonts-dejavu-extra_2.37-8_all.deb ...\nUnpacking fonts-dejavu-extra (2.37-8) ...\nSelecting previously unselected package libatk-wrapper-java.\nPreparing to unpack .../08-libatk-wrapper-java_0.40.0-3_all.deb ...\nUnpacking libatk-wrapper-java (0.40.0-3) ...\nSelecting previously unselected package libatk-wrapper-java-jni:arm64.\nPreparing to unpack .../09-libatk-wrapper-java-jni_0.40.0-3+b3_arm64.deb ...\nUnpacking libatk-wrapper-java-jni:arm64 (0.40.0-3+b3) ...\nSelecting previously unselected package libdecor-0-0:arm64.\nPreparing to unpack .../10-libdecor-0-0_0.2.2-2_arm64.deb ...\nUnpacking libdecor-0-0:arm64 (0.2.2-2) ...\nSelecting previously unselected package libdecor-0-plugin-1-gtk:arm64.\nPreparing to unpack .../11-libdecor-0-plugin-1-gtk_0.2.2-2_arm64.deb ...\nUnpacking libdecor-0-plugin-1-gtk:arm64 (0.2.2-2) ...\nSelecting previously unselected package libfontenc1:arm64.\nPreparing to unpack .../12-libfontenc1_1%3a1.1.8-1+b2_arm64.deb ...\nUnpacking libfontenc1:arm64 (1:1.1.8-1+b2) ...\nSelecting previously unselected package libxcvt0:arm64.\nPreparing to unpack .../13-libxcvt0_0.1.3-1_arm64.deb ...\nUnpacking libxcvt0:arm64 (0.1.3-1) ...\nSelecting previously unselected package libxfont2:arm64.\nPreparing to unpack .../14-libxfont2_1%3a2.0.6-1+deb13u1_arm64.deb ...\nUnpacking libxfont2:arm64 (1:2.0.6-1+deb13u1) ...\nSelecting previously unselected package x11-xkb-utils.\nPreparing to unpack .../15-x11-xkb-utils_7.7+9_arm64.deb ...\nUnpacking x11-xkb-utils (7.7+9) ...\nSelecting previously unselected package xfonts-encodings.\nPreparing to unpack .../16-xfonts-encodings_1%3a1.0.4-2.2_all.deb ...\nUnpacking xfonts-encodings (1:1.0.4-2.2) ...\nSelecting previously unselected package xfonts-utils.\nPreparing to unpack .../17-xfonts-utils_1%3a7.7+7_arm64.deb ...\nUnpacking xfonts-utils (1:7.7+7) ...\nSelecting previously unselected package xfonts-base.\nPreparing to unpack .../18-xfonts-base_1%3a1.0.5+nmu1_all.deb ...\nUnpacking xfonts-base (1:1.0.5+nmu1) ...\nSelecting previously unselected package xserver-common.\nPreparing to unpack .../19-xserver-common_2%3a21.1.16-1.3+rpt1+deb13u4_all.deb ...\nUnpacking xserver-common (2:21.1.16-1.3+rpt1+deb13u4) ...\nSelecting previously unselected package xwayland.\nPreparing to unpack .../20-xwayland_2%3a24.1.6-1+rpt1_arm64.deb ...\nUnpacking xwayland (2:24.1.6-1+rpt1) ...\nSetting up java-common (0.76) ...\nSetting up x11-xkb-utils (7.7+9) ...\nSetting up libfontenc1:arm64 (1:1.1.8-1+b2) ...\nSetting up xfonts-encodings (1:1.0.4-2.2) ...\nSetting up libgif7:arm64 (5.2.2-1+deb13u1) ...\nSetting up fonts-dejavu-extra (2.37-8) ...\nSetting up libxcvt0:arm64 (0.1.3-1) ...\nSetting up libdecor-0-0:arm64 (0.2.2-2) ...\nSetting up libatk-wrapper-java (0.40.0-3) ...\nSetting up xserver-common (2:21.1.16-1.3+rpt1+deb13u4) ...\nSetting up ca-certificates-java (20240118) ...\nNo JRE found. Skipping Java certificates setup.\nSetting up libxfont2:arm64 (1:2.0.6-1+deb13u1) ...\nSetting up libdecor-0-plugin-1-gtk:arm64 (0.2.2-2) ...\nSetting up openjdk-21-jre-headless:arm64 (21.0.13+9-1~deb13u2) ...\nupdate-alternatives: using /usr/lib/jvm/java-21-openjdk-arm64/bin/java to provide /usr/bin/java (java) in auto mode\nupdate-alternatives: using /usr/lib/jvm/java-21-openjdk-arm64/bin/jpackage to provide /usr/bin/jpackage (jpackage) in auto mode\nupdate-alternatives: using /usr/lib/jvm/java-21-openjdk-arm64/bin/keytool to provide /usr/bin/keytool (keytool) in auto mode\nupdate-alternatives: using /usr/lib/jvm/java-21-openjdk-arm64/bin/rmiregistry to provide /usr/bin/rmiregistry (rmiregistry) in auto mode\nupdate-alternatives: using /usr/lib/jvm/java-21-openjdk-arm64/lib/jexec to provide /usr/bin/jexec (jexec) in auto mode\nSetting up xfonts-utils (1:7.7+7) ...\nSetting up libatk-wrapper-java-jni:arm64 (0.40.0-3+b3) ...\nSetting up xfonts-base (1:1.0.5+nmu1) ...\nSetting up xwayland (2:24.1.6-1+rpt1) ...\nProcessing triggers for man-db (2.13.1-1) ...\nProcessing triggers for fontconfig (2.15.0-2.3) ...\nProcessing triggers for hicolor-icon-theme (0.18-2) ...\nProcessing triggers for libc-bin (2.41-12+rpt1+deb13u4) ...\nProcessing triggers for ca-certificates-java (20240118) ...\nAdding debian:ACCVRAIZ1.pem\nAdding debian:AC_RAIZ_FNMT-RCM.pem\nAdding debian:AC_RAIZ_FNMT-RCM_SERVIDORES_SEGUROS.pem\nAdding debian:Actalis_Authentication_Root_CA.pem\nAdding debian:AffirmTrust_Commercial.pem\nAdding debian:AffirmTrust_Networking.pem\nAdding debian:AffirmTrust_Premium_ECC.pem\nAdding debian:AffirmTrust_Premium.pem\nAdding debian:Amazon_Root_CA_1.pem\nAdding debian:Amazon_Root_CA_2.pem\nAdding debian:Amazon_Root_CA_3.pem\nAdding debian:Amazon_Root_CA_4.pem\nAdding debian:ANF_Secure_Server_Root_CA.pem\nAdding debian:Atos_TrustedRoot_2011.pem\nAdding debian:Atos_TrustedRoot_Root_CA_ECC_TLS_2021.pem\nAdding debian:Atos_TrustedRoot_Root_CA_RSA_TLS_2021.pem\nAdding debian:Autoridad_de_Certificacion_Firmaprofesional_CIF_A62634068.pem\nAdding debian:Baltimore_CyberTrust_Root.pem\nAdding debian:BJCA_Global_Root_CA1.pem\nAdding debian:BJCA_Global_Root_CA2.pem\nAdding debian:Buypass_Class_2_Root_CA.pem\nAdding debian:Buypass_Class_3_Root_CA.pem\nAdding debian:CA_Disig_Root_R2.pem\nAdding debian:Certainly_Root_E1.pem\nAdding debian:Certainly_Root_R1.pem\nAdding debian:Certigna.pem\nAdding debian:Certigna_Root_CA.pem\nAdding debian:certSIGN_Root_CA_G2.pem\nAdding debian:certSIGN_ROOT_CA.pem\nAdding debian:Certum_EC-384_CA.pem\nAdding debian:Certum_Trusted_Network_CA_2.pem\nAdding debian:Certum_Trusted_Network_CA.pem\nAdding debian:Certum_Trusted_Root_CA.pem\nAdding debian:CFCA_EV_ROOT.pem\nAdding debian:CommScope_Public_Trust_ECC_Root-01.pem\nAdding debian:CommScope_Public_Trust_ECC_Root-02.pem\nAdding debian:CommScope_Public_Trust_RSA_Root-01.pem\nAdding debian:CommScope_Public_Trust_RSA_Root-02.pem\nAdding debian:Comodo_AAA_Services_root.pem\nAdding debian:COMODO_Certification_Authority.pem\nAdding debian:COMODO_ECC_Certification_Authority.pem\nAdding debian:COMODO_RSA_Certification_Authority.pem\nAdding debian:DigiCert_Assured_ID_Root_CA.pem\nAdding debian:DigiCert_Assured_ID_Root_G2.pem\nAdding debian:DigiCert_Assured_ID_Root_G3.pem\nAdding debian:DigiCert_Global_Root_CA.pem\nAdding debian:DigiCert_Global_Root_G2.pem\nAdding debian:DigiCert_Global_Root_G3.pem\nAdding debian:DigiCert_High_Assurance_EV_Root_CA.pem\nAdding debian:DigiCert_TLS_ECC_P384_Root_G5.pem\nAdding debian:DigiCert_TLS_RSA4096_Root_G5.pem\nAdding debian:DigiCert_Trusted_Root_G4.pem\nAdding debian:D-TRUST_BR_Root_CA_1_2020.pem\nAdding debian:D-TRUST_BR_Root_CA_2_2023.pem\nAdding debian:D-TRUST_EV_Root_CA_1_2020.pem\nAdding debian:D-TRUST_EV_Root_CA_2_2023.pem\nAdding debian:D-TRUST_Root_Class_3_CA_2_2009.pem\nAdding debian:D-TRUST_Root_Class_3_CA_2_EV_2009.pem\nAdding debian:emSign_ECC_Root_CA_-_C3.pem\nAdding debian:emSign_ECC_Root_CA_-_G3.pem\nAdding debian:emSign_Root_CA_-_C1.pem\nAdding debian:emSign_Root_CA_-_G1.pem\nAdding debian:Entrust.net_Premium_2048_Secure_Server_CA.pem\nAdding debian:Entrust_Root_Certification_Authority_-_EC1.pem\nAdding debian:Entrust_Root_Certification_Authority_-_G2.pem\nAdding debian:Entrust_Root_Certification_Authority.pem\nAdding debian:ePKI_Root_Certification_Authority.pem\nAdding debian:e-Szigno_Root_CA_2017.pem\nAdding debian:FIRMAPROFESIONAL_CA_ROOT-A_WEB.pem\nAdding debian:GDCA_TrustAUTH_R5_ROOT.pem\nAdding debian:GlobalSign_ECC_Root_CA_-_R4.pem\nAdding debian:GlobalSign_ECC_Root_CA_-_R5.pem\nAdding debian:GlobalSign_Root_CA.pem\nAdding debian:GlobalSign_Root_CA_-_R3.pem\nAdding debian:GlobalSign_Root_CA_-_R6.pem\nAdding debian:GlobalSign_Root_E46.pem\nAdding debian:GlobalSign_Root_R46.pem\nAdding debian:GLOBALTRUST_2020.pem\nAdding debian:Go_Daddy_Class_2_CA.pem\nAdding debian:Go_Daddy_Root_Certificate_Authority_-_G2.pem\nAdding debian:GTS_Root_R1.pem\nAdding debian:GTS_Root_R2.pem\nAdding debian:GTS_Root_R3.pem\nAdding debian:GTS_Root_R4.pem\nAdding debian:HARICA_TLS_ECC_Root_CA_2021.pem\nAdding debian:HARICA_TLS_RSA_Root_CA_2021.pem\nAdding debian:Hellenic_Academic_and_Research_Institutions_ECC_RootCA_2015.pem\nAdding debian:Hellenic_Academic_and_Research_Institutions_RootCA_2015.pem\nAdding debian:HiPKI_Root_CA_-_G1.pem\nAdding debian:Hongkong_Post_Root_CA_3.pem\nAdding debian:IdenTrust_Commercial_Root_CA_1.pem\nAdding debian:IdenTrust_Public_Sector_Root_CA_1.pem\nAdding debian:ISRG_Root_X1.pem\nAdding debian:ISRG_Root_X2.pem\nAdding debian:Izenpe.com.pem\nAdding debian:Microsec_e-Szigno_Root_CA_2009.pem\nAdding debian:Microsoft_ECC_Root_Certificate_Authority_2017.pem\nAdding debian:Microsoft_RSA_Root_Certificate_Authority_2017.pem\nAdding debian:NAVER_Global_Root_Certification_Authority.pem\nAdding debian:NetLock_Arany_=Class_Gold=_F\u0151tan\u00fas\u00edtv\u00e1ny.pem\nAdding debian:OISTE_WISeKey_Global_Root_GB_CA.pem\nAdding debian:OISTE_WISeKey_Global_Root_GC_CA.pem\nAdding debian:QuoVadis_Root_CA_1_G3.pem\nAdding debian:QuoVadis_Root_CA_2_G3.pem\nAdding debian:QuoVadis_Root_CA_2.pem\nAdding debian:QuoVadis_Root_CA_3_G3.pem\nAdding debian:QuoVadis_Root_CA_3.pem\nAdding debian:Sectigo_Public_Server_Authentication_Root_E46.pem\nAdding debian:Sectigo_Public_Server_Authentication_Root_R46.pem\nAdding debian:Secure_Global_CA.pem\nAdding debian:SecureSign_Root_CA12.pem\nAdding debian:SecureSign_Root_CA14.pem\nAdding debian:SecureSign_Root_CA15.pem\nAdding debian:SecureTrust_CA.pem\nAdding debian:Security_Communication_ECC_RootCA1.pem\nAdding debian:Security_Communication_RootCA2.pem\nAdding debian:SSL.com_EV_Root_Certification_Authority_ECC.pem\nAdding debian:SSL.com_EV_Root_Certification_Authority_RSA_R2.pem\nAdding debian:SSL.com_Root_Certification_Authority_ECC.pem\nAdding debian:SSL.com_Root_Certification_Authority_RSA.pem\nAdding debian:SSL.com_TLS_ECC_Root_CA_2022.pem\nAdding debian:SSL.com_TLS_RSA_Root_CA_2022.pem\nAdding debian:Starfield_Class_2_CA.pem\nAdding debian:Starfield_Root_Certificate_Authority_-_G2.pem\nAdding debian:Starfield_Services_Root_Certificate_Authority_-_G2.pem\nAdding debian:SwissSign_Gold_CA_-_G2.pem\nAdding debian:SZAFIR_ROOT_CA2.pem\nAdding debian:Telekom_Security_TLS_ECC_Root_2020.pem\nAdding debian:Telekom_Security_TLS_RSA_Root_2023.pem\nAdding debian:Telia_Root_CA_v2.pem\nAdding debian:TeliaSonera_Root_CA_v1.pem\nAdding debian:TrustAsia_Global_Root_CA_G3.pem\nAdding debian:TrustAsia_Global_Root_CA_G4.pem\nAdding debian:Trustwave_Global_Certification_Authority.pem\nAdding debian:Trustwave_Global_ECC_P256_Certification_Authority.pem\nAdding debian:Trustwave_Global_ECC_P384_Certification_Authority.pem\nAdding debian:T-TeleSec_GlobalRoot_Class_2.pem\nAdding debian:T-TeleSec_GlobalRoot_Class_3.pem\nAdding debian:TUBITAK_Kamu_SM_SSL_Kok_Sertifikasi_-_Surum_1.pem\nAdding debian:TunTrust_Root_CA.pem\nAdding debian:TWCA_CYBER_Root_CA.pem\nAdding debian:TWCA_Global_Root_CA.pem\nAdding debian:TWCA_Root_Certification_Authority.pem\nAdding debian:UCA_Extended_Validation_Root.pem\nAdding debian:UCA_Global_G2_Root.pem\nAdding debian:USERTrust_ECC_Certification_Authority.pem\nAdding debian:USERTrust_RSA_Certification_Authority.pem\nAdding debian:vTrus_ECC_Root_CA.pem\nAdding debian:vTrus_Root_CA.pem\nAdding debian:XRamp_Global_CA_Root.pem\ndone.\nSetting up openjdk-21-jre:arm64 (21.0.13+9-1~deb13u2) ...\nSetting up default-jre-headless (2:1.21-76) ...\nSetting up default-jre (2:1.21-76) ...\n2026-10-27 21:06:14 Downloading TunerStudio\n2026-10-27 21:06:32 Gateway firmware file: looking for a newer build\n2026-10-27 21:06:53 Taillight firmware file: looking for a newer build\n2026-10-27 21:07:13 Water/meth firmware file: looking for a newer build\n2026-10-27 21:10:54 Gateway firmware file: looking for a newer build\n2026-10-27 21:11:10 Taillight firmware file: looking for a newer build\n2026-10-27 21:11:30 Water/meth firmware file: looking for a newer build\n2026-10-30 23:54:35 Gateway firmware file: looking for a newer build\n2026-10-30 23:55:04 Taillight firmware file: looking for a newer build\n2026-10-30 23:55:25 Water/meth firmware file: looking for a newer build\n2026-10-30 23:59:28 Gateway firmware file: looking for a newer build\n2026-10-30 23:59:44 Taillight firmware file: looking for a newer build\n2026-10-31 00:00:00 Water/meth firmware file: looking for a newer build\n2026-11-05 22:23:05 Gateway firmware file: looking for a newer build\n2026-11-05 22:23:07 Taillight firmware file: looking for a newer build\n2026-11-05 22:23:08 Water/meth firmware file: looking for a newer build\n2026-11-05 23:49:40 Gateway firmware file: looking for a newer build\n2026-11-05 23:49:42 Taillight firmware file: looking for a newer build\n2026-11-05 23:49:43 Water/meth firmware file: looking for a newer build\n2026-11-05 23:50:37 Gateway firmware file: looking for a newer build\n2026-11-05 23:50:41 Taillight firmware file: looking for a newer build\n2026-11-05 23:50:45 Water/meth firmware file: looking for a newer build\n2026-11-06 20:33:47 Gateway firmware file: looking for a newer build\n2026-11-06 20:33:48 Taillight firmware file: looking for a newer build\n2026-11-06 20:33:50 Water/meth firmware file: looking for a newer build\n",
+ "uptime_s": 109.9,
+ "throttled": "throttled=0x0",
+ "disk": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/mmcblk0p2  117G  6.9G  106G   7% /\n/dev/mmcblk0p2  117G  6.9G  106G   7% /"
+}
