@@ -284,6 +284,30 @@ class Driving:
             return self.read(name)  # Snapshot mutable in-memory records on their owning event loop.
         return await asyncio.to_thread(self.read_disk, name)
 
+    async def log_events(self, log_name):
+        """The bookmarks and alerts recorded while one MLG log was written, for the Log viewer:
+        each event names its log and the seconds into it."""
+        def disk():
+            found = []
+            for path in self.disk_files():
+                try:
+                    found += self.read_disk(path.name).get('events', [])
+                except (OSError, ValueError, TypeError, KeyError):
+                    continue
+            return found
+        events = await asyncio.to_thread(disk)
+        for drive in [*self.finished, *([self.current] if self.current else [])]:
+            events += drive.get('events', [])
+        seen, result = set(), []
+        for event in events:
+            log = event.get('log') or {}
+            if log.get('name') != log_name or event.get('id') in seen:
+                continue
+            seen.add(event.get('id'))
+            result.append({'t': round(float(log.get('time_s', 0)), 2), 'label': event.get('label') or event.get('kind', ''),
+                           'kind': event.get('kind', '')})
+        return sorted(result, key=lambda e: e['t'])
+
     async def get_reviews(self):
         def disk():
             results = {}

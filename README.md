@@ -59,6 +59,8 @@ diagnosed and recovered from the screen, the steering wheel or a phone, without 
 ### Logging, review and tuning
 - **MegaLogViewer logs:** genuine `.mlg` files at 20 Hz, rotated and kept within a budget,
   recording with the screen closed.
+- **Log viewer on the dash:** any log as stacked graphs on one time line, a cursor with every
+  channel's value, drag to zoom, min/average/max of the time shown, and bookmarks marked.
 - **Drive review:** every drive with synchronised graphs, bookmarks (press **B**) and faults;
   live graphs of boost, RPM, mixture, knock and temperatures; a last-drive summary.
 - **TunerStudio on the dash:** opens over the gauges with a keyboard and the tuning cable,

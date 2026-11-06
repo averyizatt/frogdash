@@ -90,6 +90,30 @@ validates v1/v2 headers, records and checksums. `--fields` lists channel definit
 modifying the file. Actual MegaLogViewer GUI loading and Pi power-loss behavior
 still need to be checked on the target installations.
 
+## Log viewer on the dash
+
+**Drive workspace → Log viewer** shows any of these logs as graphs, MegaLogViewer style, without
+copying them anywhere:
+
+- **Pick a log** from the list (newest first, with its size; the one being recorded says so and
+  Refresh brings in its newest minutes).
+- **Up to four stacked graphs on one time line**, each with up to four channels, every channel on
+  its own scale. **+ Channel** adds one from the log's channels (grouped like MegaLogViewer's);
+  a channel's chip removes it; **+ Graph** and **Remove graph** change the graphs. The choice is
+  kept for the next time.
+- **The cursor**: the values of every channel at one moment, beside each channel's lowest,
+  average and highest over the time on the screen.
+- **Zoom**: drag across a graph, or Zoom in / Zoom out, ◀ ▶ to go earlier or later, Whole log.
+  With the steering wheel or the arrow keys: highlight the graphs, press ON, then left/right move
+  in time and up/down zoom; ON again to leave.
+- **Marks**: each bookmark (B, from the log's Bookmark ID channel) and the drive's alerts and
+  bookmarks, as dashed lines across the graphs.
+- Readings that were not live (a sensor with no signal) are gaps, not zeros.
+
+The Pi reads only the channels and the time on screen. A long stretch is thinned to each part's
+lowest and highest value, so a spike is never lost when the whole drive is shown; zooming in
+reads every sample again. (`hardware/frogdash/logview.py`, `hardware/ui/logview.js`.)
+
 ## Channels and compatibility
 
 The fixed schema currently contains 168 decoded channels, a quality field for each,

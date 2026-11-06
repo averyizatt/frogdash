@@ -465,7 +465,7 @@
 <dialog id="drive-dialog" class="workspace-dialog" aria-labelledby="drive-title">
   <header class="dialog-header"><div><span class="eyebrow">DRIVING / TUNING / REVIEW</span><h2 id="drive-title">Drive workspace</h2><p id="drive-summary">Display preferences, advisory alerts and recorded sessions</p></div><button id="drive-close" class="close-button" type="button">Close <span aria-hidden="true">×</span></button></header>
   <div class="control-workspace">
-    <nav class="control-tabs driver-tabs" aria-label="Drive sections"><button data-driver-tab="display" aria-selected="true" type="button">Display modes</button><button data-driver-tab="trip" aria-selected="false" type="button">Trips &amp; economy</button><button data-driver-tab="fuel" aria-selected="false" type="button">Fuel setup</button><button data-driver-tab="alerts" aria-selected="false" type="button">Alerts</button><button data-driver-tab="review" aria-selected="false" type="button">Drive review</button><button data-driver-tab="health" aria-selected="false" type="button">Dash health</button></nav>
+    <nav class="control-tabs driver-tabs" aria-label="Drive sections"><button data-driver-tab="display" aria-selected="true" type="button">Display modes</button><button data-driver-tab="trip" aria-selected="false" type="button">Trips &amp; economy</button><button data-driver-tab="fuel" aria-selected="false" type="button">Fuel setup</button><button data-driver-tab="alerts" aria-selected="false" type="button">Alerts</button><button data-driver-tab="review" aria-selected="false" type="button">Drive review</button><button data-driver-tab="logs" aria-selected="false" type="button">Log viewer</button><button data-driver-tab="health" aria-selected="false" type="button">Dash health</button></nav>
     <div class="driver-panels">
       <section data-driver-panel="display" class="driver-panel control-section">
         <div class="settings-grid">
@@ -505,6 +505,7 @@
         <p id="audio-status" class="control-note">Chime requires this display to be open with working audio.</p></div>
       </div></section>
       <section data-driver-panel="review" class="driver-panel" hidden><div id="drive-review" class="review-host"></div></section>
+      <section data-driver-panel="logs" class="driver-panel" hidden><div id="log-viewer"><p class="control-note">Loading the log viewer…</p></div></section>
       <section data-driver-panel="health" class="driver-panel" hidden><div id="health-cards" class="health-cards"></div><p id="health-shutdown-note" class="control-note"></p><p id="health-detail" class="control-note"></p><p id="health-notes" class="control-note"></p></section>
     </div>
   </div>
@@ -532,6 +533,7 @@
   "keyboard.css",
   "uPlot.min.css",
   "graphs.css",
+  "logview.css",
   "operations.js",
   "screen.js",
   "navigation.js",
@@ -544,6 +546,7 @@
   "summary.js",
   "uPlot.iife.min.js",
   "graphs.js",
+  "logview.js",
   "alerts.js"
 ]</script>
 <script src="later.js"></script>

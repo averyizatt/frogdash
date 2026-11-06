@@ -39,6 +39,7 @@ from .paint import Paint, validate as validate_paint
 from .imports import Imports
 from . import cancheck, methtune, selftest
 from .parking import rolling
+from .logview import LogCache, LogError
 
 TERMINAL_SOCKET = Path('/run/frogdash-terminal.sock')
 
@@ -320,6 +321,49 @@ def create_app(state, adapter=None, connectivity=None):
             raise web.HTTPNotFound()
         return web.FileResponse(path, headers={'Content-Type': 'application/octet-stream',
                                                'Content-Disposition': f'attachment; filename="{name}"', 'Cache-Control': 'no-store'})
+
+    # The Log viewer (Drive > Log viewer): a log's channels and markers, then the readings of
+    # the channels shown for the time on screen (hardware/frogdash/logview.py).
+    log_cache = LogCache()
+    app.on_cleanup.append(lambda app: asyncio.to_thread(log_cache.close))
+
+    def viewed_log(request):
+        require_local(request)
+        name = request.match_info['name']
+        if not state.recorder or not LOG_NAME.fullmatch(name):
+            raise web.HTTPNotFound()
+        path = state.recorder.config.directory / name
+        if path.is_symlink() or not path.is_file():
+            raise web.HTTPNotFound()
+        return path
+
+    async def log_view(request):
+        path = viewed_log(request)
+        try:
+            log = await asyncio.to_thread(log_cache.open, path)
+            body = await asyncio.to_thread(log.describe)
+        except (OSError, LogError) as exc:
+            raise web.HTTPUnprocessableEntity(text=f'This log cannot be read: {exc}')
+        body['events'] = await state.driving.log_events(path.name)
+        body['recording'] = path == state.recorder.writer.path
+        return web.json_response(body, headers={'Cache-Control': 'no-store'})
+
+    async def log_series(request):
+        path = viewed_log(request)
+        names = [n for n in request.query.get('channels', '').split(',') if n][:16]
+        try:
+            start = float(request.query['start']) if request.query.get('start') else None
+            end = float(request.query['end']) if request.query.get('end') else None
+            points = int(request.query.get('points', 2000))
+        except ValueError:
+            raise web.HTTPBadRequest(text='start, end and points are numbers')
+        try:
+            log = await asyncio.to_thread(log_cache.open, path)
+            series = await asyncio.to_thread(log.series, names, start, end, points)
+            series['stats'] = await asyncio.to_thread(log.stats, names, start, end)
+        except (OSError, LogError) as exc:
+            raise web.HTTPUnprocessableEntity(text=str(exc))
+        return web.json_response(series, headers={'Cache-Control': 'no-store'})
 
     async def raw(request):
         return web.json_response(list(state.raw.values()))
@@ -985,7 +1029,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/snapshot", snapshot_page), web.post("/ui/error", screen_error), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.get("/can/frogdash.dbc", can_dbc), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/events', events), web.get('/uploads', uploads), web.post('/uploads', uploads), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log),
+                    web.get("/ui/display", display_info), web.get("/snapshot", snapshot_page), web.post("/ui/error", screen_error), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.get("/can/frogdash.dbc", can_dbc), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/events', events), web.get('/uploads', uploads), web.post('/uploads', uploads), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log), web.get('/logs/{name}/view', log_view), web.get('/logs/{name}/series', log_series),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.get('/drive/alerts', drive_alerts), web.post('/drive/settings', drive_settings),

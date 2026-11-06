@@ -10,7 +10,10 @@
   // :modal tracks the active modal even when several dialog elements are open.
   const scope = () => [...document.querySelectorAll('dialog:modal')].at(-1) || document.getElementById('display');
   const candidates = () => [...scope().querySelectorAll(selector)].filter(visible);
-  const editable = el => el?.matches('select, input[type="number"], input[type="range"]');
+  // [data-wheel-edit]: a control that takes the four directions itself once ON is pressed on it
+  // (the Log viewer's graphs: move in time and zoom). It gets a 'wheel-adjust' event with the
+  // direction; the attribute's text is the hint shown meanwhile.
+  const editable = el => el?.matches('select, input[type="number"], input[type="range"], [data-wheel-edit]');
   const textInput = el => el?.matches('textarea, input:not([type]), input[type="text"], input[type="search"], input[type="password"], input[type="url"], input[type="email"]');
   function message(text) {
     // Put the hint in the modal top layer so it remains visible in submenus.
@@ -30,7 +33,7 @@
   function describe() {
     const root = scope(), el = document.activeElement;
     const tabs = root.matches('dialog') && typeof sections === 'function' ? sections(root) : [];
-    message(editing ? 'SET / COAST: change value  |  ON: done'
+    message(editing ? editing.dataset.wheelEdit || 'SET / COAST: change value  |  ON: done'
       : root.dataset.wheelHint ? root.dataset.wheelHint
       : tabs.includes(el) ? 'SET / COAST: choose section  |  ON: open  |  OFF: close  |  Hold OFF: home'
       : el?.matches?.('[data-wheel-scroll]') ? 'SET / COAST: scroll this list, then move on  |  OFF: back'
@@ -431,7 +434,8 @@
         if (after.matches('dialog') || (pendingFocus && visible(pendingFocus))) focus(pendingFocus && visible(pendingFocus) ? pendingFocus : startOf(after));
         else { clearFocus(false); return; }
       } else if (!visible(current)) focus(startOf(root));
-    } else if (editing) adjust(editing, ['up', 'right'].includes(name) ? 1 : -1);
+    } else if (editing?.matches('[data-wheel-edit]')) editing.dispatchEvent(new CustomEvent('wheel-adjust', {detail: name}));
+    else if (editing) adjust(editing, ['up', 'right'].includes(name) ? 1 : -1);
     else if (tabs.length && !deep) {
       // Section level: SET/COAST choose a section (shown live); RESUME or ON opens it.
       if (name === 'right' && tabs.includes(current)) enter();

@@ -192,6 +192,7 @@
     for (const button of document.querySelectorAll('[data-driver-tab]')) { const active = button.dataset.driverTab === name; button.setAttribute('aria-selected', String(active)); button.tabIndex = active ? 0 : -1; }
     for (const panel of document.querySelectorAll('[data-driver-panel]')) panel.hidden = panel.dataset.driverPanel !== name;
     if (name === 'review') review.load();
+    if (name === 'logs') window.FrogdashLogView?.open();   // Loaded after the first screens; it opens itself if it comes later
   }
   document.querySelector('.driver-tabs').setAttribute('role', 'tablist');
   document.querySelector('.driver-tabs').setAttribute('aria-orientation', 'vertical');
