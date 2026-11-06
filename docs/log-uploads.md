@@ -20,6 +20,12 @@ next update. The setup keeps the system log across restarts (at most 150 MB).
 The reports are made after every update even when uploads are not connected, and kept on
 the Pi (the newest 10) until they can go up; the first upload sends them too.
 
+Interrupted uploads resume on the next attempt. Files already on the reports branch
+are checked against the saved report: identical files are skipped, and changed files
+are updated using GitHub's current file SHA. This also handles a connection dropping
+after GitHub saved a file but before the Pi received its reply. A report leaves the
+queue only after all its files have uploaded successfully.
+
 The file being recorded is finished first, so a drive that has just ended goes up whole.
 A drive is the recordings less than ten minutes apart. Each drive goes up once; the
 reports go up every time. This happens on any connection, including a phone hotspot:

@@ -46,6 +46,7 @@ Prints one line for the update's status message. Never prints the token.
 import base64
 import calendar
 import gzip
+import hashlib
 import socket
 import json
 import os
@@ -57,6 +58,7 @@ import sys
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 STATE = Path(os.environ.get('FROGDASH_STATE') or os.path.realpath('/var/lib/frogdash'))
@@ -161,10 +163,24 @@ class GitHub:
             return error.code, detail
 
     def put_file(self, path, content, message):
-        status, body = self.call('PUT', f'{API}/repos/{self.repo}/contents/{path}',
-                                 {'message': message, 'content': base64.b64encode(content).decode(), 'branch': self.branch})
-        if status not in (200, 201):
-            raise RuntimeError(f'GitHub refused {path} ({status}{": " + body.get("message", "") if isinstance(body, dict) else ""})')
+        url = f'{API}/repos/{self.repo}/contents/{urllib.parse.quote(path, safe="/")}'
+        payload = {'message': message, 'content': base64.b64encode(content).decode(), 'branch': self.branch}
+        # A report can stop after some files were committed, or GitHub's success reply
+        # can be lost. Retrying those files as new ones gives 422 (missing sha).
+        blob_sha = hashlib.sha1(b'blob ' + str(len(content)).encode() + b'\0' + content).hexdigest()
+        for attempt in range(3):
+            status, body = self.call('PUT', url, payload)
+            if status in (200, 201):
+                return
+            if status not in (409, 422):
+                break
+            found, existing = self.call('GET', url + '?' + urllib.parse.urlencode({'ref': self.branch}))
+            if found != 200 or not isinstance(existing, dict) or not existing.get('sha'):
+                break   # A validation error alone is not proof that the file was uploaded.
+            if existing['sha'] == blob_sha:
+                return   # Already there, byte for byte: continue the interrupted report.
+            payload['sha'] = existing['sha']   # Replace using the current version on the logs branch.
+        raise RuntimeError(f'GitHub refused {path} ({status}{": " + body.get("message", "") if isinstance(body, dict) else ""})')
 
     def release(self, tag, title, notes):
         status, body = self.call('GET', f'{API}/repos/{self.repo}/releases/tags/{tag}')

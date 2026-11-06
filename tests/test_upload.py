@@ -1,13 +1,19 @@
 """Uploads after an update (tools/frogdash_upload.py and the phone page's Uploads section),
 against a stand-in GitHub that records what it is sent."""
 import gzip
+import base64
+import hashlib
 import importlib
+import io
 import json
 import os
 from pathlib import Path
 import sys
 import tempfile
 import unittest
+import urllib.error
+import urllib.parse
+from unittest.mock import Mock
 
 from aiohttp.test_utils import TestClient, TestServer
 from hardware.frogdash.connectivity import TransferPortal
@@ -30,6 +36,43 @@ class FakeGitHub:
 
     def upload_asset(self, release, name, path):
         self.assets.append((release['tag'], name, gzip.decompress(Path(path).read_bytes())))
+
+
+class ContentsAPI:
+    """GitHub's create/update distinction, including a reply lost after committing."""
+    def __init__(self):
+        self.files, self.writes = {}, []
+        self.fail_path = None
+        self.lose_reply = False
+
+    @staticmethod
+    def sha(content):
+        return hashlib.sha1(b'blob ' + str(len(content)).encode() + b'\0' + content).hexdigest()
+
+    def open(self, request, timeout):
+        url = urllib.parse.urlsplit(request.full_url)
+        path = urllib.parse.unquote(url.path.split('/contents/', 1)[1])
+        payload = json.loads(request.data) if request.data else {}
+        branch = payload.get('branch') or urllib.parse.parse_qs(url.query)['ref'][0]
+        key = (branch, path)
+        if path == self.fail_path:
+            status, body = 503, {'message': 'Unavailable'}
+        elif request.method == 'GET':
+            status, body = (200, {'sha': self.sha(self.files[key])}) if key in self.files else (404, {})
+        elif key in self.files and payload.get('sha') != self.sha(self.files[key]):
+            status, body = 422, {'message': 'Invalid request. "sha" wasn\'t supplied.'}
+        else:
+            status, body = (200 if key in self.files else 201), {}
+            self.files[key] = base64.b64decode(payload['content'])
+            self.writes.append(key)
+            if self.lose_reply:
+                self.lose_reply = False
+                raise urllib.error.URLError('Connection lost after commit')
+        if status >= 400:
+            raise urllib.error.HTTPError(request.full_url, status, 'Failed', {}, io.BytesIO(json.dumps(body).encode()))
+        response = io.BytesIO(json.dumps(body).encode())
+        response.status, response.headers = status, {}
+        return response
 
 
 class UploadTests(unittest.TestCase):
@@ -61,6 +104,61 @@ class UploadTests(unittest.TestCase):
         end = self.up.started(name) + minutes * 60
         os.utime(path, (end, end))
         return name
+
+    def test_existing_report_file_is_skipped_or_updated_on_its_branch(self):
+        api = ContentsAPI()
+        github = self.up.GitHub('owner/frogdash', TOKEN, opener=api, branch='reports/pi')
+        path = 'pi/2026-11-06/120000-events.txt'
+        github.put_file(path, b'GPS lost\n', 'report')
+        github.put_file(path, b'GPS lost\n', 'report')
+        self.assertEqual(len(api.writes), 1)  # A repeat creates no duplicate commit.
+        github.put_file(path, b'GPS recovered\n', 'report')
+        self.assertEqual(api.files, {('reports/pi', path): b'GPS recovered\n'})
+        self.assertEqual(len(api.writes), 2)
+
+    def test_success_reply_lost_after_commit_does_not_block_the_report(self):
+        api, waits = ContentsAPI(), []
+        api.lose_reply = True
+        github = self.up.GitHub('owner/frogdash', TOKEN, opener=api, wait=waits.append)
+        github.put_file('pi/events.txt', b'GPS lost\n', 'report')
+        self.assertEqual(waits, [5])
+        self.assertEqual(len(api.writes), 1)
+
+    def test_partly_uploaded_report_and_the_rest_of_the_queue_resume(self):
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN}))
+        api = ContentsAPI()
+        github = self.up.GitHub('owner/frogdash', TOKEN, opener=api)
+        api.fail_path = 'pi/2026-10-15/120000-diagnostics.json'
+        with self.assertRaisesRegex(RuntimeError, '503'):
+            self.up.run(now=1792065600, github=github, drives=False)
+        self.assertEqual(len(self.up.held()), 1)
+        self.assertEqual(api.writes, [('pi-logs', 'pi/2026-10-15/120000-events.txt')])
+        for offset in range(1, 5):
+            self.up.keep(1792065600 + offset * 60, {'events.txt': b'queued report\n'})
+        api.fail_path = None
+        said = self.up.run(now=1792069200, github=github, drives=False)
+        self.assertIn('5 kept on the Pi', said)
+        self.assertEqual(self.up.held(), [])
+        self.assertEqual(len(api.writes), 12)  # Four original, four queued, four fresh files.
+        status = json.loads((self.state / 'upload-status.json').read_text())
+        self.assertEqual((status['state'], status['held']), ('done', 0))
+
+    def test_validation_or_permission_error_does_not_count_as_uploaded(self):
+        for status, lookup in ((422, (404, {})), (422, (403, {})), (422, (200, {})), (403, None)):
+            with self.subTest(status=status, lookup=lookup):
+                github = self.up.GitHub('owner/frogdash', TOKEN)
+                answers = [(status, {'message': 'Refused'})] + ([lookup] if lookup else [])
+                github.call = Mock(side_effect=answers)
+                with self.assertRaisesRegex(RuntimeError, f'GitHub refused pi/events.txt \\({status}'):
+                    github.put_file('pi/events.txt', b'events', 'report')
+                self.assertEqual(github.call.call_count, len(answers))
+
+    def test_conflicts_refresh_the_sha_and_stop_after_three_attempts(self):
+        github = self.up.GitHub('owner/frogdash', TOKEN)
+        github.call = Mock(side_effect=[(409, {'message': 'Conflict'}), (200, {'sha': 'changed'})] * 3)
+        with self.assertRaisesRegex(RuntimeError, '409: Conflict'):
+            github.put_file('pi/events.txt', b'events', 'report')
+        self.assertEqual(github.call.call_count, 6)
 
     def test_the_newest_drive_is_the_files_close_together_at_the_end(self):
         up = self.up
