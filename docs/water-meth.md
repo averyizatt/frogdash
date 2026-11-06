@@ -239,6 +239,10 @@ is fitted, the controller uses it instead of the MicroSquirt's.
   - After the nozzle: **A2**
 - An unplugged or shorted sensor reads *No sensor reading*; nothing else is affected
   unless you have set the intake temperature limit.
+- So does a pin with nothing wired to it yet: before each reading the Nano turns on the
+  pin's own pull-up for a moment, and an empty pin then reads full scale. (Without that
+  check an empty pin read back a made-up temperature and a cooling figure from it;
+  fixed in DIYWaterMethInjection `bc52b07`, which goes on the Nano by USB.)
 
 All three readings (before, after, cooling) can be put on the dashboard with **Edit
 gauges**, and they are in every data log next to boost, RPM, pump run time, cycle
