@@ -1,0 +1,1 @@
+2026-11-06 20:37:41 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
