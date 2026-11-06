@@ -35,20 +35,24 @@
   // mph between fixes (November 2026). The logs and the race timer keep the receiver's own
   // readings. A single wild reading is dropped (the middle of the last three), the needle moves
   // no faster than a car can (about 20 km/h a second up, 35 down), and what is left is eased.
-  const speedo = {raw: [], value: null, at: 0};
-  function smoothSpeed(sample) {
+  const speedo = {raw: [], value: null, at: 0, stamp: null};
+  function smoothSpeed(sample, stamp) {
     if (!sample || sample.quality !== 'live' || typeof sample.value !== 'number' || !isFinite(sample.value)) {
       speedo.raw = []; speedo.value = null;
       return sample;
     }
+    // The same reading again (the receiver reports a few times a second, the screen updates more
+    // often): the needle holds until a new one.
+    if (stamp !== undefined && stamp === speedo.stamp && speedo.value !== null) return {...sample, value: speedo.value < 2 ? 0 : speedo.value};
+    speedo.stamp = stamp;
     const now = performance.now();
     speedo.raw = [...speedo.raw.slice(-2), sample.value];
     const middle = [...speedo.raw].sort((a, b) => a - b)[Math.floor(speedo.raw.length / 2)];
     if (speedo.value === null) speedo.value = middle;
     else {
       const dt = Math.min((now - speedo.at) / 1000, 1);
-      const target = clamp(middle, speedo.value - 35 * dt, speedo.value + 20 * dt);
-      speedo.value += (target - speedo.value) * (1 - Math.exp(-dt / .6));
+      // Eased toward the reading, and that step itself no bigger than a car's acceleration.
+      speedo.value += clamp((middle - speedo.value) * (1 - Math.exp(-dt / .6)), -35 * dt, 20 * dt);
     }
     speedo.at = now;
     return {...sample, value: speedo.value < 2 ? 0 : speedo.value};
@@ -253,7 +257,9 @@
           return;
         }
         if (next.type !== 'state' || !next.values || !next.transport) return;
-        if (next.values['vehicle.speed_kph']) next.values['vehicle.speed_kph'] = smoothSpeed(next.values['vehicle.speed_kph']);
+        // The preview's simulated speed is smooth already, and its readings carry no time of their own.
+        const speed = next.values['vehicle.speed_kph'];
+        if (speed && next.mode !== 'demo') next.values['vehicle.speed_kph'] = smoothSpeed(speed, speed.timestamp_ms ?? next.timestamp_ms);
         snapshot = next; connected = true; lastMessage = performance.now(); retry = 250;
         render();
       } catch { ws.close(); }
