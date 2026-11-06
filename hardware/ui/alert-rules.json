@@ -112,7 +112,7 @@
      "when": [["ecu.iat_c", ">", {"param": "c"}]]},
 
     {"key": "meth", "code": "WMI-01", "title": "WATER/METH FAULT", "name": "Water/meth fault", "group": "meth", "severity": "critical",
-     "about": "The water/meth controller reports a fault, or no flow while spraying.",
+     "about": "The water/meth controller reports a fault, or no flow while spraying. Missing manifold pressure with MicroSquirt offline warns only when fresh GPS speed is above 3 km/h (about 2 mph). Other faults still warn while parked.",
      "check": "Open Water / meth for the fault. Do not rely on it until it is cleared.",
      "show": ["meth.state", "text"], "enabled": true, "delay": 1.0, "special": "meth", "params": []},
     {"key": "meth_tank", "code": "WMI-02", "title": "WATER/METH TANK LOW", "name": "Water/meth tank low", "group": "meth", "severity": "warning",

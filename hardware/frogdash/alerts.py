@@ -93,6 +93,20 @@ def live(snapshot, key):
     return value
 
 
+def ecu_off_without_gps_motion(values):
+    """Missing ECU data is expected while parked. Only fresh GPS proves motion;
+    wheel fallback and held GPS speed must not turn it into a missing-data alarm.
+    Ignore up to 3 km/h of GPS drift at rest.
+    """
+    if any(key.startswith('ecu.') and sample.get('quality') == 'live' for key, sample in values.items()):
+        return False
+    speed = values.get('vehicle.speed_kph') or {}
+    moving = (speed.get('quality') == 'live'
+              and (speed.get('source') == 'gpsd' or speed.get('source_id') == 0x203)
+              and number(speed.get('value')) and speed['value'] > 3)
+    return not moving
+
+
 def term(value, settings, snapshot):
     """A clause's right-hand side: a number or text, a threshold, a signal or a sum. None if unknown."""
     if not isinstance(value, dict):
@@ -133,6 +147,13 @@ class Specials:
             return None if warning is None or critical is None else bool(warning or critical)
         if name == 'meth':
             flags, mode, flow = live(snapshot, 'meth.fault_flags'), live(snapshot, 'meth.state'), live(snapshot, 'meth.flow')
+            if flags is not None and ecu_off_without_gps_motion(snapshot.get('values') or {}):
+                reported_flags = snapshot['values']['meth.fault_flags'].get('raw', flags)
+                flags &= ~2   # Missing MicroSquirt MAP while parked, not another controller fault.
+                # FAULT mode arrives before the debounced bits. Use the raw reason
+                # so an ECU-off start cannot briefly trigger and latch this alert.
+                if reported_flags == 2 and mode == 'FAULT':
+                    return False
             if flags is not None and flags != 0 or mode == 'FAULT':
                 return True
             if flags is None or mode is None:

@@ -5,6 +5,7 @@ import time
 import traceback
 
 from .protocol import ANALOG_BITS, ECU_TIMEOUT, EVENT_IDS, TIMEOUTS, decode
+from .alerts import ecu_off_without_gps_motion
 from .controls import Controls
 from .taillight import TaillightSettings
 from .methtune import MethTune
@@ -232,6 +233,10 @@ class State:
         fuel = values.get('vehicle.fuel_pct')
         if fuel and fuel.get('source_id') == 0x500:
             values.update(self.guarded('fuel gauge', lambda: self.fuel_gauge.step(fuel, parked(self)), {}))
+        if self.gps:
+            # USB GPS is authoritative when configured; do not silently switch
+            # to a different receiver on CAN when the USB receiver loses fix.
+            values.update(self.guarded('GPS', self.gps.values, {}))
         boost = values.get("engine.boost_kpa")
         map_value, baro = values.get("ecu.map_kpa", missing), values.get("ecu.baro_kpa", missing)
         # Barometric pressure barely changes: keep the last reading so boost follows MAP alone.
@@ -243,12 +248,11 @@ class State:
             values["engine.boost_kpa"] = {**map_value, "value": map_value["value"] - baro["value"],
                                           "timestamp_ms": min(map_value["timestamp_ms"], baro["timestamp_ms"])}
         elif boost and values.get("meth.fault_flags", missing)["quality"] == "live" and values["meth.fault_flags"]["value"] & 2:
-            values["engine.boost_kpa"] = {**boost, "quality": "fault"}
+            # The controller gets MAP from MicroSquirt. With the ECU off, show no
+            # reading; raise the missing-data fault only once fresh GPS shows motion.
+            quality = "unavailable" if ecu_off_without_gps_motion(values) else "fault"
+            values["engine.boost_kpa"] = {**boost, "quality": quality}
         self.seq += 1
-        if self.gps:
-            # USB GPS is authoritative when configured; do not silently switch
-            # to a different receiver on CAN when the USB receiver loses fix.
-            values.update(self.guarded('GPS', self.gps.values, {}))
         # GPS when it has a fix; otherwise wheel speed and dead reckoning (nav.py).
         values.update(self.guarded('navigation', lambda: self.nav.step(self, values), {}))
         # Water/meth flow now and its share of estimated fuel flow (methtune.py).
