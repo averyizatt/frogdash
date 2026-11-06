@@ -141,6 +141,13 @@
       host.append(section);
     }
   }
+  function closeDetail() {
+    const card = document.querySelector(`.alert-widget[data-key="${selected}"] .alert-widget-main`);
+    selected = null; details = null;
+    delete $('alert-detail').dataset.open;
+    highlight();
+    card?.focus();
+  }
   function highlight() { for (const card of document.querySelectorAll('.alert-widget')) card.classList.toggle('selected', card.dataset.key === selected); }
   function render() {
     if (!catalogue) return;
@@ -183,8 +190,10 @@
     if (host.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') { updateLive(rule, alert, settings); return; }
     const state = stateOf(rule, alert, settings);
     host.replaceChildren();
+    host.dataset.open = 'true';   // Slides in at the side only once an alert is chosen (no empty panel)
     const head = el('header', undefined, 'alert-detail-head');
-    head.append(el('span', `${rule.code} · ${rule.severity === 'critical' ? 'Critical' : 'Warning'}`, 'alert-code'), el('h3', rule.name), el('span', STATE_WORDS[state], 'alert-detail-state'));
+    const shut = el('button', 'Close', 'alert-detail-close'); shut.type = 'button'; shut.onclick = closeDetail;
+    head.append(shut, el('span', `${rule.code} · ${rule.severity === 'critical' ? 'Critical' : 'Warning'}`, 'alert-code'), el('h3', rule.name), el('span', STATE_WORDS[state], 'alert-detail-state'));
     head.dataset.state = state; head.dataset.severity = rule.severity;
     host.append(head, el('p', rule.about, 'alert-about'), el('p', undefined, 'alert-check'));
     host.lastChild.append(el('b', 'Check: '), document.createTextNode(rule.check));

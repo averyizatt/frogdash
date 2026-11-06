@@ -85,8 +85,18 @@
   const shown = (value, name) => value == null || !isFinite(value) ? '—' : `${value.toFixed(channel(name)?.digits ?? 1)}`;
 
   // ---- The logs, the one open, and its graphs ----
+  // The first state update says whether this is the car or the preview. This file loads after
+  // the gauges, so it can start before one has arrived here: it waits for it (the live preview
+  // asked the web site for the Pi's logs and said they could not be listed, November 2026).
+  const firstState = () => latest.mode ? Promise.resolve() : new Promise(resolve => {
+    const done = () => { window.removeEventListener('frogdash-state', done); clearTimeout(timer); resolve(); };
+    const timer = setTimeout(done, 4000);
+    window.addEventListener('frogdash-state', done);
+  });
   async function load(refresh = false) {
     if (!built) build();
+    note('Opening the logs…');
+    await firstState();
     try {
       logs = await source.list();
     } catch (error) { note(`The logs could not be listed: ${error.message}`); return; }

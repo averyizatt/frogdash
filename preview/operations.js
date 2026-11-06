@@ -186,7 +186,8 @@
       const row = moduleRow(m), [tone, label, detail, progress] = moduleView(m), hold = firmwareHold[m.name];
       const pill = $(`fw-state-${m.name}`), button = $(`fw-install-${m.name}`), bar = row.querySelector('.sw-bar');
       pill.dataset.tone = tone; pill.textContent = label; row.dataset.tone = tone;
-      if (firmwareArmed !== m.name) $(`fw-detail-${m.name}`).textContent = hold && performance.now() < hold.until && m.job.state !== 'running' ? hold.text : detail;
+      // The two-press warning stays until it is answered, for Restart as for Install.
+      if (firmwareArmed !== m.name && firmwareArmed !== `${m.name}:restart`) $(`fw-detail-${m.name}`).textContent = hold && performance.now() < hold.until && m.job.state !== 'running' ? hold.text : detail;
       bar.hidden = progress === undefined;
       if (progress !== undefined) bar.firstElementChild.style.width = `${Math.round(progress * 100)}%`;
       const restarting = m.job.kind === 'restart';

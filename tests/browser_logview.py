@@ -73,6 +73,17 @@ async def main(path):
         assert await page.evaluate("JSON.parse(localStorage.getItem('frogdash-logview-panes')).length") == 3
         assert await page.evaluate("JSON.parse(localStorage.getItem('frogdash-logview-panes'))[2].includes('Batt V')")
 
+        # Opened at once, before the menus' files have loaded (the normal delay, not 0): it comes up
+        # by itself when they arrive, on the preview's simulated drive, not asking for the Pi's logs.
+        early = await browser.new_page(viewport={'width': 1920, 'height': 720})
+        early.on('pageerror', lambda error: errors.append(str(error)))
+        await early.goto((ROOT / 'preview/dash.html').as_uri())
+        await early.wait_for_function("document.getElementById('drive-launch')")
+        await early.locator('#drive-launch').click()
+        await early.locator('[data-driver-tab="logs"]').click()
+        await early.wait_for_function("document.querySelectorAll('.lv-pane canvas').length >= 4", timeout=20000)
+        assert 'could not' not in await early.locator('#lv-note').text_content()
+
         assert not errors, errors
         assert not network, network
         await browser.close()

@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import tempfile
 import unittest
@@ -270,10 +271,21 @@ class KeeperTests(unittest.TestCase):
                 os.utime(lock, (stamp, stamp))
             env = {**os.environ, 'PATH': str(base / 'bin') + os.pathsep + os.environ['PATH'], 'KEEPER_LOG': (base / 'log').as_posix(),
                    'FROGDASH_WIFI_LOCKS': f"{(base / 'none.lock').as_posix()} {lock.as_posix()}", 'FROGDASH_KEEPER_PERIOD': '0'}
+            # One turn of the loop on a slow Windows sh, then the keeper and everything it started
+            # stop together: a stand-in still writing its log made the folder's removal fail on CI.
+            keeper = subprocess.Popen([SHELL, (ROOT / 'tools/frogdash_netkeeper.sh').as_posix()], env=env, stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL, start_new_session=True)
             try:
-                subprocess.run([SHELL, (ROOT / 'tools/frogdash_netkeeper.sh').as_posix()], env=env, capture_output=True, timeout=6)   # One turn of the loop on a slow Windows sh
+                keeper.wait(timeout=6)
             except subprocess.TimeoutExpired:
-                pass
+                if hasattr(os, 'killpg'):
+                    try:
+                        os.killpg(keeper.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                else:
+                    keeper.kill()
+                keeper.wait()
             log = (base / 'log').read_text() if (base / 'log').exists() else ''
             return log, lock.exists()
 
