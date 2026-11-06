@@ -45,7 +45,7 @@ class Driving:
         self.state, self.directory = state, Path(directory) if directory else None
         self.settings = catalogue.defaults()
         self.settings_error = self.storage_error = ''
-        self.specials = catalogue.Specials()
+        self.specials = catalogue.Specials(clock=state.clock)
         self.alerts = {key: {'key': key, 'code': rule['code'], 'title': rule['title'], 'severity': rule['severity'],
                              'group': rule['group'], 'active': False, 'latched': False, 'acknowledged': False,
                              'condition': 'unknown', 'since_ms': None, 'context': {}, 'value': None,

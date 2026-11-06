@@ -12,6 +12,7 @@ The flat version 1 (oil_psi, oil_enabled, ...) is still read, and becomes versio
 """
 import json
 import math
+import time
 from pathlib import Path
 
 CATALOGUE_PATH = Path(__file__).resolve().parents[1] / 'ui' / 'alert-rules.json'
@@ -122,8 +123,9 @@ def clauses(rule, settings, snapshot):
 
 class Specials:
     """Conditions that are not a comparison of readings. Some keep a little memory."""
-    def __init__(self):
+    def __init__(self, clock=time.monotonic):
         self.sync_count = None
+        self.clock, self.running_since = clock, None
 
     def check(self, name, settings, snapshot):
         if name == 'knock':
@@ -146,6 +148,21 @@ class Specials:
         if name == 'pi_heat':
             cpu = (snapshot.get('system') or {}).get('cpu_c')
             return None if not number(cpu) else cpu > settings['c']
+        if name == 'charging':
+            # Not charging: the battery below the limit once the engine has run for the set
+            # minutes. Right after a start the MicroSquirt and the alternator take a while to
+            # bring it above 13 V; it went off on every drive (November 2026).
+            rpm, volts = live(snapshot, 'engine.rpm'), live(snapshot, 'vehicle.battery_v')
+            if rpm is None:
+                return None
+            if rpm < 500:
+                self.running_since = None
+                return False
+            if self.running_since is None:
+                self.running_since = self.clock()
+            if self.clock() - self.running_since < settings['grace'] * 60:
+                return False
+            return None if volts is None else volts < settings['v']
         if name == 'sync':
             count = live(snapshot, 'ecu.sync_loss_count')
             if count is None:

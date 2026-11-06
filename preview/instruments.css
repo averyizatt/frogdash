@@ -27,7 +27,9 @@
 .skin-led { font:700 26px/1 "DejaVu Sans Mono", Consolas, monospace; color:#ff4a2a; letter-spacing:2px; text-shadow:0 0 6px #ff2a0a99; }
 .skin-wheels { justify-content:space-between; padding:0 3px; }
 .skin-wheels span { flex:1; text-align:center; font:700 30px/1 "DejaVu Sans Mono", Consolas, monospace; color:#f2efe6; }
-.skin-warning { position:absolute; margin:0; padding:5px 12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; font-size:15px; font-weight:800; letter-spacing:.5px; color:#ffb35c; background:#1a0d06; border:1px solid #ff6a1a; border-radius:4px; }
+/* On the photo clusters it sits in the black strip at the top, above the indicator row: the
+   steering column hides the bottom middle of the screen in the car (November 2026). */
+.skin-warning { position:absolute; z-index:4; margin:0; padding:2px 12px; line-height:22px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; font-size:15px; font-weight:800; letter-spacing:.5px; color:#ffb35c; background:#1a0d06; border:1px solid #ff6a1a; border-radius:4px; }
 .look-card[data-gauge-preview="skin-ferrari"] .look-art { background:#000 url("skins/ferrari.jpg?v=a281d1bd8f") 50% 50% / contain no-repeat; }
 .look-card[data-gauge-preview="skin-fox"] .look-art { background:#000 url("skins/fox.jpg?v=894d45eccd") 50% 50% / contain no-repeat; }
 .look-card[data-gauge-preview="skin-ferrari-yellow"] .look-art { background:#000 url("skins/ferrari-yellow.jpg?v=f8280b01d3") 50% 50% / contain no-repeat; }
@@ -61,7 +63,8 @@
 .cluster-gauge .speed-problem strong { font-size:24px; }
 .cluster-gauge .speed-problem span { font-size:13px; }
 .cluster-gauge .speed-problem small { font-size:12px; }
-.cluster-warning { position:absolute; bottom:6px; left:25%; width:50%; padding:4px 12px; text-align:center; font-size:13px; font-weight:800; background:#2c1518; color:var(--danger); border:1px solid var(--danger); border-radius:4px; }
+/* At the top: in the car the steering column hides the bottom middle of the screen (November 2026). */
+.cluster-warning { position:absolute; z-index:4; top:6px; left:25%; width:50%; padding:4px 12px; text-align:center; font-size:13px; font-weight:800; background:#2c1518; color:var(--danger); border:1px solid var(--danger); border-radius:4px; }
 .cluster-telemetry { grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
 .cluster-telemetry article { display:flex; align-items:center; gap:14px; padding:14px 22px; border:1px solid var(--line); border-radius:9px; background:color-mix(in srgb,var(--surface) var(--widget-fill),transparent); min-width:0; }
 .cluster-telemetry article > span { font-size:13px; letter-spacing:1px; color:var(--muted); font-weight:750; }.cluster-telemetry strong { font-size:30px; margin-left:auto; }.cluster-telemetry small { color:var(--muted); font-size:13px; }
@@ -106,7 +109,7 @@
 @media (max-aspect-ratio:11/5) and (max-width:1200px) {
   .custom-cluster { grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-areas:"speed speed rpm rpm" "coolant fuel oil volts"; grid-template-rows:320px 180px; padding:14px; gap:12px; }
   :root:not([data-gauges="standard"])[data-gauges] .display { grid-template-rows:auto auto auto auto; }
-  .cluster-warning { left:5%; width:90%; bottom:0; }
+  .cluster-warning { left:5%; width:90%; top:0; }
   .cluster-telemetry { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .background-grid { grid-template-columns:repeat(6,minmax(0,1fr)); }
 }
@@ -136,6 +139,7 @@
 :root[data-preset="foxnight"] .dial-tick.major { stroke:var(--accent); }
 :root[data-preset="foxnight"] .dial-scale text.redline { fill:var(--danger); }
 :root[data-preset="foxnight"] .dial-scale line.redline { stroke:var(--danger); }
+.custom-cluster:has(.cluster-warning:not([hidden])) .cluster-track:not([hidden]) { top:44px; }   /* Below the warning */
 .cluster-track { position:absolute; top:22px; left:50%; transform:translateX(-50%); width:140px; display:grid; gap:8px; padding:10px; background:#0a1018e8; border:1px solid var(--line); border-radius:6px; }
 .cluster-track > span { display:flex; justify-content:space-between; gap:8px; font-size:10px; color:var(--muted); }.cluster-track b { color:var(--text); }
 .cluster-shift { display:flex; gap:3px; }.cluster-shift i { height:8px; flex:1; background:#ffffff15; }.cluster-shift i[data-on="true"] { background:var(--accent); }.cluster-track[data-shift="true"] .cluster-shift i { background:var(--danger); }

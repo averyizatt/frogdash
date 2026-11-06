@@ -77,20 +77,31 @@
     if (popover && !pad.matches(':popover-open')) pad.showPopover();
     document.body.classList.add('osk-open');
     requestAnimationFrame(() => {
-      // Keep the field above the keyboard.
+      // Keep the field above the keyboard. A panel too short to scroll gets room at its foot
+      // while the keyboard is open, so the field can always go up (the raised keyboard covers
+      // more of the screen: the Wi-Fi password sat under it).
       const covered = field.getBoundingClientRect().bottom - pad.getBoundingClientRect().top + 16;
       if (covered <= 0) return;
       for (let box = field.parentElement; box; box = box.parentElement) {
         const style = getComputedStyle(box);
-        if (/(auto|scroll)/.test(style.overflowY) && box.scrollHeight > box.clientHeight) { box.scrollTop += covered; return; }
+        if (!/(auto|scroll)/.test(style.overflowY)) continue;
+        const short = covered - (box.scrollHeight - box.clientHeight - box.scrollTop);
+        if (short > 0) {
+          roomed = {box, padding: box.style.paddingBottom};
+          box.style.paddingBottom = `${parseFloat(style.paddingBottom) + short}px`;
+        }
+        box.scrollTop += covered;
+        return;
       }
       field.scrollIntoView({block: 'center'});
     });
   }
+  let roomed = null;   // The panel given room for the field, and its own padding, put back on close
   function close() {
     if (popover && pad.matches(':popover-open')) pad.hidePopover();
     pad.hidden = true; target = null;
     document.body.classList.remove('osk-open');
+    if (roomed) { roomed.box.style.paddingBottom = roomed.padding; roomed = null; }
   }
   // Keys never take the focus, so the field keeps its caret.
   pad.addEventListener('pointerdown', event => {

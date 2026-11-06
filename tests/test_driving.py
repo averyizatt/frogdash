@@ -42,6 +42,30 @@ class DrivingTests(unittest.TestCase):
         self.drive.sample(snapshot)
         return snapshot
 
+    def test_not_charging_waits_for_the_minutes_after_a_start(self):
+        # The car: below 13 V for a while after every start, and the alert went off each drive.
+        self.values.update({'engine.rpm': 0, 'vehicle.battery_v': 12.2})
+        self.sample(0)
+        self.sample(1, **{'engine.rpm': 900})                     # Started
+        self.sample(5 * 60)
+        self.sample(9 * 60)
+        self.assertFalse(self.drive.alerts['batt_low']['active'])  # Still within the 10 minutes
+        self.sample(10 * 60 + 2)
+        self.sample(10 * 60 + 13)                                  # ...then the 10 s it must last
+        self.assertTrue(self.drive.alerts['batt_low']['active'])
+        # A stall starts the minutes again; charging by then keeps it quiet.
+        self.drive.acknowledge('batt_low')
+        self.sample(11 * 60, **{'engine.rpm': 0, 'vehicle.battery_v': 12.4})
+        self.sample(11 * 60 + 5, **{'engine.rpm': 850})
+        self.sample(15 * 60)
+        self.assertEqual(self.drive.alerts['batt_low']['condition'], 'normal')
+        self.sample(30 * 60, **{'vehicle.battery_v': 14.1})
+        self.assertEqual(self.drive.alerts['batt_low']['condition'], 'normal')
+        # Set to 0 minutes it behaves as before.
+        self.drive.configure(settings_with(batt_low={'grace': 0}))
+        self.sample(31 * 60, **{'vehicle.battery_v': 12.0})
+        self.assertEqual(self.drive.alerts['batt_low']['condition'], 'active')
+
     def test_oil_debounce_latch_acknowledge_rearm_and_unknown(self):
         self.sample(0, **{'engine.oil_pressure_psi': 10})
         self.sample(.5)

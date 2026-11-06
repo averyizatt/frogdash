@@ -20,7 +20,7 @@
     rpm: {unit: () => 'RPM', digits: () => 0}, pct: {unit: () => '%', digits: () => 0}, afr: {unit: () => 'AFR', digits: () => 1},
     // The ECU's fuel correction, 100 % for none: shown as + or − from none.
     trim: {unit: () => '%', digits: () => 0, show: v => v - 100, signed: true},
-    volt: {unit: () => 'V', digits: () => 1}, deg: {unit: () => '°', digits: () => 1}, count: {unit: () => '', digits: () => 0},
+    volt: {unit: () => 'V', digits: () => 1}, min: {unit: () => 'min', digits: () => 0}, deg: {unit: () => '°', digits: () => 1}, count: {unit: () => '', digits: () => 0},
     text: {unit: () => '', digits: () => 0}, module: {unit: () => '', digits: () => 0},
   };
   const kind = name => KINDS[name] || KINDS.count;
@@ -63,6 +63,10 @@
       const modules = snapshot?.modules || {}, name = rule.special.slice(7);
       if (!['taillights', 'comfort', 'watermeth'].some(other => other !== name && modules[other] === 'live')) return null;
       return modules[name] !== 'live';
+    }
+    if (rule.special === 'charging') {   // The preview leaves out the minutes after a start
+      const rpm = live(snapshot, 'engine.rpm'), volts = live(snapshot, 'vehicle.battery_v');
+      return rpm === null ? null : rpm < 500 ? false : volts === null ? null : volts < settings.v;
     }
     if (rule.special) return null;   // The Pi and ignition sync: only the car has them
     let unknown = false;

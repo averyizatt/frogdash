@@ -64,7 +64,7 @@
         {id: 'left', box: [895, 381, 959, 440], on: turn('left')},
         {id: 'right', box: [959, 381, 1023, 440], on: turn('right')}
       ],
-      warning: [560, 596, 1360]
+      warning: [560, 3, 1360]
     },
     // Fox-style cluster with two LCD windows. Coolant in °F; the small dials' needles pivot
     // just off the screen's edge, as their ticks show, and swing up and down their recesses.
@@ -90,7 +90,7 @@
         {id: 'boost', box: [485, 527, 732, 588], style: 'lcd', text: boostText},
         {id: 'odometer', box: [1157, 527, 1404, 588], style: 'lcd', text: () => { const t = odometerText(); return t.includes('-') ? '------ MI' : `${t} MI`; }}
       ],
-      warning: [560, 610, 1360]
+      warning: [560, 3, 1360]
     },
     // Saleen white faces from the owner's day and night pictures: tach 0-7, speedometer to 200
     // MPH, boost and fuel on the left, coolant (L-H read as 130-270 degF) and volts on the
@@ -121,7 +121,7 @@
         {id: 'oil', box: [1194, 241, 1399, 288], style: 'led', text: (snapshot, live) => { const psi = live('engine.oil_pressure_psi'); return `OIL ${psi === null ? '--' : String(Math.round(psi)).padStart(2, ' ')} PSI`; }},
         {id: 'odometer', box: [1194, 512, 1388, 560], style: 'wheels', text: odometerText}
       ],
-      warning: [560, 616, 1360]
+      warning: [560, 3, 1360]
     },
     // Ferrari with a yellow tach and a red speedometer on carbon (the owner's picture). The
     // tach and speedometer start at the bottom and run clockwise. The speedometer's printing is
@@ -159,7 +159,7 @@
         {id: 'intake', box: [984, 424, 1113, 536], style: 'amber', text: (snapshot, live) => { const c = live('engine.iat_c'); return `${c === null ? '---' : Math.round(fahrenheit(c))}°F\nINTAKE`; }},
         {id: 'odometer', box: [1484, 286, 1612, 332], style: 'amber', text: odometerText}
       ],
-      warning: [560, 606, 1360]
+      warning: [560, 3, 1360]
     }
   };
 
