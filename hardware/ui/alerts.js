@@ -121,7 +121,8 @@
   function widget(rule) {
     const card = el('article', undefined, 'alert-widget'); card.dataset.key = rule.key; card.dataset.severity = rule.severity;
     const main = el('button', undefined, 'alert-widget-main'); main.type = 'button';
-    main.append(el('span', rule.code, 'alert-code'), el('strong', rule.name, 'alert-name'), el('span', '—', 'alert-reading'), el('span', '', 'alert-state'));
+    const group = catalogue.groups.find(([key]) => key === rule.group)?.[1];
+    main.append(el('span', group ? `${rule.code} · ${group}` : rule.code, 'alert-code'), el('strong', rule.name, 'alert-name'), el('span', '—', 'alert-reading'), el('span', '', 'alert-state'));
     main.onclick = () => { selected = rule.key; details = null; renderDetail(); highlight(); loadDetails(); };
     const toggle = el('label', undefined, 'alert-switch'), input = el('input'); input.type = 'checkbox'; input.setAttribute('role', 'switch');
     input.setAttribute('aria-label', `${rule.name}: on or off`);
@@ -130,16 +131,14 @@
     card.append(main, toggle);
     return card;
   }
+  // One grid of every alert, in group order, each card naming its group: a row per group left
+  // most of each row empty on the car's wide screen (November 2026).
   function build() {
     const host = $('alert-widgets'); host.replaceChildren();
-    for (const [group, label] of catalogue.groups) {
-      const members = catalogue.rules.filter(r => r.group === group);
-      if (!members.length) continue;
-      const section = el('section', undefined, 'alert-group'); section.dataset.group = group;
-      section.append(el('h3', label), el('div', undefined, 'alert-group-grid'));
-      for (const rule of members) section.lastChild.append(widget(rule));
-      host.append(section);
-    }
+    const section = el('section', undefined, 'alert-group'), grid = el('div', undefined, 'alert-group-grid');
+    for (const [group] of catalogue.groups) for (const rule of catalogue.rules.filter(r => r.group === group)) grid.append(widget(rule));
+    section.append(grid);
+    host.append(section);
   }
   function closeDetail() {
     const card = document.querySelector(`.alert-widget[data-key="${selected}"] .alert-widget-main`);
