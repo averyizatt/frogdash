@@ -129,14 +129,21 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn('-m pip install --quiet --disable-pip-version-check --no-deps pyubx2==1.3.9', self.log('venv.log'))
         self.assertIn('restart frogdash.service', self.log('systemctl.log'))
 
-    def test_a_pi_still_on_utc_gets_the_cars_time_zone_and_a_chosen_one_stays(self):
+    def test_utc_and_london_get_the_cars_time_zone_and_an_explicit_override_wins(self):
         zone = Path(self.folder.name) / 'zone'
         self.env['FAKE_ZONE'] = zone.as_posix()
         zone.write_text('Etc/UTC\n')                       # The car's card: the dash clock 7 hours ahead
         said, status, steps = self.run_setup('offline')
         self.assertEqual(steps['Time zone'], ('done', 'Set to America/Denver (was Etc/UTC)'))
         self.assertEqual(zone.read_text().strip(), 'America/Denver')
-        zone.write_text('Europe/Berlin\n')                 # Chosen by hand: left alone
+        zone.write_text('Europe/London\n')                 # The car's Imager setting.
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Time zone'], ('done', 'Set to America/Denver (was Europe/London)'))
+        self.assertEqual(zone.read_text().strip(), 'America/Denver')
+        self.assertIn('restart frogdash.service', self.log('systemctl.log'))
+        self.env['FROGDASH_TIMEZONE'] = 'Europe/Berlin'
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Time zone'][0], 'done')
         said, status, steps = self.run_setup('offline')
         self.assertEqual(steps['Time zone'], ('ok', 'Europe/Berlin'))
         self.assertEqual(zone.read_text().strip(), 'Europe/Berlin')

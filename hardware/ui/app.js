@@ -532,7 +532,7 @@
   setInterval(() => {
     const date = new Date();
     $('clock-time').textContent = date.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit', hour12: true});
-    $('clock-tz').textContent = '';
+    $('clock-tz').textContent = new Intl.DateTimeFormat('en-US', {timeZoneName: 'short'}).formatToParts(date).find(p => p.type === 'timeZoneName')?.value || '';
     if (connected && performance.now() - lastMessage > 1500) { disconnect(); ws.close(); }
   }, 250);
   // Plain-language CAN check: one row per expected message, grouped by module.

@@ -68,5 +68,12 @@ address, **Enable Device Flow** ticked). Its Client ID is public, not a secret: 
 
 A token pasted on the phone page (Uploads) still works the same way.
 
+GitHub may issue an eight-hour access token when connecting with the on-screen code.
+The Pi keeps the accompanying refresh token privately and renews the access token
+before it expires when uploading. After upgrading from a version that discarded the
+refresh token, disconnect and connect once more to enable renewal. The card says
+whether renewal is automatic; dates include the month name, time and time zone.
+Pasted personal access tokens retain the expiration chosen on GitHub.
+
 Reading it: a recording is `gunzip`ped and opened in MegaLogViewer, or read with
 `python tools/inspect_mlg.py file.mlg`.

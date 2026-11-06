@@ -333,6 +333,35 @@ class UploadTests(unittest.TestCase):
         self.assertIn('"expires": "2026-11-12 18:00:00 UTC"', report)
         self.assertNotIn(TOKEN, report)
 
+    def test_expiring_device_login_renews_during_a_real_report_upload(self):
+        from hardware.frogdash.github_link import refresh_login, write_login
+        config = {'repo': 'owner/frogdash', 'token': TOKEN, 'refresh_token': 'private-renewal-token',
+                  'via': 'device code', 'client_id': 'test-app', 'expires_at': 1, 'login_id': 'same-login'}
+        write_login(self.up.CONFIG, config)
+        self.up.text_of = lambda *a, **kw: TOKEN + ' private-renewal-token'
+        answer = {'access_token': 'renewed-access-token', 'refresh_token': 'renewed-refresh-token', 'expires_in': 28800}
+        post = Mock(return_value=answer)
+        self.up.refresh_login = lambda path, current, force=False: refresh_login(path, current, force, post=post, wall=lambda: 1000)
+        api, original = ContentsAPI(), self.up.GitHub
+        self.up.GitHub = lambda repo, token, **kw: original(repo, token, opener=api, **kw)
+        self.up.run(now=1792065600, drives=False)
+        post.assert_called_once()
+        self.assertEqual(json.loads(self.up.CONFIG.read_text())['refresh_token'], 'renewed-refresh-token')
+        self.assertEqual(json.loads(self.up.STATUS.read_text())['login']['login_id'], 'same-login')
+        sent = b''.join(api.files.values()).decode()
+        for secret in (TOKEN, 'private-renewal-token', 'renewed-access-token', 'renewed-refresh-token'):
+            self.assertNotIn(secret, sent)
+
+    def test_refused_renewal_keeps_the_report_and_requests_reconnection(self):
+        (self.state / 'log-upload.json').write_text(json.dumps({'repo': 'owner/frogdash', 'token': TOKEN,
+                                                              'refresh_token': 'expired-refresh-token'}))
+        self.up.refresh_login = Mock(side_effect=self.up.RefreshRefused('expired'))
+        self.up.print = Mock()
+        self.up.main()
+        self.assertFalse(self.up.CONFIG.exists())
+        self.assertEqual(len(self.up.held()), 1)
+        self.up.print.assert_called_once_with(self.up.REFUSED)
+
     def test_a_moment_without_internet_is_waited_out(self):
         # The car: "Temporary failure in name resolution" while the Wi-Fi came back.
         import io

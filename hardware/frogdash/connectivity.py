@@ -154,7 +154,7 @@ class TransferPortal:
             path.unlink(missing_ok=True)
             return
         tmp = path.with_suffix('.tmp')
-        tmp.write_text(json.dumps({'repo': repo, 'token': token}), encoding='utf-8')
+        tmp.write_text(json.dumps({'repo': repo, 'token': token, 'login_id': secrets.token_hex(16)}), encoding='utf-8')
         os.chmod(tmp, 0o600)
         os.replace(tmp, path)
 

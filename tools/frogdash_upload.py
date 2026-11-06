@@ -61,6 +61,9 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from hardware.frogdash.github_link import RefreshRefused, refresh_login
+
 STATE = Path(os.environ.get('FROGDASH_STATE') or os.path.realpath('/var/lib/frogdash'))
 REPO_DIR = Path(os.environ.get('FROGDASH_REPO', '/opt/frogdash'))
 RECORDINGS = STATE / 'can-recordings'   # Finished CAN recordings (server.py save_recording)
@@ -118,10 +121,10 @@ RETRY_WAITS = (5, 15, 30)
 
 
 class GitHub:
-    def __init__(self, repo, token, opener=None, branch=BRANCH, wait=time.sleep):
+    def __init__(self, repo, token, opener=None, branch=BRANCH, wait=time.sleep, renew=None):
         self.repo, self.token, self.branch, self.wait = repo, token, branch, wait
-        # When the login stops working, as GitHub says on every answer: only a token pasted on
-        # the phone page has one (7 to 90 days); Connect GitHub's login does not expire.
+        self.renew = renew
+        # GitHub can issue expiring tokens for both pasted and device-code logins.
         self.expires = None
         self.opener = opener or urllib.request.build_opener()
 
@@ -138,7 +141,11 @@ class GitHub:
                     raise
                 self.wait(pause)
 
-    def call_once(self, method, url, body, data, content_type, timeout):
+    def call_once(self, method, url, body, data, content_type, timeout, refreshed=False):
+        if self.renew and not refreshed:
+            token = self.renew(False)
+            if token != self.token:
+                self.token, self.expires = token, None
         headers = {'Authorization': f'Bearer {self.token}', 'Accept': 'application/vnd.github+json',
                    'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'fox-body-dash'}
         if body is not None:
@@ -159,6 +166,11 @@ class GitHub:
             except ValueError:
                 detail = {}
             if error.code == 401:
+                if self.renew and not refreshed:
+                    self.token, self.expires = self.renew(True), None
+                    if hasattr(data, 'seek'):
+                        data.seek(0)
+                    return self.call_once(method, url, body, data, content_type, timeout, refreshed=True)
                 raise LoginRefused(detail.get('message') or 'Bad credentials') from None
             return error.code, detail
 
@@ -293,6 +305,9 @@ def events_since(since):
 
 
 def diagnostics(now):
+    config = load(CONFIG, {})
+    previous_login = load(STATUS, {}).get('login') or {}
+    saved_expiry = previous_login.get('expires') if previous_login.get('login_id') == config.get('login_id') else None
     def read_json(name):
         try:
             return json.loads((STATE / name).read_text())
@@ -312,7 +327,7 @@ def diagnostics(now):
             # /state is the screen's WebSocket: its contents come from /snapshot.
             'state': local('/snapshot'), 'display': local('/ui/display'), 'firmware': local('/firmware'),
             'gps': gps_evidence(), 'can': can_evidence(),
-            'upload_login': {**login(load(CONFIG, {})), 'expires': (load(STATUS, {}).get('login') or {}).get('expires')},
+            'upload_login': login(config, saved_expiry),
             'helpers': {name: read_json(name) for name in STATUS_FILES}, 'update_failure_log': failure, 'setup_log': setup_log,
             'uptime_s': float((Path('/proc/uptime').read_text().split() or ['0'])[0]) if Path('/proc/uptime').exists() else None,
             'throttled': text_of('vcgencmd', 'get_throttled').strip(), 'disk': text_of('df', '-h', '/', str(STATE)).strip()}
@@ -320,8 +335,13 @@ def diagnostics(now):
 
 def login(config, expires=None):
     """How uploads are connected, without the token: for the dash and the reports."""
-    return {'via': 'Connect GitHub' if config.get('via') == 'device code' else 'token pasted on the phone page',
-            'account': config.get('account'), 'expires': expires}
+    if expires is None and config.get('expires_at'):
+        expires = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(config['expires_at']))
+    result = {'via': 'Connect GitHub' if config.get('via') == 'device code' else 'token pasted on the phone page',
+              'account': config.get('account'), 'expires': expires}
+    if config.get('login_id'):
+        result['login_id'] = config['login_id']
+    return result
 
 
 def secrets(config):
@@ -347,8 +367,9 @@ def secrets(config):
         for key, value in (values.items() if isinstance(values, dict) else []):
             if isinstance(value, str) and any(word in key.lower() for word in ('pass', 'psk', 'code', 'session', 'secret')):
                 found[value] = '(hidden)'
-    if config.get('token'):
-        found[config['token']] = '(hidden)'
+    for key in ('token', 'refresh_token'):
+        if config.get(key):
+            found[config[key]] = '(hidden)'
     # Longest first, so a password containing a network name is blanked whole.
     return sorted(((k, v) for k, v in found.items() if len(k) >= 4), key=lambda kv: -len(kv[0]))
 
@@ -477,7 +498,13 @@ def run(now=None, github=None, wait=time.sleep, drives=True):
         save_status({**status, 'time': int(now), 'state': 'held', 'events_until': until, 'held': len(held()),
                      'message': 'Report kept on the Pi: uploads not set up'})
         return f'Uploads not set up; report kept on the Pi ({len(held())} waiting)'
-    github = github or GitHub(repo, token, branch=config.get('branch') or BRANCH)
+    def renew(force):
+        nonlocal config
+        config = refresh_login(CONFIG, config, force=force)
+        return config['token']
+
+    github = github or GitHub(repo, token, branch=config.get('branch') or BRANCH,
+                              renew=renew if config.get('refresh_token') else None)
     save_status({**status, 'state': 'sending', 'message': 'Sending the reports', 'held': len(held())})
     sent = status.get('sent', [])
     # Reports kept from before (uploads not yet set up, or offline at the time) go first.
@@ -551,7 +578,7 @@ def main():
         lock = None
     try:
         said = auto() if '--auto' in sys.argv else run()
-    except LoginRefused:
+    except (LoginRefused, RefreshRefused):
         # Forget it: the dash then offers Connect GitHub again, instead of failing for ever.
         CONFIG.unlink(missing_ok=True)
         said = REFUSED

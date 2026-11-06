@@ -261,10 +261,12 @@
   let uploadsTimer = null, disconnectArmed = false;
   function renderUploads(s) {
     const link = s.link || {}, waiting = link.state === 'waiting';
-    // A pasted token stops working on its date; Connect GitHub's login does not expire.
+    // Device-code tokens can expire too; the uploader renews them with the saved refresh token.
     const ends = s.configured && s.expires ? new Date(String(s.expires).replace(' UTC', 'Z').replace(' ', 'T')) : null;
-    const soon = ends && !isNaN(ends) && ends - Date.now() < 7 * 86400e3;
-    const expiry = ends && !isNaN(ends) ? ` This login stops working on ${ends.toLocaleDateString()}: press Disconnect, then Connect GitHub for one that does not expire.` : '';
+    const soon = !s.renewable && ends && !isNaN(ends) && ends - Date.now() < 7 * 86400e3;
+    const deadline = ends && !isNaN(ends) ? ends.toLocaleString('en-US', {month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short'}) : '';
+    const expiry = s.renewable ? ' Login renews automatically when reports upload.' : deadline
+      ? ` This login expires ${deadline}. ${s.via === 'device code' ? 'Disconnect and Connect GitHub once more to enable automatic renewal.' : 'Replace the token before then, or use Connect GitHub.'}` : '';
     const [tone, label] = waiting ? ['busy', 'Enter the code'] : s.configured ? (s.sending ? ['busy', 'Sending…'] : s.last?.state === 'failed' ? ['bad', 'Upload failed'] : soon ? ['warn', 'Expires soon'] : ['good', 'Connected'])
       : link.state === 'failed' || s.last?.state === 'failed' ? ['bad', 'Not connected'] : ['warn', 'Not connected'];
     $('uploads-pill').dataset.tone = tone; $('uploads-pill').textContent = label;

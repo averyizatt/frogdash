@@ -3,6 +3,7 @@ shutdown rows, through the dash's own server with the updater's status file and 
 PiSugar watcher's readings standing in."""
 import argparse
 import asyncio
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sys
@@ -38,7 +39,8 @@ async def main(browser_path):
     def post(url, fields):
         if url.endswith('/device/code'):
             return {'device_code': 'dev123', 'user_code': 'WDJB-MJHT', 'verification_uri': 'https://github.com/login/device', 'expires_in': 900, 'interval': 1}
-        return {'access_token': 'gho_test'} if github['authorized'] else {'error': 'authorization_pending'}
+        return {'access_token': 'gho_test', 'refresh_token': 'ghr_private', 'expires_in': 28800,
+                'refresh_token_expires_in': 15897600} if github['authorized'] else {'error': 'authorization_pending'}
     state.github = GitHubLink(folder, client_id='Iv1.test', post=post, user=lambda token: {'login': 'averyizatt'}, sleep=lambda s: asyncio.sleep(.2))
     # The uploader counts the reports kept on the Pi (their folder is root's alone, as on the car).
     (folder / 'upload-status.json').write_text(json.dumps({'time': 1792065600, 'state': 'held', 'held': 1, 'message': 'Report kept on the Pi: uploads not set up'}))
@@ -55,10 +57,15 @@ async def main(browser_path):
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(executable_path=browser_path) if browser_path else await p.chromium.launch()
-            page = await browser.new_page(viewport={'width': 1920, 'height': 720})
+            page = await browser.new_page(viewport={'width': 1920, 'height': 720}, timezone_id='America/Denver', locale='en-GB')
             errors = []
             page.on('pageerror', lambda error: errors.append(str(error)))
             await page.goto(f'http://127.0.0.1:{port}')
+            for when, clock, zone in [('2026-01-15T19:00:00Z', '12:00 PM', 'MST'),
+                                      ('2026-07-15T19:00:00Z', '1:00 PM', 'MDT')]:
+                await page.clock.set_fixed_time(when)
+                await page.wait_for_function('([clock, zone]) => document.getElementById("clock-time").textContent.toUpperCase() === clock && document.getElementById("clock-tz").textContent === zone', arg=[clock, zone])
+            await page.clock.set_fixed_time(datetime.now(timezone.utc))
             await page.locator('#drive-launch').click()
             await page.locator('#operations-launch').click()
             await page.locator('[data-ops-tab="software"]').click()
@@ -115,6 +122,8 @@ async def main(browser_path):
                                                                    'message': 'Uploaded the diagnostics, and 1 earlier report kept on the Pi'}))
             await page.wait_for_function("document.getElementById('uploads-pill').textContent === 'Connected'", timeout=10000)
             assert 'and 1 earlier report' in await page.locator('#uploads-status').inner_text()
+            assert 'renews automatically' in await page.locator('#uploads-status').inner_text()
+            assert 'expires' not in await page.locator('#uploads-status').inner_text()
             # Send now: asks again.
             await page.locator('#uploads-send').click()
             await page.wait_for_function("document.getElementById('uploads-pill').textContent === 'Sending…'", timeout=10000)
@@ -122,12 +131,22 @@ async def main(browser_path):
             assert await page.locator('#uploads-where').inner_text() == 'To averyizatt/frogdash (branch pi-logs) · as averyizatt · by itself whenever the Pi has internet'
             saved = json.loads((folder / 'log-upload.json').read_text())
             assert (saved['repo'], saved['token']) == ('averyizatt/frogdash', 'gho_test'), saved
+            assert saved['refresh_token'] == 'ghr_private'
+            assert 'ghr_private' not in await page.content()
             assert 'gho_test' not in await page.content()                            # Never shown
             await page.locator('#uploads-disconnect').click()
             assert await page.locator('#uploads-disconnect').inner_text() == 'Press again'
             await page.locator('#uploads-disconnect').click()
             await page.wait_for_function("document.getElementById('uploads-pill').textContent === 'Not connected'")
             assert not (folder / 'log-upload.json').exists()
+            # An old device login needs one reconnect; dates stay clear even with a UK locale.
+            (folder / 'log-upload.json').write_text(json.dumps({'repo': 'averyizatt/frogdash', 'token': 'old', 'via': 'device code'}))
+            (folder / 'upload-status.json').write_text(json.dumps({'state': 'done', 'message': 'Uploaded',
+                                                                   'login': {'expires': '2026-11-07 04:37:08 UTC'}}))
+            await page.locator('#update-check').click()
+            await page.wait_for_function("document.getElementById('uploads-status').textContent.includes('Nov 6, 2026')")
+            expiry = await page.locator('#uploads-status').inner_text()
+            assert '9:37 PM MST' in expiry and 'once more to enable automatic renewal' in expiry, expiry
             # The new version did not start: it went back, and the step that failed says so.
             status.write_text(json.dumps({'state': 'rolledback', 'message': 'Update undone: version 9999999 did not start properly (the dash service did not stay up), so the dash went back to the version that worked', 'version': 'abc1234'}))
             await page.wait_for_function("document.getElementById('update-pill').textContent === 'Went back'", timeout=8000)

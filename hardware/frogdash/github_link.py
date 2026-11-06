@@ -16,7 +16,9 @@ import asyncio
 import json
 import os
 from pathlib import Path
+import tempfile
 import time
+from uuid import uuid4
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -29,11 +31,72 @@ TOKEN_URL = 'https://github.com/login/oauth/access_token'
 USER_URL = 'https://api.github.com/user'
 
 
+class RefreshRefused(Exception):
+    """The saved refresh token can no longer renew this login."""
+
+
+def token_fields(answer, now):
+    fields = {'token': answer['access_token']}
+    if answer.get('refresh_token'):
+        fields['refresh_token'] = answer['refresh_token']
+    for source, target in (('expires_in', 'expires_at'), ('refresh_token_expires_in', 'refresh_expires_at')):
+        if isinstance(answer.get(source), (int, float)) and answer[source] > 0:
+            fields[target] = now + answer[source]
+    return fields
+
+
+def write_login(path, config, expected_token=None):
+    """Replace credentials privately, preserving the dash user's ownership when root renews."""
+    path = Path(path)
+    previous = path.stat() if path.exists() else None
+    with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=path.parent, delete=False) as stream:
+        tmp = Path(stream.name)
+        json.dump(config, stream)
+    try:
+        os.chmod(tmp, 0o600)
+        if previous and hasattr(os, 'chown'):
+            os.chown(tmp, previous.st_uid, previous.st_gid)
+        if expected_token is not None:
+            try:
+                current = json.loads(path.read_text(encoding='utf-8'))
+            except (OSError, ValueError):
+                current = {}
+            if current.get('token') != expected_token:
+                raise RuntimeError('GitHub connection changed during renewal; retry the upload')
+        os.replace(tmp, path)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
 def post_form(url, fields, timeout=15):
     request = urllib.request.Request(url, data=urllib.parse.urlencode(fields).encode(), method='POST',
                                      headers={'Accept': 'application/json', 'User-Agent': 'fox-body-dash'})
     with urllib.request.urlopen(request, timeout=timeout) as response:
         return json.load(response)
+
+
+def refresh_login(path, config, force=False, post=post_form, wall=time.time):
+    if not config.get('refresh_token'):
+        return config
+    now = wall()
+    if not force and config.get('expires_at', 0) > now + 300:
+        return config
+    try:
+        answer = post(TOKEN_URL, {'client_id': config.get('client_id') or CLIENT_ID,
+                                 'grant_type': 'refresh_token', 'refresh_token': config['refresh_token']})
+    except urllib.error.HTTPError as error:
+        try:
+            answer = json.loads(error.read())
+        except ValueError:
+            answer = {}
+    if answer.get('error') in ('bad_refresh_token', 'invalid_grant', 'expired_token'):
+        raise RefreshRefused('GitHub login needs to be connected again')
+    if not answer.get('access_token') or not answer.get('refresh_token'):
+        raise RuntimeError('GitHub could not renew this login; the reports will retry later')
+    updated = {k: v for k, v in config.items() if k not in ('token', 'refresh_token', 'expires_at', 'refresh_expires_at')}
+    updated.update(token_fields(answer, now))
+    write_login(path, updated, expected_token=config['token'])
+    return updated
 
 
 def get_user(token, timeout=15):
@@ -78,9 +141,13 @@ class GitHubLink:
         if link.get('state') == 'waiting' and self.wall() > link.get('expires_at', 0):
             link = self.link = {'state': 'failed', 'message': 'The code ran out before it was entered. Press Connect GitHub for a new one'}
         login = status.get('login') if isinstance(status.get('login'), dict) else {}
+        matching = login.get('login_id') == config.get('login_id')
+        expires = (time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(config['expires_at']))
+                   if config.get('expires_at') else login.get('expires') if matching else None)
         return {'configured': bool(config.get('token')), 'repo': config.get('repo') or None, 'account': config.get('account'),
                 'via': 'device code' if config.get('via') == 'device code' else ('token' if config.get('token') else None),
-                'expires': login.get('expires') if config.get('token') else None,
+                'expires': expires if config.get('token') else None,
+                'renewable': bool(config.get('refresh_token')),
                 'ready': bool(self.client_id), 'last': last or None, 'held': held, 'link': link,
                 'sending': asked or status.get('state') == 'sending'}
 
@@ -99,12 +166,12 @@ class GitHubLink:
         request.write_text('upload', encoding='utf-8')
         return None
 
-    def save(self, token, account):
+    def save(self, token, account, answer=None):
         self.folder.mkdir(parents=True, exist_ok=True)
-        tmp = self.config_path.with_suffix('.tmp')
-        tmp.write_text(json.dumps({'repo': REPO, 'token': token, 'account': account, 'via': 'device code'}), encoding='utf-8')
-        os.chmod(tmp, 0o600)
-        os.replace(tmp, self.config_path)
+        config = {'repo': REPO, 'account': account, 'via': 'device code',
+                  'client_id': self.client_id, 'login_id': uuid4().hex,
+                  **token_fields(answer or {'access_token': token}, self.wall())}
+        write_login(self.config_path, config)
 
     def disconnect(self):
         if self.task:
@@ -155,7 +222,7 @@ class GitHubLink:
                 account = (await asyncio.to_thread(self.user, token)).get('login')
             except (OSError, ValueError, urllib.error.URLError):
                 account = None
-            await asyncio.to_thread(self.save, token, account)
+            await asyncio.to_thread(self.save, token, account, answer)
             # The reports kept on the Pi go now, not at the next update (October 2026: two
             # waited after connecting, because nothing sent them until an update).
             sent = await asyncio.to_thread(self.send_now) is None

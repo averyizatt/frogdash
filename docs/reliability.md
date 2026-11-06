@@ -46,7 +46,8 @@ the bcm2835 watchdog.
 
 The Pi has no battery-backed clock and the car has no internet, so set the time
 from the USB GPS (gpsd feeds chrony). The Pi setup does the first three lines itself on
-the next **Update now** with internet; only the time zone is yours to set:
+the next **Update now** with internet, and sets `America/Denver` for Grand Junction,
+Colorado (including daylight saving changes). `FROGDASH_TIMEZONE` overrides that zone:
 
 ```sh
 sudo apt install -y chrony
@@ -165,7 +166,7 @@ updater runs the script and does nothing else). That covers an update installed 
 older updater.
 
 Still by hand, because they are choices or need a password, not requirements of an
-update: the first install of the Pi, the dash cam's Wi-Fi profile, the time zone, and
+update: the first install of the Pi, the dash cam's Wi-Fi profile, and
 flashing the ESP32 and the Nano. The dash's options (`--terminal`, `--camera`,
 `--dashcam` ...) are not among them since November 2026: they are the list in
 `config/frogdash-options`, applied by every update (step *Dash options*).

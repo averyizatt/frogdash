@@ -360,20 +360,19 @@ if command -v iw >/dev/null 2>&1 && command -v raspi-config >/dev/null 2>&1; the
     else step "Wi-Fi country" failed "Could not set the Wi-Fi country (raspi-config nonint do_wifi_country)"
     fi
 fi
-# The time zone. A card from Raspberry Pi Imager can start on UTC (the car's showed GMT, so the
-# dash clock was hours ahead, November 2026). Only a Pi still on UTC is changed; another zone
-# chosen by hand stays. FROGDASH_TIMEZONE picks another one.
+# The car is in Grand Junction, Colorado. Imager left it on Europe/London;
+# GPS fixes UTC but cannot choose the local time zone. Honor an explicit override.
 if command -v timedatectl >/dev/null 2>&1; then
     zone=$(timedatectl show -p Timezone --value 2>/dev/null)
-    case "$zone" in
-        ""|UTC|Etc/UTC|GMT|Etc/GMT|Universal|Zulu)
-            if timedatectl set-timezone "${FROGDASH_TIMEZONE:-America/Denver}" >/dev/null 2>&1; then
-                restart_screen=1; restart_dash=1
-                step "Time zone" done "Set to ${FROGDASH_TIMEZONE:-America/Denver} (was ${zone:-not set})"
-            else step "Time zone" failed "Could not set the time zone to ${FROGDASH_TIMEZONE:-America/Denver}"
-            fi;;
-        *) step "Time zone" ok "$zone";;
-    esac
+    wanted_zone=${FROGDASH_TIMEZONE:-America/Denver}
+    if [ "$zone" != "$wanted_zone" ]; then
+        if timedatectl set-timezone "$wanted_zone" >/dev/null 2>&1; then
+            restart_screen=1; restart_dash=1
+            step "Time zone" done "Set to $wanted_zone (was ${zone:-not set})"
+        else step "Time zone" failed "Could not set the time zone to $wanted_zone"
+        fi
+    else step "Time zone" ok "$zone"
+    fi
 fi
 # Wi-Fi power saving off: the adapters doze between packets, and a phone hotspot drops a client
 # that does not answer, then the Pi joins again ("disconnects and comes back", November 2026).
