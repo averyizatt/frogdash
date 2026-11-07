@@ -212,6 +212,24 @@ else
             mkdir -p "$ETC/chrony/conf.d" && cp "$REPO/hardware/chrony/frogdash-gps.conf" "$ETC/chrony/conf.d/" &&
                 systemctl restart chrony >/dev/null 2>&1 && result=done && detail="chrony now sets the clock from the GPS"
         fi
+        # The Pi has no battery clock. Without this it starts every boot on the time chrony was
+        # installed (2026-10-27 here), and a drive's first recording carried that date until
+        # the GPS fix. chronyd -s starts the clock from when it last saved its drift file,
+        # which it does at every shutdown. Takes effect at the next start.
+        defaults="$ETC/default/chrony"
+        if ! grep -Eq '^DAEMON_OPTS=.*[" ]-s([" ]|$)' "$defaults" 2>/dev/null; then
+            mkdir -p "$ETC/default" && touch "$defaults"
+            if grep -q '^DAEMON_OPTS="' "$defaults"; then
+                sed -i 's/^DAEMON_OPTS="/DAEMON_OPTS="-s /' "$defaults"
+            else
+                echo 'DAEMON_OPTS="-s -F 1"' >> "$defaults"
+            fi
+            if grep -Eq '^DAEMON_OPTS=.*[" ]-s([" ]|$)' "$defaults"; then
+                result=done; detail="$detail; each start begins from the time saved at shutdown"
+            else
+                result=failed; detail="Could not set chrony to start from the saved time ($defaults)"
+            fi
+        fi
     fi
     step "Clock from GPS" $result "$detail"
 fi

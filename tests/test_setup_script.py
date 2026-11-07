@@ -347,6 +347,8 @@ class SetupScriptTests(unittest.TestCase):
         self.publish_firmware()
         self.publish_firmware(b'taillight image', '4d5e6f70', 'taillights')
         self.publish_firmware(b'water/meth image', '5e6f7081', 'watermeth')
+        (self.etc / 'default').mkdir(parents=True, exist_ok=True)   # As Debian's chrony leaves it
+        (self.etc / 'default/chrony').write_text('# Options to pass to chronyd\nDAEMON_OPTS="-F 1"\n', newline='\n')
         said, _, steps = self.run_setup('online')
         self.assertEqual(steps['TunerStudio: Java and display'], ('done', 'Installed xwayland default-jre'))
         # Waits for the first-boot package updates to free apt's lock instead of failing at once.
@@ -354,6 +356,9 @@ class SetupScriptTests(unittest.TestCase):
         self.assertEqual(steps['Clock from GPS'][0], 'done')
         self.assertEqual((self.etc / 'chrony/conf.d/frogdash-gps.conf').read_bytes(), (ROOT / 'hardware/chrony/frogdash-gps.conf').read_bytes())
         self.assertIn('restart chrony', self.log('systemctl.log'))
+        # No battery clock: each start begins from the time chrony saved at the last shutdown.
+        self.assertIn('DAEMON_OPTS="-s -F 1"', (self.etc / 'default/chrony').read_text())
+        self.assertIn('each start begins from the time saved at shutdown', steps['Clock from GPS'][1])
         self.assertEqual(steps['TunerStudio: program'][0], 'done')
         self.assertTrue((self.fake / 'home/TunerStudioMS/TunerStudio.sh').is_file())   # Where the screen's launcher looks.
         self.assertIn('foxbody:', self.log('chown.log'))

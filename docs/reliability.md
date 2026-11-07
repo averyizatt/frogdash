@@ -59,6 +59,13 @@ sudo timedatectl set-timezone America/Denver
 `chronyc sources` shows `#* GPS` once it has locked (needs a GPS fix). The dash
 clock follows within a minute. Pick your own zone with `timedatectl list-timezones`.
 
+Until that fix, the Pi runs on a saved time. The setup adds `-s` to `DAEMON_OPTS` in
+`/etc/default/chrony`, so each start begins from the time chrony saved at the last
+shutdown. Without it, every start began at 2026-10-27 20:31 UTC, when chrony was
+installed. The recorder also watches for the clock being set: the file it had open gets
+its real start time in its name and header, and a new file begins. So a drive is
+uploaded under its own date even when the GPS takes a while to get a fix.
+
 ## Updating in the car (no Ethernet)
 
 **Dash management → Software & power → Update now** pulls the latest version from

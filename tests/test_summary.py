@@ -83,6 +83,19 @@ class SummaryTests(unittest.TestCase):
         self.assertIsNone(self.summary.current)
         self.assertEqual(DriveSummary(self.state, self.folder.name).last['max_rpm'], 4200)   # Kept across restarts
 
+    def test_spray_time_stops_when_the_controller_goes_silent(self):
+        # 2026-11-06: the controller fell off the bus while spraying; its last report stayed
+        # SPRAYING (and the tuning status pump on), and the drive said 310 s for 11 s.
+        self.run_for(2, rpm=3000)                    # The drive has started
+        self.run_for(2, rpm=3000, meth='SPRAYING')
+        for _ in range(20):
+            silent = snap(rpm=3000, meth='SPRAYING')
+            silent['values']['meth.state']['quality'] = 'stale'
+            silent['meth_tune'] = {'supported': False, 'pump_on': True}
+            self.summary.sample(silent)
+            self.clock.now += .5
+        self.assertEqual(self.summary.current['meth_spray_s'], 2.0)
+
     def test_a_blip_of_rpm_is_not_a_drive_and_the_dash_stopping_ends_one(self):
         self.summary.sample(snap(rpm=900))
         self.clock.now += .5

@@ -217,7 +217,9 @@ class EventLog:
             if isinstance(alert, dict) and alert.get('key'):
                 self.note('alert:' + alert['key'], bool(alert.get('active')), 'warn' if alert.get('active') else None, 'alert',
                           f"Alert shown: {alert.get('title')}", {k: v.get('value') for k, v in (alert.get('context') or {}).items()
-                                                                  if isinstance(v, dict) and v.get('value') not in (None, 0, False)} or None, hold=0)
+                                                                  # Live only: a silent module's last value (SPRAYING) is not news
+                                                                  if isinstance(v, dict) and v.get('value') not in (None, 0, False)
+                                                                  and v.get('quality', 'live') == 'live'} or None, hold=0)
         rearm = (snapshot.get('controls') or {}).get('meth_rearm')
         self.note('meth-rearm', rearm, 'info' if rearm else None, 'meth', rearm or '', hold=0)
         mode = (values.get('lighting.left_state') or {}).get('value')

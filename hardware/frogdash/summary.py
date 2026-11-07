@@ -124,7 +124,11 @@ class DriveSummary:
         oil = live(values, 'engine.oil_pressure_psi')
         if oil is not None and rpm is not None and rpm >= 1500 and (d['min_oil_psi'] is None or oil < d['min_oil_psi']):
             d['min_oil_psi'] = round(oil, 1)
-        if (values.get('meth.state') or {}).get('value') == 'SPRAYING' or (snapshot.get('meth_tune') or {}).get('pump_on'):
+        # Only while the controller is heard: its last report stays SPRAYING (and pump on)
+        # after it goes silent, and on 2026-11-06 that counted 310 s for 11 s of spraying.
+        state, tune = values.get('meth.state') or {}, snapshot.get('meth_tune') or {}
+        if ((state.get('quality') == 'live' and state.get('value') == 'SPRAYING')
+                or (tune.get('supported') and tune.get('pump_on'))):
             d['meth_spray_s'] = round(d['meth_spray_s'] + dt, 1)
         knocking = any((values.get(key) or {}).get('quality') == 'live' and (values.get(key) or {}).get('value') is True
                        for key in ('knock.warning', 'knock.critical'))

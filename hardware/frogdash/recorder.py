@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import struct
 import time
 from uuid import uuid4
 
@@ -18,6 +19,15 @@ from .mlg import Encoder
 LOG = logging.getLogger(__name__)
 NAME = re.compile(r'^frogdash-(live|replay)-\d{8}T\d{6}Z-[0-9a-f]{12}\.mlg$')
 MIB = 1024 * 1024
+# The Pi has no battery clock: it starts on an old saved time and chrony steps it once the
+# GPS has a fix. A jump bigger than this between the wall clock and the monotonic clock
+# closes the file, so the next one is named from the right time.
+CLOCK_STEP_S = 60
+
+
+def file_name(source, start, tag):
+    date = datetime.fromtimestamp(start, timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    return f'frogdash-{source}-{date}-{tag}.mlg'
 
 
 @dataclass(frozen=True)
@@ -61,6 +71,8 @@ class RotatingWriter:
         self.encoder = None
         self.bytes = self.rows = self.retained_bytes = 0
         self.started = self.last_sync = self.last_prune = 0
+        # Wall clock minus monotonic clock: when the file was named, and at the last row.
+        self.named_offset = self.offset = 0.0
         self.closed = False
 
     def acquire(self):
@@ -103,35 +115,66 @@ class RotatingWriter:
     def finish_file(self):
         if self.file:
             stream, self.file = self.file, None
+            path, start = self.path, self.real_start()
             try:
+                if start is not None:
+                    stream.seek(8)   # The MLG v2 header's timestamp: after the magic and version
+                    stream.write(struct.pack('>I', int(start)))
+                    stream.seek(0, 2)
                 stream.flush()
                 os.fsync(stream.fileno())
-                if os.name == 'posix':
-                    directory_fd = os.open(self.config.directory, os.O_DIRECTORY)
-                    try:
-                        os.fsync(directory_fd)
-                    finally:
-                        os.close(directory_fd)
             finally:
                 try:
                     stream.close()
                 finally:
                     self.path = None
+            if start is not None:
+                self.rename(path, start)
+            if os.name == 'posix':
+                directory_fd = os.open(self.config.directory, os.O_DIRECTORY)
+                try:
+                    os.fsync(directory_fd)
+                finally:
+                    os.close(directory_fd)
+
+    def real_start(self):
+        """For a file opened before the clock was set: when it really started (else None).
+        Its header and name then carry that time, so the uploader files it with the right
+        drive instead of under the old saved date the Pi started with."""
+        if self.mode == 'replay' or abs(self.offset - self.named_offset) <= CLOCK_STEP_S:
+            return None
+        return self.started + self.offset
+
+    def rename(self, path, start):
+        found = NAME.fullmatch(path.name)
+        target = path.with_name(file_name(found.group(1), start, path.stem.rsplit('-', 1)[1]))
+        try:
+            if not target.exists():
+                os.rename(path, target)
+        except OSError as exc:
+            LOG.warning('Recording keeps its first name %s: %s', path.name, exc)
 
     def write(self, snapshot, now, dropped=0):
         if self.closed:
             raise RuntimeError('Recorder is closed')
         self.acquire()
         record_size = 5 + sum(1 if f.kind == 0 else 4 for f in FIELDS)
-        if self.file and (now - self.started >= self.config.seconds or self.bytes + record_size > self.config.file_bytes):
+        stamp = snapshot['timestamp_ms'] / 1000
+        offset = stamp - now
+        stepped = (self.file is not None and self.mode != 'replay'
+                   and abs(offset - self.offset) > CLOCK_STEP_S)
+        if stepped:
+            self.offset = offset   # The file's real start is known now: its name follows
+        if self.file and (stepped or now - self.started >= self.config.seconds
+                          or self.bytes + record_size > self.config.file_bytes):
             self.finish_file()
+        self.offset = offset
         if not self.file:
-            stamp = snapshot['timestamp_ms'] / 1000
             self.encoder = Encoder(FIELDS, stamp, info(self.mode, self.config.hz))
             self.prune(len(self.encoder.header) + record_size)
-            date = datetime.fromtimestamp(stamp, timezone.utc).strftime('%Y%m%dT%H%M%SZ')
             source = 'replay' if self.mode == 'replay' else 'live'
-            self.path = self.config.directory / f'frogdash-{source}-{date}-{uuid4().hex[:12]}.mlg'
+            self.path = self.config.directory / file_name(source, stamp, uuid4().hex[:12])
+            self.named_offset = offset
             self.file = self.path.open('xb')
             self.file.write(self.encoder.header)
             self.bytes = len(self.encoder.header)

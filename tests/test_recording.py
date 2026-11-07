@@ -128,6 +128,38 @@ class RotationTests(unittest.TestCase):
         again.close()
         self.assertEqual(len(inventory(self.path)), 3)
 
+    def test_clock_set_after_boot_renames_the_first_file_to_its_real_start(self):
+        # The Pi starts on an old saved time; chrony steps it once the GPS has a fix.
+        writer = RotatingWriter(self.config())
+        self.addCleanup(writer.close)
+        saved, real = 1793133102, 1794010642   # 2026-10-27 20:31:42 and 2026-11-07 00:17:22 UTC
+        for now in (100, 100.5, 101):
+            writer.write({**snapshot(), 'timestamp_ms': (saved + now - 100) * 1000}, now)
+        first = writer.path
+        self.assertIn('20261027T203142Z', first.name)
+        for now in (102, 102.5):   # The clock is set: the same moment is now 10 days later
+            writer.write({**snapshot(), 'timestamp_ms': (real + now - 100) * 1000}, now)
+        writer.close()
+        names = sorted(path.name for path, _, _ in inventory(self.path))
+        self.assertEqual(len(names), 2)
+        self.assertTrue(names[0].startswith('frogdash-live-20261107T001722Z-'))
+        self.assertTrue(names[1].startswith('frogdash-live-20261107T001724Z-'))
+        self.assertEqual(names[0][-16:], first.name[-16:])   # Same file, its tag kept
+        self.assertFalse(first.exists())
+        with (self.path / names[0]).open('rb') as stream:
+            reader = Reader(stream)
+            self.assertEqual(reader.timestamp, real)
+            self.assertEqual([r['values']['Time'] for r in reader.records()], [0, .5, 1])
+
+    def test_small_clock_corrections_keep_one_file(self):
+        writer = RotatingWriter(self.config())
+        self.addCleanup(writer.close)
+        for now, wall in ((0, 1794010642), (1, 1794010643), (2, 1794010675)):   # 31 s step
+            writer.write({**snapshot(), 'timestamp_ms': wall * 1000}, now)
+        name = writer.path.name
+        writer.close()
+        self.assertEqual([path.name for path, _, _ in inventory(self.path)], [name])
+
     def test_size_rotation_retention_and_foreign_files(self):
         # Sized so that a file holds dozens of rows: the header alone is about 55 KB (one
         # entry per logged channel), and a second of rows is kept in reserve.
