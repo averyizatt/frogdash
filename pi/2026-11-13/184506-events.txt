@@ -1,0 +1,20 @@
+2026-11-07 00:40:02 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-07 00:40:54 UTC  WARN   module   taillights module not heard (stale)
+2026-11-07 00:40:54 UTC  WARN   module   watermeth module not heard (stale)
+2026-11-07 00:40:54 UTC  WARN   module   knock module not heard (stale)
+2026-11-07 00:40:56 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":0}
+2026-11-07 00:40:56 UTC  WARN   alert    Alert shown: WATER/METH CONTROLLER NOT RESPONDING  {"vehicle.speed_kph":0.6804,"engine.fuel_pressure_psi":26.5,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","meth.fault_flags":2,"vehicle.fuel_pct":40.0}
+2026-11-07 00:40:56 UTC  INFO   power    Ignition power off: on the battery
+2026-11-07 00:41:00 UTC  WARN   alert    Alert shown: TAILLIGHTS NOT RESPONDING  {"vehicle.speed_kph":1.2636,"engine.fuel_pressure_psi":26.5,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","meth.fault_flags":2,"vehicle.fuel_pct":40.0}
+2026-11-07 00:41:06 UTC  INFO   gps      Satellite data saved: 13 satellite orbits, 32 almanac entries
+2026-11-07 00:41:24 UTC  WARN   module   comfort module not heard (stale)
+2026-11-07 00:44:21 UTC  INFO   dash     Dash stopping
+2026-11-13 18:44:10 UTC  INFO   gps      Satellite data saved: 6 satellite orbits, 4 almanac entries
+2026-11-13 18:44:41 UTC  INFO   dash     Dash stopping
+2026-11-13 18:44:44 UTC  INFO   dash     Dash started (da77531)
+2026-11-13 18:44:44 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-13 18:44:46 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-13 18:44:46 UTC  INFO   gps      Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-11-13 18:44:48 UTC  INFO   meth     Not armed again yet: Injection disabled: the controller has no manifold pressure: it takes boost from the MicroSquirt's CAN broadcast (0x5E8 or 0x5F2), which is not reaching it. Check the ECU's CAN broadcast is switched on
+2026-11-13 18:44:48 UTC  INFO   engine   Engine stopped
+2026-11-13 18:44:48 UTC  INFO   power    Ignition power on
