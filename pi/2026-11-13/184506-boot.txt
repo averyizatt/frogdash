@@ -1,0 +1,410 @@
+Frogdash boot report (read-only; times start at kernel boot, not key-on)
+
+--- Operating system ---
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+NAME="Debian GNU/Linux"
+VERSION_ID="13"
+VERSION="13 (trixie)"
+VERSION_CODENAME=trixie
+DEBIAN_VERSION_FULL=13.7
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+
+
+--- Architecture ---
+aarch64
+
+--- Default boot target ---
+multi-user.target
+
+--- Boot timing ---
+Startup finished in 2.287s (kernel) + 18.108s (userspace) = 20.396s 
+multi-user.target reached after 17.119s in userspace.
+
+--- Kernel version ---
+6.18.50+rpt-rpi-v8
+
+--- Slowest unit activation times (parallel durations do not add up) ---
+13.426s frogdash-warm.service
+ 7.608s NetworkManager.service
+ 1.495s frogdash.service
+ 1.445s rpi-resize-swap-file.service
+ 1.185s user@1000.service
+ 1.166s chrony.service
+ 1.149s avahi-daemon.service
+ 1.016s dbus.service
+ 1.007s dev-mmcblk0p2.device
+  683ms systemd-fsck@dev-disk-by\x2dpartuuid-05ea8c09\x2d01.service
+  669ms wpa_supplicant.service
+  632ms systemd-journal-flush.service
+  486ms frogdash-autoreport.service
+  455ms sshswitch.service
+  413ms ssh.service
+  411ms upower.service
+  342ms frogdash-console@foxbody.service
+  339ms systemd-udev-trigger.service
+  315ms frogdash-can.service
+  313ms systemd-zram-setup@zram0.service
+
+--- Critical chain: frogdash.service ---
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+frogdash.service +1.495s
+`-(Wi-Fi network).service @13.809s
+  `-NetworkManager.service @6.184s +7.608s
+    `-dbus.service @5.160s +1.016s
+      `-basic.target @5.078s
+        `-sockets.target @5.078s
+          `-frogdash-terminal.socket @5.040s +37ms
+            `-sysinit.target @4.969s
+              `-systemd-tmpfiles-setup.service @4.693s +271ms
+                `-local-fs.target @4.667s
+                  `-run-user-1000.mount @14.538s
+                    `-swap.target @4.582s
+                      `-dev-zram0.swap @4.481s +92ms
+                        `-systemd-zram-setup@zram0.service @4.164s +313ms
+                          `-rpi-setup-loop@var-swap.service @3.889s +166ms
+                            `-systemd-remount-fs.service @2.168s +124ms
+                              `-systemd-journald.socket @2.060s
+                                `-system.slice @2.016s
+                                  `--.slice @2.016s
+
+--- Critical chain: frogdash-console@foxbody.service ---
+The time when unit became active or started is printed after the "@" character.
+The time the unit took to start is printed after the "+" character.
+
+frogdash-console@foxbody.service +342ms
+`-systemd-user-sessions.service @13.861s +59ms
+  `-network.target @13.794s
+    `-NetworkManager.service @6.184s +7.608s
+      `-dbus.service @5.160s +1.016s
+        `-basic.target @5.078s
+          `-sockets.target @5.078s
+            `-frogdash-terminal.socket @5.040s +37ms
+              `-sysinit.target @4.969s
+                `-systemd-tmpfiles-setup.service @4.693s +271ms
+                  `-local-fs.target @4.667s
+                    `-run-user-1000.mount @14.538s
+                      `-swap.target @4.582s
+                        `-dev-zram0.swap @4.481s +92ms
+                          `-systemd-zram-setup@zram0.service @4.164s +313ms
+                            `-rpi-setup-loop@var-swap.service @3.889s +166ms
+                              `-systemd-remount-fs.service @2.168s +124ms
+                                `-systemd-journald.socket @2.060s
+                                  `-system.slice @2.016s
+                                    `--.slice @2.016s
+
+--- Dash, display manager, UPS and network waits ---
+UNIT                             LOAD      ACTIVE     SUB       JOB   DESCRIPTION
+frogdash-canreset.path           loaded    active     waiting         Reset can0 when the Frogdash dash stops receiving CAN with the key on
+frogdash-gps.path                loaded    active     waiting         Run a GPS recovery step when the Frogdash watchdog asks for one
+frogdash-screen.path             loaded    active     waiting         Change the dash screen mode when the dash asks (try, keep, go back)
+frogdash-update-cancel.path      loaded    active     waiting         Cancel a running Frogdash update when the dash asks
+frogdash-update.path             loaded    active     running         Start a Frogdash update when the dash requests one
+frogdash-wifi.path               loaded    active     waiting         Run a Frogdash Wi-Fi request (scan, join, disconnect)
+display-manager.service          not-found inactive   dead            display-manager.service
+frogdash-autoreport.service      loaded    inactive   dead            Send Frogdash reports and drive recordings to GitHub when online and not updating
+frogdash-can.service             loaded    active     exited          Configure Frogdash MCP2515 SocketCAN at 500 kbit/s
+frogdash-canreset.service        loaded    inactive   dead            CAN recovery for Frogdash (take can0 down and up again)
+frogdash-console@foxbody.service loaded    active     running         Frogdash console kiosk for foxbody
+frogdash-gps.service             loaded    inactive   dead            GPS recovery step for Frogdash (restart gpsd, find the receiver, reset its USB port)
+frogdash-guard.service           loaded    active     running         Frogdash recovery guard (puts back the last version that ran if the dash stops starting)
+(Wi-Fi network).service         loaded    active     running         Frogdash local Wi-Fi hotspot broker
+frogdash-netkeeper.service       loaded    active     running         Frogdash Wi-Fi keeper (keeps the dash cam connection up)
+frogdash-power.service           loaded    active     running         Frogdash PiSugar 3 input-power monitor
+frogdash-rescue.service          loaded    active     running         Frogdash rescue screen (shown on the screen when the dash is not running)
+frogdash-screen-boot.service     loaded    inactive   dead            Frogdash screen check after each start: finish or undo a screen trial, record the boot
+frogdash-screen.service          loaded    inactive   dead            Try, keep or undo exact 1920 x 720 on the dash screen
+frogdash-update-cancel.service   loaded    inactive   dead            Stop the running Frogdash update (Cancel on the dash)
+frogdash-update.service          loaded    activating start     start Update Frogdash from GitHub and restart it
+frogdash-warm.service            loaded    inactive   dead            Read the dash screen's browser into memory early in boot (a sooner first frame)
+frogdash-wifi.service            loaded    inactive   dead            Join a Wi-Fi network requested from the Frogdash screen
+frogdash.service                 loaded    active     running         Frogdash CAN and GPS state service
+pisugar-server.service           loaded    active     running         pisugar-server
+frogdash-terminal.socket         loaded    active     listening       Frogdash Terminal tab: commands as the screen user (only with --terminal)
+frogdash-autoreport.timer        loaded    active     waiting         Check every five minutes for Frogdash reports and drive recordings to upload
+
+Legend: LOAD   -> Reflects whether the unit definition was properly loaded.
+        ACTIVE -> The high-level unit activation state, i.e. generalization of SUB.
+        SUB    -> The low-level unit activation state, values depend on unit type.
+        JOB    -> Pending job for the unit.
+
+27 loaded units listed.
+To show all installed unit files use 'systemctl list-unit-files'.
+
+--- Enabled startup units ---
+UNIT FILE                             STATE    PRESET
+frogdash-canreset.path                enabled  enabled
+frogdash-gps.path                     enabled  enabled
+frogdash-screen.path                  enabled  enabled
+frogdash-update-cancel.path           enabled  enabled
+frogdash-update.path                  enabled  enabled
+frogdash-wifi.path                    enabled  enabled
+frogdash-autoreport.service           static   -
+frogdash-can.service                  enabled  enabled
+frogdash-canreset.service             static   -
+frogdash-console@.service             indirect enabled
+frogdash-gps.service                  static   -
+frogdash-guard.service                enabled  enabled
+(Wi-Fi network).service              enabled  enabled
+frogdash-netkeeper.service            enabled  enabled
+frogdash-power.service                enabled  enabled
+frogdash-rescue.service               enabled  enabled
+frogdash-screen-boot.service          enabled  enabled
+frogdash-screen.service               static   -
+frogdash-terminal@.service            static   -
+frogdash-update-cancel.service        static   -
+frogdash-update.service               static   -
+frogdash-warm.service                 enabled  enabled
+frogdash-wifi.service                 static   -
+frogdash.service                      enabled  enabled
+NetworkManager-wait-online.service    disabled enabled
+pisugar-poweroff.service              masked   enabled
+pisugar-server.service                enabled  enabled
+systemd-networkd-wait-online.service  disabled enabled
+systemd-networkd-wait-online@.service disabled enabled
+frogdash-terminal.socket              enabled  enabled
+frogdash-autoreport.timer             enabled  enabled
+
+31 unit files listed.
+
+--- Service timing and dependencies: frogdash.service ---
+ExecMainStartTimestampMonotonic=192122666
+Requires=sysinit.target system.slice -.mount
+Wants=-.mount (Wi-Fi network).service tmp.mount gpsd.socket frogdash-can.service
+After=frogdash-can.service systemd-journald.socket sysinit.target -.mount system.slice systemd-tmpfiles-setup.service systemd-remount-fs.service basic.target gpsd.socket tmp.mount (Wi-Fi network).service
+LoadState=loaded
+ActiveState=active
+SubState=running
+ActiveEnterTimestampMonotonic=193620101
+
+--- Service timing and dependencies: frogdash-console@foxbody.service ---
+ExecMainStartTimestampMonotonic=193747570
+Requires="system-frogdash\\x2dconsole.slice" sysinit.target
+Wants=frogdash.service dbus.socket systemd-logind.service
+After=dbus.socket getty@tty7.service "system-frogdash\\x2dconsole.slice" systemd-journald.socket basic.target sysinit.target systemd-user-sessions.service systemd-logind.service
+LoadState=loaded
+ActiveState=active
+SubState=running
+ActiveEnterTimestampMonotonic=194041850
+
+--- Service timing and dependencies: display-manager.service ---
+ExecMainStartTimestampMonotonic=0
+Requires=
+Wants=
+After=console-setup.service
+LoadState=not-found
+ActiveState=inactive
+SubState=dead
+ActiveEnterTimestampMonotonic=0
+
+--- Kiosk launch and first render (current boot) ---
+[  194.009049] raspberrypi python3[3064]: Frogdash kiosk: session c2 active after 0.02s
+[  193.993129] raspberrypi python3[3064]: Frogdash kiosk: activated logind session c2 on tty7
+[   18.191708] raspberrypi python3[849]: Frogdash kiosk: session c1 active after 0.01s
+[   18.177164] raspberrypi python3[849]: Frogdash kiosk: activated logind session c1 on tty7
+
+--- Desktop kiosk launch (if used) ---
+-- No entries --
+Exit status 1
+
+--- First 60 seconds: kiosk timeline (all session scopes) ---
+[   18.061679] raspberrypi sh[848]: Frogdash kiosk: starting Cage (boot+18.06s)
+[   21.481732] raspberrypi sh[1362]: Frogdash kiosk: compositor ready; launcher entered (boot+21.48s)
+[   21.485560] raspberrypi sh[1362]: Frogdash kiosk: waiting for local HTTP (boot+21.48s)
+[   21.534268] raspberrypi sh[1362]: Frogdash kiosk: HTTP ready; launching Chromium (boot+21.53s)
+[   25.732884] raspberrypi sh[1362]: Frogdash kiosk: first render heartbeat observed (boot+25.72s; 4.16s after browser launch)
+
+--- Kiosk user session logs (includes Cage/Chromium child processes) ---
+[   17.763140] raspberrypi systemd[867]: Queued start job for default target default.target.
+[   17.785593] raspberrypi systemd[867]: Created slice app.slice - User Application Slice.
+[   17.785698] raspberrypi systemd[867]: Reached target paths.target - Paths.
+[   17.785855] raspberrypi systemd[867]: Reached target timers.target - Timers.
+[   17.787746] raspberrypi systemd[867]: Starting dbus.socket - D-Bus User Message Bus Socket...
+[   17.788091] raspberrypi systemd[867]: Listening on dirmngr.socket - GnuPG network certificate management daemon.
+[   17.788311] raspberrypi systemd[867]: Listening on gpg-agent-browser.socket - GnuPG cryptographic agent and passphrase cache (access for web browsers).
+[   17.788467] raspberrypi systemd[867]: Listening on gpg-agent-extra.socket - GnuPG cryptographic agent and passphrase cache (restricted).
+[   17.790080] raspberrypi systemd[867]: Starting gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation)...
+[   17.792589] raspberrypi systemd[867]: Starting gpg-agent.socket - GnuPG cryptographic agent and passphrase cache...
+[   17.792953] raspberrypi systemd[867]: Listening on keyboxd.socket - GnuPG public key management service.
+[   17.795494] raspberrypi systemd[867]: Starting ssh-agent.socket - OpenSSH Agent socket...
+[   17.834378] raspberrypi systemd[867]: Listening on dbus.socket - D-Bus User Message Bus Socket.
+[   17.846285] raspberrypi systemd[867]: Listening on gpg-agent.socket - GnuPG cryptographic agent and passphrase cache.
+[   17.846511] raspberrypi systemd[867]: Listening on ssh-agent.socket - OpenSSH Agent socket.
+[   18.016097] raspberrypi systemd[867]: Listening on gpg-agent-ssh.socket - GnuPG cryptographic agent (ssh-agent emulation).
+[   18.016869] raspberrypi systemd[867]: Reached target sockets.target - Sockets.
+[   18.017347] raspberrypi systemd[867]: Reached target basic.target - Basic System.
+[   18.019451] raspberrypi systemd[867]: Started mpris-proxy.service - Bluetooth mpris proxy.
+[   18.019555] raspberrypi systemd[867]: Reached target default.target - Main User Target.
+[   18.019662] raspberrypi systemd[867]: Startup finished in 904ms.
+[   18.061679] raspberrypi sh[848]: Frogdash kiosk: starting Cage (boot+18.06s)
+[   18.082015] raspberrypi systemd[867]: Created slice session.slice - User Core Session Slice.
+[   18.083625] raspberrypi systemd[867]: Starting dbus.service - D-Bus User Message Bus...
+[   18.131840] raspberrypi systemd[867]: Started dbus.service - D-Bus User Message Bus.
+[   18.266326] raspberrypi sh[953]: 00:00:00.028 [INFO] [libseat] [libseat/libseat.c:62] Seat opened with backend 'logind'
+[   18.266326] raspberrypi sh[953]: 00:00:00.028 [INFO] [backend/session/session.c:117] Successfully loaded libseat session
+[   18.284068] raspberrypi sh[953]: 00:00:00.042 [INFO] [backend/backend.c:248] Found 1 GPUs
+[   18.284068] raspberrypi sh[953]: 00:00:00.042 [INFO] [backend/drm/backend.c:225] Initializing DRM backend for /dev/dri/card1 (vc4)
+[   18.284068] raspberrypi sh[953]: 00:00:00.042 [INFO] [backend/drm/drm.c:313] Found 6 DRM CRTCs
+[   18.284068] raspberrypi sh[953]: 00:00:00.042 [INFO] [backend/drm/drm.c:271] Found 60 DRM planes
+[   20.593536] raspberrypi sh[953]: 00:00:02.355 [INFO] [render/egl.c:206] Supported EGL client extensions: EGL_EXT_device_base EGL_EXT_device_enumeration EGL_EXT_device_query EGL_EXT_platform_base EGL_KHR_client_get_all_proc_addresses EGL_EXT_client_extensions EGL_KHR_debug EGL_EXT_platform_device EGL_EXT_explicit_device EGL_EXT_platform_wayland EGL_KHR_platform_wayland EGL_EXT_platform_x11 EGL_KHR_platform_x11 EGL_EXT_platform_xcb EGL_MESA_platform_gbm EGL_KHR_platform_gbm EGL_MESA_platform_surfaceless
+[   20.730155] raspberrypi sh[953]: 00:00:02.492 [INFO] [render/egl.c:370] Using EGL 1.5
+[   20.730155] raspberrypi sh[953]: 00:00:02.492 [INFO] [render/egl.c:371] Supported EGL display extensions: EGL_ANDROID_blob_cache EGL_ANDROID_native_fence_sync EGL_EXT_buffer_age EGL_EXT_config_select_group EGL_EXT_create_context_robustness EGL_EXT_image_dma_buf_import EGL_EXT_image_dma_buf_import_modifiers EGL_EXT_query_reset_notification_strategy EGL_EXT_surface_compression EGL_KHR_cl_event2 EGL_KHR_config_attribs EGL_KHR_context_flush_control EGL_KHR_create_context EGL_KHR_create_context_no_error EGL_KHR_fence_sync EGL_KHR_get_all_proc_addresses EGL_KHR_gl_colorspace EGL_KHR_gl_renderbuffer_image EGL_KHR_gl_texture_2D_image EGL_KHR_gl_texture_3D_image EGL_KHR_gl_texture_cubemap_image EGL_KHR_image EGL_KHR_image_base EGL_KHR_image_pixmap EGL_KHR_no_config_context EGL_KHR_reusable_sync EGL_KHR_surfaceless_context EGL_EXT_pixel_format_float EGL_KHR_wait_sync EGL_MESA_configless_context EGL_MESA_gl_interop EGL_MESA_image_dma_buf_export EGL_MESA_query_driver EGL_MESA_x11_native_visual_id EGL_WL_bind_wayland_display
+[   20.730155] raspberrypi sh[953]: 00:00:02.492 [INFO] [render/egl.c:373] Supported EGL device extensions: EGL_EXT_device_drm EGL_EXT_device_drm_render_node EGL_EXT_device_query_name EGL_EXT_device_persistent_id
+[   20.730624] raspberrypi sh[953]: 00:00:02.492 [INFO] [render/egl.c:375] EGL vendor: Mesa Project
+[   20.730624] raspberrypi sh[953]: 00:00:02.492 [INFO] [render/egl.c:377] EGL driver name: v3d
+[   20.792965] raspberrypi sh[953]: 00:00:02.554 [INFO] [render/gles2/renderer.c:537] Creating GLES2 renderer
+[   20.792965] raspberrypi sh[953]: 00:00:02.554 [INFO] [render/gles2/renderer.c:538] Using OpenGL ES 3.1 Mesa 26.2.2-1~bpo13+0~rpt1
+[   20.792965] raspberrypi sh[953]: 00:00:02.554 [INFO] [render/gles2/renderer.c:539] GL vendor: Broadcom
+[   20.792965] raspberrypi sh[953]: 00:00:02.554 [INFO] [render/gles2/renderer.c:540] GL renderer: V3D 4.2.14.0
+[   20.793433] raspberrypi sh[953]: 00:00:02.555 [INFO] [render/gles2/renderer.c:541] Supported GLES2 extensions: GL_EXT_blend_minmax GL_EXT_multi_draw_arrays GL_EXT_texture_filter_anisotropic GL_EXT_texture_compression_s3tc GL_EXT_texture_compression_dxt1 GL_EXT_texture_compression_rgtc GL_EXT_texture_format_BGRA8888 GL_OES_compressed_ETC1_RGB8_texture GL_OES_depth24 GL_OES_element_index_uint GL_OES_fbo_render_mipmap GL_OES_mapbuffer GL_OES_rgb8_rgba8 GL_OES_standard_derivatives GL_OES_stencil8 GL_OES_texture_3D GL_OES_texture_float GL_OES_texture_half_float GL_OES_texture_half_float_linear GL_OES_texture_npot GL_OES_vertex_half_float GL_EXT_draw_instanced GL_EXT_texture_sRGB_decode GL_OES_EGL_image GL_OES_depth_texture GL_AMD_performance_monitor GL_OES_packed_depth_stencil GL_EXT_texture_type_2_10_10_10_REV GL_NV_conditional_render GL_OES_get_program_binary GL_APPLE_texture_max_level GL_EXT_discard_framebuffer GL_EXT_read_format_bgra GL_EXT_texture_storage GL_NV_pack_subimage GL_NV_texture_barrier GL_EXT_frag_depth GL_NV_fbo_color_attachments GL_OES_EGL_image_external GL_OES_EGL_sync GL_OES_vertex_array_object GL_ANGLE_pack_reverse_row_order GL_ANGLE_texture_compression_dxt3 GL_ANGLE_texture_compression_dxt5 GL_EXT_occlusion_query_boolean GL_EXT_robustness GL_EXT_sRGB GL_EXT_texture_rg GL_EXT_unpack_subimage GL_NV_draw_buffers GL_NV_read_buffer GL_NV_read_depth GL_NV_read_depth_stencil GL_NV_read_stencil GL_APPLE_sync GL_EXT_draw_buffers GL_EXT_instanced_arrays GL_EXT_map_buffer_range GL_EXT_shadow_samplers GL_KHR_debug GL_KHR_robustness GL_KHR_texture_compression_astc_ldr GL_NV_generate_mipmap_sRGB GL_NV_pixel_buffer_object GL_OES_depth_texture_cube_map GL_OES_required_internalformat GL_OES_surfaceless_context GL_EXT_color_buffer_float GL_EXT_debug_label GL_EXT_sRGB_write_control GL_EXT_separate_shader_objects GL_EXT_shader_framebuffer_fetch GL_EXT_shader_implicit_conversions GL_EXT_shader_integer_mix GL_EXT_base_instance GL_EXT_compressed_ETC1_RGB8_sub_texture GL_EXT_copy_image GL_EXT_draw_buffers_indexed GL_EXT_draw_elements_base_vertex GL_EXT_multi_draw_indirect GL_EXT_polygon_offset_clamp GL_EXT_primitive_bounding_box GL_EXT_shader_io_blocks GL_EXT_texture_border_clamp GL_EXT_texture_cube_map_array GL_EXT_texture_norm16 GL_EXT_texture_view GL_KHR_blend_equation_advanced GL_KHR_blend_equation_advanced_coherent GL_KHR_context_flush_control GL_KHR_robust_buffer_access_behavior GL_NV_image_formats GL_NV_shader_noperspective_interpolation GL_OES_copy_image GL_OES_draw_buffers_indexed GL_OES_draw_elements_base_vertex GL_OES_primitive_bounding_box GL_OES_shader_io_blocks GL_OES_texture_border_clamp GL_OES_texture_cube_map_array GL_OES_texture_stencil8 GL_OES_texture_storage_multisample_2d_array GL_OES_texture_view GL_EXT_blend_func_extended GL_EXT_buffer_storage GL_EXT_float_blend GL_EXT_geometry_point_size GL_EXT_geometry_shader GL_KHR_no_error GL_KHR_texture_compression_astc_sliced_3d GL_OES_EGL_image_external_essl3 GL_OES_geometry_point_size GL_OES_geometry_shader GL_OES_shader_image_atomic GL_EXT_clear_texture GL_EXT_conservative_depth GL_EXT_disjoint_timer_query GL_EXT_texture_compression_s3tc_srgb GL_MESA_shader_integer_functions GL_EXT_color_buffer_half_float GL_EXT_texture_mirror_clamp_to_edge GL_KHR_parallel_shader_compile GL_EXT_EGL_image_storage GL_EXT_shader_framebuffer_fetch_non_coherent GL_MESA_framebuffer_flip_y GL_EXT_texture_query_lod GL_MESA_sampler_objects GL_EXT_EGL_image_storage_compression GL_EXT_texture_storage_compression GL_MESA_bgra
+[   21.200529] raspberrypi sh[953]: 00:00:02.962 [INFO] [../seat.c:141] Input device Logitech M325 cannot be mapped to an output device
+[   21.210115] raspberrypi sh[953]: 00:00:02.972 [INFO] [../seat.c:141] Input device vc4-hdmi-0 cannot be mapped to an output device
+[   21.219682] raspberrypi sh[953]: 00:00:02.981 [INFO] [../seat.c:141] Input device vc4-hdmi-1 cannot be mapped to an output device
+[   21.219682] raspberrypi sh[953]: 00:00:02.981 [INFO] [backend/drm/drm.c:1799] Scanning DRM connectors on /dev/dri/card1
+[   21.220612] raspberrypi sh[953]: 00:00:02.982 [INFO] [backend/drm/drm.c:1854] Found connector 'HDMI-A-1'
+[   21.220697] raspberrypi sh[953]: 00:00:02.982 [INFO] [backend/drm/drm.c:1879] 'HDMI-A-1' connected
+[   21.220697] raspberrypi sh[953]: 00:00:02.982 [INFO] [backend/drm/drm.c:1653] Detected modes:
+[   21.220697] raspberrypi sh[953]: 00:00:02.982 [INFO] [backend/drm/drm.c:1688]   1920x720 @ 59.853 Hz (preferred)
+[   21.220871] raspberrypi sh[953]: 00:00:02.982 [INFO] [backend/drm/drm.c:1725] Physical size: 290x110
+[   21.221101] raspberrypi sh[953]: 00:00:02.983 [INFO] [backend/drm/drm.c:1854] Found connector 'HDMI-A-2'
+[   21.221168] raspberrypi sh[953]: 00:00:02.983 [INFO] [backend/drm/drm.c:1913] connector HDMI-A-1: Requesting modeset
+[   21.257488] raspberrypi sh[953]: 00:00:03.019 [INFO] [backend/drm/drm.c:987] connector HDMI-A-1: Modesetting with 1920x720 @ 59.853 Hz
+[   21.481732] raspberrypi sh[1362]: Frogdash kiosk: compositor ready; launcher entered (boot+21.48s)
+[   21.485560] raspberrypi sh[1362]: Frogdash kiosk: waiting for local HTTP (boot+21.48s)
+[   21.534268] raspberrypi sh[1362]: Frogdash kiosk: HTTP ready; launching Chromium (boot+21.53s)
+[   22.832056] raspberrypi sh[950]: dbus-daemon[950]: [session uid=1000 pid=950 pidfd=5] Activating service name='org.a11y.Bus' requested by ':1.0' (uid=1000 pid=1363 comm="/usr/lib/chromium/chromium --force-renderer-access")
+[   22.862238] raspberrypi sh[950]: dbus-daemon[950]: [session uid=1000 pid=950 pidfd=5] Successfully activated service 'org.a11y.Bus'
+[   25.732884] raspberrypi sh[1362]: Frogdash kiosk: first render heartbeat observed (boot+25.72s; 4.16s after browser launch)
+[  115.576887] raspberrypi sh[953]: 00:01:37.338 [ERROR] [libinput] event0  - Logitech M325: client bug: event processing lagging behind by 34ms, your system is too slow
+[  193.672843] raspberrypi sh[950]: dbus-daemon[950]: [session uid=1000 pid=950 pidfd=5] Reloaded configuration
+[  193.887061] raspberrypi sh[3063]: Frogdash kiosk: starting Cage (boot+193.88s)
+[  193.922272] raspberrypi sh[3073]: 00:00:00.006 [INFO] [libseat] [libseat/libseat.c:62] Seat opened with backend 'logind'
+[  193.923119] raspberrypi sh[3073]: 00:00:00.006 [INFO] [backend/session/session.c:117] Successfully loaded libseat session
+[  193.936343] raspberrypi sh[3073]: 00:00:00.020 [INFO] [backend/backend.c:248] Found 1 GPUs
+[  193.936647] raspberrypi sh[3073]: 00:00:00.020 [INFO] [backend/drm/backend.c:225] Initializing DRM backend for /dev/dri/card1 (vc4)
+[  193.936647] raspberrypi sh[3073]: 00:00:00.020 [INFO] [backend/drm/drm.c:313] Found 6 DRM CRTCs
+[  193.936862] raspberrypi sh[3073]: 00:00:00.020 [INFO] [backend/drm/drm.c:271] Found 60 DRM planes
+[  194.026139] raspberrypi sh[3073]: 00:00:00.110 [INFO] [render/egl.c:206] Supported EGL client extensions: EGL_EXT_device_base EGL_EXT_device_enumeration EGL_EXT_device_query EGL_EXT_platform_base EGL_KHR_client_get_all_proc_addresses EGL_EXT_client_extensions EGL_KHR_debug EGL_EXT_platform_device EGL_EXT_explicit_device EGL_EXT_platform_wayland EGL_KHR_platform_wayland EGL_EXT_platform_x11 EGL_KHR_platform_x11 EGL_EXT_platform_xcb EGL_MESA_platform_gbm EGL_KHR_platform_gbm EGL_MESA_platform_surfaceless
+[  194.079993] raspberrypi sh[3073]: 00:00:00.164 [INFO] [render/egl.c:370] Using EGL 1.5
+[  194.079993] raspberrypi sh[3073]: 00:00:00.164 [INFO] [render/egl.c:371] Supported EGL display extensions: EGL_ANDROID_blob_cache EGL_ANDROID_native_fence_sync EGL_EXT_buffer_age EGL_EXT_config_select_group EGL_EXT_create_context_robustness EGL_EXT_image_dma_buf_import EGL_EXT_image_dma_buf_import_modifiers EGL_EXT_query_reset_notification_strategy EGL_EXT_surface_compression EGL_KHR_cl_event2 EGL_KHR_config_attribs EGL_KHR_context_flush_control EGL_KHR_create_context EGL_KHR_create_context_no_error EGL_KHR_fence_sync EGL_KHR_get_all_proc_addresses EGL_KHR_gl_colorspace EGL_KHR_gl_renderbuffer_image EGL_KHR_gl_texture_2D_image EGL_KHR_gl_texture_3D_image EGL_KHR_gl_texture_cubemap_image EGL_KHR_image EGL_KHR_image_base EGL_KHR_image_pixmap EGL_KHR_no_config_context EGL_KHR_reusable_sync EGL_KHR_surfaceless_context EGL_EXT_pixel_format_float EGL_KHR_wait_sync EGL_MESA_configless_context EGL_MESA_gl_interop EGL_MESA_image_dma_buf_export EGL_MESA_query_driver EGL_MESA_x11_native_visual_id EGL_WL_bind_wayland_display
+[  194.080474] raspberrypi sh[3073]: 00:00:00.164 [INFO] [render/egl.c:373] Supported EGL device extensions: EGL_EXT_device_drm EGL_EXT_device_drm_render_node EGL_EXT_device_query_name EGL_EXT_device_persistent_id
+[  194.080474] raspberrypi sh[3073]: 00:00:00.164 [INFO] [render/egl.c:375] EGL vendor: Mesa Project
+[  194.080474] raspberrypi sh[3073]: 00:00:00.164 [INFO] [render/egl.c:377] EGL driver name: v3d
+[  194.087042] raspberrypi sh[3073]: 00:00:00.171 [INFO] [render/gles2/renderer.c:537] Creating GLES2 renderer
+[  194.087042] raspberrypi sh[3073]: 00:00:00.171 [INFO] [render/gles2/renderer.c:538] Using OpenGL ES 3.1 Mesa 26.2.2-1~bpo13+0~rpt1
+[  194.087042] raspberrypi sh[3073]: 00:00:00.171 [INFO] [render/gles2/renderer.c:539] GL vendor: Broadcom
+[  194.087042] raspberrypi sh[3073]: 00:00:00.171 [INFO] [render/gles2/renderer.c:540] GL renderer: V3D 4.2.14.0
+[  194.087572] raspberrypi sh[3073]: 00:00:00.171 [INFO] [render/gles2/renderer.c:541] Supported GLES2 extensions: GL_EXT_blend_minmax GL_EXT_multi_draw_arrays GL_EXT_texture_filter_anisotropic GL_EXT_texture_compression_s3tc GL_EXT_texture_compression_dxt1 GL_EXT_texture_compression_rgtc GL_EXT_texture_format_BGRA8888 GL_OES_compressed_ETC1_RGB8_texture GL_OES_depth24 GL_OES_element_index_uint GL_OES_fbo_render_mipmap GL_OES_mapbuffer GL_OES_rgb8_rgba8 GL_OES_standard_derivatives GL_OES_stencil8 GL_OES_texture_3D GL_OES_texture_float GL_OES_texture_half_float GL_OES_texture_half_float_linear GL_OES_texture_npot GL_OES_vertex_half_float GL_EXT_draw_instanced GL_EXT_texture_sRGB_decode GL_OES_EGL_image GL_OES_depth_texture GL_AMD_performance_monitor GL_OES_packed_depth_stencil GL_EXT_texture_type_2_10_10_10_REV GL_NV_conditional_render GL_OES_get_program_binary GL_APPLE_texture_max_level GL_EXT_discard_framebuffer GL_EXT_read_format_bgra GL_EXT_texture_storage GL_NV_pack_subimage GL_NV_texture_barrier GL_EXT_frag_depth GL_NV_fbo_color_attachments GL_OES_EGL_image_external GL_OES_EGL_sync GL_OES_vertex_array_object GL_ANGLE_pack_reverse_row_order GL_ANGLE_texture_compression_dxt3 GL_ANGLE_texture_compression_dxt5 GL_EXT_occlusion_query_boolean GL_EXT_robustness GL_EXT_sRGB GL_EXT_texture_rg GL_EXT_unpack_subimage GL_NV_draw_buffers GL_NV_read_buffer GL_NV_read_depth GL_NV_read_depth_stencil GL_NV_read_stencil GL_APPLE_sync GL_EXT_draw_buffers GL_EXT_instanced_arrays GL_EXT_map_buffer_range GL_EXT_shadow_samplers GL_KHR_debug GL_KHR_robustness GL_KHR_texture_compression_astc_ldr GL_NV_generate_mipmap_sRGB GL_NV_pixel_buffer_object GL_OES_depth_texture_cube_map GL_OES_required_internalformat GL_OES_surfaceless_context GL_EXT_color_buffer_float GL_EXT_debug_label GL_EXT_sRGB_write_control GL_EXT_separate_shader_objects GL_EXT_shader_framebuffer_fetch GL_EXT_shader_implicit_conversions GL_EXT_shader_integer_mix GL_EXT_base_instance GL_EXT_compressed_ETC1_RGB8_sub_texture GL_EXT_copy_image GL_EXT_draw_buffers_indexed GL_EXT_draw_elements_base_vertex GL_EXT_multi_draw_indirect GL_EXT_polygon_offset_clamp GL_EXT_primitive_bounding_box GL_EXT_shader_io_blocks GL_EXT_texture_border_clamp GL_EXT_texture_cube_map_array GL_EXT_texture_norm16 GL_EXT_texture_view GL_KHR_blend_equation_advanced GL_KHR_blend_equation_advanced_coherent GL_KHR_context_flush_control GL_KHR_robust_buffer_access_behavior GL_NV_image_formats GL_NV_shader_noperspective_interpolation GL_OES_copy_image GL_OES_draw_buffers_indexed GL_OES_draw_elements_base_vertex GL_OES_primitive_bounding_box GL_OES_shader_io_blocks GL_OES_texture_border_clamp GL_OES_texture_cube_map_array GL_OES_texture_stencil8 GL_OES_texture_storage_multisample_2d_array GL_OES_texture_view GL_EXT_blend_func_extended GL_EXT_buffer_storage GL_EXT_float_blend GL_EXT_geometry_point_size GL_EXT_geometry_shader GL_KHR_no_error GL_KHR_texture_compression_astc_sliced_3d GL_OES_EGL_image_external_essl3 GL_OES_geometry_point_size GL_OES_geometry_shader GL_OES_shader_image_atomic GL_EXT_clear_texture GL_EXT_conservative_depth GL_EXT_disjoint_timer_query GL_EXT_texture_compression_s3tc_srgb GL_MESA_shader_integer_functions GL_EXT_color_buffer_half_float GL_EXT_texture_mirror_clamp_to_edge GL_KHR_parallel_shader_compile GL_EXT_EGL_image_storage GL_EXT_shader_framebuffer_fetch_non_coherent GL_MESA_framebuffer_flip_y GL_EXT_texture_query_lod GL_MESA_sampler_objects GL_EXT_EGL_image_storage_compression GL_EXT_texture_storage_compression GL_MESA_bgra
+[  194.197885] raspberrypi sh[3073]: 00:00:00.281 [INFO] [../seat.c:141] Input device Logitech M325 cannot be mapped to an output device
+[  194.207467] raspberrypi sh[3073]: 00:00:00.291 [INFO] [../seat.c:141] Input device vc4-hdmi-0 cannot be mapped to an output device
+[  194.217499] raspberrypi sh[3073]: 00:00:00.301 [INFO] [../seat.c:141] Input device vc4-hdmi-1 cannot be mapped to an output device
+[  194.217499] raspberrypi sh[3073]: 00:00:00.301 [INFO] [backend/drm/drm.c:1799] Scanning DRM connectors on /dev/dri/card1
+[  194.218427] raspberrypi sh[3073]: 00:00:00.302 [INFO] [backend/drm/drm.c:1854] Found connector 'HDMI-A-1'
+[  194.218586] raspberrypi sh[3073]: 00:00:00.302 [INFO] [backend/drm/drm.c:1879] 'HDMI-A-1' connected
+[  194.218586] raspberrypi sh[3073]: 00:00:00.302 [INFO] [backend/drm/drm.c:1653] Detected modes:
+[  194.218586] raspberrypi sh[3073]: 00:00:00.302 [INFO] [backend/drm/drm.c:1688]   1920x720 @ 59.853 Hz (preferred)
+[  194.218586] raspberrypi sh[3073]: 00:00:00.302 [INFO] [backend/drm/drm.c:1725] Physical size: 290x110
+[  194.218884] raspberrypi sh[3073]: 00:00:00.303 [INFO] [backend/drm/drm.c:1854] Found connector 'HDMI-A-2'
+[  194.218960] raspberrypi sh[3073]: 00:00:00.303 [INFO] [backend/drm/drm.c:1913] connector HDMI-A-1: Requesting modeset
+[  194.253921] raspberrypi sh[3073]: 00:00:00.338 [INFO] [backend/drm/drm.c:987] connector HDMI-A-1: Modesetting with 1920x720 @ 59.853 Hz
+[  194.445917] raspberrypi sh[3087]: Frogdash kiosk: compositor ready; launcher entered (boot+194.44s)
+[  194.449036] raspberrypi sh[3087]: Frogdash kiosk: waiting for local HTTP (boot+194.44s)
+[  194.492142] raspberrypi sh[3087]: Frogdash kiosk: HTTP ready; launching Chromium (boot+194.49s)
+[  195.464825] raspberrypi sh[3072]: dbus-daemon[3072]: [session uid=1000 pid=3072 pidfd=5] Activating service name='org.a11y.Bus' requested by ':1.0' (uid=1000 pid=3088 comm="/usr/lib/chromium/chromium --force-renderer-access")
+[  195.481924] raspberrypi sh[3072]: dbus-daemon[3072]: [session uid=1000 pid=3072 pidfd=5] Successfully activated service 'org.a11y.Bus'
+[  198.648337] raspberrypi sh[3087]: Frogdash kiosk: first render heartbeat observed (boot+198.64s; 4.13s after browser launch)
+
+--- Kiosk restart count and last exit ---
+Result=success
+NRestarts=0
+ExecMainCode=0
+ExecMainStatus=0
+
+--- Recent console display errors ---
+-- No entries --
+
+--- Display connectors ---
+card1-HDMI-A-1: connected
+Advertised modes (not proof of current mode):
+1920x720
+card1-HDMI-A-2: disconnected
+Advertised modes (not proof of current mode):
+none
+card1-Writeback-1: unknown
+Advertised modes (not proof of current mode):
+none
+
+--- USB ports, devices, drivers and power state ---
+1-1: idVendor=2109, idProduct=3431, product=USB2.0 Hub, speed=480, power/control=auto, power/runtime_status=active; drivers=hub
+1-1.2: idVendor=05e3, idProduct=0610, manufacturer=GenesysLogic, product=USB2.1 Hub, speed=480, power/control=auto, power/runtime_status=active; drivers=hub
+1-1.2.2: idVendor=1546, idProduct=01a7, manufacturer=u-blox AG - www.u-blox.com, product=u-blox 7 - GPS/GNSS Receiver, speed=12, power/control=on, power/runtime_status=active; drivers=cdc_acm
+1-1.2.3: idVendor=046d, idProduct=c52f, manufacturer=Logitech, product=USB Receiver, speed=12, power/control=on, power/runtime_status=active; drivers=usbhid
+1-1.2.4: idVendor=0bda, idProduct=c820, manufacturer=Realtek, product=802.11ac NIC, speed=480, power/control=on, power/runtime_status=active; drivers=btusb,rtw88_8821cu
+2-2: idVendor=05e3, idProduct=0626, manufacturer=GenesysLogic, product=USB3.1 Hub, speed=5000, power/control=auto, power/runtime_status=suspended; drivers=hub
+usb1: idVendor=1d6b, idProduct=0002, manufacturer=Linux 6.18.50+rpt-rpi-v8 xhci-hcd, product=xHCI Host Controller, speed=480, power/control=auto, power/runtime_status=active; drivers=none
+usb2: idVendor=1d6b, idProduct=0003, manufacturer=Linux 6.18.50+rpt-rpi-v8 xhci-hcd, product=xHCI Host Controller, speed=5000, power/control=auto, power/runtime_status=suspended; drivers=none
+
+--- USB topology reported by lsusb ---
+/:  Bus 001.Port 001: Dev 001, Class=root_hub, Driver=xhci_hcd/1p, 480M
+    |__ Port 001: Dev 002, If 0, Class=Hub, Driver=hub/4p, 480M
+        |__ Port 002: Dev 003, If 0, Class=Hub, Driver=hub/4p, 480M
+            |__ Port 002: Dev 004, If 0, Class=Communications, Driver=cdc_acm, 12M
+            |__ Port 002: Dev 004, If 1, Class=CDC Data, Driver=cdc_acm, 12M
+            |__ Port 003: Dev 005, If 0, Class=Human Interface Device, Driver=usbhid, 12M
+            |__ Port 003: Dev 005, If 1, Class=Human Interface Device, Driver=usbhid, 12M
+            |__ Port 004: Dev 006, If 0, Class=Wireless, Driver=btusb, 480M
+            |__ Port 004: Dev 006, If 1, Class=Wireless, Driver=btusb, 480M
+            |__ Port 004: Dev 006, If 2, Class=Vendor Specific Class, Driver=rtw88_8821cu, 480M
+/:  Bus 002.Port 001: Dev 001, Class=root_hub, Driver=xhci_hcd/4p, 5000M
+    |__ Port 002: Dev 002, If 0, Class=Hub, Driver=hub/4p, 5000M
+
+--- USB and graphics kernel warnings (current boot) ---
+[    6.920048] raspberrypi kernel: vc4-drm gpu: [drm] fb0: vc4drmfb frame buffer device
+[    6.836113] raspberrypi kernel: [drm] Initialized vc4 0.0.0 for gpu on minor 1
+[    6.821628] raspberrypi kernel: vc4-drm gpu: bound fec12000.pixelvalve (ops vc4_crtc_ops [vc4])
+[    6.821228] raspberrypi kernel: vc4-drm gpu: bound fe216000.pixelvalve (ops vc4_crtc_ops [vc4])
+[    6.820729] raspberrypi kernel: vc4-drm gpu: bound fe20a000.pixelvalve (ops vc4_crtc_ops [vc4])
+[    6.820090] raspberrypi kernel: vc4-drm gpu: bound fe207000.pixelvalve (ops vc4_crtc_ops [vc4])
+[    6.813422] raspberrypi kernel: vc4-drm gpu: bound fe206000.pixelvalve (ops vc4_crtc_ops [vc4])
+[    6.804909] raspberrypi kernel: vc4-drm gpu: bound fe004000.txp (ops vc4_txp_ops [vc4])
+[    6.800483] raspberrypi kernel: vc4-drm gpu: bound fef05700.hdmi (ops vc4_hdmi_ops [vc4])
+[    6.800081] raspberrypi kernel: input: vc4-hdmi-1 HDMI Jack as /devices/platform/soc/fef05700.hdmi/sound/card2/input13
+[    6.757531] raspberrypi kernel: input: vc4-hdmi-1 as /devices/platform/soc/fef05700.hdmi/rc/rc1/input12
+[    6.756241] raspberrypi kernel: rc rc1: vc4-hdmi-1 as /devices/platform/soc/fef05700.hdmi/rc/rc1
+[    6.748252] raspberrypi kernel: vc4-drm gpu: bound fef00700.hdmi (ops vc4_hdmi_ops [vc4])
+[    6.748096] raspberrypi kernel: input: vc4-hdmi-0 HDMI Jack as /devices/platform/soc/fef00700.hdmi/sound/card1/input11
+[    6.708120] raspberrypi kernel: input: vc4-hdmi-0 as /devices/platform/soc/fef00700.hdmi/rc/rc0/input10
+[    6.704268] raspberrypi kernel: rc rc0: vc4-hdmi-0 as /devices/platform/soc/fef00700.hdmi/rc/rc0
+[    6.660072] raspberrypi kernel: vc4-drm gpu: bound fe400000.hvs (ops vc4_hvs_ops [vc4])
+[    6.091734] raspberrypi kernel: [drm] Initialized v3d 1.0.0 for fec00000.v3d on minor 0
+[    6.080214] raspberrypi kernel: v3d fec00000.v3d: [drm] Transparent Hugepage support is recommended for optimal performance on this platform!
+[    4.703482] raspberrypi systemd[1]: Finished modprobe@drm.service - Load Kernel Module drm.
+[    4.703441] raspberrypi systemd[1]: modprobe@drm.service: Deactivated successfully.
+[    4.702649] raspberrypi systemd[1]: Starting modprobe@drm.service - Load Kernel Module drm...
+[    4.599873] raspberrypi kernel: Kernel command line: coherent_pool=1M 8250.nr_uarts=0 snd_bcm2835.enable_headphones=0 cgroup_disable=memory numa_policy=interleave nvme.max_host_mem_size_mb=32 snd_bcm2835.enable_headphones=1 snd_bcm2835.enable_hdmi=1 snd_bcm2835.enable_hdmi=0  numa=fake=2 system_heap.max_order=0 iommu_dma_numa_policy=interleave smsc95xx.macaddr=D8:3A:DD:9F:0D:4B vc_mem.mem_base=0x3ec00000 vc_mem.mem_size=0x40000000  console=ttyS0,115200 console=tty3 root=PARTUUID=05ea8c09-02 rootfstype=ext4 fsck.repair=yes rootwait cfg80211.ieee80211_regdom=GB drm.edid_firmware=edid/frogdash-1920x720.bin quiet loglevel=3 logo.nologo vt.global_cursor_default=0 systemd.show_status=false rd.udev.log_level=3
+
+--- Pi voltage/throttling flags ---
+throttled=0x0
+
+--- Memory ---
+total        used        free      shared  buff/cache   available
+Mem:            3795         671        2379          61         866        3123
+Swap:           2047           0        2047
+
+--- Browser files read early in boot (frogdash-warm) ---
+[    6.968768] raspberrypi systemd[1]: Starting frogdash-warm.service - Read the dash screen's browser into memory early in boot (a sooner first frame)...
+[   20.393381] raspberrypi sh[601]: frogdash-warm: read the screen's files from boot+7.03s to boot+20.39s
+[   20.395165] raspberrypi systemd[1]: frogdash-warm.service: Deactivated successfully.
+[   20.395571] raspberrypi systemd[1]: Finished frogdash-warm.service - Read the dash screen's browser into memory early in boot (a sooner first frame).
+[   20.396287] raspberrypi systemd[1]: frogdash-warm.service: Consumed 1.568s CPU time.
+
+--- Chromium as it runs (first processes, with their settings) ---
+3088 /usr/lib/chromium/chromium --force-renderer-accessibility --enable-remote-extensions --show-component-extension-options --enable-gpu-rasterization --no-default-browser-check --disable-pings --media-router=0 --disable-dev-shm-usage --enable-remote-extensions --load-extension --use-angle=gles --kiosk --no-first-run --no-default-browser-check --disable-session-crashed-bubble --disable-background-networking --disable-component-update --disable-sync --disable-breakpad --ozone-platform=wayland --user-data-dir=/home/foxbody/.config/frogdash-chromium --password-store=basic --disable-renderer-acce
+3112 /usr/lib/chromium/chromium --type=zygote --no-zygote-sandbox --crashpad-handler-pid=0 --enable-crash-reporter=,built on Debian GNU/Linux 13 (trixie) --user-data-dir=/home/foxbody/.config/frogdash-chromium --change-stack-guard-on-fork=enable
+3113 /usr/lib/chromium/chromium --type=zygote --crashpad-handler-pid=0 --enable-crash-reporter=,built on Debian GNU/Linux 13 (trixie) --user-data-dir=/home/foxbody/.config/frogdash-chromium --change-stack-guard-on-fork=enable
+
+Compare with a video of key-on to visible gauges. A render heartbeat is a browser liveness observation, not proof the physical screen is lit.
