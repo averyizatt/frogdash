@@ -5,12 +5,12 @@
    bore suggests and the one the engine itself rings at; and the amplifier, the second
    resonance and the sensor signal as numbers.
    Settings view: everything the controller lets the dash set. Each field shows the
-   controller's own value and sends a change at once; the ESP32 keeps it through a
-   restart, the Nano only until power-off.
+   controller's own value and sends a change at once; the controller keeps it through a
+   restart.
 
-   The spectrum, the frequency it finds and the amplifier gain come from the ESP32
-   water/meth controller (0x30E, can_protocol.h extension 6). With the Nano controller
-   those parts say so and the rest works as before. */
+   The spectrum, the frequency it finds and the amplifier gain come from the water/meth
+   controller's knock detail (0x30E, can_protocol.h extension 6). Without it (knock built
+   out, or not heard yet) those parts say so and the rest works from the knock state. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -28,7 +28,7 @@
   const set = (id, text) => { const node = $(id); if (node.textContent !== text) node.textContent = text; };
   const kHz = hz => `${(hz / 1000).toFixed(2)} kHz`;
   const detail = () => snapshot.knock_detail || {supported: false};
-  // The controller's firmware is built without knock listening (both boards since November
+  // The controller's firmware is built without knock listening (ESP32 since November
   // 2026, the owner's choice until the amplifier works): controls.py knock_built_out.
   const builtOut = () => !!snapshot.controls?.knock_built_out;
   const OFF_IN_FIRMWARE = "Knock listening is off in the water/meth controller's firmware for now. Injection does not depend on it.";
@@ -122,19 +122,18 @@
     set('knock-amp', gain === null ? '—' : `${gain.toFixed(1)}×`);
     const trouble = live('knock.amp.overloaded') ? 'TOO LOUD AT THE LOWEST GAIN' : live('knock.amp.silent') ? 'NOTHING HEARD AT FULL GAIN'
       : live('knock.amp.ineffective') ? 'GAIN CONTROL NOT RESPONDING' : null;
-    set('knock-amp-note', gain === null ? (d.supported || builtOut() ? '' : 'FIXED BY THE CIRCUIT') :
+    set('knock-amp-note', gain === null ? (builtOut() ? '' : 'WAITING FOR GAIN REPORT') :
       trouble || `${live('knock.amp.fixed') ? 'HELD' : live('knock.amp.automatic') ? 'AUTOMATIC' : 'FIXED'}${step === null ? '' : ` · POSITION ${step} OF ${top}`}`);
     $('knock-amp-note').dataset.state = trouble ? 'warn' : '';
 
     const swing = live('knock.amp.swing_mv'), room = live('knock.amp.room_mv'), rest = live('knock.amp.rest_mv');
     if (swing !== null) set('knock-swing', `${swing} mV${room ? ` · ${Math.round(swing * 100 / room)}% of room` : ''}`);
     else {
-      // The Nano reports its swing as a share of its ADC range.
+      // Without the knock detail: the swing from the live hook, as a share of the ADC range.
       const envelope = live('knock.hook.envelope');
       set('knock-swing', envelope === null ? '—' : `${Math.round(envelope * 2 * 100 / 512)}% of range`);
     }
-    const nanoRest = live('knock.hook.bias_adc');
-    set('knock-rest', rest !== null ? `${(rest / 1000).toFixed(2)} V` : nanoRest !== null ? `${(nanoRest * 5 / 1024).toFixed(1)} V` : '—');
+    set('knock-rest', rest !== null ? `${(rest / 1000).toFixed(2)} V` : '—');
 
     const second = live('knock.listen.second'), secondNormal = live('knock.listen.second_normal');
     set('knock-second', !d.supported ? '—' : live('knock.freq.second_active') === false ? 'Not used' : second === null ? '—' :
@@ -166,7 +165,7 @@
       for (const id of ['knock-band', 'knock-band-second']) $(id).setAttribute('width', 0);
       $('knock-marks').replaceChildren();
       if (d.supported) { $('knock-spectrum-missing').hidden = false; set('knock-spectrum-missing', 'Waiting for the first spectrum from the controller…'); }
-      else set('knock-spectrum-missing', builtOut() ? OFF_IN_FIRMWARE : 'The spectrum comes from the ESP32 water/meth controller. The controller fitted now does not send one.');
+      else set('knock-spectrum-missing', builtOut() ? OFF_IN_FIRMWARE : 'Waiting for spectrum reports from the ESP32 water/meth controller.');
       return;
     }
     const normal = d.normal, burst = Array.isArray(d.burst) ? d.burst : normal;
@@ -331,7 +330,7 @@
     const busy = !!snapshot.controls?.pending;
     const off = builtOut();
     const blocked = (action, esp32) => !connected || snapshot.mode === 'replay' || off || (!!reasons[action] && !busy) || (esp32 && !d.supported);
-    const why = (action, esp32) => off ? OFF_IN_FIRMWARE : esp32 && !d.supported ? 'Needs the ESP32 water/meth controller' : busy ? '' : reasons[action] || '';
+    const why = (action, esp32) => off ? OFF_IN_FIRMWARE : esp32 && !d.supported ? 'Waiting for knock detail from the ESP32 water/meth controller' : busy ? '' : reasons[action] || '';
     if (!busy) {
       const general = !connected ? 'Not connected to the dash: settings cannot be changed.' : snapshot.mode === 'replay' ? 'Replay: settings cannot be changed.'
         : off ? OFF_IN_FIRMWARE : reasons['knock.multiplier'] ? `${reasons['knock.multiplier']}.` : '';
@@ -361,7 +360,7 @@
     set('knock-set-freq-note', off ? 'Off in the controller\'s firmware.' : !filter ? 'Waiting for the controller.' :
       `Listening at ${kHz(filter)}${byHand ? ', set by hand' : live('knock.freq.learned') ? ', learned from the engine' : d.supported ? ', the bore\'s figure until the engine has been heard under boost' : ', from the bore'}.` +
       `${bore ? ` The bore suggests ${kHz(bore)}.` : ''}${found ? ` The engine's own ringing points to ${kHz(found)}.` : ''}` +
-      `${d.supported ? '' : ' Finding it from the engine needs the ESP32 controller.'}`);
+      `${d.supported ? '' : ' Waiting for frequency reports from the controller.'}`);
 
     const step = live('knock.amp.step'), top = live('knock.amp.top_step'), gain = live('knock.amp.gain'), held = live('knock.amp.fixed');
     ampMode.disabled = blocked('knock.amp_gain', true); ampMode.title = why('knock.amp_gain', true);
@@ -371,7 +370,7 @@
     if (top !== null) ampStep.max = top;
     if (step !== null && !editing(ampStep, 'knock.amp_gain')) ampStep.value = step;
     set('knock-set-amp-note', off ? 'Off in the controller\'s firmware: the gain potentiometer is left alone.' :
-      !d.supported ? 'The gain is fixed by the circuit on this controller. Setting it from here needs the ESP32 controller and its gain potentiometer.' :
+      !d.supported ? 'Waiting for knock detail from the ESP32 controller before changing amplifier gain.' :
       gain === null ? 'Waiting for the controller.' :
       `${gain.toFixed(1)}× at position ${step} of ${top}, ${held ? 'held here' : live('knock.amp.automatic') ? 'set by the controller to keep normal engine noise in the lower part of its range' : 'not under control'}.` +
       `${live('knock.amp.ineffective') ? ' Changing the gain shows no effect: check the potentiometer and its three control wires.' : ''}` +

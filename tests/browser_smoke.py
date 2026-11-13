@@ -92,7 +92,7 @@ async def check_transfer(browser, state, errors):
         # Module firmware: every module listed; a button only where a new build is ready, armed by the first press.
         await until(lambda: has('#firmware', 'Gateway firmware: build 0a0b0c0d. Build 1a2b3c4d is ready to install'))
         assert await page.locator('#firmware li').count() == 3 and 'Taillight firmware' in await text('#firmware')
-        # Nothing heard from the water/meth controller here: not answering, without blaming the Nano.
+        # Nothing heard from the water/meth controller here: not answering, with wiring guidance.
         assert 'Water/meth firmware' in await text('#firmware') and "Check the ESP32 board's power and CAN wiring" in await text('#firmware')
         assert await page.locator('#firmware button').count() == 1
         await page.locator('[data-firmware="gateway"]').click()

@@ -19,7 +19,7 @@ COMMANDS = {
     "meth.stop": (0x301, 0x03, None, None, True),
     "meth.boost": (0x301, 0x04, 0, 250, True),
     "meth.clear_faults": (0x301, 0x06, None, None, True),
-    # The Nano restarts on this (can_protocol.h extension 7); busy (status 4) while pumping.
+    # The water/meth controller restarts on this (can_protocol.h extension 7); busy (status 4) while pumping.
     "meth.restart": (0x301, 0x07, None, None, True),
     # Pulse tuning (can_protocol.h extension 4), acknowledged on 0x30F. setting = key << 16 | value;
     # tune_action = 0 save, 1 revert, 2 defaults, 3 report.
@@ -34,7 +34,7 @@ COMMANDS = {
     "knock.level_gain": (0x301, 0x46, 1, 200, True),      # x 0.1
     "knock.center": (0x301, 0x47, 30, 90, True),          # x 100 Hz; also switches to "set by hand"
     "knock.bandwidth": (0x301, 0x48, 3, 200, True),       # x 100 Hz
-    "knock.auto_frequency": (0x301, 0x49, 0, 1, True),    # 1: found from the engine (from the bore on the Nano)
+    "knock.auto_frequency": (0x301, 0x49, 0, 1, True),    # 1: found from the engine; 0: from the bore
     "knock.clear_events": (0x301, 0x4A, None, None, True),
     # ESP32 controller only (can_protocol.h extension 6).
     "knock.amp_gain": (0x301, 0x4B, 0, 100, True),        # 0 automatic; n holds potentiometer position n - 1
@@ -182,8 +182,8 @@ class Controls:
         return self.live('meth.config.version', 0x304, 3) is not None
 
     def knock_built_out(self):
-        """The water/meth controller's firmware is built without knock listening (NANO_KNOCK or
-        ESP32_KNOCK 0: both boards since November 2026). Its knock state (0x307) says not
+        """The water/meth controller's firmware is built without knock listening (ESP32_KNOCK 0,
+        since November 2026). Its knock state (0x307) says not
         enabled, and the live knock frame (0x30B), which a build with knock sends whether
         listening is on or off, never comes. Knock commands would only be refused."""
         return self.live('knock.enabled', 0x307) is False and self.live('knock.hook.flags', 0x30B, 2) is None
@@ -228,7 +228,7 @@ class Controls:
         elif action.startswith('knock.'):
             if self.live('knock.status_flags', 0x307) is None: return 'Knock controller is offline'
             if action in KNOCK_DETAIL and not self.state.knock_detail.supported:
-                return 'This setting needs the ESP32 water/meth controller'
+                return 'Waiting for knock detail from the ESP32 water/meth controller'
         elif action == 'interior.light':
             if self.live('interior.upper.brightness', 0x503, 1) is None and self.live('interior.lower.brightness', 0x503, 1) is None:
                 return 'Sensor gateway interior lights are offline'
@@ -472,9 +472,9 @@ class Controls:
 
     async def keep_meth_armed(self):
         """Arm the water/meth controller again when it is heard disarmed and the driver last
-        chose Arm. The Nano always starts disarmed (fail safe) and nothing else on the bus
-        arms it: the comfort module's gateway build sends no 0x304. So after every key-on,
-        and after the Nano restarts, it sat disarmed until Arm was pressed again. Disarm is
+        chose Arm. The controller starts disarmed after a power-on (fail safe) and nothing else
+        on the bus arms it: the comfort module's gateway build sends no 0x304. So after every
+        key-on it would sit disarmed until Arm was pressed again. Disarm is
         remembered the same way, and every rule that applies to the Arm button applies here."""
         mode = self.live('meth.state', 0x300)
         now = self.state.clock()

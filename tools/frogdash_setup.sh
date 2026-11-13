@@ -521,7 +521,7 @@ firmware_file() {  # name, step name, release URL
 }
 firmware_file gateway "Gateway firmware file" "$GATEWAY_FW_URL"
 firmware_file taillights "Taillight firmware file" "$TAILLIGHT_FW_URL"
-# For the ESP32 water/meth board. Kept ready while the Nano board is still fitted.
+# For the ESP32 water/meth board, installed over CAN from the dash.
 firmware_file watermeth "Water/meth firmware file" "$WATERMETH_FW_URL"
 
 # --- Phone hotspot: the dash's own Wi-Fi network for logs, faults and updates from a phone ---

@@ -8,7 +8,6 @@ wire that already connects them. No USB cable, and no Wi-Fi in the modules.
 | Sensor gateway | Yes | About a minute | Speed, fuel level, wheel buttons and interior lights pause |
 | Taillight controller | Yes | A few minutes (its firmware is three times the size) | Lamps dark. Lights off and foot off the brake: any light input stops the update at once |
 | Water/meth controller, ESP32 board | Yes | About a minute | Injection off. Engine off: it will not start, and stops, if the pump is on or boost comes up |
-| Water/meth controller, Nano board | No: see below | | The dash shows "USB only" |
 
 ## Using it
 
@@ -67,15 +66,15 @@ The ESP32 board is the water/meth controller in the car since November 2026. It 
 an update, and drops one that is running, when the pump is on or boost is near: install
 with the engine off.
 
-The dash tells the two water/meth boards apart from their own setting reports (a PWM
-pump is the ESP32 board, a relay the Nano), not from silence, and the water/meth line
-says what silence means for the board fitted:
+The water/meth row distinguishes telemetry from firmware-update replies:
 
 | The water/meth controller | The line reads |
 |---|---|
 | Not heard at all | *Not answering*: check the ESP32 board's power and CAN wiring |
-| Reports a relay pump (the Nano) | *USB only*: the Nano cannot take firmware over CAN and is flashed by USB |
-| Reports a PWM pump (the ESP32) but does not answer firmware commands | *Not answering*: flash `esp32s3_water_meth` to it once by USB |
+| State reports arrive, but no firmware reply | *Not answering*: flash `esp32s3_water_meth` once by USB if its firmware lacks the updater |
+| Firmware replies arrive | The installed build and any available update |
+
+Both current pulse firmware and earlier ESP32 PWM firmware use the same updater.
 
 The first flash of the ESP32 board is by USB from VS Code. It then reports build
 `00000000`, and the published build is offered over it on this line.
@@ -97,24 +96,13 @@ them) can join without a new message:
    `firmware_file` line in `tools/frogdash_setup.sh`. The Support tab, the phone page
    and System check follow the table.
 
-## The water/meth Nano
-
-The Nano cannot be updated this way as it is. Its ATmega328P can only rewrite its own
-program from a bootloader, the one it has listens on USB serial, and there is no spare
-slot to keep the old firmware in. Doing it over CAN means replacing that bootloader
-with a CAN one, which needs a hardware programmer once and leaves no automatic
-way back if a transfer goes wrong (the bootloader survives, so it can be tried again,
-but the pump controller is out of action until one succeeds). The ESP32 board that is
-replacing the Nano is on the same footing as the other modules: see the table above.
-
 ## Tests
 
 `tests/test_fwupdate.py` runs the dash's sender against the modules' real receiver code,
 compiled for the computer from the shared header: complete transfers to all three
 targets, lost frames and lost answers, a module that goes back to its old firmware, one
 that never comes back, one that refuses or stops because it is needed, a controller
-that cannot answer at all (the Nano), an ESP32 water/meth board told from the Nano by
-its reports, and the car moving off mid-transfer.
+that does not answer firmware commands despite sending state reports, and the car moving off mid-transfer.
 `tests/test_can_contract.py` checks every frame the dash builds against the modules'
 own builders. All three firmwares are compiled by their GitHub workflows. None of this has run on the car: the first real transfer is the test of
 the wiring and timing.

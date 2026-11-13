@@ -150,7 +150,7 @@ class FreshnessTests(unittest.TestCase):
     def test_a_module_restart_shows_as_a_gap_not_a_row_of_faults(self):
         self.state.connected = True
         self.state.ingest(0x300, bytes.fromhex('0100640055505000'))
-        self.now = 2.5                                                                # The Nano restarts
+        self.now = 2.5                                                                # The controller restarts
         self.state.ingest(0x300, bytes.fromhex('0100640055505003'))                    # and reports its start-up faults
         self.assertEqual(self.values()['meth.fault_flags']['value'], 0)
         self.now = 2.7

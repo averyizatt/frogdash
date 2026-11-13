@@ -23,7 +23,7 @@ COMPILER = shutil.which('g++') or shutil.which('clang++')
 def vectors():
     with tempfile.TemporaryDirectory() as directory:
         exe = Path(directory) / 'vectors.exe'
-        # can_protocol.h must stay C++11 (water/meth Nano). The gateway header needs
+        # The shared contract stays C++11-compatible. The gateway header needs
         # C++14 and is only used by ESP32 builds, so the combined vectors use C++17.
         header_only = Path(directory) / 'cxx11.cpp'
         header_only.write_text('#include "can_contract/can_protocol.h"\nint main() { return 0; }\n')
@@ -155,11 +155,11 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
         # No frequency found yet is "unavailable", not zero hertz.
         found = decode(0x30E, bytes([2, 1, 0x17, 0x4E, 0, 0, 0, 0]))['knock.freq.found_hz']
         self.assertEqual((found.value, found.quality), (None, 'unavailable'))
-        # The controller goes quiet (or the Nano is fitted): the page falls back.
+        # The controller goes quiet (detail reports stop): the page falls back.
         now[0] += 5
         self.assertEqual(state.snapshot()['knock_detail'], {'supported': False, 'start_hz': 2000, 'step_hz': 300, 'normal': None, 'burst': None})
 
-    async def test_knock_settings_for_the_esp32_controller_are_refused_for_the_nano(self):
+    async def test_knock_detail_settings_require_fresh_detail_reports(self):
         state = State(clock=lambda: 10)
         state.connected = True
         state.samples['ecu.rpm', 1520] = dict(value=0, quality='live', seen=10, source_id=1520, timestamp_ms=0)
@@ -171,10 +171,10 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
         state.controls.attach(send); state.controls.ready_at = 0
         try:
             for action, value in (('knock.amp_gain', 5), ('knock.bore', 96), ('knock.relearn', None)):
-                with self.assertRaisesRegex(ValueError, 'needs the ESP32'):
+                with self.assertRaisesRegex(ValueError, 'Waiting for knock detail'):
                     await state.controls.execute(action, value)
             self.assertEqual(sent, [])
-            # Settings the Nano has too still go out.
+            # Basic settings with a fresh state report still go out.
             self.assertEqual((await state.controls.execute('knock.min_rpm', 25))['status'], 'acknowledged')
             self.assertEqual(sent, [vectors()['knock.min_rpm']])
             for action, value in (('knock.min_rpm', 81), ('knock.center', 29), ('knock.center', 91), ('knock.hold', 9), ('knock.bore', 39), ('knock.amp_gain', 101)):
@@ -196,8 +196,8 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual((mirror['unsaved'], mirror['pump_on'], mirror['rpm_ok'], mirror['pre_valid']), (True, True, True, False))
         self.assertEqual((mirror['early_start'], mirror['hot_air']), (True, False))
         self.assertEqual((mirror['on_ms'], mirror['period_ms'], mirror['settings']), (1500, 4000, {'min_rpm': 2500}))
-        # A setting report from the PWM board says so; one from the relay board does not.
-        self.assertEqual(mirror['drive'], 'relay')
+        # The extension-10 pulse drive and earlier ESP32 PWM drive have distinct reports.
+        self.assertEqual(mirror['drive'], 'pulse')
         state.ingest(*vectors()['meth_tune_setting_pwm'])
         mirror = state.meth_tune.snapshot()
         self.assertEqual((mirror['drive'], mirror['settings']), ('pwm', {'min_rpm': 2500, 'max_duty_pct': 50}))

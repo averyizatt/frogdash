@@ -76,7 +76,7 @@ async def preview(browser):
         assert await page.locator('#mt-fluid').input_value() == 'Water'
         await page.locator('#mt-start_psi_x10').fill('6.5')
         await page.locator('#mt-start_psi_x10').blur()
-        await page.wait_for_function('document.getElementById("mt-summary").textContent.startsWith("At 6.5 psi the pump runs 1 s in every 4 s (15 ml/min), rising to 2 s in every 4 s (30 ml/min) at 10 psi.")')
+        await page.wait_for_function('document.getElementById("mt-summary").textContent.startsWith("At 6.5 psi the pump runs full on 1 s in every 4 s (15 ml/min), rising to 2 s in every 4 s (30 ml/min) at 10 psi.")')
         assert "Never more than 10% of the engine's fuel flow" in await page.locator('#mt-summary').inner_text()
         # Extra triggers: early start is on at 3500 RPM by default; hot air is off until set.
         assert await page.locator('#mt-early_rpm').input_value() == '3500'
@@ -96,7 +96,7 @@ async def preview(browser):
         await page.locator('#mt-min_on_ms').blur()
         await page.wait_for_function('document.getElementById("mt-min_on_ms").value === "2"')
         assert await page.locator('#mt-max_on_ms').input_value() == '2'
-        await page.locator('#mt-min_on_ms').fill('0.1')   # Shorter than the relay allows.
+        await page.locator('#mt-min_on_ms').fill('0.1')   # Shorter than the pulse timing allows.
         await page.locator('#mt-min_on_ms').blur()
         await page.wait_for_function('document.getElementById("mt-min_on_ms").value === "0.5"')
         await page.locator('#mt-preset').select_option('Mild')
@@ -126,7 +126,7 @@ async def preview(browser):
         await page.locator('#mt-revert').click()
         await page.wait_for_function('document.getElementById("mt-max_on_ms").value === "3"')
         assert await page.locator('#mt-fluid').input_value() == '53% meth'
-        # The ESP32 board drives the pump with PWM: duty settings replace the pulse settings.
+        # Earlier ESP32 firmware drives the pump with PWM: duty replaces pulse settings.
         assert await page.locator('#mt-min_duty_pct').is_hidden() and await page.locator('#mt-period_ms').is_visible()
         await page.evaluate('window.frogdashDemo.methDrive("pwm")')
         await page.wait_for_function('document.getElementById("mt-summary").textContent.includes("% duty (about")')
@@ -140,13 +140,13 @@ async def preview(browser):
         await page.locator('#mt-min_duty_pct').blur()
         await page.wait_for_function('document.getElementById("mt-summary").textContent.includes("the pump runs at 25% duty (about 30 ml/min), rising to 70% duty (about 50 ml/min)")')
         assert 'Custom flow settings' in await page.locator('#mt-sync').inner_text()
-        await page.evaluate('window.frogdashDemo.methDrive("relay")')
+        await page.evaluate('window.frogdashDemo.methDrive("pulse")')
         await page.wait_for_function('!document.getElementById("mt-period_ms").parentNode.hidden')
-        assert 'Matches preset: Mild' in await page.locator('#mt-sync').inner_text()   # Duty is not a relay setting.
+        assert 'Matches preset: Mild' in await page.locator('#mt-sync').inner_text()   # Duty is not a pulse setting.
         await page.locator('#tab-meth').click()
         assert await page.locator('#meth-live-hold').inner_text() in ('Disarmed', 'Armed: waiting for boost', 'Injecting', 'Held: engine RPM is below the minimum')
         assert await page.locator('#meth-live-flow').inner_text() != '—'
-        # The dashboard tile turns green exactly while the simulated pump relay is closed.
+        # The dashboard tile turns green exactly while the simulated pump is running.
         await page.locator('[data-action="meth.arm"][data-value="1"]').click()
         await page.locator('#controls-close').click()
         # Pump on and the tile lit, seen together: the simulated pump pulses, so reading the

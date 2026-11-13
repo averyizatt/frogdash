@@ -72,7 +72,7 @@ int main() {
   emit("knock.enable", packEngineKnockCommand(knock_command::SET_ENABLE,1));
   emit("knock.threshold", packEngineKnockCommand(knock_command::SET_THRESHOLD_OFFSET,20));
   emit("knock.multiplier", packEngineKnockCommand(knock_command::SET_ADAPTIVE_MULTIPLIER,24));
-  // Nano's CLEAR_EVENTS handler accepts the one-byte no-argument command.
+  // Controller's CLEAR_EVENTS handler accepts the one-byte no-argument command.
   CanFrame clear = packEngineKnockCommand(knock_command::CLEAR_EVENTS_AND_FAULTS); clear.dlc=1;
   emit("knock.clear_events", clear);
   emit("knock.refresh", packEngineKnockConfigRequest());
@@ -99,7 +99,7 @@ int main() {
   emit("meth_intake_temp", packMethLiveIntakeTemp(487));
   emit("meth_intake_temp_cold", packMethLiveIntakeTemp(-123));
   emit("meth_tune_ack", packMethTuneAck(meth_tune_command::SET_SETTING, config_ack_status::VALUE_CLAMPED, meth_tune_setting::MAX_ON_MS, 2000, 7));
-  emit("meth_tune_setting", packMethTuneSettingReport(meth_tune_setting::MIN_RPM, 2500, 7, meth_tune_flag::UNSAVED));
+  emit("meth_tune_setting", packMethTuneSettingReport(meth_tune_setting::MIN_RPM, 2500, 7, meth_tune_flag::UNSAVED, meth_drive::PULSE));
   emit("meth_tune_setting_pwm", packMethTuneSettingReport(meth_tune_setting::MAX_DUTY_PCT, 50, 7, 0, meth_drive::PWM));
   emit("meth_tune_status", packMethTuneStatus(7, meth_tune_flag::UNSAVED | meth_tune_flag::PUMP_ON | meth_tune_flag::RPM_OK | meth_tune_flag::EARLY_START, meth_hold::DOSE_LIMIT, 1500, 4000));
   static_assert(meth_tune_setting::COUNT == 19 && meth_tune_setting::MAX_DOSE_PCT == 14 && meth_tune_setting::HOT_FULL_C == 17 && meth_tune_setting::MAX_DUTY_PCT == 19, "Water/meth tuning keys changed");

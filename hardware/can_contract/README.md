@@ -1,4 +1,4 @@
-# Shared CAN contract: schema 2 plus Frogdash extension 2
+# Shared CAN contract: schema 2 plus Frogdash extension 10
 
 `include/can_contract/can_protocol.h` preserves the complete existing CCM and
 taillight schema-2 header and appends the Frogdash extension. Existing IDs,
@@ -62,3 +62,10 @@ Extension 2 adds `packSteeringButtons(mask, sequence)` for CCM ID 0x205.
 The five logical bits are in `steering_button`; report version 1 is separate
 from the unchanged schema-2 command ACK version. See [steering-wheel integration](../../docs/steering-wheel.md)
 for the payload, timing, GPIO integration hook and incremental upgrade patch.
+
+## ESP32 water/meth pulse drive
+
+Extension 10 adds `meth_drive::PULSE` (2). Settings reports on `0x30F` identify
+full-pressure MOSFET pulses; status reports carry on-time and cycle length in ms.
+The earlier ESP32 PWM value (1) and retired drive value (0) retain their wire
+numbers. No existing message layout or command changes.

@@ -296,7 +296,7 @@ class State:
                 "operations": self.guarded('dash management', self.operations.status), "system": dict(self.health.status) if self.health else None,
                 "can_errors": dict(self.can_errors),
                 "can_watch": self.guarded('CAN watch', self.can_watch.snapshot) if self.can_watch else None,
-                "firmware": self.guarded('module firmware', self.firmware.snapshot_with_nano) if self.firmware else None,
+                "firmware": self.guarded('module firmware', self.firmware.snapshot_shown) if self.firmware else None,
                 "updating": sorted(self.guarded('module firmware', self.firmware.quiet) or ()) if self.firmware else [],
                 "wheel": self.guarded('steering wheel', lambda: self.wheel.snapshot(self.connected and self.mode == "socketcan")),
                 "recording": dict(self.recorder.status) if self.recorder else {"enabled": False, "state": "disabled"}}

@@ -1,33 +1,19 @@
 # Knock monitor: the page, how it listens and how to set it up
 
 The knock sensor is read by the water/meth controller, through your amplifier, and
-shown on the dash under **Knock**. The page works with both controllers:
+shown on the dash under **Knock**. The ESP32-S3 reports level, threshold, events,
+spectrum, learned frequency, amplifier gain and second-resonance detail.
 
-| | Nano board (fitted now) | ESP32-S3 board |
-|---|---|---|
-| Level, normal level, threshold, events | yes | yes |
-| Every setting changeable from the dash | all but the three below | yes |
-| Spectrum of the sensor signal | no | yes |
-| Knock frequency found from the engine | no, calculated from the bore | yes |
-| Amplifier gain shown, automatic or held | no, fixed by the circuit | yes |
-| Second resonance, how far a burst stands out | no | yes |
-
-The dash finds out by itself which one is fitted. With the Nano, the parts it cannot
-send say so and the rest works as before.
-
-**Off on both boards for now** (November 2026). The Nano firmware is built without
-knock listening to free its flash and RAM (DIYWaterMethInjection `ed2a155`), and the
-ESP32 firmware too, the owner's choice until the knock amplifier's input works on the
-bench (`e057dbb`). Either then reports knock not enabled and sends nothing else for
-knock: no level, settings, spectrum or gain. Injection never depended on it.
+**Knock is off in the published firmware for now** (November 2026), until the
+amplifier works on the bench. It reports knock not enabled and sends no live knock
+readings. Injection does not depend on knock.
 
 The dash recognises this (knock reported not enabled, and none of the live knock frames
 that a firmware with knock sends even when listening is switched off) and says so
 instead of waiting for data: the knock page reads *OFF IN THE CONTROLLER'S FIRMWARE*,
 its settings are greyed out with the reason, and Controls → Knock monitor reads *Off in
 the controller's firmware for now*. The dash does not send knock commands meanwhile.
-The rest of this page describes knock with it built in: `-DNANO_KNOCK=1` or
-`-DESP32_KNOCK=1` (in `platformio.ini`) brings it back, and the firmware's GitHub
+The rest of this page describes knock with it built in: `-DESP32_KNOCK=1` (in `platformio.ini`) brings it back, and the firmware's GitHub
 workflow builds the ESP32 firmware with knock on as well, so that code keeps compiling.
 
 ## The page
@@ -65,7 +51,7 @@ Under the graphs:
 | **At knock frequency** | How much of the whole signal sits in the knock band. Ordinary engine noise is spread out and reads around 15%. Ringing reads 50% and up. |
 | **Stands out by** | How far the loudest moment of the last pass stood above the rest of it. Knock is a burst. NOTABLE: it counted as ringing. |
 | **Second resonance** | Its level against its own normal. RINGING: it rang too, which marks real knock. |
-| **Sensor signal** | The swing either side of rest, and how much of the room to the nearer limit that is. With the Nano: a share of its input range. |
+| **Sensor signal** | The swing either side of rest, and how much of the room to the nearer limit that is. |
 | **Amplifier rests at** | Where the amplifier's output sits with no signal |
 | **Engine rings at** | The frequency the votes agree on, how many votes and how many agree |
 | **Steady tone** | A frequency if there is one. If it appears while the pump runs, the pump's PWM is getting into the knock signal. |
@@ -74,8 +60,7 @@ Under the graphs:
 ### Settings
 
 A field shows the controller's own value. Changing it sends the change at once. The
-ESP32 keeps it through a restart; **the Nano does not**: it starts with its built-in
-values at every power-up, so a change made from here lasts until the ignition is off.
+ESP32 keeps it through a restart.
 A change made right after another waits a moment for its turn; the line under CLEAR
 EVENTS shows what the controller answered.
 
@@ -88,7 +73,7 @@ EVENTS shows what the controller answered.
 | Level gain | 0.1 to 20 | A software gain on the level. Leave it at 1. |
 | Only above engine speed | 0 to 8000 RPM | Hits are judged only above this |
 | Only above manifold pressure | 0 to 250 kPa absolute | At about 5,000 ft the air outside is 85 to 87 kPa: 100 is about 2 psi of boost, 120 about 5 |
-| Where it listens | | Found from the engine (ESP32; from the bore on the Nano), or set by hand |
+| Where it listens | | Found from the engine, or set by hand |
 | Frequency, when set by hand | 3 to 9 kHz | Choosing "Set by hand" starts from where the filter is now |
 | Band width | 1500 or 900 Hz | |
 | Cylinder bore (ESP32) | 40 to 200 mm | Where the search starts and how far it may go. Changing it starts the search again. |
@@ -106,21 +91,16 @@ and so does everything on the Live view.
 Knock makes the cylinder ring at a frequency set by the bore. For the 2.3 L Lima's
 96 mm bore that is about **6.0 kHz**.
 
-Both controllers learn the normal level **separately for each 1000 RPM**, because an
+The controller learns the normal level **separately for each 1000 RPM**, because an
 engine is simply louder at high revs. A hit is a level well above the learned normal
 for that RPM **and** energy concentrated at the knock frequency. Two hits within 0.6 s
 raise a warning; a strong, clearly narrow hit is critical at once. Knock is never
 learned as normal.
 
 Readings are judged only while armed: knock monitoring enabled, RPM above the minimum
-and manifold pressure above the arming level (100 kPa absolute in current firmware,
-120 in the Nano firmware now in the car: set it to 100 on the Settings view).
+and manifold pressure above the arming level (100 kPa absolute by default).
 The ESP32 learns the knock frequency only while armed too. They are measured and shown all the
 time.
-
-**Nano:** fifty times a second it takes a burst of 64 samples at 19,200 samples a
-second (3.3 ms). It has no crank or spark signal, so a single knock is caught only if
-a burst happens to overlap it; sustained knock is caught within a fraction of a second.
 
 **ESP32:** every sample is filtered, 38 thousand a second, with no gaps; a hit must
 also stand out as a burst within its own 20 ms; the second resonance is checked; the
@@ -142,15 +122,11 @@ automatically. The details are in the controller's
 
 Open **Knock** with the engine off, ignition on.
 
-1. **Amplifier rests at** the middle of its range: about 2.5 V on the Nano's 0–5 V
-   input (below about 0.7 V or above 4.3 V the Nano flags a sensor fault), about
-   0.82 V on the ESP32 board with its 10 k / 10 k divider.
+1. **Amplifier rests at** about 0.82 V on the ESP32 board with its 10 k / 10 k divider.
 2. **Tap test.** Tap the block near the sensor with a wrench. *Sensor signal* and
    *Knock-band level* should jump, and on the ESP32 the yellow line of the spectrum
    lifts. Nothing at all means the sensor or amplifier is not connected.
-3. **Gain.** On the Nano: *Sensor signal* roughly 5–15% at idle and under about 60% on
-   a pull; 100% is clipping (the dash flags it): change the amplifier's gain resistor.
-   On the ESP32 the controller does this itself: the gain reads AUTOMATIC with a
+3. **Gain.** The ESP32 controls gain itself: the gain reads AUTOMATIC with a
    position that moves with engine speed, and *Sensor signal* settles between about
    16 and 40% of room. "TOO LOUD AT THE LOWEST GAIN", "NOTHING HEARD AT FULL GAIN" or
    "GAIN CONTROL NOT RESPONDING" mean the circuit needs attention.
@@ -178,9 +154,9 @@ Open **Knock** with the engine off, ignition on.
 | `0x30B` | Amplifier resting level, largest swing |
 | `0x30C`, `0x30D` | The settings, as the controller holds them |
 | `0x30E` (ESP32, extension 6) | Knock detail, the first byte naming the report: amplifier, frequency, engine, listening, and the two spectra in pieces of six points |
-| `0x301` commands `0x40`–`0x4A` | The settings both controllers take |
+| `0x301` commands `0x40`–`0x4A` | The basic knock settings |
 | `0x301` commands `0x4B`, `0x4C`, `0x4D` (ESP32, extension 6) | Amplifier gain (0 automatic, n holds position n − 1), bore in mm, learn the frequency again |
 
 `0x30E` and the three commands are additions; nothing existing changed. The dash
-treats the controller as an ESP32 while `0x30E` has been seen in the last three
-seconds, and refuses the three commands otherwise.
+allows detail-setting commands only while `0x30E` has been seen in the last three
+seconds. Missing reports are shown as unavailable, without assuming different hardware.

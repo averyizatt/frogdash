@@ -1,8 +1,8 @@
 """Engine runtime (0x309) for the water/meth controller, sent by the dash.
 
 The comfort module's dashboard firmware used to publish 0x309 (RPM) every 50 ms;
-its sensor-gateway build does not. The water/meth Nano needs it to arm knock
-detection above its minimum RPM. The dash takes over with the same payload the
+its sensor-gateway build does not. The water/meth controller takes RPM from the
+MicroSquirt's own broadcast and uses this as its backup. The dash takes over with the same payload the
 CCM sent: RPM little-endian, MAP 0 and valid bit 0 only while RPM is fresh and
 above zero. Only one node may publish 0x309, so the dash listens first and
 latches off for this run if any other sender appears (RAW_RECV_OWN_MSGS is off,

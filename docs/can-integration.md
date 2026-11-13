@@ -101,13 +101,14 @@ git apply /path/to/frogdash/hardware/compat/comfort-disable-gps-tx.patch
 
 ## Imported wire definitions
 
-The decoder was checked against these exact source revisions:
+The original schema-2 decoder audit was on 2026-09-27. The ESP32 cleanup and
+extension-10 contract checks on 2026-11-13 use these CCM and water/meth revisions:
 
 | Repository | Revision | Sources |
 |---|---|---|
-| [DIYComfortControlModule](https://github.com/averyizatt/DIYComfortControlModule/tree/69c73f86a61e9892836a1006f8a676e7e1e750a3) | `69c73f86a61e9892836a1006f8a676e7e1e750a3` | shared schema-2 `can_protocol.h`, `CanFrameBuilders.hpp`, `MicroSquirtProtocol.hpp`, `src/main.cpp` |
+| [DIYComfortControlModule](https://github.com/averyizatt/DIYComfortControlModule/tree/bad4dcad41934b69a731579f245af1fcc5b7300d) | `bad4dcad41934b69a731579f245af1fcc5b7300d` | shared schema-2 `can_protocol.h`, `CanFrameBuilders.hpp`, `MicroSquirtProtocol.hpp`, `src/main.cpp` |
 | [CustomTaillights](https://github.com/averyizatt/CustomTaillights/tree/dd4d971b47a7e4aee9d07c7801daaec4579f19e2) | `dd4d971b47a7e4aee9d07c7801daaec4579f19e2` | `src/canbus.cpp`, `src/can_protocol.h`, `src/inputs.cpp` |
-| [DIYWaterMethInjection](https://github.com/averyizatt/DIYWaterMethInjection/tree/ae1e6ae1c98babd860ba3d328207434e4dd78cef) | `ae1e6ae1c98babd860ba3d328207434e4dd78cef` | `src/main_nano.cpp`, schema-2 contract via CCM |
+| [DIYWaterMethInjection](https://github.com/averyizatt/DIYWaterMethInjection/tree/ebe92cf0c9283f9b570921f77f648c913de7bb89) | `ebe92cf0c9283f9b570921f77f648c913de7bb89` | `src/main_esp32.cpp`, schema-2 contract via CCM |
 
 | IDs | Decoded content |
 |---|---|
@@ -140,8 +141,8 @@ Key compatibility details:
 - 303 pressure values are psi × 2; temperatures use Celsius + 40. Its fault
   bitfield is little-endian. IAT/bay values in 300 depend on validity in 303.
 - 300 boost is nonnegative gauge kPa; ECU MAP minus baro supplies vacuum and
-  boost when both values are fresh. Nano 300 fault bit 1 invalidates its MAP.
-- Nano tank telemetry is currently **0 or 100 from a low-level switch**, not
+  boost when both values are fresh. Water/meth 300 fault bit 1 invalidates its MAP.
+- Water/meth tank telemetry is currently **0 or 100 from a low-level switch**, not
   a continuous fluid-level measurement. Flow can legitimately be UNKNOWN.
 - GPS `fix_type=1` is ambiguous in CCM; its validity flags are required.
 - The CCM heartbeat battery field has no validity bit and can contain a default;

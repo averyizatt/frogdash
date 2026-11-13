@@ -860,7 +860,7 @@ inline CanFrame packMethConfigAck(uint8_t acceptedVersion, uint8_t status, uint8
 
 // BEGIN FROGDASH ADDITIVE EXTENSION
 // Existing schema-2 IDs, layouts and ACK schema remain unchanged.
-constexpr uint8_t FROGDASH_EXTENSION_VERSION = 9;
+constexpr uint8_t FROGDASH_EXTENSION_VERSION = 10;
 constexpr uint16_t ID_FUEL_LEVEL_STATE = 0x204;
 constexpr uint8_t FUEL_LEVEL_DLC = 3;
 constexpr uint32_t FUEL_LEVEL_TX_MS = 500;
@@ -1478,6 +1478,16 @@ inline CanFrame packMethBlackBoxData(uint8_t index, const uint8_t* bytes, uint16
   }
   return frame;
 }
+// Extension 10 (November 2026): a third kind of pump drive. The ESP32 board's pump runs on a
+// MOSFET switched fully on and fully off in pulses, timed like the relay's (PERIOD_MS,
+// MIN_ON_MS, MAX_ON_MS, RAMP_MS and its shortest pulse and gap), each start softened by a
+// short ramp of the duty. Its status reports the cycle's on-time and period as the relay's
+// does, and flow is the nozzle's rating for the share of the cycle the pump runs. It keeps
+// MIN_DUTY_PCT and MAX_DUTY_PCT but ignores them.
+#define CAN_PROTOCOL_HAS_METH_PULSE_DRIVE 1
+namespace meth_drive {
+constexpr uint8_t PULSE = 2;      // Pump on a MOSFET, full on or off in pulses, each started softly
+}  // namespace meth_drive
 // END FROGDASH ADDITIVE EXTENSION
 
 }  // namespace can_protocol

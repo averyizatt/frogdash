@@ -174,7 +174,7 @@ older updater.
 
 Still by hand, because they are choices or need a password, not requirements of an
 update: the first install of the Pi, the dash cam's Wi-Fi profile, and
-flashing the ESP32 and the Nano. The dash's options (`--terminal`, `--camera`,
+flashing the ESP32 modules. The dash's options (`--terminal`, `--camera`,
 `--dashcam` ...) are not among them since November 2026: they are the list in
 `config/frogdash-options`, applied by every update (step *Dash options*).
 
@@ -199,7 +199,7 @@ sudo nmcli dev wifi connect "<network name>" password "<password>" ifname wlan0
 The update also refreshes any installed systemd unit files that changed. From a
 laptop on the same hotspot you can still use `ssh` and `sudo sh
 /opt/frogdash/tools/frogdash_update.sh`. Firmware for the ESP32 modules and the
-Nano is separate and still flashed over USB.
+Water/meth ESP32 uses the same CAN updater; its first flash is by USB.
 
 ### Never stuck on an update
 

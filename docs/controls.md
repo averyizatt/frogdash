@@ -5,7 +5,7 @@ The original browser preview remains simulated. Replay never transmits commands.
 
 ## Water/meth
 
-- **ARM / DISARM**: command the Nano's boost-only injection mode. The state pill
+- **ARM / DISARM**: command the ESP32's automatic injection mode. The state pill
   and pump duty continue to show received telemetry, not an optimistic prediction.
 - **CLEAR FAULTS**: ask the controller to clear its latches. Persistent underlying
   faults may remain or return; the dashboard does not erase them locally.
@@ -21,20 +21,19 @@ The original browser preview remains simulated. Replay never transmits commands.
 Tests send stop on the service's three-second deadline, stale module telemetry,
 reported fault, CCM configuration conflict, browser disconnect, panel close,
 page hide, or service shutdown. A missing test acknowledgement also triggers a
-stop attempt. If CAN itself has failed, the Pi cannot deliver STOP; the Nano's
+stop attempt. If CAN itself has failed, the Pi cannot deliver STOP; the controller's
 existing five-second maximum/manual-test failsafe remains the hardware backstop.
 Normal armed injection is **not** automatically disarmed when the browser closes.
 
-Mixture ratio, IAT threshold, and maximum injection duty are not exposed by this
-panel: they do not have matching implemented direct commands in the pinned Nano
-firmware. The header declares an IAT command that the actual receiver does not
-implement. This UI does not invent that functionality or broadcast guessed
-configuration defaults. Settings here are runtime changes, not guaranteed EEPROM
-persistence. The requested boost input is not a live settings readback.
+Tank mix, intake-temperature limits, pulse timing and dose limit are on **Meth tuning**.
+Values are read back from the ESP32; **Save to controller** persists them. The earlier
+ESP32 PWM drive shows duty settings until updated to pulse firmware.
 
 ## Transfer control from the CCM
 
-The CCM currently sends `0x304` periodically, which can re-arm/disarm the Nano and
+The current sensor-gateway build sends no `0x304`. For an older CCM dashboard build:
+
+Older CCM dashboard builds send `0x304` periodically, which can re-arm/disarm the controller and
 overwrite its boost trigger. Frogdash waits three seconds after CAN attachment
 to inspect ownership. Recent `0x304` traffic blocks meth arm/test/tuning/clear
 commands and explains the conflict in the panel. Explicit DISARM and STOP can

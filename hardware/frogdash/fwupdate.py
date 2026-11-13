@@ -36,24 +36,15 @@ MODULES = (
      'Speed, fuel, wheel buttons and interior lights pause for about a minute.'),
     ('taillights', 'Taillight controller', 'Taillight firmware', 2,
      'Lights off and foot off the brake: the taillights stay dark for a few minutes, and any light switched on stops the update.'),
-    # Only the ESP32 water/meth board answers. The Arduino Nano board it replaces cannot
-    # take firmware over CAN, and says nothing here: that is not a fault. Which board is
-    # fitted is known from its own setting reports (Firmware.meth_board, METH_SILENT).
     ('watermeth', 'Water/meth controller', 'Water/meth firmware', 3,
      'Engine off: injection is off for about a minute, and the controller stops the update if boost comes up.',
-     ('not answering',
-      "Not answering. Check the ESP32 board's power and CAN wiring (the Nano board never answers here; it is updated by USB)")),
+     ('not answering', "Not answering. Check the ESP32 board's power and CAN wiring")),
 )
-# What the water/meth controller's silence means, by the board its setting reports say is
-# fitted (None: not heard, or not reported yet). Since November 2026 the ESP32 board is the
-# one in the car, so its silence is a fault to show, not the Nano's normal.
-METH_SILENT = {
-    'nano': ('no answer (normal with the Nano board)',
-             'No answer. That is normal with the Nano board, which is updated by USB; the ESP32 board answers here once it is fitted'),
-    'esp32': ('ESP32 board not answering firmware commands',
-              'The ESP32 board is on the bus but does not answer firmware commands, so it cannot be updated from here. '
-              'Flash esp32s3_water_meth to it once by USB'),
-}
+# The water/meth board heard on the bus (its state frames arrive) but not answering firmware
+# commands: firmware without the CAN updater, which only a USB flash can replace.
+METH_ON_BUS_SILENT = ('ESP32 board not answering firmware commands',
+                      'The ESP32 board is on the bus but does not answer firmware commands, so it cannot be updated from here. '
+                      'Flash esp32s3_water_meth to it once by USB')
 MAX_IMAGE = 0x330000
 QUERY_EVERY_S = 20
 BLOCK_TRIES = 8
@@ -333,20 +324,6 @@ class ModuleFirmware:
             self.job = {'state': 'failed', 'kind': 'restart', 'message': 'Stopped: the dash is shutting down', 'progress': 0.0}
             raise
 
-    async def restart_nano(self):
-        """The Nano water/meth board takes no firmware commands: its own restart command on
-        0x301 instead (it turns the pump off, answers and restarts; busy while pumping)."""
-        try:
-            result = await self.state.controls.execute('meth.restart')
-        except ValueError as error:
-            self.job = {'state': 'failed', 'kind': 'restart', 'message': str(error), 'progress': 0.0}
-            return
-        if result.get('status') == 'acknowledged':
-            self.job = {'state': 'done', 'kind': 'restart',
-                        'message': 'The Nano restarted: back in a few seconds, and armed again if you had it armed', 'progress': 1.0}
-        else:
-            self.job = {'state': 'failed', 'kind': 'restart', 'message': result.get('message') or 'The Nano did not restart', 'progress': 0.0}
-
     async def install(self, manifest, data):
         target, build = self.target, manifest['build']
         info = lambda reply: reply[0] == INFO
@@ -489,49 +466,24 @@ class Firmware:
         return module.start() if module else 'Unknown module'
 
     @staticmethod
-    def meth_board(module):
-        """The water/meth board on the bus, from its own setting reports: 'esp32' (PWM pump
-        drive), 'nano' (relay), or None while it is not heard or has not reported yet."""
-        state = module.state
-        if module.name != 'watermeth' or state.controls.live('meth.state', 0x300, 3) is None:
-            return None
-        tune = state.meth_tune
-        return ('esp32' if tune.pwm else 'nano') if tune.values else None
-
-    def nano_fitted(self, module):
-        """The Nano water/meth board: it reports a relay pump and takes no firmware commands.
-        (It used to be any water/meth controller that did not answer them: an ESP32 board
-        whose updater stopped answering was then offered the Nano's restart.)"""
-        return module.snapshot()['installed'] is None and self.meth_board(module) == 'nano'
+    def meth_on_bus(module):
+        """The water/meth board is heard on the bus: its state frames (0x300) are arriving."""
+        return module.name == 'watermeth' and module.state.controls.live('meth.state', 0x300, 3) is not None
 
     def restart(self, name):
         """Restart a module (two presses on the dash, car stopped). An error text, or None."""
         module = self.modules.get(name) if isinstance(name, str) else None
         if not module:
             return 'Unknown module'
-        if self.nano_fitted(module):
-            if self.busy() or module.busy():
-                return 'A module is being updated or restarted'
-            if rolling(module.state):
-                return 'Stop the car first: the water/meth controller is out of action for a moment while it restarts'
-            module.job = {'state': 'running', 'kind': 'restart', 'message': 'Asking the Nano to restart', 'progress': 0.0}
-            module.task = asyncio.create_task(module.restart_nano())
-            return None
         return module.start_restart()
 
-    def snapshot_with_nano(self):
-        """The snapshot, with the water/meth controller's silence explained for the board fitted."""
+    def snapshot_shown(self):
+        """The snapshot, with a water/meth board that is on the bus but silent to firmware
+        commands explained as such rather than as missing."""
         result = self.snapshot()
-        for name, module in self.modules.items():
-            if name != 'watermeth':
-                continue
-            shown, board = result[name], self.meth_board(module)
-            shown['board'] = board
-            if shown['installed'] is None and board in METH_SILENT:
-                shown['short'], shown['note'] = METH_SILENT[board]
-            if self.nano_fitted(module):
-                shown['nano'] = True
-                shown['can_restart'] = not module.busy() and not self.busy()
+        module = self.modules.get('watermeth')
+        if module and result['watermeth']['installed'] is None and self.meth_on_bus(module):
+            result['watermeth']['short'], result['watermeth']['note'] = METH_ON_BUS_SILENT
         return result
 
     async def run(self):

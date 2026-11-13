@@ -83,21 +83,19 @@ async def main(browser_path):
                 await page.wait_for_function("document.getElementById('fw-state-gateway')?.textContent === 'Not answering'")
                 assert await page.locator('#firmware-modules li').count() == 3
                 assert await page.locator('#fw-state-taillights').inner_text() == 'Not answering'
-                # The water/meth controller: what its silence means follows the board its reports say is fitted.
+                # The water/meth controller: distinguish no telemetry from an updater that does not answer.
                 assert await page.locator('#fw-state-watermeth').inner_text() == 'Not answering'      # Nothing heard at all
                 async def meth_board(drive):
                     while True:
                         state.ingest(0x300, bytes([0, 0, 80, 0, 0, 40, 40, 0]))
-                        state.ingest(0x30F, bytes([2, 18, 0, 25, 0, 0, drive, 0]))   # A setting report: 0 relay, 1 PWM
+                        state.ingest(0x30F, bytes([2, 18, 0, 25, 0, 0, drive, 0]))   # A setting report: 2 pulse, 1 PWM
                         await asyncio.sleep(.2)
-                feed = asyncio.create_task(meth_board(0))
-                await page.wait_for_function("document.getElementById('fw-state-watermeth').textContent === 'USB only'")   # The Nano
-                assert 'flashed by USB' in await page.locator('#fw-detail-watermeth').inner_text()
-                feed.cancel()
-                feed = asyncio.create_task(meth_board(1))
-                await page.wait_for_function("document.getElementById('fw-state-watermeth').textContent === 'Not answering'")   # The ESP32
-                assert 'ESP32 board is on the bus but does not answer firmware commands' in await page.locator('#fw-detail-watermeth').inner_text()
-                feed.cancel()
+                for drive in (2, 1):  # Current pulse drive and earlier ESP32 PWM firmware.
+                    feed = asyncio.create_task(meth_board(drive))
+                    await page.wait_for_function("document.getElementById('fw-detail-watermeth').textContent.includes('ESP32 board is on the bus but does not answer firmware commands')")
+                    assert await page.locator('#fw-state-watermeth').inner_text() == 'Not answering'
+                    feed.cancel()
+                    await asyncio.gather(feed, return_exceptions=True)
                 assert await page.locator('#fw-install-gateway').is_hidden()
                 await module.query()
                 await page.wait_for_function("document.getElementById('fw-state-gateway').textContent === 'New build ready'")

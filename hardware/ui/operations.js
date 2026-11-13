@@ -155,8 +155,7 @@
     if (job.state === 'running') return ['busy', restart ? 'Restarting…' : `Installing ${Math.round(job.progress * 100)}%`, job.message, restart ? undefined : job.progress];
     if (job.state === 'failed') return ['bad', restart ? 'Restart failed' : 'Failed', job.message];
     if (job.state === 'done') return ['good', restart ? 'Restarted' : 'Updated', job.message];
-    // m.nano: the water/meth controller reports a relay pump (the Nano board), so its silence is normal.
-    if (m.installed == null) return m.nano ? ['idle', 'USB only', 'The Nano board is fitted: it is flashed by USB, not over CAN'] : ['warn', 'Not answering', m.note];
+    if (m.installed == null) return ['warn', 'Not answering', m.note];
     if (m.on_trial) return ['warn', 'On trial', `Build ${m.installed} is confirming itself`];
     if (m.new) return ['new', 'New build ready', `Running ${m.installed} · ${m.available} is on the Pi`];
     return ['good', 'Up to date', `Build ${m.installed}`];

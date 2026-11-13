@@ -159,10 +159,10 @@ async def settings_view(page):
     await wait_text(page, 'knock-set-amp-note', 'set by the controller')
 
 
-async def nano_controller(page):
-    """The controller in the car today reports no spectrum, frequency or gain: the page says so and keeps working."""
-    await page.evaluate("frogdashDemo.knockController('nano')")
-    await wait_text(page, 'knock-set-amp-note', 'needs the ESP32 controller')
+async def missing_detail(page):
+    """The controller temporarily reports no spectrum, frequency or gain: the page says so and keeps working."""
+    await page.evaluate("frogdashDemo.knockController('missing')")
+    await wait_text(page, 'knock-set-amp-note', 'Waiting for knock detail')
     for control in ('amp-mode', 'amp-step', 'bore', 'relearn'):
         assert await page.locator(f'#knock-set-{control}').is_disabled(), control
     assert await page.locator('#knock-set-multiplier').is_enabled() and await page.locator('#knock-set-freq-mode').is_enabled()
@@ -170,11 +170,11 @@ async def nano_controller(page):
     await page.locator('#knock-view-live-tab').click()
     await page.wait_for_function("!document.getElementById('knock-spectrum-missing').hidden")
     assert 'ESP32' in await text(page, '#knock-spectrum-missing')
-    assert await text(page, '#knock-amp') == '—' and await text(page, '#knock-amp-note') == 'FIXED BY THE CIRCUIT'
+    assert await text(page, '#knock-amp') == '—' and await text(page, '#knock-amp-note') == 'WAITING FOR GAIN REPORT'
     assert await text(page, '#knock-second') == '—' and await text(page, '#knock-found') == '—'
     assert await text(page, '#knock-freq-note') == 'FROM THE BORE'
-    assert '% of range' in await text(page, '#knock-swing') and await text(page, '#knock-rest') == '2.5 V'
-    assert await text(page, '#knock-energy-num') != '—' and await text(page, '#knock-status') == 'OK'   # The level graph is the Nano's too.
+    assert '% of range' in await text(page, '#knock-swing') and await text(page, '#knock-rest') == '—'
+    assert await text(page, '#knock-energy-num') != '—' and await text(page, '#knock-status') == 'OK'   # The basic level graph still works.
     assert await page.locator('#knock-spectrum-normal').get_attribute('d') == ''
     await page.evaluate("frogdashDemo.knockController('esp32')")
     await page.wait_for_function("document.getElementById('knock-spectrum-normal').getAttribute('d').startsWith('M')")
@@ -308,9 +308,9 @@ async def real_backend(browser):
         await went_out(sent, bytes([0x4D]))
         assert [data for _, data in sent] == [bytes([0x4B, 13]), bytes([0x4B, 0]), bytes([0x4C, 92]), bytes([0x4D])], sent
 
-        # The ESP32 reports stop (the Nano board is fitted): within a few seconds the page says so.
+        # The ESP32 detail reports stop: within a few seconds the page says so.
         held['esp32'] = False
-        await wait_text(page, 'knock-set-amp-note', 'needs the ESP32 controller', timeout=12000)
+        await wait_text(page, 'knock-set-amp-note', 'Waiting for knock detail', timeout=12000)
         assert await page.locator('#knock-set-relearn').is_disabled() and await page.locator('#knock-set-multiplier').is_enabled()
         assert await page.locator('#knock-set-blocked').is_hidden()
 
@@ -363,7 +363,7 @@ async def main(browser_path):
                 await settings_view(page)
                 if width == 1920:
                     await page.screenshot(path=str(ROOT / '.tmp/knock-settings.png'))
-                await nano_controller(page)
+                await missing_detail(page)
                 await knock_built_out(page)
                 await page.keyboard.press('Escape')
                 assert not await page.locator('#knock-overlay').evaluate('dialog => dialog.open')
@@ -378,7 +378,7 @@ async def main(browser_path):
                 await page.close()
         finally:
             await browser.close()
-    print('Knock page: spectrum, frequency, amplifier and second resonance live from CAN frames and in the preview; every setting changes; the Nano controller falls back cleanly; passed.')
+    print('Knock page: spectrum, frequency, amplifier and second resonance live from CAN frames and in the preview; every setting changes; missing detail reports fall back cleanly; passed.')
 
 
 if __name__ == '__main__':

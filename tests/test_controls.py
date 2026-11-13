@@ -61,7 +61,7 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
             await self.controls.execute('meth.arm', 1)
             self.assertTrue(self.controls.meth_wanted)
             self.assertEqual(__import__('json').loads(path.read_text()), {'armed': True})
-            # Key off and on: a new dash run, the Nano starts disarmed (mode OFF).
+            # Key off and on: a new dash run, the controller starts disarmed (mode OFF).
             restarted = State(clock=lambda: self.now)
             restarted.connected = True
             sent = []

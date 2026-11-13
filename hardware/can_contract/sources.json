@@ -1,12 +1,13 @@
 {
   "schema": 2,
-  "extension_version": 9,
+  "extension_version": 10,
   "upstream_header_sha256": "e788343d14948985305261d4b031a65d8acd5f9f5b8ffbb3dd746007911be220",
   "repositories": {
-    "DIYComfortControlModule": "fc61b490e257535e125dda9796a3beaa2bcdd246",
-    "DIYWaterMethInjection": "bbb377cd28fb6674a103ad73a49f2b07afd57632",
+    "DIYComfortControlModule": "bad4dcad41934b69a731579f245af1fcc5b7300d",
+    "DIYWaterMethInjection": "ebe92cf0c9283f9b570921f77f648c913de7bb89",
     "CustomTaillights": "498e4bf3c68711e4bea91cadaad0742f90a2c247"
   },
   "ecu_spec": "https://www.msextra.com/doc/pdf/Megasquirt_CAN_Broadcast.pdf",
-  "audit_date": "2026-09-27"
+  "audit_date": "2026-09-27",
+  "esp32_cleanup_date": "2026-11-13"
 }

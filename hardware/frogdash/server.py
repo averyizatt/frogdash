@@ -437,7 +437,7 @@ def create_app(state, adapter=None, connectivity=None):
             error = (state.firmware.restart if body['action'] == 'restart' else state.firmware.start)(body['module'])
             if error:
                 raise web.HTTPConflict(text=error)
-        return web.json_response(state.firmware.snapshot_with_nano(), headers={'Cache-Control': 'no-store'})
+        return web.json_response(state.firmware.snapshot_shown(), headers={'Cache-Control': 'no-store'})
 
     async def tune(request):
         # TunerStudio over the dash: a request for the kiosk launcher to collect (tune.py).

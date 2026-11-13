@@ -5,8 +5,8 @@ normally carries, and the loudest block of the last second. They are put back to
 here for the knock page. The single values in the same message (amplifier gain, knock
 frequency, second resonance) are ordinary signals, decoded in protocol.py.
 
-The Nano controller never sends 0x30E: `supported` is then false and the page shows what
-the Nano does report.
+A controller built without knock listening never sends 0x30E: `supported` is then false
+and the page shows what the knock state does report.
 """
 POINTS, PER_FRAME = 36, 6
 START_HZ, STEP_HZ = 2000, 300

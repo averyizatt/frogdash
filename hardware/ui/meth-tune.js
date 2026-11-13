@@ -1,11 +1,10 @@
-/* Water/meth tuning (can_protocol.h extension 5). Two kinds of controller:
-   - relay board: the pump is switched by a mechanical relay, so flow is set by how long
-     the pump runs in each slow cycle (at least half a second on, at least half a second
-     off, or on continuously);
-   - PWM board (ESP32): the pump runs through a MOSFET at a duty that follows boost, and
-     flow goes with the square root of the duty.
-   The controller says which it is (meth_tune.drive) and the page shows that kind's
-   settings. Every value shown is the controller's own reported setting (0x30F), and the
+/* Water/meth tuning (can_protocol.h extensions 4, 5 and 10). The ESP32 board runs the pump
+   on a MOSFET, full on or full off in pulses (meth_tune.drive 'pulse'): flow is set by how
+   long the pump runs in each slow cycle (at least half a second on, at least half a second
+   off, or on continuously), and every run starts with a short soft ramp. Its firmware before
+   that ran the pump continuously at a duty that followed boost (drive 'pwm', flow going
+   with the square root of the duty); the page shows that drive's settings while the board
+   reports it. Every value shown is the controller's own reported setting (0x30F), and the
    controller enforces the limits. Changes apply at once; Save stores them on the controller. */
 (() => {
   'use strict';
@@ -79,18 +78,18 @@
     if (name === 'period_ms') { values.max_on_ms = Math.min(values.max_on_ms, value); values.min_on_ms = Math.min(values.min_on_ms, values.max_on_ms); }
     return value;
   }
-  // The relay's rules for one cycle: no blips, no gaps too short to be worth a switch.
-  function relayOn(on, period) {
+  // The pulse rules for one cycle: no blips, no gaps too short to be worth a stop.
+  function pulseOn(on, period) {
     if (on >= period) return period;
     if (period - on < 500) on = Math.max(0, period - 500);
     return on < 500 ? 0 : on;
   }
-  // PWM: share of the nozzle's rated flow at a pump duty. Pressure rises roughly with duty
-  // and flow with the square root of pressure (meth_tune::flowFraction).
+  // The earlier duty drive: share of the nozzle's rated flow at a pump duty. Pressure rises
+  // roughly with duty and flow with the square root of pressure.
   const pwmFlow = duty => duty <= 0 ? 0 : duty >= 100 ? 1 : Math.sqrt(duty / 100);
   // Fuel flow estimate shared with the controller's dose limit (2.3 L, see meth_tune.h).
   const fuelGPerMin = (rpm, mapKpa) => rpm * mapKpa * 8.79e-4;
-  window.FrogdashMethTune = {RULES, DEFAULTS, applySetting, relayOn, pwmFlow, fuelGPerMin, keyName: key => NAMES[key - 1]};
+  window.FrogdashMethTune = {RULES, DEFAULTS, applySetting, pulseOn, pwmFlow, fuelGPerMin, keyName: key => NAMES[key - 1]};
 
   let latest = {}, presets = BUILT_IN.map(p => ({...p})), demoCustom = {}, loaded = false, busy = false;
   const mirror = () => latest.meth_tune || {supported: false, settings: {}};
@@ -217,14 +216,15 @@
         `Flow is an estimate: it goes with the square root of the duty. Boost and RPM come from the MicroSquirt over CAN; needs ${s.min_rpm} RPM` +
         `${s.rest_s ? `; rests ${s.rest_s} s after ${s.max_spray_s} s of spraying` : '; no spray time limit'}.`;
     }
-    const flow = ms => { const on = relayOn(ms, s.period_ms); return `${seconds(on)} in every ${seconds(s.period_ms)} (${Math.round(s.nozzle_ml_min * on / s.period_ms)} ml/min)`; };
-    const top = relayOn(s.max_on_ms, s.period_ms);
-    return `At ${tidy(s.start_psi_x10 / 10)} psi the pump runs ${flow(s.min_on_ms)}, rising to ${top >= s.period_ms ? `on continuously (${s.nozzle_ml_min} ml/min)` : flow(s.max_on_ms)} at ${tidy(s.full_psi_x10 / 10)} psi. ` +
+    const flow = ms => { const on = pulseOn(ms, s.period_ms); return `${seconds(on)} in every ${seconds(s.period_ms)} (${Math.round(s.nozzle_ml_min * on / s.period_ms)} ml/min)`; };
+    const top = pulseOn(s.max_on_ms, s.period_ms);
+    return `At ${tidy(s.start_psi_x10 / 10)} psi the pump runs full on ${flow(s.min_on_ms)}, rising to ${top >= s.period_ms ? `on continuously (${s.nozzle_ml_min} ml/min)` : flow(s.max_on_ms)} at ${tidy(s.full_psi_x10 / 10)} psi. ` +
       `${s.early_rpm ? `It also starts above ${s.early_rpm} RPM with the throttle open, before boost. ` : ''}` +
       `${s.hot_start_c ? `Intake air hotter than ${degrees(s.hot_start_c)} adds run time, reaching the full run at ${degrees(s.hot_full_c)}. ` : ''}` +
-      `${(s.hot_start_c || s.min_pre_temp_c) && m.ecu_temp ? 'Temperature comes from the MicroSquirt IAT until the sensor before the nozzle is fitted. ' : ''}` +
-      `${s.max_dose_pct ? `Never more than ${s.max_dose_pct}% of the engine's fuel flow. ` : 'No dose limit. '}` +
-      `The relay switches at most once every ${seconds(s.period_ms)}. Needs ${s.min_rpm} RPM from the dash` +
+      `${(s.hot_start_c || s.min_pre_temp_c) && m.ecu_temp ? 'Temperature comes from the MicroSquirt IAT while the sensor before the nozzle is not reading. ' : ''}` +
+      `${s.max_dose_pct ? `Never more than ${s.max_dose_pct}% of the engine's fuel flow: when the pump on all the time would be more, it runs in long pulses instead. ` : 'No dose limit. '}` +
+      `It starts at most once every ${seconds(s.period_ms)}, each time with a 0.4 s soft start, and sprays at full pressure. ` +
+      `Boost and RPM come from the MicroSquirt over CAN; needs ${s.min_rpm} RPM` +
       `${s.rest_s ? `; rests ${s.rest_s} s after ${s.max_spray_s} s of spraying` : '; no spray time limit'}.`;
   }
 

@@ -1,4 +1,4 @@
-"""Water/meth tuning (relay pulses and PWM duty): settings mirror, validation, presets, tank mixes and the flow maths."""
+"""Water/meth tuning (ESP32 pulses and PWM duty): settings mirror, validation, presets, tank mixes and the flow maths."""
 import random
 import tempfile
 import unittest
@@ -7,7 +7,7 @@ from pathlib import Path
 from aiohttp.test_utils import TestClient, TestServer
 from hardware.frogdash import methtune
 from hardware.frogdash.methtune import (BASE_NAMES, DEFAULTS, DUTY_NAMES, FLUIDS, KEYS, PRESET_NAMES, PRESETS, SETTINGS, TIMING_NAMES,
-                                        Cooling, apply_setting, fuel_g_min, plan, pwm_flow_fraction, relay_on_ms, valid)
+                                        Cooling, apply_setting, fuel_g_min, plan, pwm_flow_fraction, pulse_on_ms, valid)
 from hardware.frogdash.server import create_app
 from hardware.frogdash.state import State
 
@@ -17,10 +17,10 @@ METH_OFF = bytes.fromhex('0000640000282800')
 class Controller:
     """Stand-in for the water/meth controller: applies settings with the firmware's rules.
 
-    drive 0 is the relay board, 1 the PWM board (it reports duty as on-time out of 1000).
+    drive 2 is the pulse drive, 1 the earlier PWM drive (it reports duty as on-time out of 1000).
     count 17 is firmware from before the pump duty settings existed.
     """
-    def __init__(self, state, drive=0, count=19):
+    def __init__(self, state, drive=2, count=19):
         self.state, self.drive, self.count = state, drive, count
         self.defaults = {name: DEFAULTS[name] for key, (name, _, _, _) in SETTINGS.items() if key <= count}
         self.values, self.revision, self.unsaved, self.saved = dict(self.defaults), 0, False, dict(self.defaults)
@@ -29,7 +29,7 @@ class Controller:
         self.on_ms = 0
 
     def status(self):
-        period = 1000 if self.drive else self.values['period_ms']
+        period = 1000 if self.drive == 1 else self.values['period_ms']
         self.state.ingest(0x30F, bytes([3, self.revision, 1 if self.unsaved else 0, 0 if self.on_ms else 1])
                           + self.on_ms.to_bytes(2, 'big') + period.to_bytes(2, 'big'))
 
@@ -59,7 +59,7 @@ class Controller:
 
 
 class RulesTests(unittest.TestCase):
-    def test_presets_respect_the_relay_and_the_default_is_the_most_careful(self):
+    def test_presets_respect_pulse_limits_and_the_default_is_the_most_careful(self):
         self.assertEqual(SETTINGS[1][1], 1000)   # The cycle can never be set below 1000 ms.
         self.assertEqual(SETTINGS[2][1], 500)    # The pump never runs for less than half a second.
         for name, timing in PRESETS.items():
@@ -156,8 +156,8 @@ class RulesTests(unittest.TestCase):
         self.assertAlmostEqual(fuel_g_min(5500, 154), 744.5, delta=1)
         self.assertAlmostEqual(60 / fuel_g_min(5500, 154) * 100, 8.1, delta=.1)   # Nozzle flat out: 8% of fuel.
         self.assertAlmostEqual(60 / fuel_g_min(2500, 119.5) * 100, 22.8, delta=.2)  # Low airflow: far more.
-        self.assertEqual([relay_on_ms(on, 4000) for on in (300, 500, 2000, 3800, 4000, 9000)], [0, 500, 2000, 3500, 4000, 4000])
-        self.assertEqual(relay_on_ms(900, 1000), 500)
+        self.assertEqual([pulse_on_ms(on, 4000) for on in (300, 500, 2000, 3800, 4000, 9000)], [0, 500, 2000, 3500, 4000, 4000])
+        self.assertEqual(pulse_on_ms(900, 1000), 500)
         # PWM: flow goes with the square root of the duty, so a quarter duty is half the nozzle.
         self.assertEqual([round(pwm_flow_fraction(duty), 3) for duty in (0, 25, 50, 100, 140)], [0, .5, .707, 1, 1])
 
@@ -438,7 +438,7 @@ class TuningTests(unittest.IsolatedAsyncioTestCase):
             self.tick(state, controller)
         server.preset_pause = pause
         try:
-            controller.values['max_on_ms'] = 3000   # A relay-only setting: it does not decide the preset here.
+            controller.values['max_on_ms'] = 3000   # A pulse-only setting: it does not decide the preset here.
             await self.sync(state, controller)
             mirror = state.snapshot()['meth_tune']
             self.assertEqual((mirror['drive'], mirror['complete'], mirror['preset'], mirror['duty_pct']), ('pwm', True, 'Conservative', 0))
@@ -482,7 +482,7 @@ class TuningTests(unittest.IsolatedAsyncioTestCase):
             try:
                 await self.sync(state, controller)
                 mirror = state.snapshot()['meth_tune']
-                self.assertEqual((mirror['drive'], mirror['complete'], mirror['preset'], mirror['fluid']), ('relay', True, 'Conservative', 'Water'))
+                self.assertEqual((mirror['drive'], mirror['complete'], mirror['preset'], mirror['fluid']), ('pulse', True, 'Conservative', 'Water'))
                 self.assertEqual(mirror['settings'], {name: DEFAULTS[name] for name in BASE_NAMES})
                 with self.assertRaisesRegex(ValueError, 'no pump duty setting'):
                     await state.controls.execute('meth.setting', (KEYS['max_duty_pct'] << 16) | 60)

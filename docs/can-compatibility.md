@@ -1,10 +1,11 @@
 # CAN compatibility and commissioning
 
-Audited on 2026-09-27 against the current project revisions listed in
+Schema 2 was audited on 2026-09-27; ESP32 pulse drive was checked on 2026-11-13.
+Source revisions are listed in
 [CAN integration](can-integration.md#imported-wire-definitions) and pinned in
 [`sources.json`](../hardware/can_contract/sources.json). The shared CCM and
-taillight schema-2 headers are identical. Water/meth includes that same shared
-contract; its actual Nano command handlers were checked as well.
+taillight base schema-2 definitions are identical; additive extension versions can differ. Water/meth includes that same shared
+contract; its ESP32 command handlers use that contract.
 
 ## Bus and message ownership
 
@@ -14,18 +15,18 @@ and the [MCP2515 setup](mcp2515.md) provide the Pi transport. IDs below are hex.
 | Publisher | IDs | Purpose |
 | --- | --- | --- |
 | Taillights | 100, 102 | Left/right state and inputs, brightness, thermal status, fault events |
-| CCM dashboard firmware | 200, 202, 309 | Heartbeat, tach status, RPM runtime for the Nano |
+| CCM dashboard firmware | 200, 202, 309 | Heartbeat, tach status, RPM backup for the water/meth controller |
 | CCM sensor-gateway firmware | 202, 500, 501, 503 | Tach status, speed/RPM/fuel, cruise buttons, interior light state |
-| Dash (Pi), when no other sender | 309 | RPM runtime for the Nano, from MicroSquirt, tach or gateway RPM |
+| Dash (Pi), when no other sender | 309 | RPM backup for the water/meth controller, from MicroSquirt, tach or gateway RPM |
 | Dash (Pi) | 502 | Interior light commands to the sensor gateway |
 | Dash (Pi) | 680 | Firmware update commands and image data for a named module ([firmware-updates.md](firmware-updates.md), additive) |
-| Sensor gateway, taillight controller | 681 | Firmware build and update acknowledgements, each naming itself (additive) |
+| Sensor gateway, taillight controller, water/meth ESP32 | 681 | Firmware build and update acknowledgements, each naming itself (additive) |
 | CCM or Pi, one owner | 203 | GPS speed, altitude, satellites and validity |
 | External fuel controller | 204 | Fuel percentage and validity, new additive contract |
 | CCM wheel input task | 205 | Five debounced button levels and report sequence, new additive contract |
-| Water/meth Nano | 300, 302, 303, 306, 307, 308, 30A-30D | Meth, sensors, knock, configuration replies and acknowledgements |
-| Water/meth Nano | 30F | Pulse tuning status, settings and intake air temperatures (extension 4, additive) |
-| Water/meth ESP32 | 30F | The same message; two more settings (pump duty) and a drive-type byte in setting reports (extension 5, additive) |
+| Water/meth ESP32 | 300, 302, 303, 306, 307, 308, 30A-30D | Meth, sensors, knock, configuration replies and acknowledgements |
+| Water/meth ESP32 | 30F | Pulse tuning status, settings and intake air temperatures (extension 4, additive) |
+| Water/meth ESP32 | 30F | Drive-type byte: 2 for full-pressure pulses (extension 10); 1 for earlier PWM firmware (extension 5) |
 | Water/meth ESP32 | 302 | Once after each start, code 0A: the reset reason and what it did (armed again, holding after crashes, restarted over a silent bus); fault bit 6 on 300 while resting after crashes (extension 8, additive; [water-meth.md](water-meth.md)) |
 | Water/meth ESP32 | 310 | After a reset nobody asked for: its black box of the last 10 s, header then samples; the dash answers 13 on 301 (extension 9, additive; [water-meth.md](water-meth.md)) |
 | Water/meth ESP32 | 30E | Knock detail: amplifier gain, the knock frequency found, how the last pass sounded and two spectra, the first byte naming the report (extension 6, additive). Commands 4B, 4C, 4D on 301 set the amplifier gain, the bore and restart the frequency search ([knock.md](knock.md)) |
@@ -41,7 +42,7 @@ When moving GPS to the Pi, apply `comfort-disable-gps-tx.patch` and set
 `CCM_CAN_GPS_TX_ENABLED=0`. When moving meth/knock control to the Pi, apply
 `comfort-disable-meth-control.patch` and set `CCM_CAN_METH_CONTROL_ENABLED=0`.
 Both patches are in `hardware/compat/`; rebuild and flash the CCM afterward.
-The Nano consumes 309 to arm knock detection above its minimum RPM. With the CCM
+The ESP32 reads RPM from the MicroSquirt directly and accepts 309 as a backup. With the CCM
 dashboard firmware, keep its runtime transmission enabled and start the dash with
 `--no-engine-runtime`. With the sensor-gateway firmware (which sends no 309), the
 dash publishes it every 50 ms after listening 2 s for another sender; if one

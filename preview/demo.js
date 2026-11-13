@@ -25,17 +25,18 @@
   };
   let scenario = 'drive', paused = false, elapsed = 3, previous = performance.now();
   let tick = 0, testTimer, lightingMode = 0;
-  // Simulated water/meth tuning (can_protocol.h extension 5); rules come from meth-tune.js.
-  // The relay board is simulated unless the address ends in ?meth=pwm (the ESP32 board).
+  // Simulated water/meth tuning (can_protocol.h extensions 4, 5, 10); rules come from meth-tune.js.
+  // The ESP32 board's full-on pulses, or with ?meth=pwm at the end of the address its earlier
+  // duty drive.
   const mt = () => window.FrogdashMethTune;
   let mtLive = null, mtSaved = null, mtRevision = 1, mtAck = null;
-  let mtDrive = new URLSearchParams(location.search).get('meth') === 'pwm' ? 'pwm' : 'relay';
+  let mtDrive = new URLSearchParams(location.search).get('meth') === 'pwm' ? 'pwm' : 'pulse';
   // Simulated knock controller. The ESP32 board (can_protocol.h extension 6: spectrum, the
-  // knock frequency it finds, amplifier gain) unless the address ends in ?knock=nano, or
+  // knock frequency it finds, amplifier gain) unless the address ends in ?knock=missing, or
   // ?knock=off: firmware built without knock listening (ESP32_KNOCK / NANO_KNOCK 0, both
   // boards since November 2026), which reports knock not enabled and sends nothing else.
   const knockParam = new URLSearchParams(location.search).get('knock');
-  const knockSim = {esp32: knockParam !== 'nano', off: knockParam === 'off', ringsAt: 6250, learnedFrom: 0, fixedStep: -1, top: 30, boreMm: 96};
+  const knockSim = {esp32: knockParam !== 'missing', off: knockParam === 'off', ringsAt: 6250, learnedFrom: 0, fixedStep: -1, top: 30, boreMm: 96};
   const KNOCK_OFF = "Knock listening is off in the water/meth controller's firmware for now: nothing to change here";
   const KNOCK_ESP32_ONLY = ['knock.amp_gain', 'knock.bore', 'knock.relearn'];
   const KNOCK_SETTINGS = ['knock.threshold', 'knock.multiplier', 'knock.min_rpm', 'knock.min_map', 'knock.hold', 'knock.level_gain',
@@ -143,8 +144,8 @@
   // Static scenarios remain available for repeatable design checks.
   // This entire transport is loaded only by the standalone preview.
   window.frogdashDemo = {scenario: setScenario, methPreset(values) { mtLive = {...mtLive, ...values}; mtRevision++; },
-    knockController(kind) { knockSim.esp32 = kind !== 'nano'; knockSim.off = kind === 'off'; },
-    methDrive(drive) { mtDrive = drive === 'pwm' ? 'pwm' : 'relay'; mtRevision++; }};
+    knockController(kind) { knockSim.esp32 = kind !== 'missing'; knockSim.off = kind === 'off'; },
+    methDrive(drive) { mtDrive = drive === 'pwm' ? 'pwm' : 'pulse'; mtRevision++; }};
   class FrogdashDemoSocket {
     static OPEN = 1;
     readyState = 1;
@@ -208,7 +209,7 @@
       if (hotAir) wanted = heat;
       const share = Math.min(1, fuel * mtLive.max_dose_pct / 100 / mtLive.nozzle_ml_min);
       if (mtLive.max_dose_pct) wanted = Math.min(wanted, Math.floor(period * (pwm ? share * share : share)));
-      const onMs = hold !== 'NONE' ? 0 : pwm ? (wanted >= low ? wanted : 0) : mt().relayOn(wanted, period);
+      const onMs = hold !== 'NONE' ? 0 : pwm ? (wanted >= low ? wanted : 0) : mt().pulseOn(wanted, period);
       if (hold === 'NONE' && !onMs) hold = 'DOSE_LIMIT';
       if (onMs) { current['meth.state'] = 'SPRAYING'; current['meth.duty_pct'] = Math.round(onMs * 100 / period); }
       const flow = mtLive.nozzle_ml_min * (pwm ? mt().pwmFlow(onMs / 10) : onMs / period);
@@ -269,7 +270,7 @@
       if (test) reasons['meth.arm'] = reasons['meth.test'] = reasons['meth.boost'] = 'Stop the pump test first';
       if (readings['meth.state'] === 'ARMED') reasons['meth.test'] = reasons['meth.boost'] = 'Disarm before adjusting or testing';
       if (!(speed < 1)) for (const action of TL_PARKED) reasons[action] = 'Park first: shows and overrides replace the turn signals';
-      if (!knockSim.esp32) for (const action of KNOCK_ESP32_ONLY) reasons[action] = 'This setting needs the ESP32 water/meth controller';
+      if (!knockSim.esp32) for (const action of KNOCK_ESP32_ONLY) reasons[action] = 'Waiting for knock detail from the ESP32 water/meth controller';
       if (knockSim.off) for (const action of [...KNOCK_SETTINGS, 'knock.enable', 'knock.clear_events', 'knock.refresh']) reasons[action] = KNOCK_OFF;
       if (scenario === 'offline') {
         for (const button of document.querySelectorAll('[data-action]')) reasons[button.dataset.action] = 'Simulated controller offline';
@@ -335,7 +336,7 @@
           readings['knock.config.flags'] = value ? readings['knock.config.flags'] | 2 : readings['knock.config.flags'] & ~2;
           detail = value ? 'Simulated: the knock frequency is found from the engine.' : detail; break;
         case 'knock.amp_gain': case 'knock.bore': case 'knock.relearn':
-          if (!knockSim.esp32) { this.emit({type: 'command_result', request_id, status: 'rejected', message: 'This setting needs the ESP32 water/meth controller'}); return; }
+          if (!knockSim.esp32) { this.emit({type: 'command_result', request_id, status: 'rejected', message: 'Waiting for knock detail from the ESP32 water/meth controller'}); return; }
           if (action === 'knock.amp_gain') { knockSim.fixedStep = value ? Math.min(value - 1, knockSim.top) : -1; detail = value ? `Simulated: gain held at position ${knockSim.fixedStep}.` : 'Simulated: the controller sets the gain.'; }
           else {
             // A new bore, or learning again: the bore's figure for a few seconds, then the engine's.
