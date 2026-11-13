@@ -457,7 +457,8 @@ class Controls:
         """
         jobs = (('taillight guard', self.check_lighting), ('taillight settings sync', self.sync_taillight),
                 ('water/meth settings sync', self.sync_meth_tune), ('intake temperature to water/meth', self.send_intake_temp),
-                ('interior lights refresh', self.refresh_interior), ('water/meth re-arm', self.keep_meth_armed))
+                ('interior lights refresh', self.refresh_interior), ('water/meth re-arm', self.keep_meth_armed),
+                ('water/meth black box answer', self.answer_black_box))
         while not self.closing:
             await asyncio.sleep(.25)
             for name, job in jobs:
@@ -521,6 +522,12 @@ class Controls:
             await self.sender(0x101, bytes([0x09, 3, 0]))
         except (OSError, TimeoutError):
             pass
+
+    async def answer_black_box(self):
+        """Tell the ESP32 water/meth board its black box arrived, so it stops sending it (blackbox.py)."""
+        box = getattr(self.state, 'meth_black_box', None)
+        if box:
+            await box.answer()
 
     async def sync_meth_tune(self):
         """Ask the water/meth controller for its settings whenever its revision moved."""

@@ -382,13 +382,28 @@ controller started (brownout (supply dip)): the pump was running, armed again by
 gentler pump start after resets*. A power-on start is logged as information; anything
 else as a warning, since it is the board recovering from something.
 
+**A black box of the last ten seconds.** The board keeps what it was doing, ten times a
+second, in memory a reset does not clear: pump duty (at the end of each tenth of a second
+and its highest), manifold pressure and RPM from the MicroSquirt, why it was holding, armed
+and soft-start, the pump starting and stopping, how long since anything was heard on CAN,
+the CAN controller set up again or frames not getting out, the longest gap between control
+passes, the pump keeper stepping in, the air before the nozzle and the free memory. No
+extra wiring. After a reset nobody asked for, it sends the record left behind to the dash
+(contract extension 9) and again every 5 s until the dash answers. The dash writes it to
+the event log with every sample, so it goes up with the next report, and in words: for
+example *water/meth black box (brownout (supply dip)), the 10.0 s before it: pump on at
+30%, started 0.4 s before the end (still in its soft start); 132 kPa, 3392 rpm; CAN heard
+to the end; longest control gap 21 ms*. The Water / meth tab shows the latest under *Last
+controller restart*. After power on, a firmware update or the dash's Restart there is
+nothing to send.
+
 What software cannot do: if the CAN module itself latches up (a transient can leave a
 CAN chip stuck until its power is removed), no reset of the ESP32 brings it back, because
 the module keeps its power. Powering the CAN module through a small switch that a spare
 ESP32 pin controls would let the board power-cycle it as a last step; say if you want
 that, and which pin.
 
-## CAN messages (contract extension 4, and 5 and 8 for the ESP32 board)
+## CAN messages (contract extension 4, and 5, 8 and 9 for the ESP32 board)
 
 Additive: no existing message changed.
 
@@ -399,6 +414,8 @@ Additive: no existing message changed.
 | `0x301` cmd `0x12` | Dash | The MicroSquirt's intake temperature, about four times a second, not acknowledged |
 | `0x30F` | Controller | Acknowledgements, settings, status every 0.5 s (why it is holding, run time, cycle), temperatures every 0.2 s |
 | `0x302` code `0x0A` | ESP32 board | Once after each start: why it started (the chip's reset reason) and what it did (extension 8) |
+| `0x310` | ESP32 board | After a reset nobody asked for: its black box, the last 10 s, a header and the samples seven bytes a frame (extension 9) |
+| `0x301` cmd `0x13` | Dash | The black box arrived: stop sending it (extension 9) |
 
 Extension 5 adds settings 18 and 19 (lowest and highest pump duty) and one byte in each
 setting report saying how the pump is driven (0 relay, 1 PWM). A PWM controller reports
@@ -412,3 +429,9 @@ crashes, 8 new firmware on trial, 16 restarted itself over a silent CAN bus, 32 
 quiet ADC, 64 pump soft start lengthened. In the state message (`0x300`), fault bit 6
 (64) means the ESP32 board is resting after three crashes since the ignition came on.
 The bit was unused and the Nano never sets it.
+
+Extension 9 adds the black box: a header `FF vv nn ww rr ff sH sL` (layout version, samples,
+window in 10 ms, reset reason, data frames, 16-bit sum of the bytes) and data frames
+`ii` + seven bytes, oldest sample first, ten bytes a sample as `black_box.h` in
+DIYWaterMethInjection lays them out. The dash checks the sum, writes each record once, and
+answers `0x301 0x13`; the board tries six times, five seconds apart.

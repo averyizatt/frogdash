@@ -47,6 +47,18 @@ int main() {
   emit("knock_fault", packEngineKnockFault(1,2,3,4));
   // Extension 8: the ESP32 water/meth board's start report (a brownout, pump running, armed again).
   emit("meth_start", packMethStartReport(9, meth_start_flag::PUMP_WAS_ON | meth_start_flag::ARMED_AGAIN));
+  // Extension 9: a black box of two samples after a brownout: the pump started at 32% in its
+  // soft start, then 35%. The header and its three data frames.
+  {
+    const uint8_t box[20] = {64, 64, 132, 106, 0x30, 0x07, 1, 21, 75, 124,
+                             70, 70, 132, 106, 0x10, 0x03, 1, 22, 75, 124};
+    uint16_t sum = 0;
+    for (uint8_t b : box) sum = static_cast<uint16_t>(sum + b);
+    emit("meth_box_header", packMethBlackBoxHeader(2, 10, 9, 3, sum));
+    emit("meth_box_data0", packMethBlackBoxData(0, box, 20));
+    emit("meth_box_data1", packMethBlackBoxData(1, box, 20));
+    emit("meth_box_data2", packMethBlackBoxData(2, box, 20));
+  }
   emit("meth.arm", packMethArm(true));
   emit("meth.test", packMethManualTest(25));
   emit("meth.stop", packMethStopManualTest());

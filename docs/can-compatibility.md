@@ -27,6 +27,7 @@ and the [MCP2515 setup](mcp2515.md) provide the Pi transport. IDs below are hex.
 | Water/meth Nano | 30F | Pulse tuning status, settings and intake air temperatures (extension 4, additive) |
 | Water/meth ESP32 | 30F | The same message; two more settings (pump duty) and a drive-type byte in setting reports (extension 5, additive) |
 | Water/meth ESP32 | 302 | Once after each start, code 0A: the reset reason and what it did (armed again, holding after crashes, restarted over a silent bus); fault bit 6 on 300 while resting after crashes (extension 8, additive; [water-meth.md](water-meth.md)) |
+| Water/meth ESP32 | 310 | After a reset nobody asked for: its black box of the last 10 s, header then samples; the dash answers 13 on 301 (extension 9, additive; [water-meth.md](water-meth.md)) |
 | Water/meth ESP32 | 30E | Knock detail: amplifier gain, the knock frequency found, how the last pass sounded and two spectra, the first byte naming the report (extension 6, additive). Commands 4B, 4C, 4D on 301 set the amplifier gain, the bore and restart the frequency search ([knock.md](knock.md)) |
 | Configuration requester | 305 | Meth configuration request |
 | Control owner | 101, 301 | Lighting and meth/knock commands |

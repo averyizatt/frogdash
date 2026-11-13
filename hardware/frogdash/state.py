@@ -10,6 +10,7 @@ from .controls import Controls
 from .taillight import TaillightSettings
 from .methtune import MethTune
 from .knockview import KnockDetail
+from .blackbox import ID as BLACK_BOX_ID, BlackBox
 from .fuel import FuelGauge
 from .parking import parked
 from .race import Race
@@ -87,6 +88,7 @@ class State:
         self.taillight = TaillightSettings(clock)
         self.meth_tune = MethTune(clock)
         self.knock_detail = KnockDetail(clock)
+        self.meth_black_box = BlackBox(self)  # The ESP32 water/meth board's last ten seconds before a reset
         self.fuel_gauge = FuelGauge(clock)  # Display damping only: no sender, calibration or settings.
         self.runtime = EngineRuntime(self, enabled=mode == 'socketcan')
         self.tune = Tune(self)
@@ -177,6 +179,8 @@ class State:
             self.meth_tune.observe(data)
         elif can_id == 0x30E:
             self.knock_detail.observe(data)
+        elif can_id == BLACK_BOX_ID:
+            self.meth_black_box.observe(data)
         elif can_id == 0x681 and self.firmware:
             self.firmware.observe(data)
         self.controls.observe(can_id, data)
@@ -287,7 +291,7 @@ class State:
                 "controls": self.guarded('controls', self.controls.status) or {'reasons': {}},
                 "taillight": self.guarded('taillight settings', self.taillight.snapshot),
                 "meth_tune": self.guarded('water/meth tuning', self.meth_tune.snapshot),
-                "knock_detail": self.guarded('knock detail', self.knock_detail.snapshot), "events": list(self.events), "race": race,
+                "knock_detail": self.guarded('knock detail', self.knock_detail.snapshot), "meth_black_box": self.guarded('water/meth black box', self.meth_black_box.snapshot, None), "events": list(self.events), "race": race,
                 "drive": self.guarded('drive alerts', self.driving.snapshot), "trip": self.guarded('trip', self.trip.snapshot),
                 "operations": self.guarded('dash management', self.operations.status), "system": dict(self.health.status) if self.health else None,
                 "can_errors": dict(self.can_errors),

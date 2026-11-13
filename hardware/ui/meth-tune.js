@@ -258,6 +258,10 @@
       'meth-live-post': value('meth.post_temp_c') !== null ? `${temp('meth.post_temp_c')}${postFromEcu ? ' (MicroSquirt IAT)' : ''}`
         : ecuIat !== null ? `${shownTemp(ecuIat)} (MicroSquirt IAT)` : 'No sensor reading',
       'meth-live-drop': cooling,
+      // The ESP32 board's black box from its last restart nobody asked for (blackbox.py).
+      'meth-live-restart': latest.meth_black_box
+        ? `${new Date(latest.meth_black_box.at * 1000).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})} ${latest.meth_black_box.text}`
+        : 'None since the dash started',
     };
     for (const [id, content] of Object.entries(text)) if ($(id).textContent !== content) $(id).textContent = content;
     $('meth-live-hold').dataset.state = m.hold === 'NONE' ? 'on' : !m.hold || ['DISARMED', 'BELOW_BOOST'].includes(m.hold) ? 'idle' : 'held';

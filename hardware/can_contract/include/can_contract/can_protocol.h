@@ -860,7 +860,7 @@ inline CanFrame packMethConfigAck(uint8_t acceptedVersion, uint8_t status, uint8
 
 // BEGIN FROGDASH ADDITIVE EXTENSION
 // Existing schema-2 IDs, layouts and ACK schema remain unchanged.
-constexpr uint8_t FROGDASH_EXTENSION_VERSION = 8;
+constexpr uint8_t FROGDASH_EXTENSION_VERSION = 9;
 constexpr uint16_t ID_FUEL_LEVEL_STATE = 0x204;
 constexpr uint8_t FUEL_LEVEL_DLC = 3;
 constexpr uint32_t FUEL_LEVEL_TX_MS = 500;
@@ -1427,6 +1427,55 @@ inline CanFrame packMethStartReport(uint8_t resetReason, uint8_t flags) {
   frame.data[1] = static_cast<uint8_t>(FaultSeverity::INFO);
   frame.data[2] = resetReason;
   frame.data[3] = flags;
+  return frame;
+}
+// Extension 9 (November 2026): the ESP32 water/meth board's black box (DIYWaterMethInjection
+// include/black_box.h): its last ten seconds, one sample per 100 ms, kept through a reset.
+// After a reset nobody asked for, it sends the record left behind on ID_METH_BLACK_BOX: one
+// header frame, then the samples' bytes seven to a frame, oldest sample first. It sends it
+// again every 5 s until the dash answers meth_tune_command::BLACK_BOX_RECEIVED on 0x301
+// (DLC 1, not acknowledged), six times at most.
+//   header  FF vv nn ww rr ff sH sL   version, samples, window in 10 ms, reset reason
+//                                     (esp_reset_reason_t), data frames, 16-bit sum of the bytes
+//   data    ii d0 d1 d2 d3 d4 d5 d6   ii = 0.. the frame's place; the last one padded with 0
+// Each sample is meth_black_box::SAMPLE_BYTES bytes, laid out as black_box::Byte.
+#define CAN_PROTOCOL_HAS_METH_BLACK_BOX 1
+constexpr uint16_t ID_METH_BLACK_BOX = 0x310;
+namespace meth_black_box {
+constexpr uint8_t HEADER = 0xFF;
+constexpr uint8_t VERSION = 1;
+constexpr uint8_t SAMPLE_BYTES = 10;
+constexpr uint8_t MAX_SAMPLES = 100;
+constexpr uint8_t BYTES_PER_FRAME = 7;
+}  // namespace meth_black_box
+namespace meth_tune_command {
+constexpr uint8_t BLACK_BOX_RECEIVED = 0x13;
+}  // namespace meth_tune_command
+inline CanFrame packMethBlackBoxHeader(uint8_t samples, uint8_t windowMsDiv10, uint8_t resetReason, uint8_t frames,
+                                       uint16_t sum) {
+  CanFrame frame{};
+  frame.id = ID_METH_BLACK_BOX;
+  frame.dlc = 8;
+  frame.data[0] = meth_black_box::HEADER;
+  frame.data[1] = meth_black_box::VERSION;
+  frame.data[2] = samples;
+  frame.data[3] = windowMsDiv10;
+  frame.data[4] = resetReason;
+  frame.data[5] = frames;
+  frame.data[6] = static_cast<uint8_t>(sum >> 8);
+  frame.data[7] = static_cast<uint8_t>(sum & 0xFFU);
+  return frame;
+}
+// Frame `index` of the record: bytes [index * 7, index * 7 + 7) of all of it (total bytes).
+inline CanFrame packMethBlackBoxData(uint8_t index, const uint8_t* bytes, uint16_t total) {
+  CanFrame frame{};
+  frame.id = ID_METH_BLACK_BOX;
+  frame.dlc = 8;
+  frame.data[0] = index;
+  for (uint8_t i = 0; i < meth_black_box::BYTES_PER_FRAME; ++i) {
+    const uint16_t at = static_cast<uint16_t>(index * meth_black_box::BYTES_PER_FRAME + i);
+    frame.data[1 + i] = at < total ? bytes[at] : 0;
+  }
   return frame;
 }
 // END FROGDASH ADDITIVE EXTENSION

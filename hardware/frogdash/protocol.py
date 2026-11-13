@@ -18,7 +18,8 @@ LENGTHS = {0x100: 7, 0x102: 4, 0x103: 8, 0x200: 8, 0x202: 8, 0x203: 8, 0x204: 3,
            0x500: 8, 0x501: 4, 0x503: 7,
            0x300: 8, 0x302: 4, 0x303: 8, 0x304: 8, 0x305: 1,
            0x306: 4, 0x307: 8, 0x308: 4, 0x309: 4, 0x30A: 4,
-           0x30B: 8, 0x30C: 8, 0x30D: 8, 0x30E: 8, 0x30F: 8}
+           0x30B: 8, 0x30C: 8, 0x30D: 8, 0x30E: 8, 0x30F: 8,
+           0x310: 8}   # The ESP32 water/meth board's black box (extension 9): put together in blackbox.py
 TIMEOUTS = {0x100: .5, 0x103: 1.5, 0x200: 1.5, 0x202: .5, 0x203: 2, 0x204: 2, 0x205: .35,
             0x500: .5, 0x501: .5, 0x503: .5,
             0x300: .5, 0x303: 1.5, 0x304: 3, 0x307: .5,
@@ -216,6 +217,10 @@ def decode(can_id, data):
             put("meth.post_temp_c", post if d[5] & 2 else None, "live" if d[5] & 2 else "unavailable")
             both = d[5] & 3 == 3
             put("meth.temp_drop_c", round(pre - post, 1) if both else None, "live" if both else "unavailable")
+    elif can_id == 0x310:
+        # The ESP32 board's black box after a restart (extension 9): which frame of the record
+        # (255: its header). The record itself is put together in blackbox.py.
+        put("meth.black_box.frame", d[0])
     elif can_id == 0x30C:
         fields("knock.config", "flags threshold_offset multiplier min_rpm min_map_kpa debounce_ms gain center_hz",
                [d[0], d[1], d[2] / 10, d[3] * 100, d[4], d[5] * 10, d[6] / 10, d[7] * 100])
