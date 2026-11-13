@@ -1,0 +1,32 @@
+2026-11-13 18:46:46 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 18:46:58 UTC  INFO   gps      Satellite data saved: 7 satellite orbits, 12 almanac entries
+2026-11-13 18:48:36 UTC  INFO   firmware Water/meth controller updated to build ecfbf127 (sent in 2 min 23 s, 2.8 KB/s) · 26 blocks resent · ended at 1 frame(s) per 2 ms
+2026-11-13 18:48:36 UTC  INFO   module   water/meth controller started (software restart): new firmware on trial  {"frame":"0x302#0A000308"}
+2026-11-13 18:48:40 UTC  WARN   module   water/meth controller started (software restart): it restarted itself: the ADC went quiet  {"frame":"0x302#0A000320"}
+2026-11-13 18:48:41 UTC  WARN   module   water/meth black box (software restart), the 4.4 s before it: pump off; no fresh MicroSquirt data at the end; CAN heard to the end; CAN set up again in 1 of the windows; longest control gap 44 ms; least free memory 246 KB  {"window_ms":100,"columns":["t_s","duty_pct","duty_max_pct","map_kpa","rpm","hold","state","events","rx_age_ms","loop_gap_ms","pre_c","heap_kb"],"rows":[[-4.3,0.0,0.0,null,null,"DISARMED",0,18,70,20,null,248],[-4.2,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,248],[-4.1,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,248],[-4.0,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,248],[-3.9,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,248],[-3.8,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,248],[-3.7,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,248],[-3.6,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,248],[-3.5,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,248],[-3.4,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-3.3,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-3.2,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,246],[-3.1,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-3.0,0.0,0.0,null,null,"DISARMED",0,2,20,44,null,246],[-2.9,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-2.8,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,246],[-2.7,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-2.6,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-2.5,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,246],[-2.4,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-2.3,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-2.2,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,246],[-2.1,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-2.0,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,246],[-1.9,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,246],[-1.8,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-1.7,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-1.6,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,246],[-1.5,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,246],[-1.4,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-1.3,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-1.2,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-1.1,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,246],[-1.0,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-0.9,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-0.8,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,246],[-0.7,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-0.6,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-0.5,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-0.4,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-0.3,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,246],[-0.2,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[-0.1,0.0,0.0,null,null,"DISARMED",0,2,40,20,null,246],[0.0,0.0,0.0,null,null,"DISARMED",0,2,50,20,null,246]]}
+2026-11-13 18:49:54 UTC  INFO   firmware Gateway updated to build d32a7b12 (sent in 56 s, 6.1 KB/s) · 16 blocks resent · ended at 4 frame(s) per 1 ms
+2026-11-13 18:52:03 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 18:53:09 UTC  WARN   module   taillights module not heard (stale)
+2026-11-13 18:53:09 UTC  WARN   module   watermeth module not heard (stale)
+2026-11-13 18:53:09 UTC  WARN   module   knock module not heard (stale)
+2026-11-13 18:53:11 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":0}
+2026-11-13 18:53:11 UTC  WARN   alert    Alert shown: WATER/METH CONTROLLER NOT RESPONDING  {"vehicle.speed_kph":0.1548,"vehicle.fuel_pct":39.0}
+2026-11-13 18:53:11 UTC  INFO   power    Ignition power off: on the battery
+2026-11-13 18:53:15 UTC  INFO   dash     Dash stopping
+2026-11-13 18:53:25 UTC  INFO   dash     Dash started (da77531)
+2026-11-13 18:53:25 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-13 18:53:25 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-13 18:53:27 UTC  INFO   module   taillights started (software restart): after its restart on settled power  {"frame":"0x102#08000301"}
+2026-11-13 18:53:27 UTC  INFO   gps      Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-11-13 18:53:29 UTC  INFO   meth     Not armed again yet: Injection disabled: the controller has no manifold pressure: it takes boost from the MicroSquirt's CAN broadcast (0x5E8 or 0x5F2), which is not reaching it. Check the ECU's CAN broadcast is switched on
+2026-11-13 18:53:29 UTC  INFO   engine   Engine stopped
+2026-11-13 18:53:29 UTC  INFO   power    Ignition power on
+2026-11-13 23:29:47 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:30:00 UTC  INFO   dash     Dash stopping
+2026-11-13 23:30:03 UTC  INFO   dash     Dash started (7b345f8)
+2026-11-13 23:30:03 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-13 23:30:03 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-13 23:30:05 UTC  INFO   gps      Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-11-13 23:30:07 UTC  INFO   meth     Not armed again yet: Injection disabled: the controller has no manifold pressure: it takes boost from the MicroSquirt's CAN broadcast (0x5E8 or 0x5F2), which is not reaching it. Check the ECU's CAN broadcast is switched on
+2026-11-13 23:30:07 UTC  INFO   engine   Engine stopped
+2026-11-13 23:30:07 UTC  INFO   power    Ignition power on
