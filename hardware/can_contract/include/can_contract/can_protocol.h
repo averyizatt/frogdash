@@ -860,7 +860,7 @@ inline CanFrame packMethConfigAck(uint8_t acceptedVersion, uint8_t status, uint8
 
 // BEGIN FROGDASH ADDITIVE EXTENSION
 // Existing schema-2 IDs, layouts and ACK schema remain unchanged.
-constexpr uint8_t FROGDASH_EXTENSION_VERSION = 7;
+constexpr uint8_t FROGDASH_EXTENSION_VERSION = 8;
 constexpr uint16_t ID_FUEL_LEVEL_STATE = 0x204;
 constexpr uint8_t FUEL_LEVEL_DLC = 3;
 constexpr uint32_t FUEL_LEVEL_TX_MS = 500;
@@ -1397,6 +1397,38 @@ constexpr uint8_t RESTART = 0x07;
 namespace config_ack_status {
 constexpr uint8_t BUSY = 0x04;
 }  // namespace config_ack_status
+// Extension 8 (November 2026): the ESP32 water/meth controller says why it started. Once
+// its CAN is up after each start it sends one 0x302: code STARTED, severity INFO, data0
+// the chip's reset reason as ESP-IDF numbers it (esp_reset_reason_t: 1 power on,
+// 3 software restart, 4 crash, 5-7 watchdogs, 9 brownout, 14 power glitch, 15 CPU
+// lock-up), data1 the meth_start_flag bits. In ID_ENGINE_METH_STATE's fault flags, bit 6
+// (64) means injection is held off after repeated crashes. The Nano sends neither.
+#define CAN_PROTOCOL_HAS_METH_START_REPORT 1
+namespace meth_fault_code {
+constexpr uint8_t STARTED = 0x0A;
+}  // namespace meth_fault_code
+namespace meth_start_flag {
+constexpr uint8_t PUMP_WAS_ON = 1 << 0;         // The pump was running when the reset came
+constexpr uint8_t ARMED_AGAIN = 1 << 1;         // Armed again by itself: it was armed before
+constexpr uint8_t CRASH_HOLD = 1 << 2;          // Holding injection off after repeated crashes
+constexpr uint8_t ON_TRIAL = 1 << 3;            // New firmware from the dash, not yet confirmed
+constexpr uint8_t RESTART_SILENT_CAN = 1 << 4;  // It restarted itself: the CAN bus stayed silent
+constexpr uint8_t RESTART_ADC = 1 << 5;         // It restarted itself: the ADC went quiet
+constexpr uint8_t GENTLE_START = 1 << 6;        // Pump soft start lengthened: a reset came while it ran
+}  // namespace meth_start_flag
+namespace meth_fault_flag {
+constexpr uint8_t CRASH_HOLD = 1 << 6;
+}  // namespace meth_fault_flag
+inline CanFrame packMethStartReport(uint8_t resetReason, uint8_t flags) {
+  CanFrame frame{};
+  frame.id = ID_ENGINE_METH_FAULT;
+  frame.dlc = 4;
+  frame.data[0] = meth_fault_code::STARTED;
+  frame.data[1] = static_cast<uint8_t>(FaultSeverity::INFO);
+  frame.data[2] = resetReason;
+  frame.data[3] = flags;
+  return frame;
+}
 // END FROGDASH ADDITIVE EXTENSION
 
 }  // namespace can_protocol

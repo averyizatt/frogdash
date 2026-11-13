@@ -180,6 +180,25 @@ async def nano_controller(page):
     await page.wait_for_function("document.getElementById('knock-spectrum-normal').getAttribute('d').startsWith('M')")
 
 
+async def knock_built_out(page):
+    """Firmware built without knock listening (both boards since November 2026): said once, plainly, and nothing to set."""
+    await page.evaluate("frogdashDemo.knockController('off')")
+    await page.locator('#knock-view-live-tab').click()
+    await wait_text(page, 'knock-source', "OFF IN THE CONTROLLER'S FIRMWARE")
+    assert await text(page, '#knock-status') == 'OFF'
+    assert "off in the water/meth controller's firmware" in await text(page, '#knock-spectrum-missing')
+    assert await text(page, '#knock-amp-note') == ''                      # Not "fixed by the circuit": nothing is listening.
+    await page.locator('#knock-view-settings-tab').click()
+    await wait_text(page, 'knock-set-blocked', "off in the water/meth controller's firmware")
+    for control in ('multiplier', 'offset', 'min-map', 'freq-mode', 'bandwidth', 'amp-mode', 'bore', 'relearn'):
+        assert await page.locator(f'#knock-set-{control}').is_disabled(), control
+    assert "firmware" in await text(page, '#knock-set-amp-note')
+    await page.evaluate("frogdashDemo.knockController('esp32')")
+    await page.locator('#knock-view-live-tab').click()
+    await page.wait_for_function("document.getElementById('knock-spectrum-normal').getAttribute('d').startsWith('M')")
+    assert await text(page, '#knock-status') != 'OFF'
+
+
 def controller_frames(fixed_step=None):
     """What the ESP32 controller sends: knock status and settings, and the six kinds of 0x30E."""
     step = 12 if fixed_step is None else fixed_step
@@ -218,7 +237,7 @@ async def real_backend(browser):
     site = web.TCPSite(runner, '127.0.0.1', 0)
     await site.start()
     port = site._server.sockets[0].getsockname()[1]
-    sent, held = [], {'step': None, 'esp32': True, 'moving': False}
+    sent, held = [], {'step': None, 'esp32': True, 'moving': False, 'knock': True}
     state.gps = GPS(transmit=False)
 
     async def sender(identifier, data):
@@ -233,8 +252,14 @@ async def real_backend(browser):
     async def feed():
         while True:
             for identifier, data in controller_frames(held['step']):
-                if identifier != 0x30E or held['esp32']:
-                    state.ingest(identifier, data)
+                if identifier == 0x30E and not held['esp32']:
+                    continue
+                if not held['knock']:   # Built without knock listening: 0x307 says not enabled, and nothing else comes.
+                    if identifier in (0x30B, 0x30C, 0x30D, 0x30E):
+                        continue
+                    if identifier == 0x307:
+                        data = bytes(8)
+                state.ingest(identifier, data)
             state.gps.connected = True
             state.gps.update({'class': 'TPV', 'mode': 3, 'speed': 14 if held['moving'] else 0})
             await asyncio.sleep(.05)
@@ -302,6 +327,19 @@ async def real_backend(browser):
         await page.locator('#knock-view-settings-tab').click()
         await page.wait_for_function("document.getElementById('knock-set-blocked').hidden")
         assert await page.locator('#knock-set-multiplier').is_enabled()
+
+        # Firmware built without knock (ESP32_KNOCK 0): the dash refuses knock commands itself and the page says why.
+        held['knock'] = False
+        await wait_text(page, 'knock-set-blocked', "off in the water/meth controller's firmware")
+        assert await page.locator('#knock-set-multiplier').is_disabled()
+        assert state.controls.reason('knock.multiplier').startswith('Knock listening is off')
+        assert state.controls.reason('knock.enable', 1).startswith('Knock listening is off')
+        assert "Off in the controller's firmware" in await page.locator('#knock-live-summary').text_content()
+        await page.locator('#knock-view-live-tab').click()
+        await wait_text(page, 'knock-source', "OFF IN THE CONTROLLER'S FIRMWARE")
+        assert await text(page, '#knock-status') == 'OFF'
+        held['knock'] = True
+        await wait_text(page, 'knock-source', 'KNOCK SENSOR')
         assert not errors, errors
         await page.close()
     finally:
@@ -326,6 +364,7 @@ async def main(browser_path):
                 if width == 1920:
                     await page.screenshot(path=str(ROOT / '.tmp/knock-settings.png'))
                 await nano_controller(page)
+                await knock_built_out(page)
                 await page.keyboard.press('Escape')
                 assert not await page.locator('#knock-overlay').evaluate('dialog => dialog.open')
                 # From the controls page, straight to the settings.

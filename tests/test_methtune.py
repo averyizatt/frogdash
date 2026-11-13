@@ -177,7 +177,8 @@ class CoolingTests(unittest.TestCase):
         self.assertEqual(step(True, 48.2), -6.8)        # Warming again under boost.
         self.assertIsNone(cooling.last)
         self.assertIsNone(step(False, 50.0))
-        self.assertEqual(cooling.last, {'from_c': 55.0, 'lowest_c': 47.0, 'end_c': 48.2, 'change_c': -8.0, 'seconds': 2.0, 'flow_ml_min': 30.0})
+        self.assertEqual(cooling.last, {'from_c': 55.0, 'lowest_c': 47.0, 'end_c': 48.2, 'change_c': -8.0, 'seconds': 2.0, 'flow_ml_min': 30.0,
+                                        'against_pre': False})
         # The next spray starts from the reading just before it, not the old one.
         step(False, 61.0)
         self.assertEqual(step(True, 60.0), -1.0)
@@ -195,6 +196,40 @@ class CoolingTests(unittest.TestCase):
         now[0] += 3
         self.assertIsNone(blind.step(False, 55.0, 0))
         self.assertIsNone(blind.last)
+
+    def test_against_the_sensor_before_the_nozzle_boost_heating_cancels(self):
+        """The ESP32 board's one intake sensor is before the nozzle, the MicroSquirt's MAT after it."""
+        now = [0.0]
+        cooling = Cooling(lambda: now[0])
+        def step(injecting, mat, pre, seconds=.5):
+            now[0] += seconds
+            return cooling.step(injecting, mat, 30, pre)
+        step(False, 45.0, 40.0)                       # The MAT sits 5 C above the air before the nozzle
+        # Boost heats both by 10 C; the spray takes 6 C off the air after the nozzle. The MAT
+        # alone would read +4 C ("warmer"); against the sensor before the nozzle it is -6.
+        self.assertEqual(step(True, 47.0, 45.0), -3.0)
+        self.assertEqual(step(True, 49.0, 50.0), -6.0)
+        self.assertIsNone(step(True, 49.0, None))     # That sensor drops out: no number, the spray goes on
+        self.assertEqual(step(True, 50.0, 50.0), -5.0)
+        step(False, 52.0, 48.0)
+        self.assertEqual((cooling.last['change_c'], cooling.last['against_pre'], cooling.last['from_c']), (-6.0, True, 45.0))
+
+    def test_the_microsquirt_mat_stands_for_the_air_after_the_nozzle(self):
+        tune = methtune.MethTune(lambda: 0.0)
+        tune.status_seen = 0.0                       # The controller's tuning status is arriving
+        live = lambda value: {'value': value, 'quality': 'live'}
+        values = {'meth.pre_temp_c': live(38.0), 'meth.post_temp_c': {'value': None, 'quality': 'unavailable'},
+                  'ecu.iat_c': live(44.5)}
+        out = tune.derived(values)
+        self.assertEqual((out['meth.post_temp_c']['value'], out['meth.post_temp_c']['source']), (44.5, 'MicroSquirt MAT (after the nozzle)'))
+        self.assertEqual(out['meth.temp_drop_c']['value'], -6.5)   # Not spraying: the MAT sits warmer than the air before the nozzle
+        # A controller with a sensor of its own after the nozzle keeps it.
+        values['meth.post_temp_c'] = live(36.0)
+        self.assertNotIn('meth.post_temp_c', tune.derived(values))
+        # No water/meth controller reporting: nothing made up.
+        tune.status_seen = None
+        values['meth.post_temp_c'] = {'value': None, 'quality': 'unavailable'}
+        self.assertNotIn('meth.post_temp_c', tune.derived(values))
 
 
 class TuningTests(unittest.IsolatedAsyncioTestCase):

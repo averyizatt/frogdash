@@ -37,6 +37,11 @@ class CanCheckTests(unittest.TestCase):
         self.assertIn('No valid manifold pressure', text)   # Either board: its MAP sensor, or no ECU data.
         self.assertIn('No command master', text)
         self.assertIn('Tank byte is 255', text)
+        # The ESP32 board's crash hold (bit 6) is known; bit 7 is not.
+        self.state.ingest(0x300, bytes([3, 0, 80, 0, 0, 40, 40, 0xC0]))
+        text = ' '.join(self.row(0x300)['notes'])
+        self.assertIn('Fault bit 64: Injection held off after three crashes', text)
+        self.assertIn('Unknown fault bits 0x80', text)
 
     def test_wrong_length_is_rejected_with_reason(self):
         self.state.ingest(0x300, bytes(6))

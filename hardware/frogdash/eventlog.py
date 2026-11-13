@@ -22,7 +22,7 @@ KEEP_DAYS = 30
 MAX_BYTES = 20 << 20
 ALWAYS = {'engine', 'ignition', 'gps-recovery'}   # Written even when first seen
 METH_BITS = {0: 'tank level low', 1: 'no manifold pressure', 2: 'overboost assist', 3: 'overboost emergency',
-             4: 'invalid setting', 5: 'dash commands timed out'}
+             4: 'invalid setting', 5: 'dash commands timed out', 6: 'held off after repeated crashes'}
 SENSOR_BITS = {0: 'oil pressure', 1: 'fuel pressure', 2: 'meth pressure', 3: 'boost reference', 4: 'intake air temp',
                5: 'engine bay temp', 6: 'ambient temp', 7: 'cabin temp'}
 EVENT_SOURCES = {0x102: 'taillights', 0x302: 'water/meth', 0x308: 'knock'}
@@ -31,6 +31,12 @@ TAILLIGHT_FAULTS = {1: 'running hot', 2: 'too hot: lights cut back', 3: 'CAN bus
                     5: 'restarted by a watchdog', 6: 'crashed and restarted', 7: 'restarted after a supply dip (brownout)'}
 RESET_REASONS = {1: 'power-on or reset button', 3: 'software restart', 4: 'crash', 5: 'watchdog', 6: 'watchdog',
                  7: 'watchdog', 9: 'brownout (supply dip)', 14: 'power glitch', 15: 'processor lock-up'}
+# DIYWaterMethInjection src/main_esp32.cpp, can_protocol.h extension 8 (meth_start_flag).
+METH_STARTED = 0x0A
+METH_START_FLAGS = ((1, 'the pump was running'), (16, 'it restarted itself: nothing on CAN'),
+                    (32, 'it restarted itself: the ADC went quiet'), (2, 'armed again by itself'),
+                    (4, 'injection held off after repeated crashes'), (64, 'gentler pump start after resets'),
+                    (8, 'new firmware on trial'))
 
 
 def module_event(event):
@@ -47,6 +53,13 @@ def module_event(event):
         return 'info', f"taillights started ({RESET_REASONS.get(data0, f'reset reason {data0}')}){': ' + ', '.join(notes) if notes else ''}"
     if event['id'] == 0x102 and code in TAILLIGHT_FAULTS:
         return ('info' if code == 1 else 'warn'), f'taillights: {TAILLIGHT_FAULTS[code]}'
+    if event['id'] == 0x302 and code == METH_STARTED:   # The ESP32 water/meth board's start report (extension 8)
+        flags = data1 or 0
+        notes = [text for bit, text in METH_START_FLAGS if flags & bit]
+        # Power on and a restart someone asked for are routine; anything else is the board recovering.
+        level = 'info' if data0 in (1, 3) and not flags & 0x30 else 'warn'
+        return level, (f"water/meth controller started ({RESET_REASONS.get(data0, f'reset reason {data0}')})"
+                       f"{': ' + ', '.join(notes) if notes else ''}")
     return 'warn', f'{source} reported fault code {code}'
 GPS_LEVEL = {'fix': 'info', 'starting': 'info', 'searching': 'info', 'deaf': 'warn', 'weak': 'warn',
              'silent': 'error', 'no-gpsd': 'error', 'jammed': 'warn', 'antenna': 'error'}

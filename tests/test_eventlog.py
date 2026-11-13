@@ -106,6 +106,28 @@ class EventLogTests(unittest.TestCase):
         self.assertEqual(self.texts(), ['taillights started (power-on or reset button): after its restart on settled power',
                                         'taillights: restarted after a supply dip (brownout)'])
 
+    def test_the_water_meth_start_report_says_why_and_what_it_did(self):
+        """The ESP32 board's start report (contract extension 8): routine starts are information, recoveries warnings."""
+        base = snapshot()
+        self.log.watch(base)
+        def report(at, reason, flags):
+            return {'id': 0x302, 'timestamp_ms': at, 'data': f'0a00{reason:02x}{flags:02x}',
+                    'values': {'meth.last_fault.code': 0x0A, 'meth.last_fault.severity': 0,
+                               'meth.last_fault.data0': reason, 'meth.last_fault.data1': flags}}
+        power_on = report(1000, 1, 0)
+        dip = report(60000, 9, 1 | 2 | 64)          # A supply dip with the pump running: armed again, gentler start
+        silent = report(90000, 3, 16 | 2)           # Restarted itself over a silent CAN bus
+        self.log.watch({**base, 'events': [power_on]})
+        self.log.watch({**base, 'events': [power_on, dip]})
+        self.log.watch({**base, 'events': [power_on, dip, silent]})
+        entries = read(self.log.folder)[-3:]
+        self.assertEqual([e['level'] for e in entries], ['info', 'warn', 'warn'])
+        self.assertEqual(self.texts()[-3:], [
+            'water/meth controller started (power-on or reset button)',
+            'water/meth controller started (brownout (supply dip)): the pump was running, armed again by itself, '
+            'gentler pump start after resets',
+            'water/meth controller started (software restart): it restarted itself: nothing on CAN, armed again by itself'])
+
     def test_readable_text_and_reading_since(self):
         self.log.write('warn', 'gps', 'GPS has a position but no speed', {'status': 'GPS fix'})
         self.clock.now += 60

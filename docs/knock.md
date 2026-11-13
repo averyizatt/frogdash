@@ -15,10 +15,20 @@ shown on the dash under **Knock**. The page works with both controllers:
 The dash finds out by itself which one is fitted. With the Nano, the parts it cannot
 send say so and the rest works as before.
 
-**Off on the Nano for now** (November 2026, to free its flash and RAM): the Nano
-firmware is built without knock listening, reports knock as *Disabled*, and refuses
-knock settings. Building it with `-DNANO_KNOCK=1` (in `platformio.ini`) brings it back
-as described here. The ESP32 board is not affected.
+**Off on both boards for now** (November 2026). The Nano firmware is built without
+knock listening to free its flash and RAM (DIYWaterMethInjection `ed2a155`), and the
+ESP32 firmware too, the owner's choice until the knock amplifier's input works on the
+bench (`e057dbb`). Either then reports knock not enabled and sends nothing else for
+knock: no level, settings, spectrum or gain. Injection never depended on it.
+
+The dash recognises this (knock reported not enabled, and none of the live knock frames
+that a firmware with knock sends even when listening is switched off) and says so
+instead of waiting for data: the knock page reads *OFF IN THE CONTROLLER'S FIRMWARE*,
+its settings are greyed out with the reason, and Controls → Knock monitor reads *Off in
+the controller's firmware for now*. The dash does not send knock commands meanwhile.
+The rest of this page describes knock with it built in: `-DNANO_KNOCK=1` or
+`-DESP32_KNOCK=1` (in `platformio.ini`) brings it back, and the firmware's GitHub
+workflow builds the ESP32 firmware with knock on as well, so that code keeps compiling.
 
 ## The page
 

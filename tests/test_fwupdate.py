@@ -314,13 +314,14 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
     async def test_the_esp32_water_meth_controller_is_the_third_module(self):
         image = random.Random(11).randbytes(448 * 2 + 77)
         self.publish(image, NEW, 'watermeth')
-        # With the Nano board fitted nothing answers: nothing to install, and nothing is sent to it but questions.
+        # Nothing answers (the Nano board, or the ESP32 board off the bus): nothing to install, and
+        # nothing is sent to it but questions.
         await self.manager.modules['watermeth'].query()
         shown = self.manager.snapshot()['watermeth']
         self.assertEqual((shown['installed'], shown['new'], shown['can_install']), (None, False, False))
         job = await self.install(name='watermeth')
         self.assertEqual(job['state'], 'failed')
-        self.assertIn('The water/meth controller: no answer. That is normal with the Nano board', job['message'])
+        self.assertIn("The water/meth controller: not answering. Check the ESP32 board's power and CAN wiring", job['message'])
         # It was only asked who is there (and told to forget any transfer): no image was offered.
         self.assertEqual({frame[0] for frame in self.module.sent if frame[1] == 3}, {fwupdate.QUERY, fwupdate.ABORT})
         # The ESP32 board answers under number 3 and takes the image like the others.
@@ -428,13 +429,46 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
         controls.attach(bus)
         controls.ready_at = 0
         self.state.ingest(0x300, bytes([0, 0, 80, 0, 0, 40, 40, 0]))   # Nano telemetry: off, tank 80 %
+        # Heard, but which board is not known until it reports its settings: no Nano restart yet.
         shown = self.manager.snapshot_with_nano()['watermeth']
-        self.assertEqual((shown['can_restart'], shown['nano']), (True, True))
+        self.assertEqual((shown['board'], shown['can_restart'], shown.get('nano')), (None, False, None))
+        self.state.ingest(0x30F, bytes([2, 1, 0x0F, 0xA0, 0, 0, 0, 0]))   # A setting report: relay pump drive
+        shown = self.manager.snapshot_with_nano()['watermeth']
+        self.assertEqual((shown['board'], shown['can_restart'], shown['nano']), ('nano', True, True))
+        self.assertIn('normal with the Nano board', shown['short'])
         self.assertIsNone(self.manager.restart('watermeth'))
         meth = self.manager.modules['watermeth']
         await asyncio.wait_for(meth.task, 5)
         self.assertEqual(meth.job['state'], 'done', meth.job)
         self.assertIn((0x301, bytes([0x07])), [(i, d[:1]) for i, d in sent])
+
+    async def test_the_esp32_board_is_told_from_the_nano_by_its_own_reports(self):
+        """Since November 2026 the ESP32 board is in the car: its silence is a fault to show, not the Nano's normal."""
+        sent = []
+        async def bus(identifier, data):
+            sent.append((identifier, bytes(data)))
+        self.state.controls.attach(bus)
+        self.state.controls.ready_at = 0
+        self.publish(self.image, NEW, name='watermeth')
+        self.state.ingest(0x300, bytes([0, 0, 80, 0, 0, 40, 40, 0]))
+        self.state.ingest(0x30F, bytes([2, 18, 0, 25, 0, 0, 1, 0]))      # A setting report: PWM pump drive
+        shown = self.manager.snapshot_with_nano()['watermeth']
+        self.assertEqual((shown['board'], shown.get('nano'), shown['can_restart'], shown['can_install']), ('esp32', None, False, False))
+        self.assertEqual(shown['short'], 'ESP32 board not answering firmware commands')
+        self.assertIn('Flash esp32s3_water_meth to it once by USB', shown['note'])
+        # Not mistaken for the Nano: a restart is asked of its firmware updater, never 0x301's.
+        self.assertIsNone(self.manager.restart('watermeth'))
+        meth = self.manager.modules['watermeth']
+        await asyncio.wait_for(meth.task, 5)
+        self.assertEqual(meth.job['state'], 'failed', meth.job)
+        self.assertEqual({identifier for identifier, _ in sent}, {fwupdate.ID_COMMAND})
+        self.assertEqual(sent[0][1][:2], bytes([fwupdate.RESTART, 3]))
+        meth.job = {'state': 'idle', 'message': '', 'progress': 0.0}
+        # It answers (flashed once by USB): its build, and the published one ready to install over CAN.
+        self.state.ingest(fwupdate.ID_REPLY, bytes([fwupdate.INFO, 3]) + bytes.fromhex(OLD) + bytes([0, 1]))
+        shown = self.manager.snapshot_with_nano()['watermeth']
+        self.assertEqual((shown['installed'], shown['new'], shown['can_install'], shown['can_restart']), (OLD, True, True, True))
+        self.assertEqual(shown['short'], f'build {OLD}, {NEW} ready to install')
 
     async def test_the_dash_asks_which_build_is_running_and_routes_serve_it(self):
         from aiohttp.test_utils import TestClient, TestServer
@@ -448,11 +482,11 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
             shown = await (await client.get('/firmware')).json()
             self.assertEqual((shown['gateway']['installed'], shown['gateway']['available']), (OLD, NEW))
             self.assertEqual(set(shown), {'gateway', 'taillights', 'watermeth'})
-            # The water/meth Nano never answers; that is said plainly and is not an error.
+            # No water/meth controller heard at all: not answering, without blaming the Nano.
             meth = shown['watermeth']
-            self.assertEqual((meth['installed'], meth['new'], meth['can_install']), (None, False, False))
-            self.assertIn('normal with the Nano board', meth['short'])
-            self.assertIn('ESP32 board answers here once it is fitted', meth['note'])
+            self.assertEqual((meth['installed'], meth['new'], meth['can_install'], meth['board']), (None, False, False, None))
+            self.assertEqual(meth['short'], 'not answering')
+            self.assertIn("Check the ESP32 board's power and CAN wiring", meth['note'])
             self.assertEqual(shown['taillights']['short'] == 'not answering', False)   # It answered above.
             self.assertEqual((await client.post('/firmware', json={'module': 'nano', 'action': 'install'})).status, 400)
             self.assertEqual((await client.post('/firmware', json={'module': 'gateway', 'action': 'erase'})).status, 400)

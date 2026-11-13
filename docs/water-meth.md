@@ -1,17 +1,19 @@
 # Water/meth: flow, failsafes, presets and intake temperatures
 
 Written for this car: 2.3 L Lima turbo at up to 10 psi, a 0.9 MPa (130 psi) 4–6 L/min
-pump switched directly by a mechanical relay, a 60 ml/min (1 GPH) nozzle and a 2 L tank.
+pump, a 60 ml/min (1 GPH) nozzle and a 2 L tank.
 
-Everything here needs the current firmware on the water/meth Nano
-(DIYWaterMethInjection, CAN contract extension 4). With older firmware the tuning page
-says so and the rest of the dash works as before.
+**Since November 2026 the water/meth controller is the ESP32 board**: the pump on a
+MOSFET with PWM instead of the Nano's relay, and boost and RPM read straight from the
+MicroSquirt. The dash works with either and tells them apart by itself; what changes
+with the ESP32 board is in [The ESP32 board](#the-esp32-board-pump-speed-instead-of-pulses)
+below. Everything else on this page applies to both, and the parts about the relay
+apply only while the Nano is fitted.
 
-An ESP32 board is being built to replace the Nano: the pump on a MOSFET with PWM
-instead of the relay, and boost and RPM read straight from the MicroSquirt. The dash
-works with either and tells them apart by itself; what changes with the new board is
-in [The ESP32 board](#the-esp32-board-pump-speed-instead-of-pulses) below. Everything
-else on this page applies to both.
+Everything here needs current firmware on the controller (DIYWaterMethInjection, CAN
+contract extension 4, and 5 for the ESP32 board). With older firmware the tuning page
+says so and the rest of the dash works as before. Knock listening is off in both
+boards' firmware for now ([knock.md](knock.md)); injection never depended on it.
 
 ## How much fluid the engine can use
 
@@ -203,9 +205,41 @@ runs 1 s in every 4 s (15 ml/min), rising to 2 s in every 4 s (30 ml/min) at 10 
 
 ## Intake temperature
 
-### Now: the MicroSquirt's sensor
+### On the car: one sensor before the nozzle, the MicroSquirt's after it
 
-Until the controller has its own sensors, the dash forwards the MicroSquirt's intake
+Since November 2026 there are two intake air temperatures, one each side of the nozzle:
+
+| | Sensor | On the live card |
+|---|---|---|
+| Air before the nozzle | The ESP32 board's own intake sensor (GPIO5) | *Air before the nozzle* |
+| Air after the nozzle | The MicroSquirt's MAT, after the throttle | *Air after the nozzle … (MicroSquirt IAT)* |
+
+The board's second input (GPIO6) is not used and not read
+(`POST_INJECTION_TEMP_FITTED` in the firmware's `pins_esp32.h`): with nothing on it, it
+would float and could read back a made-up temperature.
+
+- *Hot air adds run time* and *Only spray above intake temp* use the sensor before the
+  nozzle: the air on its way in, before any spray. That removes the loop described
+  below.
+- **Cooling** is worked out from the two around each spray: how much further the air
+  after the nozzle falls below the air before it than it was just before the spray.
+  Boost heats both at the same time, so that cancels out, and so does the steady
+  difference between two sensors in two places (the MAT sits in a warm manifold). On the
+  live card while spraying: *14 °F cooler since injection began (against the air before
+  the nozzle)*; afterwards *Last spray: 14 °F cooler after the nozzle, measured against
+  the air before it, in 6 s at 30 ml/min*. In the logs, *Intake before inj* is the
+  board's sensor, *Intake after inj* the MAT, and *MAT change while injecting* the
+  cooling.
+- *Injection temp drop* (before minus after, at any moment) includes that steady
+  difference: with no spray the MAT usually reads a few degrees warmer, so it shows
+  below zero. The cooling above is the number to compare.
+
+If the board's sensor is not reading (unplugged, or a broken wire), the controller falls
+back on the MicroSquirt's temperature as below, and the tuning page says so.
+
+### Without the board's sensor: the MicroSquirt's sensor alone
+
+Until the controller has its own sensor, the dash forwards the MicroSquirt's intake
 air temperature to the controller about four times a second, and everything that
 needs a temperature uses it: *Hot air adds run time* and *Only spray above intake
 temp*. The tuning page says so when it is the source.
@@ -225,7 +259,7 @@ card and in the logs (*MAT change while injecting*). Boost heats the air during 
 same seconds, so this understates the cooling; compare a pull with injection armed
 against the same pull disarmed to see the real difference.
 
-### Later: two sensors on the controller
+### The Nano board: two sensors on the controller
 
 Two thermistors on the Nano show the air temperature before and after the nozzle at
 the same moment, which measures the cooling directly. Once the one before the nozzle
@@ -283,6 +317,11 @@ from the first to the second between start boost and full boost.
   stop, the dash shows "WATER/METH OFF: NO MANIFOLD PRESSURE".
 - The Pump line on the Water / meth tab reads "Pump at 37% duty" instead of run time
   and cycle.
+- **Its firmware is updated from the dash**, over CAN: Update now downloads the newest
+  published build (`watermeth-latest`), and Dash management → Software & power installs
+  it, engine off ([firmware-updates.md](firmware-updates.md)). Only the first flash is by
+  USB from VS Code; the dash then shows build `00000000` with the published build ready
+  to install over it. Settings saved in the board stay through an update.
 
 The Nano board keeps working exactly as before for as long as it is fitted. Its
 firmware and its build are unchanged in the repository, next to the new board's.
@@ -290,7 +329,66 @@ firmware and its build are unchanged in the repository, next to the new board's.
 To see the new board's tuning page without the hardware, open the preview with
 `?meth=pwm` at the end of the address.
 
-## CAN messages (contract extension 4, and 5 for the ESP32 board)
+### The pump: started gently, never chattered
+
+The pump is an ordinary diaphragm water pump. It takes PWM, but it is a motor, not a
+valve, and it does not like being switched about. So the board treats it gently,
+whatever the settings say:
+
+- **Soft start.** From rest the duty climbs from 5% to what is asked over 0.4 s, instead
+  of jumping straight there. A motor starting draws its largest current, and slamming it
+  on dips the 12 V supply: the likely reason the Nano went silent at the start of its
+  tenth spray (November 2026). The spray reaches full strength within half a second; a
+  low duty is reached sooner. The pump test starts the same way.
+- **A rest between runs.** Once it stops it stays off at least 0.5 s: never more than two
+  starts a second, however boost wanders around the start point.
+- **No chatter at the dose limit.** At low airflow the dose limit can sit right at the
+  minimum duty. A run then starts only when the limit allows a little more than the
+  minimum (3% of duty), and stops only when it falls under the minimum.
+- **Gentler still after trouble.** If the board ever resets while the pump is running
+  (a supply dip or a crash), the soft start doubles for the rest of that drive, up to
+  1.6 s.
+
+For a stronger spray, raise **Pump duty at start boost** and **at full boost**, or choose
+the Mild or Standard preset; a higher minimum also keeps the pump out of the low duties
+where it labours. To find the least that sprays well: engine off, disarmed, nozzle into a
+container, run the pump test at 20, 25, 30, 40% and watch for a fine cone rather than a
+dribble. Set *Pump duty at start boost* at or above the lowest that gives a cone.
+
+### When something goes wrong, it comes back by itself
+
+What happened with the Nano on 6 November 2026 (it went silent on CAN during a spray and
+stayed silent until the ignition was cycled) is covered three ways:
+
+- **CAN goes silent.** With the ignition on the bus is never quiet: the MicroSquirt
+  broadcasts many times a second. Nothing at all for 1.5 s and the board sets its CAN
+  controller up again, every 2 s while it lasts; still nothing after 15 s and the whole
+  board restarts (three times at most per drive). Injection is off meanwhile anyway: the
+  manifold pressure comes over CAN.
+- **Any reset nobody asked for** (a crash, a watchdog, a supply dip, a restart over a
+  fault) comes back **armed**, and sprays again as soon as the MicroSquirt's data is
+  fresh: under a second, without waiting for the dash. Power on, a firmware update and
+  the dash's Restart still start disarmed, and the dash arms it again if you had it armed.
+- **A board that keeps crashing rests, then tries again.** One crash is a restart (the
+  pump is switched off first) and nothing more. Three in one drive and it holds
+  injection off for 30 s, then tries again; three more and it rests 60 s, then 2, 4, at
+  most 5 minutes. The dash says *Injection disabled: the controller crashed and restarted
+  three times since the ignition came on, so it rests*; **Clear faults** on the Water /
+  meth tab lets it inject at once and starts the next rest short again.
+
+Each start is reported to the dash (contract extension 8), and the dash's event log, which
+goes up with each drive report, says why and what the board did: for example *water/meth
+controller started (brownout (supply dip)): the pump was running, armed again by itself,
+gentler pump start after resets*. A power-on start is logged as information; anything
+else as a warning, since it is the board recovering from something.
+
+What software cannot do: if the CAN module itself latches up (a transient can leave a
+CAN chip stuck until its power is removed), no reset of the ESP32 brings it back, because
+the module keeps its power. Powering the CAN module through a small switch that a spare
+ESP32 pin controls would let the board power-cycle it as a last step; say if you want
+that, and which pin.
+
+## CAN messages (contract extension 4, and 5 and 8 for the ESP32 board)
 
 Additive: no existing message changed.
 
@@ -300,8 +398,17 @@ Additive: no existing message changed.
 | `0x301` cmd `0x11` | Dash | Save, revert, defaults, or report all settings |
 | `0x301` cmd `0x12` | Dash | The MicroSquirt's intake temperature, about four times a second, not acknowledged |
 | `0x30F` | Controller | Acknowledgements, settings, status every 0.5 s (why it is holding, run time, cycle), temperatures every 0.2 s |
+| `0x302` code `0x0A` | ESP32 board | Once after each start: why it started (the chip's reset reason) and what it did (extension 8) |
 
 Extension 5 adds settings 18 and 19 (lowest and highest pump duty) and one byte in each
 setting report saying how the pump is driven (0 relay, 1 PWM). A PWM controller reports
 its duty in the status message as run time out of a cycle of 1000. Firmware from
 extension 4 reports 17 settings and a zero in that byte, and is read as a relay board.
+
+Extension 8 (November 2026) adds the start report above: byte 2 is the reset reason as
+ESP-IDF numbers it (1 power on, 3 software restart, 4 crash, 5-7 watchdogs, 9 brownout),
+byte 3 flags: 1 the pump was running, 2 armed again by itself, 4 holding injection after
+crashes, 8 new firmware on trial, 16 restarted itself over a silent CAN bus, 32 over a
+quiet ADC, 64 pump soft start lengthened. In the state message (`0x300`), fault bit 6
+(64) means the ESP32 board is resting after three crashes since the ignition came on.
+The bit was unused and the Nano never sets it.

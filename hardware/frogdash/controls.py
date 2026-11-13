@@ -66,6 +66,7 @@ METH_TUNE = ('meth.setting', 'meth.tune_action')
 KNOCK_CALIBRATION = ('knock.threshold', 'knock.multiplier', 'knock.min_rpm', 'knock.min_map', 'knock.hold', 'knock.level_gain',
                      'knock.center', 'knock.bandwidth', 'knock.auto_frequency', 'knock.amp_gain', 'knock.bore', 'knock.relearn')
 KNOCK_DETAIL = ('knock.amp_gain', 'knock.bore', 'knock.relearn')
+KNOCK_BUILT_OUT = "Knock listening is off in the water/meth controller's firmware for now: nothing to change here"
 # Water/meth status bits that are information, not faults: overboost assist active (4)
 # and "no command master seen for 3 s" (32), which clears with the next frame from the dash.
 METH_INFO_FLAGS = 4 | 32
@@ -87,6 +88,9 @@ LABELS = {
 
 # Water/meth controller fault bits (methFaultFlagsFor in its firmware), most actionable first.
 METH_FAULTS = [
+    # ESP32 board only (DIYWaterMethInjection reset_guard.h): three crashes in one ignition cycle.
+    (64, 'the controller crashed and restarted three times since the ignition came on, so it rests: '
+         'injection is off for 30 s (longer if it keeps crashing), then tried again. Clear faults to allow it now'),
     (1, 'the tank level sensor reads LOW. Fill the tank, or check the float switch wiring and polarity'),
     (2, "the controller has no manifold pressure: it takes boost from the MicroSquirt's CAN broadcast "
         "(0x5E8 or 0x5F2), which is not reaching it. Check the ECU's CAN broadcast is switched on"),
@@ -177,12 +181,20 @@ class Controls:
     def conflict(self):
         return self.live('meth.config.version', 0x304, 3) is not None
 
+    def knock_built_out(self):
+        """The water/meth controller's firmware is built without knock listening (NANO_KNOCK or
+        ESP32_KNOCK 0: both boards since November 2026). Its knock state (0x307) says not
+        enabled, and the live knock frame (0x30B), which a build with knock sends whether
+        listening is on or off, never comes. Knock commands would only be refused."""
+        return self.live('knock.enabled', 0x307) is False and self.live('knock.hook.flags', 0x30B, 2) is None
+
     def reason(self, action, value=None):
         if self.state.mode != 'socketcan': return 'Controls are disabled during replay'
         if not self.state.connected or self.sender is None: return 'CAN is disconnected'
         stop = action == 'meth.stop' or (action == 'meth.arm' and value == 0)
         if stop: return None  # Always allow an explicit stop/disarm on an open bus.
         if self.state.operations.restoring: return 'Configuration restore recovery pending'
+        if action.startswith('knock.') and self.knock_built_out(): return KNOCK_BUILT_OUT
         if (action == 'meth.boost' or action in KNOCK_CALIBRATION) and rolling(self.state):
             return 'Stop the car first to change controller calibration'
         if self.closing: return 'Dashboard is shutting down'
@@ -234,6 +246,7 @@ class Controls:
         reasons = {name: self.reason(name, 1 if name == 'meth.arm' else None) for name in COMMANDS}
         reasons['meth.disarm'] = self.reason('meth.arm', 0)
         return {'reasons': reasons, 'pending': self.pending['action'] if self.pending else None,
+                'knock_built_out': self.knock_built_out(),
                 'interior': {'upper': self.interior[1], 'lower': self.interior[2]},
                 'lighting_active': self.lighting_active,
                 'test_active': self.test_owner is not None, 'last_result': self.last,

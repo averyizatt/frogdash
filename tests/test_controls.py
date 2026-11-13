@@ -125,6 +125,17 @@ class ControlTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ValueError): await self.controls.execute('meth.test', 10, owner=self)
         self.assertEqual(self.sent, [])
 
+    async def test_the_esp32_crash_hold_is_explained_and_clear_faults_releases_it(self):
+        # Three crashes in one ignition cycle: FAULT with bit 6 (DIYWaterMethInjection reset_guard.h).
+        self.refresh(mode=3, flags=64)
+        reason = self.controls.reason('meth.arm', 1)
+        self.assertIn('crashed and restarted three times since the ignition came on', reason)
+        self.assertIn('then tried again', reason)
+        self.assertIn('Clear faults', reason)
+        self.assertIsNone(self.controls.reason('meth.clear_faults'))
+        result = await self.controls.execute('meth.clear_faults')
+        self.assertEqual((self.sent[-1], result['status']), ((0x301, b'\x06'), 'acknowledged'))
+
     async def test_config_owner_conflict_blocks_arm_but_allows_disarm(self):
         # Use a valid checksum for the captured configuration.
         from functools import reduce

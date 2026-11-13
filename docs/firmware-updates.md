@@ -8,7 +8,7 @@ wire that already connects them. No USB cable, and no Wi-Fi in the modules.
 | Sensor gateway | Yes | About a minute | Speed, fuel level, wheel buttons and interior lights pause |
 | Taillight controller | Yes | A few minutes (its firmware is three times the size) | Lamps dark. Lights off and foot off the brake: any light input stops the update at once |
 | Water/meth controller, ESP32 board | Yes | About a minute | Injection off. Engine off: it will not start, and stops, if the pump is on or boost comes up |
-| Water/meth controller, Nano board | No: see below | | The dash shows "no answer (normal with the Nano board)" |
+| Water/meth controller, Nano board | No: see below | | The dash shows "USB only" |
 
 ## Using it
 
@@ -63,11 +63,22 @@ simply ignore them.
 Target 1 is the sensor gateway, target 2 the taillight controller, target 3 the ESP32
 water/meth controller.
 
-The water/meth line reads "no answer (normal with the Nano board)" for as long as the
-Arduino Nano board is fitted: the Nano cannot take firmware over CAN and is flashed by
-USB. Its image is still downloaded and kept on the Pi, so it is ready when the ESP32
-board goes in. That board refuses an update, and drops one that is running, when the
-pump is on or boost is near: install with the engine off.
+The ESP32 board is the water/meth controller in the car since November 2026. It refuses
+an update, and drops one that is running, when the pump is on or boost is near: install
+with the engine off.
+
+The dash tells the two water/meth boards apart from their own setting reports (a PWM
+pump is the ESP32 board, a relay the Nano), not from silence, and the water/meth line
+says what silence means for the board fitted:
+
+| The water/meth controller | The line reads |
+|---|---|
+| Not heard at all | *Not answering*: check the ESP32 board's power and CAN wiring |
+| Reports a relay pump (the Nano) | *USB only*: the Nano cannot take firmware over CAN and is flashed by USB |
+| Reports a PWM pump (the ESP32) but does not answer firmware commands | *Not answering*: flash `esp32s3_water_meth` to it once by USB |
+
+The first flash of the ESP32 board is by USB from VS Code. It then reports build
+`00000000`, and the published build is offered over it on this line.
 
 ## Adding another module
 
@@ -102,7 +113,8 @@ replacing the Nano is on the same footing as the other modules: see the table ab
 compiled for the computer from the shared header: complete transfers to all three
 targets, lost frames and lost answers, a module that goes back to its old firmware, one
 that never comes back, one that refuses or stops because it is needed, a controller
-that cannot answer at all (the Nano), and the car moving off mid-transfer.
+that cannot answer at all (the Nano), an ESP32 water/meth board told from the Nano by
+its reports, and the car moving off mid-transfer.
 `tests/test_can_contract.py` checks every frame the dash builds against the modules'
 own builders. All three firmwares are compiled by their GitHub workflows. None of this has run on the car: the first real transfer is the test of
 the wiring and timing.

@@ -65,6 +65,8 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
             'meth_config_ack': {'meth.ack.version':7, 'meth.ack.ratio_pct':50},
             'command_ack': {'engine.ack.command':65, 'engine.ack.applied_value':20, 'engine.ack.schema':2},
             'knock_fault': {'knock.last_fault.severity':2},
+            # The ESP32 water/meth board's start report (extension 8): code 0x0A, the reset reason, the flags.
+            'meth_start': {'meth.last_fault.code':0x0A, 'meth.last_fault.severity':0, 'meth.last_fault.data0':9, 'meth.last_fault.data1':3},
             # Knock detail from the ESP32 controller (extension 6). Millivolts are sent in steps of 16 and 8.
             'knock_amplifier': {'knock.amp.automatic':True, 'knock.amp.fixed':False, 'knock.amp.gain':8.0, 'knock.amp.step':21,
                                 'knock.amp.top_step':30, 'knock.amp.rest_mv':816, 'knock.amp.swing_mv':144, 'knock.amp.room_mv':800},

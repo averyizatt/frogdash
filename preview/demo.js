@@ -31,8 +31,12 @@
   let mtLive = null, mtSaved = null, mtRevision = 1, mtAck = null;
   let mtDrive = new URLSearchParams(location.search).get('meth') === 'pwm' ? 'pwm' : 'relay';
   // Simulated knock controller. The ESP32 board (can_protocol.h extension 6: spectrum, the
-  // knock frequency it finds, amplifier gain) unless the address ends in ?knock=nano.
-  const knockSim = {esp32: new URLSearchParams(location.search).get('knock') !== 'nano', ringsAt: 6250, learnedFrom: 0, fixedStep: -1, top: 30, boreMm: 96};
+  // knock frequency it finds, amplifier gain) unless the address ends in ?knock=nano, or
+  // ?knock=off: firmware built without knock listening (ESP32_KNOCK / NANO_KNOCK 0, both
+  // boards since November 2026), which reports knock not enabled and sends nothing else.
+  const knockParam = new URLSearchParams(location.search).get('knock');
+  const knockSim = {esp32: knockParam !== 'nano', off: knockParam === 'off', ringsAt: 6250, learnedFrom: 0, fixedStep: -1, top: 30, boreMm: 96};
+  const KNOCK_OFF = "Knock listening is off in the water/meth controller's firmware for now: nothing to change here";
   const KNOCK_ESP32_ONLY = ['knock.amp_gain', 'knock.bore', 'knock.relearn'];
   const KNOCK_SETTINGS = ['knock.threshold', 'knock.multiplier', 'knock.min_rpm', 'knock.min_map', 'knock.hold', 'knock.level_gain',
     'knock.center', 'knock.bandwidth', 'knock.auto_frequency', ...KNOCK_ESP32_ONLY];
@@ -139,7 +143,7 @@
   // Static scenarios remain available for repeatable design checks.
   // This entire transport is loaded only by the standalone preview.
   window.frogdashDemo = {scenario: setScenario, methPreset(values) { mtLive = {...mtLive, ...values}; mtRevision++; },
-    knockController(kind) { knockSim.esp32 = kind !== 'nano'; },
+    knockController(kind) { knockSim.esp32 = kind !== 'nano'; knockSim.off = kind === 'off'; },
     methDrive(drive) { mtDrive = drive === 'pwm' ? 'pwm' : 'relay'; mtRevision++; }};
   class FrogdashDemoSocket {
     static OPEN = 1;
@@ -213,7 +217,7 @@
         'meth.temp_drop_c': Math.round(dropC * 10) / 10, 'meth.hold': hold, 'meth.on_ms': onMs, 'meth.period_ms': period,
         'meth.flow_ml_min': Math.round(flow * 10) / 10, 'meth.dose_pct': fuel > 0 ? Math.round(flow / fuel * 1000) / 10 : null});
       // Stand-in knock controller: where it listens, its amplifier, and two spectra.
-      const knockDetail = {supported: knockSim.esp32 && scenario !== 'offline', start_hz: 2000, step_hz: 300, normal: null, burst: null};
+      const knockDetail = {supported: knockSim.esp32 && !knockSim.off && scenario !== 'offline', start_hz: 2000, step_hz: 300, normal: null, burst: null};
       {
         const boreHz = Math.round(1800000 / (Math.PI * knockSim.boreMm));
         const byHand = !(readings['knock.config.flags'] & 2), loud = scenario === 'warning';
@@ -239,6 +243,10 @@
           'freq.agreement_pct', 'freq.votes', 'freq.bore_hz', 'freq.tone_hz', 'freq.sample_rate_hz', 'listen.notable', 'listen.confirmed',
           'listen.second', 'listen.second_normal', 'listen.background', 'listen.crest'].map(name => [`knock.${name}`, null]));
         Object.assign(current, esp32);
+        if (knockSim.off) {
+          for (const key of Object.keys(current)) if (key.startsWith('knock.')) current[key] = null;
+          Object.assign(current, {'knock.enabled': false, 'knock.warning': false, 'knock.critical': false, 'knock.learned': false, 'knock.event_count': 0});
+        }
         if (knockDetail.supported) {
           // The engine's own spectrum: falling with frequency, a hump where the cylinder
           // rings and a smaller one at its second resonance. Bursts lift both.
@@ -262,6 +270,7 @@
       if (readings['meth.state'] === 'ARMED') reasons['meth.test'] = reasons['meth.boost'] = 'Disarm before adjusting or testing';
       if (!(speed < 1)) for (const action of TL_PARKED) reasons[action] = 'Park first: shows and overrides replace the turn signals';
       if (!knockSim.esp32) for (const action of KNOCK_ESP32_ONLY) reasons[action] = 'This setting needs the ESP32 water/meth controller';
+      if (knockSim.off) for (const action of [...KNOCK_SETTINGS, 'knock.enable', 'knock.clear_events', 'knock.refresh']) reasons[action] = KNOCK_OFF;
       if (scenario === 'offline') {
         for (const button of document.querySelectorAll('[data-action]')) reasons[button.dataset.action] = 'Simulated controller offline';
         reasons['meth.disarm'] = 'Simulated controller offline';
@@ -277,7 +286,7 @@
         taillight: {supported: scenario !== 'offline', complete: true, revision: tlRevision, unsaved: JSON.stringify(tlLive) !== JSON.stringify(tlSaved),
           show: false, demo: false, custom: false, override: false, show_anim: tlLive.settings.show_anim, phase_ms: 0,
           profiles: tlProfiles.map(Boolean), settings: tlLive.settings, colors: tlLive.colors, text: tlLive.text, last_ack: tlAck},
-        controls: {reasons, test_active: test, lighting_active: tl.show !== null || !!tl.override, ...(tlResult ? {last_result: tlResult} : {})},
+        controls: {reasons, knock_built_out: knockSim.off, test_active: test, lighting_active: tl.show !== null || !!tl.override, ...(tlResult ? {last_result: tlResult} : {})},
         summary: demoSummary(values)});
     }
     send(data) {

@@ -38,6 +38,8 @@ HOLDS = 'NONE DISARMED BELOW_BOOST RPM_LOW RPM_MISSING AIR_COLD TEMP_SENSOR REST
 FLAGS = {'unsaved': 1, 'rpm_ok': 2, 'pre_valid': 4, 'post_valid': 8, 'pump_on': 16, 'early_start': 32, 'hot_air': 64, 'ecu_temp': 128}
 ACTIONS = {'save': 0, 'revert': 1, 'defaults': 2, 'report': 3}
 STATUS_TIMEOUT = 1.5
+# The source named on the air after the nozzle when it is the MicroSquirt's MAT.
+AFTER_NOZZLE_FROM_ECU = 'MicroSquirt MAT (after the nozzle)'
 REPORT_RETRY = 2.0
 USER_SLOTS = ('Custom 1', 'Custom 2', 'Custom 3')
 # What is in the tank, the nozzle fitted and the extra triggers (early start at high
@@ -162,38 +164,48 @@ def fuel_g_min(rpm, map_kpa):
 
 
 class Cooling:
-    """Before and after from one sensor: the ECU's intake temperature around each spray.
+    """The intake air around each spray: the ECU's intake temperature (the MicroSquirt's MAT,
+    after the throttle, so after the nozzle), against the air before the nozzle when the
+    controller's sensor there is reading.
 
-    The last reading before injection starts is the "before"; the change is followed
-    while injecting and the finished spray is kept for comparison. Boost heats the air
-    at the same time, so this understates the cooling; two sensors, one each side of
-    the nozzle, measure it properly.
+    The last readings before injection starts are the "before"; the change is followed
+    while injecting and the finished spray is kept for comparison.
+
+    With the sensor before the nozzle (the ESP32 board's one intake sensor, November 2026)
+    the cooling is how much further the air after the nozzle falls below the air before
+    it than it was just before the spray. Boost heats both at the same time, so that
+    cancels out, and so does the steady difference between two sensors in two places.
+    Without it, it is the MAT's own change, which boost heating makes an understatement.
     """
     def __init__(self, clock):
         self.clock = clock
         self.before = None      # Latest intake temperature while not injecting.
+        self.before_gap = None  # ...and how far it was from the air before the nozzle.
         self.active = None      # The spray in progress.
         self.last = None        # The most recent finished spray.
         self.seen = None
 
-    def step(self, injecting, intake_c, flow_ml_min):
+    def step(self, injecting, intake_c, flow_ml_min, pre_c=None):
         now = self.clock()
         elapsed = 0 if self.seen is None else min(max(now - self.seen, 0), 1)
         self.seen = now
         if not injecting:
             if self.active:
                 spray, self.active = self.active, None
-                if spray['seconds'] >= 1:  # Anything shorter is not a measurement.
+                if spray['seconds'] >= 1 and spray['change_c'] is not None:  # Anything shorter is not a measurement.
                     self.last = {'from_c': spray['from_c'], 'lowest_c': spray['lowest_c'], 'end_c': spray['now_c'],
-                                 'change_c': round(spray['lowest_c'] - spray['from_c'], 1), 'seconds': round(spray['seconds'], 1),
-                                 'flow_ml_min': round(spray['ml'] / spray['seconds'] * 60, 1)}
+                                 'change_c': spray['change_c'], 'seconds': round(spray['seconds'], 1),
+                                 'flow_ml_min': round(spray['ml'] / spray['seconds'] * 60, 1),
+                                 'against_pre': spray['gap_c'] is not None}
             if intake_c is not None:
                 self.before = intake_c
+                self.before_gap = intake_c - pre_c if pre_c is not None else None
             return None
         if self.active is None:
             if self.before is None or intake_c is None:
                 return None  # No "before" reading: nothing to compare against.
-            self.active = {'from_c': self.before, 'lowest_c': intake_c, 'now_c': intake_c, 'seconds': 0.0, 'ml': 0.0}
+            self.active = {'from_c': self.before, 'lowest_c': intake_c, 'now_c': intake_c, 'seconds': 0.0, 'ml': 0.0,
+                           'gap_c': self.before_gap, 'change_c': None}
         spray = self.active
         spray['seconds'] += elapsed
         spray['ml'] += (flow_ml_min or 0) * elapsed / 60
@@ -201,7 +213,14 @@ class Cooling:
             return None
         spray['now_c'] = intake_c
         spray['lowest_c'] = min(spray['lowest_c'], intake_c)
-        return round(intake_c - spray['from_c'], 1)
+        if spray['gap_c'] is not None:
+            if pre_c is None:
+                return None   # The sensor before the nozzle dropped out: no number this time.
+            change = round(intake_c - pre_c - spray['gap_c'], 1)
+        else:
+            change = round(intake_c - spray['from_c'], 1)
+        spray['change_c'] = change if spray['change_c'] is None else min(spray['change_c'], change)
+        return change
 
 
 class MethTune:
@@ -309,8 +328,8 @@ class MethTune:
         def live(key):
             sample = values.get(key)
             return sample['value'] if sample and sample.get('quality') == 'live' and sample.get('value') is not None else None
-        def signal(value):
-            return {'value': value, 'quality': 'live' if value is not None else 'unavailable', 'source': 'Water/meth estimate',
+        def signal(value, source='Water/meth estimate'):
+            return {'value': value, 'quality': 'live' if value is not None else 'unavailable', 'source': source,
                     'source_id': None, 'timestamp_ms': stamp_ms}
         flow = dose = None
         if self.supported and self.complete() and self.on_ms is not None and self.period_ms:
@@ -321,9 +340,19 @@ class MethTune:
             rpm, map_kpa = live('engine.rpm'), live('ecu.map_kpa')
             if rpm and map_kpa:
                 dose = round(flow / fuel_g_min(rpm, map_kpa) * 100, 1)
-        # Intake temperature change since this spray began, from the ECU's own sensor.
-        change = self.cooling.step(live('meth.state') == 'SPRAYING', live('ecu.iat_c'), flow)
-        return {'meth.flow_ml_min': signal(flow), 'meth.dose_pct': signal(dose), 'meth.iat_change_c': signal(change)}
+        # Intake temperature change since this spray began: the ECU's own sensor, against the
+        # controller's sensor before the nozzle when that is reading.
+        pre, mat = live('meth.pre_temp_c'), live('ecu.iat_c')
+        change = self.cooling.step(live('meth.state') == 'SPRAYING', mat, flow, pre)
+        out = {'meth.flow_ml_min': signal(flow), 'meth.dose_pct': signal(dose), 'meth.iat_change_c': signal(change)}
+        # The ESP32 board has one intake sensor, before the nozzle; the MicroSquirt's MAT,
+        # after the throttle, is the air after the nozzle (owner, November 2026). So while the
+        # controller reports no sensor of its own there, the MAT stands in, and the difference
+        # is worked out from the two.
+        if self.supported and live('meth.post_temp_c') is None and mat is not None:
+            out['meth.post_temp_c'] = signal(mat, AFTER_NOZZLE_FROM_ECU)
+            out['meth.temp_drop_c'] = signal(round(pre - mat, 1) if pre is not None else None, AFTER_NOZZLE_FROM_ECU)
+        return out
 
     def snapshot(self):
         flags = self.flags or 0

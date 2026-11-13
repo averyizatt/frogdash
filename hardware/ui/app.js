@@ -327,7 +327,9 @@
     $('test-control-reason').textContent = controls.test_active ? 'Pump test active — stops automatically after 3 seconds.' :
       controls.reasons['meth.test'] || 'Test ready. Closing this panel or losing the connection stops the test.';
     const knockEnabled = live('knock.enabled');
-    $('knock-live-summary').textContent = `${knockEnabled === null ? 'No live status' : knockEnabled ? 'Enabled' : 'Disabled'} · Offset ${text('knock.config.threshold_offset')} · Multiplier ${text('knock.config.multiplier')}`;
+    $('knock-live-summary').textContent = controls.knock_built_out
+      ? "Off in the controller's firmware for now · injection does not depend on it"
+      : `${knockEnabled === null ? 'No live status' : knockEnabled ? 'Enabled' : 'Disabled'} · Offset ${text('knock.config.threshold_offset')} · Multiplier ${text('knock.config.multiplier')}`;
     renderInterior();
     $('lighting-live-summary').textContent = `Applied brightness ${text('lighting.brightness')} / 255 · Left ${text('lighting.left_state')} · Right ${text('lighting.right_state')}`;
     const result = JSON.stringify(controls.last_result || null);

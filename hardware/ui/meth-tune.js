@@ -233,13 +233,18 @@
     const value = key => { const v = latest.values?.[key]; return v && v.quality === 'live' && v.value !== null ? v.value : null; };
     const temp = (key, delta) => { const v = value(key); return v === null ? 'No sensor reading' : `${(u.metric ? v : delta ? v * 1.8 : v * 1.8 + 32).toFixed(1)} ${tempUnit()}`; };
     const flow = value('meth.flow_ml_min'), dose = value('meth.dose_pct');
-    // Until the controller's own sensors are fitted, the MicroSquirt's intake sensor
-    // (after the nozzle) stands in: its reading, and its change around each spray.
+    // The MicroSquirt's intake sensor (after the throttle, so after the nozzle) is the air
+    // after the nozzle unless the controller has a sensor of its own there (the ESP32 board
+    // has one, before the nozzle: methtune.py derived). Around each spray its change is
+    // followed, against the air before the nozzle when that sensor is reading.
     const shownTemp = c => `${(u.metric ? c : c * 1.8 + 32).toFixed(1)} ${tempUnit()}`;
     const shownChange = c => { const d = Math.abs(u.metric ? c : c * 1.8).toFixed(1); return c < 0 ? `${d} ${tempUnit()} cooler` : c > 0 ? `${d} ${tempUnit()} warmer` : 'no change'; };
     const ecuIat = value('ecu.iat_c'), change = value('meth.iat_change_c'), last = m.last_spray;
-    const cooling = value('meth.temp_drop_c') !== null ? temp('meth.temp_drop_c', true)
-      : change !== null ? `${shownChange(change)} since injection began (MicroSquirt IAT)`
+    const postFromEcu = String(latest.values?.['meth.post_temp_c']?.source || '').startsWith('MicroSquirt');
+    const against = value('meth.pre_temp_c') !== null ? 'against the air before the nozzle' : 'MicroSquirt IAT';
+    const cooling = value('meth.temp_drop_c') !== null && !postFromEcu ? temp('meth.temp_drop_c', true)
+      : change !== null ? `${shownChange(change)} since injection began (${against})`
+      : last && last.against_pre ? `Last spray: ${shownChange(last.change_c)} after the nozzle, measured against the air before it, in ${tidy(last.seconds)} s at ${Math.round(last.flow_ml_min)} ml/min`
       : last ? `Last spray: ${shownTemp(last.from_c)} to ${shownTemp(last.lowest_c)}, ${shownChange(last.change_c)} in ${tidy(last.seconds)} s at ${Math.round(last.flow_ml_min)} ml/min`
       : 'Shown after the first spray';
     const text = {
@@ -250,7 +255,8 @@
       'meth-live-flow': !m.supported || flow === null ? '—' : !flow ? 'None' : `About ${Math.round(flow)} ml/min${dose === null ? '' : ` · ${dose.toFixed(1)}% of fuel`}`,
       'meth-live-rpm': !m.supported ? '—' : m.rpm_ok ? 'OK: above the minimum' : 'Not met',
       'meth-live-pre': value('meth.pre_temp_c') === null ? 'No sensor fitted yet' : temp('meth.pre_temp_c'),
-      'meth-live-post': value('meth.post_temp_c') !== null ? temp('meth.post_temp_c') : ecuIat !== null ? `${shownTemp(ecuIat)} (MicroSquirt IAT)` : 'No sensor reading',
+      'meth-live-post': value('meth.post_temp_c') !== null ? `${temp('meth.post_temp_c')}${postFromEcu ? ' (MicroSquirt IAT)' : ''}`
+        : ecuIat !== null ? `${shownTemp(ecuIat)} (MicroSquirt IAT)` : 'No sensor reading',
       'meth-live-drop': cooling,
     };
     for (const [id, content] of Object.entries(text)) if ($(id).textContent !== content) $(id).textContent = content;

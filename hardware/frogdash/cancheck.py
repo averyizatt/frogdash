@@ -29,7 +29,11 @@ METH_FAULTS = [
     (8, 'Overboost emergency or assist fault latched', 'Check boost control; clear faults once resolved'),
     (16, 'Invalid blend or boost configuration', 'Re-send the boost start setting from Controls'),
     (32, 'No command master seen for 3 s', 'Normal until the dash sends its first command or engine RPM (0x309)'),
+    (64, 'Injection held off after three crashes since the ignition came on (ESP32 board)',
+         "It tries again after 30 s (longer each time it keeps crashing); Clear faults allows it now. "
+         "If it keeps crashing, the controller's USB serial log says why"),
 ]
+KNOWN_FAULT_BITS = sum(bit for bit, _, _ in METH_FAULTS)
 SENSOR_BITS = ['Oil pressure', 'Fuel pressure', 'Meth pressure', 'Boost reference', 'Intake air temp',
                'Engine bay temp', 'Ambient temp', 'Cabin temp']
 BUTTONS = [(1, 'ON'), (2, 'OFF'), (4, 'COAST'), (8, 'SET/ACCEL'), (16, 'RESUME')]
@@ -55,8 +59,8 @@ def meth_detail(data):
     for bit, meaning, action in METH_FAULTS:
         if data[7] & bit:
             notes.append(f'Fault bit {bit}: {meaning}. {action}.')
-    if data[7] & ~63:
-        notes.append(f'Unknown fault bits 0x{data[7] & ~63:02X}: firmware newer or different from this dash')
+    if data[7] & ~KNOWN_FAULT_BITS:
+        notes.append(f'Unknown fault bits 0x{data[7] & ~KNOWN_FAULT_BITS:02X}: firmware newer or different from this dash')
     if not data[7] and data[0] != 3:
         notes.append('No faults reported')
     return notes

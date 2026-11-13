@@ -45,6 +45,8 @@ int main() {
   emit("meth_config_ack", packMethConfigAck(7,0,0,50));
   emit("command_ack", packConfigAck(0x41,0,20,CAN_PROTOCOL_SCHEMA_VERSION));
   emit("knock_fault", packEngineKnockFault(1,2,3,4));
+  // Extension 8: the ESP32 water/meth board's start report (a brownout, pump running, armed again).
+  emit("meth_start", packMethStartReport(9, meth_start_flag::PUMP_WAS_ON | meth_start_flag::ARMED_AGAIN));
   emit("meth.arm", packMethArm(true));
   emit("meth.test", packMethManualTest(25));
   emit("meth.stop", packMethStopManualTest());

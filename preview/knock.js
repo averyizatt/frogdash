@@ -28,6 +28,10 @@
   const set = (id, text) => { const node = $(id); if (node.textContent !== text) node.textContent = text; };
   const kHz = hz => `${(hz / 1000).toFixed(2)} kHz`;
   const detail = () => snapshot.knock_detail || {supported: false};
+  // The controller's firmware is built without knock listening (both boards since November
+  // 2026, the owner's choice until the amplifier works): controls.py knock_built_out.
+  const builtOut = () => !!snapshot.controls?.knock_built_out;
+  const OFF_IN_FIRMWARE = "Knock listening is off in the water/meth controller's firmware for now. Injection does not depend on it.";
 
   // The dash refuses a command while another awaits its reply, and the same command twice
   // within 1.5 s of that reply (a late reply could be taken for the second one's). So a
@@ -72,7 +76,7 @@
     show('knock-last-rpm', 'knock.last_rpm');
     show('knock-last-boost', 'knock.last_boost_kpa', n => `${n} kPa`);
     set('knock-headroom-num', energy === null || threshold === null ? '—' : String(threshold - energy));
-    const status = energy === null ? signal('knock.energy').quality.toUpperCase() :
+    const status = live('knock.enabled') === false ? 'OFF' : energy === null ? signal('knock.energy').quality.toUpperCase() :
       live('knock.critical') ? 'CRITICAL' : live('knock.warning') ? 'WARNING' : !live('knock.learned') ? 'LEARNING' : 'OK';
     set('knock-status', status);
     $('knock-status').dataset.status = status;
@@ -118,7 +122,7 @@
     set('knock-amp', gain === null ? '—' : `${gain.toFixed(1)}×`);
     const trouble = live('knock.amp.overloaded') ? 'TOO LOUD AT THE LOWEST GAIN' : live('knock.amp.silent') ? 'NOTHING HEARD AT FULL GAIN'
       : live('knock.amp.ineffective') ? 'GAIN CONTROL NOT RESPONDING' : null;
-    set('knock-amp-note', gain === null ? (d.supported ? '' : 'FIXED BY THE CIRCUIT') :
+    set('knock-amp-note', gain === null ? (d.supported || builtOut() ? '' : 'FIXED BY THE CIRCUIT') :
       trouble || `${live('knock.amp.fixed') ? 'HELD' : live('knock.amp.automatic') ? 'AUTOMATIC' : 'FIXED'}${step === null ? '' : ` · POSITION ${step} OF ${top}`}`);
     $('knock-amp-note').dataset.state = trouble ? 'warn' : '';
 
@@ -145,7 +149,8 @@
     const rate = live('knock.freq.sample_rate_hz') ?? live('knock.config.sample_rate_hz');
     set('knock-rate', rate ? rate.toLocaleString('en-US') : '—');
 
-    set('knock-source', `${snapshot.mode === 'demo' ? 'SIMULATED' : snapshot.mode === 'replay' ? 'REPLAY' : 'KNOCK SENSOR'} · ${QUALITY[signal('knock.energy').quality]}` +
+    set('knock-source', builtOut() ? "OFF IN THE CONTROLLER'S FIRMWARE" :
+      `${snapshot.mode === 'demo' ? 'SIMULATED' : snapshot.mode === 'replay' ? 'REPLAY' : 'KNOCK SENSOR'} · ${QUALITY[signal('knock.energy').quality]}` +
       `${filter ? ` · LISTENING AT ${(filter / 1000).toFixed(1)} kHz` : ''}${d.supported ? ' · ESP32 CONTROLLER' : ''}`);
   }
 
@@ -161,7 +166,7 @@
       for (const id of ['knock-band', 'knock-band-second']) $(id).setAttribute('width', 0);
       $('knock-marks').replaceChildren();
       if (d.supported) { $('knock-spectrum-missing').hidden = false; set('knock-spectrum-missing', 'Waiting for the first spectrum from the controller…'); }
-      else set('knock-spectrum-missing', 'The spectrum comes from the ESP32 water/meth controller. The controller fitted now does not send one.');
+      else set('knock-spectrum-missing', builtOut() ? OFF_IN_FIRMWARE : 'The spectrum comes from the ESP32 water/meth controller. The controller fitted now does not send one.');
       return;
     }
     const normal = d.normal, burst = Array.isArray(d.burst) ? d.burst : normal;
@@ -324,11 +329,12 @@
     // While a command awaits its reply every command has a reason; a change made then waits
     // its turn (request), so the fields stay usable.
     const busy = !!snapshot.controls?.pending;
-    const blocked = (action, esp32) => !connected || snapshot.mode === 'replay' || (!!reasons[action] && !busy) || (esp32 && !d.supported);
-    const why = (action, esp32) => esp32 && !d.supported ? 'Needs the ESP32 water/meth controller' : busy ? '' : reasons[action] || '';
+    const off = builtOut();
+    const blocked = (action, esp32) => !connected || snapshot.mode === 'replay' || off || (!!reasons[action] && !busy) || (esp32 && !d.supported);
+    const why = (action, esp32) => off ? OFF_IN_FIRMWARE : esp32 && !d.supported ? 'Needs the ESP32 water/meth controller' : busy ? '' : reasons[action] || '';
     if (!busy) {
       const general = !connected ? 'Not connected to the dash: settings cannot be changed.' : snapshot.mode === 'replay' ? 'Replay: settings cannot be changed.'
-        : reasons['knock.multiplier'] ? `${reasons['knock.multiplier']}.` : '';
+        : off ? OFF_IN_FIRMWARE : reasons['knock.multiplier'] ? `${reasons['knock.multiplier']}.` : '';
       blockedNote.hidden = !general; set('knock-set-blocked', general);
     }
     const flags = live('knock.config.flags'), byHand = flags !== null && !(flags & 2);
@@ -352,7 +358,7 @@
     $('knock-set-relearn').disabled = blocked('knock.relearn', true) || byHand;
     $('knock-set-relearn').title = byHand ? 'Only when the frequency is found from the engine' : why('knock.relearn', true);
     const filter = live('knock.freq.filter_hz') ?? live('knock.config.center_hz'), bore = live('knock.freq.bore_hz'), found = live('knock.freq.found_hz');
-    set('knock-set-freq-note', !filter ? 'Waiting for the controller.' :
+    set('knock-set-freq-note', off ? 'Off in the controller\'s firmware.' : !filter ? 'Waiting for the controller.' :
       `Listening at ${kHz(filter)}${byHand ? ', set by hand' : live('knock.freq.learned') ? ', learned from the engine' : d.supported ? ', the bore\'s figure until the engine has been heard under boost' : ', from the bore'}.` +
       `${bore ? ` The bore suggests ${kHz(bore)}.` : ''}${found ? ` The engine's own ringing points to ${kHz(found)}.` : ''}` +
       `${d.supported ? '' : ' Finding it from the engine needs the ESP32 controller.'}`);
@@ -364,7 +370,8 @@
     ampStep.title = !held && d.supported ? 'Choose "Hold a position" to set it yourself' : why('knock.amp_gain', true);
     if (top !== null) ampStep.max = top;
     if (step !== null && !editing(ampStep, 'knock.amp_gain')) ampStep.value = step;
-    set('knock-set-amp-note', !d.supported ? 'The gain is fixed by the circuit on this controller. Setting it from here needs the ESP32 controller and its gain potentiometer.' :
+    set('knock-set-amp-note', off ? 'Off in the controller\'s firmware: the gain potentiometer is left alone.' :
+      !d.supported ? 'The gain is fixed by the circuit on this controller. Setting it from here needs the ESP32 controller and its gain potentiometer.' :
       gain === null ? 'Waiting for the controller.' :
       `${gain.toFixed(1)}× at position ${step} of ${top}, ${held ? 'held here' : live('knock.amp.automatic') ? 'set by the controller to keep normal engine noise in the lower part of its range' : 'not under control'}.` +
       `${live('knock.amp.ineffective') ? ' Changing the gain shows no effect: check the potentiometer and its three control wires.' : ''}` +
