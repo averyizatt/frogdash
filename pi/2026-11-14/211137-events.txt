@@ -1,0 +1,240 @@
+2026-11-13 23:31:16 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":0}
+2026-11-13 23:31:16 UTC  WARN   module   taillights module not heard (stale)
+2026-11-13 23:31:16 UTC  WARN   module   watermeth module not heard (stale)
+2026-11-13 23:31:16 UTC  WARN   module   knock module not heard (stale)
+2026-11-13 23:31:16 UTC  INFO   power    Ignition power off: on the battery
+2026-11-13 23:31:18 UTC  WARN   alert    Alert shown: WATER/METH CONTROLLER NOT RESPONDING  {"vehicle.speed_kph":1.6452,"vehicle.fuel_pct":38.0}
+2026-11-13 23:31:20 UTC  INFO   dash     Dash stopping
+2026-11-13 23:31:31 UTC  INFO   dash     Dash started (7b345f8)
+2026-11-13 23:31:31 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-13 23:31:33 UTC  INFO   module   taillights started (software restart): after its restart on settled power  {"frame":"0x102#08000301"}
+2026-11-13 23:31:33 UTC  INFO   gps      Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-11-13 23:31:35 UTC  INFO   engine   Engine stopped
+2026-11-13 23:31:35 UTC  INFO   power    Ignition power on
+2026-11-13 23:34:22 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:34:24 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-13 23:34:36 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-13 23:34:56 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:35:04 UTC  WARN   module   taillights module not heard (stale)
+2026-11-13 23:35:04 UTC  WARN   module   watermeth module not heard (stale)
+2026-11-13 23:35:04 UTC  WARN   module   knock module not heard (stale)
+2026-11-13 23:35:06 UTC  WARN   alert    Alert shown: WATER/METH CONTROLLER NOT RESPONDING  {"vehicle.speed_kph":0.13319999999999999,"vehicle.fuel_pct":38.0}
+2026-11-13 23:35:08 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":0,"tx_errors":0}
+2026-11-13 23:35:08 UTC  INFO   power    Ignition power off: on the battery
+2026-11-13 23:35:10 UTC  INFO   dash     Dash stopping
+2026-11-13 23:35:20 UTC  INFO   dash     Dash started (7b345f8)
+2026-11-13 23:35:20 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-13 23:35:22 UTC  INFO   module   taillights started (software restart): after its restart on settled power  {"frame":"0x102#08000301"}
+2026-11-13 23:35:22 UTC  INFO   gps      Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-11-13 23:35:24 UTC  INFO   engine   Engine stopped
+2026-11-13 23:35:24 UTC  INFO   power    Ignition power on
+2026-11-13 23:42:45 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:42:51 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:43:03 UTC  INFO   meth     Not armed again yet: Waiting for late controller replies; try again shortly
+2026-11-13 23:43:37 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:43:39 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:43:47 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:44:30 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:44:34 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:44:42 UTC  INFO   gps      Satellite data saved: 10 satellite orbits, 12 almanac entries
+2026-11-13 23:45:00 UTC  ERROR  can      CAN controller ERROR-PASSIVE  {"error_counters":null,"rx_errors":2,"tx_errors":0}
+2026-11-13 23:45:00 UTC  WARN   module   taillights module not heard (stale)
+2026-11-13 23:45:00 UTC  WARN   module   watermeth module not heard (stale)
+2026-11-13 23:45:00 UTC  WARN   module   knock module not heard (stale)
+2026-11-13 23:45:00 UTC  WARN   alert    Alert shown: WATER/METH CONTROLLER NOT RESPONDING  {"vehicle.speed_kph":0.0684,"vehicle.fuel_pct":38.0}
+2026-11-13 23:45:00 UTC  INFO   power    Ignition power off: on the battery
+2026-11-13 23:45:04 UTC  INFO   dash     Dash stopping
+2026-11-13 23:45:14 UTC  INFO   dash     Dash started (7b345f8)
+2026-11-13 23:45:14 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-13 23:45:16 UTC  INFO   module   taillights started (software restart): after its restart on settled power  {"frame":"0x102#08000301"}
+2026-11-13 23:45:16 UTC  WARN   alert    Alert shown: LOW FUEL PRESSURE  {"engine.rpm":973,"engine.boost_kpa":-54.0,"engine.afr":7.6,"ecu.afr_target":14.3,"engine.oil_pressure_psi":79.5,"engine.coolant_c":8.055555555555554,"engine.iat_c":9.38888888888889,"meth.tank_pct":100,"meth.state":"OFF","meth.flow":"UNKNOWN","vehicle.battery_v":11.7,"vehicle.fuel_pct":37.0,"ecu.iat_c":9.38888888888889,"engine.ego_correction_pct":100.0}
+2026-11-13 23:45:16 UTC  INFO   gps      Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-11-13 23:45:16 UTC  WARN   module   water/meth black box (brownout (supply dip)), the 10.0 s before it: pump off; 86 kPa, 0 rpm; CAN heard to the end; longest control gap 20 ms; least free memory 246 KB  {"window_ms":100,"columns":["t_s","duty_pct","duty_max_pct","map_kpa","rpm","hold","state","events","rx_age_ms","loop_gap_ms","pre_c","heap_kb"],"rows":[[-9.9,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-9.8,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-9.7,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-9.6,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-9.5,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-9.4,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-9.3,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-9.2,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-9.1,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-9.0,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-8.9,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-8.8,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-8.7,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-8.6,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-8.5,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-8.4,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-8.3,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-8.2,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-8.1,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-8.0,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-7.9,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-7.8,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-7.7,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-7.6,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-7.5,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-7.4,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-7.3,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-7.2,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-7.1,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-7.0,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-6.9,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-6.8,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-6.7,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-6.6,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-6.5,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-6.4,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-6.3,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-6.2,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-6.1,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-6.0,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-5.9,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-5.8,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-5.7,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-5.6,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-5.5,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-5.4,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-5.3,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-5.2,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-5.1,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-5.0,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-4.9,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-4.8,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-4.7,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-4.6,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-4.5,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-4.4,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-4.3,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-4.2,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-4.1,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-4.0,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-3.9,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-3.8,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-3.7,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-3.6,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-3.5,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-3.4,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-3.3,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-3.2,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-3.1,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-3.0,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-2.9,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-2.8,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-2.7,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-2.6,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-2.5,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-2.4,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-2.3,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-2.2,0.0,0.0,null,null,"DISARMED",0,2,2550,20,9,246],[-2.1,0.0,0.0,86,null,"DISARMED",0,3,90,20,9,246],[-2.0,0.0,0.0,86,null,"DISARMED",0,3,40,20,9,246],[-1.9,0.0,0.0,86,null,"DISARMED",0,3,40,20,9,246],[-1.8,0.0,0.0,87,null,"DISARMED",0,3,40,20,9,246],[-1.7,0.0,0.0,86,null,"DISARMED",0,3,40,20,9,246],[-1.6,0.0,0.0,86,null,"DISARMED",0,3,40,20,9,246],[-1.5,0.0,0.0,86,null,"DISARMED",0,3,40,20,9,246],[-1.4,0.0,0.0,86,null,"DISARMED",0,3,40,20,9,246],[-1.3,0.0,0.0,86,null,"DISARMED",0,3,40,20,9,246],[-1.2,0.0,0.0,87,null,"DISARMED",0,3,40,20,9,246],[-1.1,0.0,0.0,86,null,"DISARMED",0,3,40,20,9,246],[-1.0,0.0,0.0,86,null,"DISARMED",0,3,40,20,9,246],[-0.9,0.0,0.0,87,null,"DISARMED",0,3,40,20,9,246],[-0.8,0.0,0.0,86,null,"DISARMED",0,3,40,20,9,246],[-0.7,0.0,0.0,87,null,"DISARMED",0,3,40,20,9,246],[-0.6,0.0,0.0,87,null,"DISARMED",0,3,40,20,9,246],[-0.5,0.0,0.0,87,null,"DISARMED",0,3,40,20,9,246],[-0.4,0.0,0.0,87,null,"DISARMED",0,3,40,20,9,246],[-0.3,0.0,0.0,86,null,"DISARMED",0,3,40,20,9,246],[-0.2,0.0,0.0,87,null,"DISARMED",0,3,40,20,9,246],[-0.1,0.0,0.0,86,null,"DISARMED",0,3,40,20,9,246],[0.0,0.0,0.0,86,null,"DISARMED",0,3,60,20,9,246]]}
+2026-11-13 23:45:18 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:45:18 UTC  INFO   engine   Engine started
+2026-11-13 23:45:18 UTC  INFO   power    Ignition power on
+2026-11-13 23:45:22 UTC  INFO   gps      Satellite data restored: 10 satellite orbits from 1 min ago
+2026-11-13 23:45:24 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:45:26 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:45:40 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-13 23:45:46 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:45:52 UTC  INFO   gps      Fix with 4 satellites (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-11-13 23:45:58 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-13 23:46:08 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 20:38:55 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:38:59 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:39:33 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:39:55 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:40:05 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 20:40:11 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:40:17 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:40:21 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:40:23 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:40:25 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:40:29 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:40:33 UTC  INFO   gps      Satellite data saved: 7 satellite orbits, 21 almanac entries
+2026-11-14 20:40:37 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:40:59 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:41:25 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:41:31 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:41:37 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:41:39 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:41:43 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:41:45 UTC  WARN   module   sensor gateway silent for 1.0 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:41:51 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:42:03 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:42:05 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:42:13 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:42:17 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:42:53 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:43:01 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:43:07 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:43:27 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:43:29 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:43:43 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:43:55 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:44:14 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 20:44:20 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:44:34 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 20:44:42 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:44:48 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:45:06 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:45:14 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 20:45:26 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:45:36 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:45:44 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:45:58 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 20:46:08 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:46:10 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:46:32 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:46:44 UTC  WARN   alert    Alert shown: BOOST ON A COLD ENGINE  {"engine.rpm":3294,"vehicle.speed_kph":38.455200000000005,"engine.boost_kpa":25.799999999999997,"engine.afr":11.6,"ecu.afr_target":12.2,"engine.oil_pressure_psi":80.0,"engine.coolant_c":55.333333333333336,"engine.iat_c":16.833333333333336,"meth.duty_pct":19,"meth.tank_pct":100,"meth.state":"SPRAYING","meth.flow":"UNKNOWN","vehicle.battery_v":14.0,"vehicle.fuel_pct":33.3,"ecu.iat_c":16.833333333333336,"engine.ego_correction_pct":100.0}
+2026-11-14 20:46:58 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:47:08 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-14 20:47:12 UTC  INFO   engine   Engine stopped
+2026-11-14 20:48:16 UTC  INFO   meth     meth faults cleared
+2026-11-14 20:48:19 UTC  WARN   module   water/meth silent for 1.0 s (0x300), then back: a restart of the module, or a dropout  {"id":"0x300"}
+2026-11-14 20:48:19 UTC  WARN   module   sensor gateway silent for 1.0 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:48:21 UTC  WARN   module   taillights silent for 4.9 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 20:48:21 UTC  INFO   module   taillights started (software restart): after its restart on settled power  {"frame":"0x102#08000301"}
+2026-11-14 20:48:21 UTC  INFO   engine   Engine started
+2026-11-14 20:49:13 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:49:21 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:49:49 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:49:51 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:49:59 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:50:05 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:50:07 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:50:09 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:50:35 UTC  INFO   gps      Satellite data saved: 11 satellite orbits, 32 almanac entries
+2026-11-14 20:50:39 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:50:51 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:51:00 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 20:51:02 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:51:04 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:51:08 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:51:24 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:51:32 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:51:42 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 20:51:50 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 20:51:52 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:52:06 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:52:20 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:52:24 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:52:32 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:52:34 UTC  WARN   module   sensor gateway silent for 1.2 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:52:40 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:53:14 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:53:28 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:53:32 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:53:34 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:53:40 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:53:56 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:54:02 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:54:04 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:54:12 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:54:24 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:54:50 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:54:52 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:54:54 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:54:58 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:55:02 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:55:12 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:55:14 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:55:22 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:55:24 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:55:28 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:56:09 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:56:23 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:56:25 UTC  WARN   module   sensor gateway silent for 1.2 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:56:27 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:56:31 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:56:33 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:56:33 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:56:35 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:56:55 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:57:13 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:57:35 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:58:13 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:58:31 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 20:58:35 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:58:37 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:58:47 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:58:51 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 20:59:09 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:00:10 UTC  WARN   alert    Alert shown: LEAN UNDER BOOST  {"engine.rpm":2235,"vehicle.speed_kph":78.99480000000001,"engine.boost_kpa":20.599999999999994,"engine.afr":13.9,"ecu.afr_target":12.6,"engine.oil_pressure_psi":82.5,"engine.coolant_c":89.66666666666666,"engine.iat_c":33.05555555555556,"meth.tank_pct":100,"meth.state":"ARMED","meth.flow":"UNKNOWN","vehicle.battery_v":13.8,"vehicle.fuel_pct":36.7,"ecu.iat_c":33.05555555555556,"engine.ego_correction_pct":100.0}
+2026-11-14 21:00:24 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:00:38 UTC  INFO   gps      Satellite data saved: 12 satellite orbits, 32 almanac entries
+2026-11-14 21:00:40 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:00:54 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:01:02 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:01:14 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:01:20 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 21:01:30 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:01:52 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:02:10 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:02:44 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 21:03:26 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:03:31 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:03:45 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:03:51 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 21:03:53 UTC  WARN   module   taillights silent for 1.1 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-14 21:04:25 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:04:33 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:04:47 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:04:57 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:05:03 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:05:07 UTC  WARN   module   sensor gateway silent for 1.2 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:05:09 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:05:13 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:05:19 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:05:21 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:05:25 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:05:45 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:05:47 UTC  WARN   module   sensor gateway silent for 1.2 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:05:49 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:05:51 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:05:55 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:06:13 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:06:15 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:06:21 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:06:53 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:06:59 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:08:12 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:08:18 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:08:28 UTC  WARN   module   sensor gateway silent for 1.0 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:08:32 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:08:36 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:08:58 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:09:30 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:10:10 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-14 21:10:28 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-14 21:10:32 UTC  INFO   engine   Engine stopped
+2026-11-14 21:10:42 UTC  INFO   gps      Satellite data saved: 13 satellite orbits, 33 almanac entries
+2026-11-14 21:11:08 UTC  INFO   drive    Drive ended: 0.0 mi, 33 min, top 53 mph, peak boost 7.8 psi, meth 33 s  {"started":1794613515.5,"ended":1794690668.0,"duration_s":2001,"distance_km":0.0,"top_speed_kph":84.7,"peak_boost_kpa":53.9,"max_rpm":4647,"max_coolant_c":95.4,"min_oil_psi":79.5,"meth_spray_s":33.1,"knock_events":0,"alerts":3,"problems":169,"ended_by":"dash stopped"}
+2026-11-14 21:11:08 UTC  INFO   dash     Dash stopping
+2026-11-14 21:11:11 UTC  INFO   dash     Dash started (Frogdash 1.1, 25d3178)
+2026-11-14 21:11:11 UTC  WARN   meth     meth faults reported: no manifold pressure
+2026-11-14 21:11:11 UTC  WARN   sensors  sensors faults reported: fuel pressure, meth pressure, boost reference, intake air temp, engine bay temp, ambient temp, cabin temp
+2026-11-14 21:11:13 UTC  INFO   gps      Receiver set to the automotive model (/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00)
+2026-11-14 21:11:15 UTC  INFO   engine   Engine stopped
+2026-11-14 21:11:17 UTC  INFO   power    Ignition power on
