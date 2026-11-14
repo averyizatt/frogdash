@@ -175,6 +175,15 @@ class UpdateScriptTests(unittest.TestCase):
         if shutil.which('python3'):
             self.assertEqual((self.state / 'uploaded').read_text(), 'yes')
 
+    def test_the_status_names_the_system_version(self):
+        self.publish('VERSION', '1.1')
+        self.git(self.origin, 'tag', 'v1.1')
+        status = self.run_script(request='requested')
+        self.assertEqual((status['state'], status['release']), ('updated', '1.1'))   # On the release tag
+        self.publish('dash.txt', 'a fix after 1.1')
+        status = self.run_script(request='requested')
+        self.assertEqual((status['state'], status['release']), ('updated', '1.1+'))  # A later commit
+
     def test_good_update_is_kept_and_can_be_undone_by_hand(self):
         second = self.publish('dash.txt', 'version two')
         status = self.run_script(request='requested')

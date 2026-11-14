@@ -2,7 +2,10 @@
 
 The receiver is the shared header compiled for this computer (tests/firmware_receiver_harness.cpp),
 so both ends of the protocol are exercised together, including lost frames and answers,
-a module that goes back to its old firmware, and one that never comes back.
+a module that goes back to its old firmware, and one that never comes back. The stand-in
+module answers as firmware from before protocol version 2 unless a test says otherwise, as
+every board in the car did until its first update to version 2; while it runs it sends its
+own regular messages, which the dash checks for before confirming a new build.
 """
 import asyncio
 import errno
@@ -17,12 +20,12 @@ import unittest
 
 from hardware.frogdash import fwupdate
 from hardware.frogdash.adapters import send_frame
-from hardware.frogdash.fwupdate import Firmware, crc16, data_frames, load_image
+from hardware.frogdash.fwupdate import Firmware, crc16, data_frames, data_frames_2, load_image
 from hardware.frogdash.state import State
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPILER = shutil.which('g++') or shutil.which('clang++')
-OLD, NEW = '0a0b0c0d', '1a2b3c4d'
+OLD, NEW, NEWER = '0a0b0c0d', '1a2b3c4d', '2b3c4d5e'
 _harness = {}
 
 
@@ -31,7 +34,7 @@ def harness():
         folder = Path(tempfile.mkdtemp())
         exe = folder / 'receiver.exe'
         done = subprocess.run([COMPILER, '-std=c++17', '-Wall', '-Wextra', '-Werror', '-I', str(ROOT / 'hardware/can_contract/include'),
-                               str(ROOT / 'tests/firmware_receiver_harness.cpp'), '-o', str(exe)], capture_output=True, text=True)
+                               str(ROOT / 'tests/firmware_receiver_harness.cpp'), '-lz', '-o', str(exe)], capture_output=True, text=True)
         if done.returncode:
             raise AssertionError(done.stderr)
         _harness['exe'] = exe
@@ -40,8 +43,14 @@ def harness():
 
 class Module:
     """The gateway on the bus: the real receiver in a child process, restarted as it would restart."""
-    def __init__(self, test, build=OLD, out=None, **options):
+    def __init__(self, test, build=OLD, out=None, v1=True, **options):
         self.test, self.out, self.options = test, out, options
+        self.v1 = v1                   # Answers as firmware from before protocol version 2
+        self.v1_after_restart = v1     # ...and after it restarts into the new build
+        self.healthy = True            # Sends its own regular messages while it runs
+        self.healthy_after_restart = True
+        self.healthy_from = None       # Only from this (test) time on
+        self.messages_late_s = 0.0     # After a restart, its messages start this much later
         self.process = None
         self.sent = []                 # Every frame the dash put on the bus
         self.lose_frames = set()       # Indexes into `sent` that never arrive
@@ -57,6 +66,8 @@ class Module:
         args = [str(harness()), '--build', build]
         if trial:
             args.append('--trial')
+        if self.v1:
+            args.append('--v1')
         if self.out:
             args += ['--out', str(self.out)]
         for name, value in self.options.items():
@@ -93,7 +104,16 @@ class Module:
             if self.after_restart is None:
                 self.silent = True
             else:
-                self.boot(self.after_restart, trial=self.after_restart == NEW)
+                self.v1, self.healthy = self.v1_after_restart, self.healthy_after_restart
+                self.healthy_from = self.test.now + self.messages_late_s
+                self.boot(self.after_restart, trial=self.after_restart in (NEW, NEWER))
+
+    def tick(self):
+        """Its own regular messages on the bus, as a running module sends them all the time."""
+        if not self.process or self.silent or not self.healthy or (self.healthy_from or 0) > self.test.now:
+            return
+        for can_id, _ in fwupdate.HEALTH.get(int(self.options.get('target', 1)), ()):
+            self.test.state.ingest(can_id, bytes(8))
 
 
 @unittest.skipUnless(COMPILER, 'C++ compiler required to run the real receiver')
@@ -116,6 +136,7 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
 
     async def sleep(self, seconds):
         self.now += seconds
+        self.module.tick()
         await asyncio.sleep(0)
 
     def publish(self, image, build, name='gateway'):
@@ -149,6 +170,98 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
         # Data frames carry seven bytes each, two at a time with a pause between.
         self.assertEqual(len(data_frames(self.image[:448])), 64)
         self.assertEqual(crc16(b'123456789'), 0x29B1)
+
+    # ---- Protocol version 2 (November 2026) ----
+    def compressible(self, size=30000):
+        """Like firmware: compresses to about half."""
+        rng = random.Random(9)
+        return b''.join(rng.randbytes(40) + bytes([n % 7]) * 40 for n in range(size // 80))[:size]
+
+    def data_sent(self):
+        return [frame for frame in self.module.sent if frame[0] < 0x80]   # Data frames; commands have bit 7 set
+
+    def begin_mode(self):
+        return next(frame[7] for frame in self.module.sent if frame[:2] == bytes([fwupdate.BEGIN, 1]))
+
+    async def test_version_2_sends_compressed_8_kb_blocks_and_confirms_once_its_messages_are_back(self):
+        image = self.compressible()
+        self.publish(image, NEW)
+        self.use(Module(self, out=self.folder / 'received.bin', v1=False))
+        job = await self.install()
+        self.assertEqual(job['state'], 'done', job)
+        self.assertEqual((self.folder / 'received.bin').read_bytes(), image)
+        self.assertEqual(self.begin_mode(), fwupdate.MODE_LARGE | fwupdate.MODE_COMPRESSED)
+        chunks = [image[i:i + fwupdate.CHUNK_BYTES] for i in range(0, len(image), fwupdate.CHUNK_BYTES)]
+        wire = [__import__('zlib').compress(chunk, 9) for chunk in chunks]
+        self.assertEqual(len(self.data_sent()), sum(len(data_frames_2(w)) for w in wire))   # Every frame once, no more
+        self.assertLess(len(self.data_sent()), -(-len(image) // 7) * .7)                     # Far fewer than version 1 would send
+        self.assertEqual(sum(frame[:2] == bytes([fwupdate.BLOCK_END, 1]) for frame in self.module.sent), len(chunks))
+        self.assertIn('KB on the bus', job['message'])
+        self.assertIn('working: its speed and RPM back', job['message'])
+        self.assertIn(bytes([fwupdate.CONFIRM, 1]), [frame[:2] for frame in self.module.sent])
+
+    async def test_version_2_sends_only_the_frames_that_went_missing(self):
+        image = self.compressible()
+        self.publish(image, NEW)
+        self.use(Module(self, out=self.folder / 'received.bin', v1=False))
+        self.module.lose_frames = {2 + 30, 2 + 31, 2 + 90}   # After QUERY and BEGIN: frames 30, 31 and 90 of block 0
+        job = await self.install()
+        self.assertEqual(job['state'], 'done', job)
+        self.assertEqual((self.folder / 'received.bin').read_bytes(), image)
+        chunks = [image[i:i + fwupdate.CHUNK_BYTES] for i in range(0, len(image), fwupdate.CHUNK_BYTES)]
+        once = sum(len(data_frames_2(__import__('zlib').compress(chunk, 9))) for chunk in chunks)
+        self.assertEqual(len(self.data_sent()), once + 61)    # Frames 30 to 90 again, not the whole block
+        self.assertEqual(self.firmware.missed['had frames sent again'], 1)
+
+    async def test_version_2_without_compression_sends_the_image_as_it_is(self):
+        self.use(Module(self, out=self.folder / 'received.bin', v1=False, no_compression=True))
+        job = await self.install()
+        self.assertEqual(job['state'], 'done', job)
+        self.assertEqual((self.folder / 'received.bin').read_bytes(), self.image)
+        self.assertEqual(self.begin_mode(), fwupdate.MODE_LARGE)
+        self.assertEqual(len(self.data_sent()), -(-len(self.image) // 6))
+        self.assertNotIn('KB on the bus', job['message'])
+
+    async def test_the_first_update_to_version_2_firmware_goes_the_old_way_and_the_next_the_new(self):
+        self.module.v1_after_restart = False           # The build it is updated to takes version 2
+        job = await self.install()
+        self.assertEqual(job['state'], 'done', job)
+        self.assertEqual(self.begin_mode(), 0)          # Today's firmware: version 1
+        self.assertEqual({len(frame) for frame in self.data_sent()}, {8})
+        self.assertIn('its next updates take the faster protocol', job['message'])
+        self.assertEqual(self.firmware.version, 2)
+        # The next update: version 2, compressed.
+        image = self.compressible()
+        self.publish(image, NEWER)
+        self.module.after_restart = NEWER
+        self.module.sent.clear()
+        job = await self.install()
+        self.assertEqual(job['state'], 'done', job)
+        self.assertEqual((self.folder / 'received.bin').read_bytes(), image)
+        self.assertEqual(self.begin_mode(), fwupdate.MODE_LARGE | fwupdate.MODE_COMPRESSED)
+        self.assertNotIn('next updates take', job['message'])
+
+    async def test_a_new_build_whose_messages_do_not_come_back_is_not_confirmed(self):
+        self.module.healthy_after_restart = False      # It answers as the new build but does nothing else
+        job = await self.install()
+        self.assertEqual(job['state'], 'failed', job)
+        self.assertIn(f'runs build {NEW}, but its speed and RPM did not come back steadily', job['message'])
+        self.assertIn('returns to its previous firmware by itself', job['message'])
+        self.assertNotIn(bytes([fwupdate.CONFIRM, 1]), [frame[:2] for frame in self.module.sent])
+
+    async def test_messages_that_take_a_few_seconds_to_come_back_are_waited_for(self):
+        self.module.messages_late_s = 6.0
+        job = await self.install()
+        self.assertEqual(job['state'], 'done', job)
+        self.assertIn(bytes([fwupdate.CONFIRM, 1]), [frame[:2] for frame in self.module.sent])
+
+    async def test_the_water_meth_controller_is_checked_by_its_own_three_messages(self):
+        image = self.compressible()
+        self.publish(image, NEW, 'watermeth')
+        self.use(Module(self, out=self.folder / 'received.bin', v1=False, target=3))
+        job = await self.install(name='watermeth')
+        self.assertEqual(job['state'], 'done', job)
+        self.assertIn('working: its water/meth state, knock state and tuning status back', job['message'])
 
     async def test_lost_frames_and_lost_answers_only_cost_a_repeat(self):
         self.module.lose_frames = {7, 150, 151, 400}          # Data frames that never arrive

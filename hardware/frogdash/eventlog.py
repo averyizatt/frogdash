@@ -15,6 +15,7 @@ from collections import deque
 import json
 from pathlib import Path
 import time
+import zlib
 
 WATCH_S = 2
 HOLD_S = 4                 # A change has to last this long to be written (no one-sample blips)
@@ -65,21 +66,61 @@ GPS_LEVEL = {'fix': 'info', 'starting': 'info', 'searching': 'info', 'deaf': 'wa
              'silent': 'error', 'no-gpsd': 'error', 'jammed': 'warn', 'antenna': 'error'}
 
 
-def installed_version(repo=Path(__file__).resolve().parents[2]):
-    """The commit the dash runs, read from git's files (no git command at start-up)."""
+def _peel(repo, sha):
+    """An annotated tag's commit, when its tag object is loose (release tags are plain ones,
+    which name the commit themselves). The name itself otherwise."""
+    try:
+        data = zlib.decompress((repo / '.git' / 'objects' / sha[:2] / sha[2:]).read_bytes())
+    except (OSError, zlib.error):
+        return sha
+    if data.startswith(b'tag '):
+        body = data.split(b'\0', 1)[1]
+        if body.startswith(b'object '):
+            return body[7:47].decode('ascii', 'replace')
+    return sha
+
+
+def _ref(repo, ref):
+    """The commit a ref names, from git's files: loose, or packed (an annotated tag's commit
+    is the "^" line after it). '' when there is no such ref."""
+    try:
+        path = repo / '.git' / ref
+        if path.exists():
+            return _peel(repo, path.read_text().strip())
+        lines = (repo / '.git' / 'packed-refs').read_text().splitlines()
+        for index, line in enumerate(lines):
+            if line.endswith(' ' + ref):
+                peeled = lines[index + 1] if index + 1 < len(lines) else ''
+                return peeled[1:].strip() if peeled.startswith('^') else line.split()[0]
+    except (OSError, IndexError):
+        pass
+    return ''
+
+
+def _head(repo):
     try:
         head = (repo / '.git' / 'HEAD').read_text().strip()
-        if head.startswith('ref: '):
-            ref = head[5:]
-            path = repo / '.git' / ref
-            if path.exists():
-                head = path.read_text().strip()
-            else:
-                packed = (repo / '.git' / 'packed-refs').read_text().splitlines()
-                head = next(line.split()[0] for line in packed if line.endswith(' ' + ref))
-        return head[:7]
-    except (OSError, StopIteration, IndexError):
+    except OSError:
         return ''
+    return _ref(repo, head[5:]) if head.startswith('ref: ') else head
+
+
+def installed_version(repo=Path(__file__).resolve().parents[2]):
+    """The commit the dash runs, read from git's files (no git command at start-up)."""
+    return _head(repo)[:7]
+
+
+def installed_release(repo=Path(__file__).resolve().parents[2]):
+    """The system version (VERSION, one number for the dash and every module, November 2026):
+    "1.1" when the dash runs its release tag v1.1, "1.1+" for a later commit, '' without it."""
+    try:
+        version = ''.join(ch for ch in (repo / 'VERSION').read_text(encoding='utf-8').strip() if ch.isdigit() or ch == '.')
+    except OSError:
+        return ''
+    if not version:
+        return ''
+    head = _head(repo)
+    return version if head and _ref(repo, f'refs/tags/v{version}') == head else version + '+'
 
 
 def read(folder, since=0.0, limit=2000):
@@ -308,8 +349,9 @@ class EventLog:
                 path.unlink(missing_ok=True)
 
     async def run(self):
-        version = await asyncio.to_thread(installed_version)
-        self.write('info', 'dash', 'Dash started' + (f' ({version})' if version else ''))
+        version, release = await asyncio.to_thread(installed_version), await asyncio.to_thread(installed_release)
+        named = ', '.join(part for part in (f'Frogdash {release}' if release else '', version) if part)
+        self.write('info', 'dash', 'Dash started' + (f' ({named})' if named else ''))
         await asyncio.to_thread(self.prune)
         while not self.stopping:
             try:

@@ -7,7 +7,7 @@ Raspberry Pi, 12.3-inch 1920 × 720 display, live engine data over CAN.
 
 [![Tests](https://github.com/averyizatt/frogdash/actions/workflows/test.yml/badge.svg)](https://github.com/averyizatt/frogdash/actions/workflows/test.yml)
 [![Preview](https://github.com/averyizatt/frogdash/actions/workflows/pages.yml/badge.svg)](https://averyizatt.github.io/frogdash/)
-![Version](https://img.shields.io/badge/version-0.4.0-2f9e6b)
+![Version](https://img.shields.io/badge/version-1.1-2f9e6b)
 
 **[Try the live preview](https://averyizatt.github.io/frogdash/)** · [Documentation](docs/README.md) · [Install](#install)
 
@@ -216,6 +216,14 @@ preview check, and deploys `preview/` to GitHub Pages.
 
 ## Status
 
-Version 0.4.0. Running in the car, with diagnostics uploaded after each update; desktop
-and browser tests cover every feature. See the [documentation](docs/README.md) for what each
+Version 1.1. Running in the car, with diagnostics uploaded after each update; desktop
+and browser tests cover every feature.
+
+**One version for the whole system** (November 2026): the dash and the three modules'
+firmware (gateway, taillights, water/meth) share one number, in the `VERSION` file of each
+repository, and each release is tagged `vX.Y` in all four together. 1.0 is what was in the
+car and checked there on 13 November 2026; 1.1 adds the faster firmware updates over CAN
+and the check after each one. A build after a release shows a `+` (`1.1+`). The dash shows
+its own version under Software and Support and in the event log at each start, and each
+module's version beside its build when the firmware file on the Pi names one. See the [documentation](docs/README.md) for what each
 part does and how it was checked.

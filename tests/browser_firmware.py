@@ -63,6 +63,11 @@ async def main(browser_path):
         gateway = Gateway(state.firmware)
         module = state.firmware.modules['gateway']
         state.controls.attach(gateway.sender)
+        async def running_gateway():   # Its regular speed and RPM message (0x500), as a gateway on the bus sends it:
+            while True:                # the dash confirms a new build only once that is back and steady.
+                state.ingest(0x500, bytes(8))
+                await asyncio.sleep(.1)
+        beat = asyncio.create_task(running_gateway())
         runner = web.AppRunner(create_app(state), access_log=None)
         await runner.setup()
         site = web.TCPSite(runner, '127.0.0.1', 0)
@@ -131,7 +136,8 @@ async def main(browser_path):
                 assert await page.locator('#fw-row-gateway .sw-bar').is_visible()
                 await page.screenshot(path=str(ROOT / '.tmp/firmware-installing.png'))
                 await page.wait_for_function("document.getElementById('fw-state-gateway').textContent === 'Updated'", timeout=30000)
-                assert (await page.locator('#fw-detail-gateway').inner_text()).startswith(f'Gateway updated to build {NEW}')
+                detail = await page.locator('#fw-detail-gateway').inner_text()
+                assert detail.startswith(f'Gateway updated to build {NEW}') and 'working: its speed and RPM back' in detail, detail
                 await page.wait_for_function("document.getElementById('fw-install-gateway').hidden")
                 assert gateway.blocks == -(-len(image) // fw.BLOCK_BYTES) and gateway.commands[-1] == fw.CONFIRM and not gateway.trial
                 # Restart: two presses too, and it says when the module is answering again.
@@ -150,6 +156,7 @@ async def main(browser_path):
                 await page.close()
                 await browser.close()
                 await runner.cleanup()
+                beat.cancel()
     print('Gateway firmware: status line, two-press install, refusal while moving, progress, confirmed result and restart passed.')
 
 

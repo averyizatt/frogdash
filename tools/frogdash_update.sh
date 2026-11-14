@@ -55,9 +55,15 @@ stopped() {
 trap stopped TERM INT
 
 short() { git -C $REPO rev-parse --short "$1" 2>/dev/null; }
+# The system version (VERSION) at a commit: "1.1" on its release tag v1.1, "1.1+" after it, nothing before there was one.
+release() {
+    v=$(git -C $REPO show "$1:VERSION" 2>/dev/null | head -n 1 | tr -cd '0-9.')
+    [ -n "$v" ] || return 0
+    if git -C $REPO tag --points-at "$1" 2>/dev/null | grep -qx "v$v"; then printf '%s' "$v"; else printf '%s+' "$v"; fi
+}
 report() {  # state, message. The mode tells the dash a start-up setup (which Update now may stop) from an update.
-    printf '{"state":"%s","message":"%s","version":"%s","previous":"%s","time":%s,"mode":"%s"}\n' "$1" "$2" \
-        "$(short HEAD)" "$(short "$(cat "$STATE/update-previous" 2>/dev/null)")" "$(date +%s)" "$mode" > "$STATUS.tmp"
+    printf '{"state":"%s","message":"%s","version":"%s","previous":"%s","release":"%s","time":%s,"mode":"%s"}\n' "$1" "$2" \
+        "$(short HEAD)" "$(short "$(cat "$STATE/update-previous" 2>/dev/null)")" "$(release HEAD)" "$(date +%s)" "$mode" > "$STATUS.tmp"
     chmod 644 "$STATUS.tmp"; mv "$STATUS.tmp" "$STATUS"
 }
 probe() {  # The dash's own health page; fails unless the service answers.

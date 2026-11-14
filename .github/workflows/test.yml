@@ -30,6 +30,8 @@ jobs:
           python-version: '3.13'
       - run: pip install -r requirements.txt -r requirements-tools.lock
       - run: g++ --version
+      # The firmware-update tests run the boards' real receiver, which unpacks with zlib here.
+      - run: dpkg -s zlib1g-dev >/dev/null 2>&1 || (sudo apt-get update -qq && sudo apt-get install -y -qq zlib1g-dev)
       # An undefined name only fails when its line runs: on the Pi, at start-up (os in
       # server.py's main(), October 2026). Caught here before it can be installed.
       - run: pip install pyflakes==3.2.0 && python -m pyflakes hardware/frogdash tools

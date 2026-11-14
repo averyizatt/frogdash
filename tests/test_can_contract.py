@@ -226,8 +226,20 @@ class WireTests(unittest.IsolatedAsyncioTestCase):
             'fw_abort': fw.command(fw.ABORT, 1),
             'fw_confirm': fw.command(fw.CONFIRM, 1, bytes.fromhex('1a2b3c4d')),
         }
+        frames_2 = fw.data_frames_2(part)
+        built.update({
+            'fw_begin_2': fw.command(fw.BEGIN, 1, (0x05A1B2).to_bytes(3, 'big') + b'FW' + bytes([fw.MODE_LARGE | fw.MODE_COMPRESSED])),
+            'fw_data2_full': frames_2[0], 'fw_data2_last': frames_2[1],
+            'fw_data2_high': fw.data_frames_2(bytes(6 * 0x0456) + part[:6])[0x0456],
+            'fw_block_end_2': fw.command(fw.BLOCK_END, 1, (0x0123).to_bytes(2, 'big') + fw.crc16(part).to_bytes(2, 'big') + (10).to_bytes(2, 'big')),
+        })
         for name, payload in built.items():
             self.assertEqual((fw.ID_COMMAND, payload), vectors()[name], name)
+        # Version 2's answers: the range the module missed, and a module that can unpack.
+        missing = vectors()['fw_missing'][1]
+        self.assertEqual((missing[3], int.from_bytes(missing[4:6], 'big'), int.from_bytes(missing[6:8], 'big')), (fw.MISSING, 0x11, 0x345))
+        info_2 = vectors()['fw_info_2'][1]
+        self.assertEqual((info_2[6] & fw.COMPRESSION, info_2[7]), (fw.COMPRESSION, 2))
         # The module's answers, as the dash reads them.
         state = State('socketcan', clock=lambda: 10)
         state.connected = True

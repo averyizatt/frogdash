@@ -342,6 +342,7 @@ def diagnostics(now):
         setup_log = None
     return {'format': 'pi-diagnostics', 'version': 1, 'created': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(now)),
             'version_installed': text_of('git', '-C', str(REPO_DIR), 'log', '-1', '--format=%h %s').strip(),
+            'release': text_of('git', '-C', str(REPO_DIR), 'describe', '--tags', '--match', 'v*', '--always').strip(),
             'selftest': local('/selftest'), 'health': local('/health'), 'logs': local('/logs'),
             # /state is the screen's WebSocket: its contents come from /snapshot.
             'state': local('/snapshot'), 'display': local('/ui/display'), 'firmware': local('/firmware'),

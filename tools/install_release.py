@@ -38,8 +38,8 @@ def manifest(source):
 
 def release_name(source, contents):
     version = (source / 'VERSION').read_text().strip()
-    if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', version):
-        raise ValueError('VERSION must be major.minor.patch')
+    if not re.fullmatch(r'[0-9]+\.[0-9]+(\.[0-9]+)?', version):   # The system version: 1.1, or 1.1.1 for a fix
+        raise ValueError('VERSION must be major.minor or major.minor.patch')
     digest = sha256(json.dumps(contents, sort_keys=True).encode()).hexdigest()[:12]
     return f'{version}-{digest}'
 

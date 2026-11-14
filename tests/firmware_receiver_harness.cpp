@@ -4,11 +4,14 @@
 //   T <ms>       advance the clock        ->  -
 //   X            check for an abandoned transfer  ->  EXPIRED or -
 // On RESTART the received image is written to --out.
+// --v1 answers as firmware from before protocol version 2; --no-compression as a module
+// that cannot unpack. The receiver itself is the current one either way.
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
 #include <vector>
+#include <zlib.h>
 #include "can_contract/firmware_update.h"
 
 namespace fw = can_protocol::firmware;
@@ -30,10 +33,21 @@ struct Flash {
   bool confirm() { return true; }
 };
 
+// The boards unpack with their ROM's decompressor; zlib stands in for it here.
+struct ZlibInflate {
+  static constexpr bool kAvailable = true;
+  bool begin() { return true; }
+  void end() {}
+  bool unpack(const uint8_t* in, uint32_t inLength, uint8_t* out, uint32_t outLength) {
+    uLongf got = outLength;
+    return uncompress(out, &got, in, inLength) == Z_OK && got == outLength;
+  }
+};
+
 int main(int argc, char** argv) {
   Flash flash;
   uint32_t build = 0;
-  bool trial = false, busyBegin = false;
+  bool trial = false, busyBegin = false, v1 = false, noCompression = false;
   uint8_t target = fw::TARGET_GATEWAY;
   int busyAfter = -1, blocks = 0;   // As the taillight controller does when a light input comes on.
   for (int i = 1; i < argc; ++i) {
@@ -46,8 +60,10 @@ int main(int argc, char** argv) {
     else if (arg == "--busy-begin") busyBegin = true;
     else if (arg == "--busy-after" && i + 1 < argc) busyAfter = std::atoi(argv[++i]);
     else if (arg == "--fail-finish") flash.failFinish = true;
+    else if (arg == "--v1") v1 = true;
+    else if (arg == "--no-compression") noCompression = true;
   }
-  fw::Receiver<Flash> module(target, build, flash);
+  fw::Receiver<Flash, ZlibInflate> module(target, build, flash);
   module.setOnTrial(trial);
   uint32_t now = 1000;
   char line[64];
@@ -76,6 +92,8 @@ int main(int argc, char** argv) {
         std::printf(" STOPPED\n");
       } else if (module.handle(frame, reply, now, action)) {
         if (frame.data[0] == fw::BLOCK_END && reply.data[3] == fw::STATUS_OK) ++blocks;
+        if (reply.data[0] == fw::INFO && (v1 || noCompression)) reply.data[6] &= static_cast<uint8_t>(~fw::FLAG_COMPRESSION);
+        if (reply.data[0] == fw::INFO && v1) reply.data[7] = 1;
         std::printf("R ");
         for (int i = 0; i < 8; ++i) std::printf("%02x", reply.data[i]);
         std::printf(" %s\n", names[static_cast<int>(action)]);

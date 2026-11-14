@@ -148,6 +148,14 @@ int main() {
   emit("fw_confirm", firmware::packConfirm(firmware::TARGET_GATEWAY, 0x1A2B3C4D));
   emit("fw_info", firmware::packInfo(firmware::TARGET_GATEWAY, 0x1A2B3C4D, firmware::FLAG_ON_TRIAL));
   emit("fw_ack", firmware::packAck(firmware::TARGET_GATEWAY, firmware::BLOCK_END, firmware::STATUS_RESEND, 0x0123));
+  // Version 2: bigger blocks, frames named in two bytes, only the missing frames again.
+  emit("fw_begin_2", firmware::packBegin(firmware::TARGET_GATEWAY, 0x05A1B2, firmware::MODE_LARGE | firmware::MODE_COMPRESSED));
+  emit("fw_data2_full", firmware::packData2(0, part, 6));
+  emit("fw_data2_last", firmware::packData2(1, part + 6, 4));
+  emit("fw_data2_high", firmware::packData2(0x0456, part, 6));
+  emit("fw_block_end_2", firmware::packBlockEnd2(firmware::TARGET_GATEWAY, 0x0123, firmware::crc16(part, 10), 10));
+  emit("fw_missing", firmware::packMissing(firmware::TARGET_GATEWAY, 0x0011, 0x0345));
+  emit("fw_info_2", firmware::packInfo(firmware::TARGET_GATEWAY, 0x1A2B3C4D, firmware::FLAG_COMPRESSION));
   GpsState gps{}; gps.speed_kph_x10=756; gps.altitude_m=-10; gps.satellites=1;
   gps.fix_type=3; gps.status_flags=0x1b; gps.satellites_in_view=2; emit("gps",packGpsState(gps));
 }

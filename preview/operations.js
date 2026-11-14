@@ -4,7 +4,7 @@
   const $ = id => document.getElementById(id), u = window.FrogdashUnits;
   const keys = ['frogdash.appearance.v1', 'frogdash.driving.v1', 'frogdash.units.v1', 'frogdash.cluster.v1', 'frogdash.camera.v1'];
   let latest = {}, online = false, busy = false, pending = null, backlight = {};
-  const simulated = {version: '0.4.0 preview', os: 'Simulated Raspberry Pi', maintenance: [], checks: {}, capabilities: []};
+  const simulated = {version: '1.1 preview', os: 'Simulated Raspberry Pi', maintenance: [], checks: {}, capabilities: []};
   const demo = () => latest.mode === 'demo';
   const MODULE_NAMES = {taillights: 'Taillights', comfort: 'Sensor gateway', watermeth: 'Water / meth', knock: 'Knock sensing'};
   const status = () => demo() ? simulated : latest.operations || {};
@@ -97,7 +97,7 @@
     const busy = s.pending || s.state === 'running';
     const [tone, label] = s.pending ? ['busy', 'Starting…'] : PILLS[s.state] || ['idle', s.state || 'Unknown'];
     $('update-pill').dataset.tone = tone; $('update-pill').textContent = label;
-    $('update-version').textContent = s.version ? `Version ${s.version}${s.previous ? ` · before it ${s.previous}` : ''}` : 'Version unknown';
+    $('update-version').textContent = s.version ? `Version ${s.release ? `${s.release} (${s.version})` : s.version}${s.previous ? ` · before it ${s.previous}` : ''}` : 'Version unknown';
     $('update-status').textContent = s.pending ? 'Waiting for the update helper… (is frogdash-update.path enabled?)' : s.message;
     const at = STEPS.indexOf(updateStep(s)), finished = ['updated', 'current'].includes(s.state), broken = ['failed', 'rolledback', 'held'].includes(s.state);
     document.querySelectorAll('#update-steps li').forEach((li, i) => {
@@ -156,9 +156,11 @@
     if (job.state === 'failed') return ['bad', restart ? 'Restart failed' : 'Failed', job.message];
     if (job.state === 'done') return ['good', restart ? 'Restarted' : 'Updated', job.message];
     if (m.installed == null) return ['warn', 'Not answering', m.note];
+    // A version beside a build when the Pi's file names it (the system version, VERSION).
+    const named = (version, build) => version ? `${version} (build ${build})` : build;
     if (m.on_trial) return ['warn', 'On trial', `Build ${m.installed} is confirming itself`];
-    if (m.new) return ['new', 'New build ready', `Running ${m.installed} · ${m.available} is on the Pi`];
-    return ['good', 'Up to date', `Build ${m.installed}`];
+    if (m.new) return ['new', 'New build ready', `Running ${m.installed} · ${named(m.available_version, m.available)} is on the Pi`];
+    return ['good', 'Up to date', m.installed_version ? `Version ${named(m.installed_version, m.installed)}` : `Build ${m.installed}`];
   }
   function moduleRow(m) {
     let row = $(`fw-row-${m.name}`);

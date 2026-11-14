@@ -1,9 +1,13 @@
 """New firmware for the car's modules, sent over the CAN bus (can_contract/firmware_update.h).
 
-The dash sends the image in blocks of 64 frames, waits for the module to accept each
-block, and repeats a block the module asks for again. The module checks the whole image
-before restarting into it, and keeps it only when the dash then confirms it is talking
-to the new build: otherwise the module goes back to the firmware it had.
+A module that reports protocol version 2 gets the image in blocks of 8 KB, each compressed
+on its own when the module can unpack, and only the frames it missed are sent again. One
+that reports version 1 (firmware from before November 2026) gets blocks of 64 frames, as
+before, so the first update to new firmware goes the old way. The dash waits for the
+module to accept each block. The module checks the whole image before restarting into it.
+The dash then waits until the module answers as the new build and its own messages are
+back on the bus and stay fresh, and only then confirms it: otherwise the module goes back
+to the firmware it had, by itself.
 
 The image and its manifest are downloaded by the Pi setup during Update now
 (tools/frogdash_setup.sh) into <data>/firmware/. Nothing is sent while the car is moving.
@@ -22,12 +26,23 @@ from .parking import rolling
 ID_COMMAND, ID_REPLY = 0x680, 0x681
 QUERY, BEGIN, BLOCK_END, END, ABORT, CONFIRM, RESTART = 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86
 INFO, ACK = 1, 2
-OK, RESEND, BUSY = 0, 1, 7
+OK, RESEND, BUSY, MISSING = 0, 1, 7, 8
 STATUS = {0: 'accepted', 1: 'asked for the block again', 2: 'was not expecting it', 3: 'has no room for it',
           4: 'could not write its flash', 5: 'found the image damaged', 6: 'is running a different build',
-          7: 'is in use and will not update now'}
-ON_TRIAL, UPDATING = 1, 2
+          7: 'is in use and will not update now', 8: 'missed frames'}
+ON_TRIAL, UPDATING, COMPRESSION = 1, 2, 4
 BLOCK_BYTES, FRAMES_PER_BLOCK = 448, 64
+# Version 2: 8 KB of the image a block, six bytes a frame (two name the frame), each block
+# its own zlib stream when the module can unpack (MODE_COMPRESSED).
+MODE_LARGE, MODE_COMPRESSED = 1, 2
+CHUNK_BYTES, PER_FRAME_2 = 8192, 6
+# After an update: the module's own messages that must come back from the new build, and
+# stay no older than HEALTH_FRESH_S for HEALTH_STEADY_S, before it is confirmed. Not
+# within HEALTH_WAIT_S: not confirmed, and the module goes back to its previous firmware.
+HEALTH = {1: ((0x500, 'speed and RPM'),),
+          2: ((0x100, 'light state'),),
+          3: ((0x300, 'water/meth state'), (0x307, 'knock state'), (0x30F, 'tuning status'))}
+HEALTH_STEADY_S, HEALTH_WAIT_S, HEALTH_FRESH_S = 3.0, 20.0, 1.5
 TARGET_GATEWAY = 1
 # name (file and API name), label (in sentences), title (on buttons), target, what to tell the driver first,
 # and optionally what silence means for this module when that is not simply "old firmware".
@@ -85,6 +100,16 @@ def data_frames(chunk):
             for index, offset in enumerate(range(0, len(chunk), 7))]
 
 
+def data_frames_2(wire):
+    """Version 2: each frame names its place in the block in two bytes, then six of the block."""
+    return [bytes([(index >> 8) & 0x7F, index & 0xFF]) + wire[offset:offset + PER_FRAME_2].ljust(PER_FRAME_2, b'\xff')
+            for index, offset in enumerate(range(0, len(wire), PER_FRAME_2))]
+
+
+def words(names):
+    return names[0] if len(names) == 1 else ', '.join(names[:-1]) + ' and ' + names[-1]
+
+
 def load_image(folder, name):
     """(manifest, bytes) for a downloaded image that matches its manifest, else (None, reason)."""
     try:
@@ -133,6 +158,7 @@ class ModuleFirmware:
         self.blocked = lambda: False   # Set by Firmware: another module is being updated.
         self.installed = None        # Build the module reports, as 8 hex digits
         self.flags = 0
+        self.version = None          # Update protocol version it reports
         self.heard = None            # When it last answered
         self.replies = asyncio.Queue()
         self.job = {'state': 'idle', 'message': '', 'progress': 0.0}
@@ -147,7 +173,7 @@ class ModuleFirmware:
         if len(data) != 8 or data[1] != self.target or data[0] not in (INFO, ACK):
             return
         if data[0] == INFO:
-            self.installed, self.flags, self.heard = data[2:6].hex(), data[6], self.state.clock()
+            self.installed, self.flags, self.version, self.heard = data[2:6].hex(), data[6], data[7], self.state.clock()
         if self.busy():
             self.replies.put_nowait(bytes(data))
 
@@ -197,18 +223,24 @@ class ModuleFirmware:
         manifest, reason = self.available()
         answered = self.heard is not None and self.state.clock() - self.heard < 3 * QUERY_EVERY_S
         new = bool(manifest) and answered and manifest['build'] != self.installed
+        # The system version (VERSION) the Pi's file was built at, when the workflow named it.
+        version = (manifest.get('version') or None) if manifest else None
+        named = f'{version} (build {manifest["build"]})' if version else (manifest['build'] if manifest else None)
         if not answered:
             short, note = self.silent
         elif not manifest:
             note, short = reason, f'build {self.installed}, no newer file on the Pi'
         elif new:
-            note, short = f'Build {manifest["build"]} is ready to install', f'build {self.installed}, {manifest["build"]} ready to install'
+            note, short = f'Build {named} is ready to install', f'build {self.installed}, {named} ready to install'
+        elif version:
+            note, short = 'Up to date', f'version {version}, build {self.installed}, up to date'
         else:
             note, short = 'Up to date', f'build {self.installed}, up to date'
         return {'name': self.name, 'label': self.label, 'title': self.title, 'warning': self.warning,
                 'installed': self.installed if answered else None,
                 'can_restart': answered and not self.busy() and not self.blocked(),
                 'on_trial': bool(answered and self.flags & ON_TRIAL), 'available': manifest['build'] if manifest else None,
+                'available_version': version, 'installed_version': version if answered and manifest and not new else None,
                 'can_install': bool(manifest) and answered and not self.busy() and not self.blocked(),
                 'new': new, 'note': note, 'short': short, 'job': dict(self.job)}
 
@@ -329,24 +361,38 @@ class ModuleFirmware:
         info = lambda reply: reply[0] == INFO
         ack = lambda op: (lambda reply: reply[0] == ACK and reply[2] == op)
         try:
-            if not await self.ask(command(QUERY, target), info, 1.0):
+            reply = await self.ask(command(QUERY, target), info, 1.0)
+            if not reply:
                 raise Failure(self.no_answer)
-            reply = await self.ask(command(BEGIN, target, len(data).to_bytes(3, 'big') + b'FW'), ack(BEGIN), 6.0, tries=2)
+            # The protocol the module's own firmware takes: version 2 from November 2026.
+            large = reply[7] >= 2
+            compressed = large and bool(reply[6] & COMPRESSION)
+            mode = (MODE_LARGE | (MODE_COMPRESSED if compressed else 0)) if large else 0
+            reply = await self.ask(command(BEGIN, target, len(data).to_bytes(3, 'big') + b'FW' + bytes([mode])), ack(BEGIN), 6.0, tries=2)
             if not reply:
                 raise Failure(f'The {self.label.lower()} did not accept the update')
             if reply[3] == BUSY:
                 raise Failure(f'The {self.label.lower()} is in use and did not start the update. {self.warning}')
             if reply[3] != OK:
                 raise Failure(f'The {self.label.lower()} {STATUS.get(reply[3], "refused")}')
-            blocks = -(-len(data) // BLOCK_BYTES)
+            size = CHUNK_BYTES if large else BLOCK_BYTES
+            blocks = -(-len(data) // size)
             self.pace, self.clean, self.need = START_PACE, 0, CLEAN_TO_SPEED_UP
-            self.missed = {'resent': 0, 'asked again': 0, 'silent': 0}
+            self.missed = {'resent': 0, 'asked again': 0, 'silent': 0, **({'had frames sent again': 0} if large else {})}
+            self.wire = 0                    # Bytes of image put on the bus, compressed or not
             began = self.state.clock()
             for number in range(blocks):
                 if rolling(self.state):
                     raise Failure('The car started moving: update stopped, the old firmware is still running')
-                await self.block(number, data[number * BLOCK_BYTES:(number + 1) * BLOCK_BYTES])
-                sent = min(len(data), (number + 1) * BLOCK_BYTES)
+                chunk = data[number * size:(number + 1) * size]
+                if large:
+                    wire = zlib.compress(chunk, 9) if compressed else chunk
+                    await self.block2(number, wire)
+                    self.wire += len(wire)
+                else:
+                    await self.block(number, chunk)
+                    self.wire += len(chunk)
+                sent = min(len(data), (number + 1) * size)
                 self.progress(f'Sending: {sent // 1024} of {len(data) // 1024} KB{pace_text(sent, len(data), self.state.clock() - began)}',
                               (number + 1) / blocks * .9)
             self.took = self.state.clock() - began
@@ -356,14 +402,16 @@ class ModuleFirmware:
                 raise Failure(f'The {self.label.lower()} did not answer after the transfer: its old firmware is still in place')
             if reply[3] != OK:
                 raise Failure(f'The {self.label.lower()} {STATUS.get(reply[3], "refused the image")}: its old firmware is still running')
-            # It restarts into the new image, on trial. Confirm it only once it answers as that build.
+            # It restarts into the new image, on trial. Confirm it only once it answers as that
+            # build and its own messages are back (frames from here on are the new firmware's).
             self.progress(f'The {self.label.lower()} is restarting', .95)
             await self.sleep(1.5)
+            restarted = self.state.clock()
             running, other = None, 0
             for _ in range(40):
                 reply = await self.ask(command(QUERY, target), info, 1.0, tries=1)
                 if reply:
-                    running = reply[2:6].hex()
+                    running, self.version = reply[2:6].hex(), reply[7]
                     if running == build:
                         break
                     other += 1
@@ -372,12 +420,21 @@ class ModuleFirmware:
                     await self.sleep(1.0)
             if running != build:
                 raise Failure(f'The {self.label.lower()} did not come back. If it stays silent it returns to its previous firmware by itself within two minutes')
+            self.progress(f'Checking the {self.label.lower()} works on build {build}', .97)
+            working, names = await self.working(restarted)
+            if not working:
+                raise Failure(f'The {self.label.lower()} runs build {build}, but its {words(names)} did not come back steadily: '
+                              'not confirmed, so it returns to its previous firmware by itself within two minutes')
             reply = await self.ask(command(CONFIRM, target, bytes.fromhex(build)), ack(CONFIRM), 1.0, tries=5)
             if not reply or reply[3] != OK:
                 raise Failure(f'The {self.label.lower()} is running build {build} but did not take the confirmation; it will return to its previous firmware')
             self.flags &= ~ON_TRIAL   # Confirmed: it keeps this firmware.
-            speed = f' (sent in {duration(self.took)}, {len(data) / 1024 / max(self.took, .001):.1f} KB/s)' if self.took else ''
-            self.job = {'state': 'done', 'message': f'{self.label} updated to build {build}{speed}', 'progress': 1.0}
+            packed = f', {self.wire // 1024} KB on the bus' if compressed else ''
+            speed = f' (sent in {duration(self.took)}, {len(data) / 1024 / max(self.took, .001):.1f} KB/s{packed})' if self.took else ''
+            checked = f'; working: its {words(names)} back' if names else ''
+            if not large and (self.version or 0) >= 2:   # Sent the old way to firmware that takes the new one
+                checked += '; its next updates take the faster protocol'
+            self.job = {'state': 'done', 'message': f'{self.label} updated to build {build}{speed}{checked}', 'progress': 1.0}
             self.log('info', self.job['message'] + self.trouble())
         except Failure as failure:
             self.job = {'state': 'failed', 'message': str(failure), 'progress': self.job['progress']}
@@ -389,6 +446,28 @@ class ModuleFirmware:
         except asyncio.CancelledError:
             self.job = {'state': 'failed', 'message': 'Update stopped: the dash is shutting down', 'progress': self.job['progress']}
             raise
+
+    async def working(self, since):
+        """(True, what came back) once every message of HEALTH for this module has been heard
+        since the restart and stayed fresh for HEALTH_STEADY_S; (False, what did not) after
+        HEALTH_WAIT_S. A module with nothing listed passes at once."""
+        watched = HEALTH.get(self.target, ())
+        began, steady, lacking = self.state.clock(), None, [name for _, name in watched]
+        while watched:
+            now = self.state.clock()
+            lacking = [name for can_id, name in watched
+                       if not ((entry := self.state.frames.get(can_id)) and entry.get('seen', -1) >= since
+                               and now - entry['seen'] <= HEALTH_FRESH_S)]
+            if lacking:
+                steady = None
+            else:
+                steady = now if steady is None else steady
+                if now - steady >= HEALTH_STEADY_S:
+                    return True, [name for _, name in watched]
+            if now - began >= HEALTH_WAIT_S:
+                return False, lacking
+            await self.sleep(.5)
+        return True, []
 
     async def block(self, number, chunk):
         frames = data_frames(chunk)
@@ -427,6 +506,58 @@ class ModuleFirmware:
             if reply[3] == RESEND:            # It missed frames: a step slower.
                 self.missed['resent'] += 1
                 self.slower()
+                continue
+            raise Failure(f'The {self.label.lower()} {STATUS.get(reply[3], "refused a block")} (block {number})')
+        raise Failure(f'Block {number} could not be delivered: check the CAN wiring')
+
+
+    async def block2(self, number, wire):
+        """Version 2: one block of up to 8 KB of image as sent (compressed or not). The module
+        keeps the frames that arrived and names the range it missed: only that is sent again."""
+        frames = data_frames_2(wire)
+        end = command(BLOCK_END, self.target, number.to_bytes(2, 'big') + crc16(wire).to_bytes(2, 'big') + len(wire).to_bytes(2, 'big'))
+        answered = lambda reply: reply[0] == ACK and (reply[3] == BUSY or (
+            reply[2] == BLOCK_END and (reply[3] != OK or reply[4:6] == number.to_bytes(2, 'big'))))
+        # For the pace, a block counts as the 64-frame blocks it is worth.
+        units = max(1, -(-len(frames) // FRAMES_PER_BLOCK))
+        todo = range(len(frames))
+        for _ in range(BLOCK_TRIES):
+            while not self.replies.empty():   # A late answer to an earlier block must not be read as this one's.
+                self.replies.get_nowait()
+            burst, gap = self.burst, self.gap
+            full = self.state.tx_full
+            for count, index in enumerate(todo, 1):
+                await self.send(frames[index])
+                if count % burst == 0:
+                    await self.sleep(gap)
+            await self.send(end)
+            reply = await self.expect(answered, FIRST_ANSWER_S)
+            if reply is None:
+                self.missed['asked again'] += 1
+                await self.send(end)          # Its answer, or our block end, may be all that was lost.
+                reply = await self.expect(answered, SECOND_ANSWER_S)
+            if reply is None:
+                self.missed['silent'] += 1
+                self.slower()
+                todo = range(len(frames))
+                continue
+            if reply[3] == BUSY:
+                raise Failure(f'The {self.label.lower()} stopped the update because it was needed; its old firmware is still running. {self.warning}')
+            if reply[3] == OK:
+                self.clean = self.clean + units if self.state.tx_full == full else 0
+                if self.clean >= self.need and self.pace > 0:
+                    self.pace, self.clean = self.pace - 1, 0
+                return
+            if reply[3] == MISSING:           # It kept the rest: only the gap again, a step slower.
+                first, last = int.from_bytes(reply[4:6], 'big'), int.from_bytes(reply[6:8], 'big')
+                self.missed['had frames sent again'] += 1
+                self.slower()
+                todo = range(first, last + 1) if first <= last < len(frames) else range(len(frames))
+                continue
+            if reply[3] == RESEND:            # Damaged on the way: the whole block again.
+                self.missed['resent'] += 1
+                self.slower()
+                todo = range(len(frames))
                 continue
             raise Failure(f'The {self.label.lower()} {STATUS.get(reply[3], "refused a block")} (block {number})')
         raise Failure(f'Block {number} could not be delivered: check the CAN wiring')
