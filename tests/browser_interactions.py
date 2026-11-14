@@ -76,7 +76,7 @@ async def preview(browser):
         assert await page.locator('#mt-fluid').input_value() == 'Water'
         await page.locator('#mt-start_psi_x10').fill('6.5')
         await page.locator('#mt-start_psi_x10').blur()
-        await page.wait_for_function('document.getElementById("mt-summary").textContent.startsWith("At 6.5 psi the pump runs full on 1 s in every 4 s (15 ml/min), rising to 2 s in every 4 s (30 ml/min) at 10 psi.")')
+        await page.wait_for_function('document.getElementById("mt-summary").textContent.startsWith("At 6.5 psi the pump runs full on 1 s in every 4 s (40 ml/min), rising to 2 s in every 4 s (80 ml/min) at 10 psi.")')
         assert "Never more than 10% of the engine's fuel flow" in await page.locator('#mt-summary').inner_text()
         # Extra triggers: early start is on at 3500 RPM by default; hot air is off until set.
         assert await page.locator('#mt-early_rpm').input_value() == '3500'
@@ -109,7 +109,7 @@ async def preview(browser):
         assert 'Matches preset: Mild' in await page.locator('#mt-sync').inner_text()
         await page.locator('#mt-preset').select_option('Standard')
         await page.locator('#mt-apply').click()
-        await page.wait_for_function('document.getElementById("mt-summary").textContent.includes("rising to on continuously (60 ml/min) at 8 psi")')
+        await page.wait_for_function('document.getElementById("mt-summary").textContent.includes("rising to on continuously (160 ml/min) at 8 psi")')
         assert await page.locator('#mt-fluid').input_value() == '53% meth'
         await page.locator('#mt-preset').select_option('Mild')
         await page.locator('#mt-apply').click()
@@ -138,7 +138,7 @@ async def preview(browser):
         await page.wait_for_function('document.getElementById("mt-min_duty_pct").value === "70"')
         await page.locator('#mt-min_duty_pct').fill('25')
         await page.locator('#mt-min_duty_pct').blur()
-        await page.wait_for_function('document.getElementById("mt-summary").textContent.includes("the pump runs at 25% duty (about 30 ml/min), rising to 70% duty (about 50 ml/min)")')
+        await page.wait_for_function('document.getElementById("mt-summary").textContent.includes("the pump runs at 25% duty (about 80 ml/min), rising to 70% duty (about 134 ml/min)")')
         assert 'Custom flow settings' in await page.locator('#mt-sync').inner_text()
         await page.evaluate('window.frogdashDemo.methDrive("pulse")')
         await page.wait_for_function('!document.getElementById("mt-period_ms").parentNode.hidden')

@@ -369,17 +369,17 @@ class TuningTests(unittest.IsolatedAsyncioTestCase):
             await self.sync(state, controller)
             values = state.snapshot()['values']
             self.assertEqual((values['meth.flow_ml_min']['value'], values['meth.dose_pct']['quality']), (0, 'unavailable'))  # Pump off, no engine data.
-            # 2 s in every 4 s through the 60 ml/min nozzle is 30 ml/min.
+            # 2 s in every 4 s through the measured 160 ml/min nozzle is 80 ml/min.
             controller.on_ms = 2000
             self.tick(state, controller)
             for key, value in (('ecu.rpm', 5500), ('ecu.map_kpa', 154.0)):
                 state.samples[key, 0x5E8] = dict(value=value, quality='live', seen=self.now[0], source_id=0x5E8, timestamp_ms=0)
             values = state.snapshot()['values']
-            self.assertEqual(values['meth.flow_ml_min']['value'], 30)
-            self.assertAlmostEqual(values['meth.dose_pct']['value'], 4.0, delta=.1)   # 30 of 744 g/min.
+            self.assertEqual(values['meth.flow_ml_min']['value'], 80)
+            self.assertAlmostEqual(values['meth.dose_pct']['value'], 10.7, delta=.1)   # 80 of 744 g/min.
             # The same pulse at low airflow is a much bigger share: this is what the dose limit watches.
             state.samples['ecu.rpm', 0x5E8]['value'], state.samples['ecu.map_kpa', 0x5E8]['value'] = 2500, 119.5
-            self.assertAlmostEqual(state.snapshot()['values']['meth.dose_pct']['value'], 11.4, delta=.2)
+            self.assertAlmostEqual(state.snapshot()['values']['meth.dose_pct']['value'], 30.5, delta=.2)
         finally:
             await state.controls.close()
 
@@ -426,7 +426,7 @@ class TuningTests(unittest.IsolatedAsyncioTestCase):
             mirror = state.snapshot()
             self.assertEqual(mirror['values']['meth.iat_change_c']['quality'], 'unavailable')
             last = mirror['meth_tune']['last_spray']
-            self.assertEqual((last['from_c'], last['lowest_c'], last['change_c'], last['flow_ml_min']), (55.0, 46.5, -8.5, 30.0))
+            self.assertEqual((last['from_c'], last['lowest_c'], last['change_c'], last['flow_ml_min']), (55.0, 46.5, -8.5, 80.0))
         finally:
             await state.controls.close()
 
@@ -442,14 +442,14 @@ class TuningTests(unittest.IsolatedAsyncioTestCase):
             await self.sync(state, controller)
             mirror = state.snapshot()['meth_tune']
             self.assertEqual((mirror['drive'], mirror['complete'], mirror['preset'], mirror['duty_pct']), ('pwm', True, 'Conservative', 0))
-            # 25% duty through the 60 ml/min nozzle: half its rating, not a quarter.
+            # 25% duty through the 160 ml/min nozzle: half its rating, not a quarter.
             controller.on_ms = 250
             self.tick(state, controller)
             snapshot = state.snapshot()
-            self.assertEqual((snapshot['meth_tune']['duty_pct'], snapshot['values']['meth.flow_ml_min']['value']), (25.0, 30))
+            self.assertEqual((snapshot['meth_tune']['duty_pct'], snapshot['values']['meth.flow_ml_min']['value']), (25.0, 80))
             controller.on_ms = 1000
             self.tick(state, controller)
-            self.assertEqual(state.snapshot()['values']['meth.flow_ml_min']['value'], 60)
+            self.assertEqual(state.snapshot()['values']['meth.flow_ml_min']['value'], 160)
             async with TestClient(TestServer(create_app(state))) as client:
                 controller.commands.clear()
                 reply = await client.post('/meth/presets', json={'action': 'apply', 'name': 'Standard'})

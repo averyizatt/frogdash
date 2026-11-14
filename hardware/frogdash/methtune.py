@@ -20,13 +20,14 @@ import math
 
 from .driving import atomic_write
 
-# key: (name, minimum, maximum, conservative default)
+# key: (name, minimum, maximum, conservative default). The nozzle's 160 ml/min is measured:
+# 8 g of water in the owner's 3 s pump test (November 2026); its label says 60.
 SETTINGS = {
     1: ('period_ms', 1000, 10000, 4000), 2: ('min_on_ms', 500, 10000, 1000), 3: ('max_on_ms', 500, 10000, 2000),
     4: ('start_psi_x10', 5, 300, 5), 5: ('full_psi_x10', 20, 350, 100), 6: ('min_rpm', 0, 8000, 2500),
     7: ('max_spray_s', 1, 120, 12), 8: ('rest_s', 0, 60, 6), 9: ('ramp_ms', 0, 5000, 500),
     10: ('min_pre_temp_c', 0, 120, 0), 11: ('overboost_assist', 0, 1, 0),
-    12: ('meth_pct', 0, 100, 0), 13: ('nozzle_ml_min', 20, 1000, 60), 14: ('max_dose_pct', 0, 40, 10),
+    12: ('meth_pct', 0, 100, 0), 13: ('nozzle_ml_min', 20, 1000, 160), 14: ('max_dose_pct', 0, 40, 10),
     15: ('early_rpm', 0, 8000, 3500), 16: ('hot_start_c', 0, 145, 0), 17: ('hot_full_c', 20, 150, 70),
     18: ('min_duty_pct', 10, 100, 25), 19: ('max_duty_pct', 10, 100, 50)}
 KEYS = {name: key for key, (name, _, _, _) in SETTINGS.items()}

@@ -1,7 +1,8 @@
 # Water/meth: flow, failsafes, presets and intake temperatures
 
 Written for this car: 2.3 L Lima turbo at up to 10 psi, a 0.9 MPa (130 psi) 4–6 L/min
-pump, a 60 ml/min (1 GPH) nozzle and a 2 L tank.
+pump, a nozzle sold as 60 ml/min (1 GPH) that measures about 160 ml/min on this pump,
+a metal check valve right before it, and a 2 L tank.
 
 The water/meth controller is an **ESP32-S3**, with the pump on a MOSFET at GPIO15.
 It runs full on or full off in long pulses, with a 0.4 s soft start on each run.
@@ -16,25 +17,30 @@ does not depend on it.
 
 The numbers are estimates: 85% volumetric efficiency, 50 °C charge air, 12:1 air/fuel
 at full load, and about 85 kPa of air pressure at Grand Junction's altitude. The nozzle
-is taken at its rated 60 ml/min; at your pump pressure it may flow 10–20% more.
+is taken at the 160 ml/min measured on the pump test (November 2026): a 3 s test at full
+pressure gave a very fine mist and about 8 g of water, counting what the still-pressurised
+line sprayed after the pump stopped. To measure again: a 3 s pump test into a cup on a
+scale; grams × 20 = ml/min.
 
 | Boost | RPM | Fuel burned | Nozzle running flat out |
 |---|---|---|---|
-| 5 psi | 2500 | 262 g/min | 23% of fuel |
-| 5 psi | 4000 | 420 g/min | 14% |
-| 10 psi | 3000 | 406 g/min | 15% |
-| 10 psi | 4000 | 541 g/min | 11% |
-| 10 psi | 5500 | 744 g/min | 8% |
+| 5 psi | 2500 | 262 g/min | 61% of fuel |
+| 5 psi | 4000 | 420 g/min | 38% |
+| 10 psi | 3000 | 406 g/min | 39% |
+| 10 psi | 4000 | 541 g/min | 30% |
+| 10 psi | 5500 | 744 g/min | 22% |
 
 Water-only injection is usually run at roughly 10–15% of fuel. So:
 
-- **At full boost and high RPM this nozzle is on the small side.** Even on continuously
-  it is 8–11% of fuel. It cannot over-inject there.
-- **Too much water is a low-RPM, low-boost problem.** At 5 psi and 2500 RPM the same
-  nozzle is 23% of fuel, enough to misfire and bog. This is what the dose limit is for.
+- **On all the time, this nozzle is too much everywhere.** Even at 10 psi and 5500 RPM
+  it is 22% of fuel, and at 5 psi and 2500 RPM 61%: enough to misfire and bog. So the
+  pump runs in pulses and the dose limit sets them: at 10% of fuel, 0.85 s of every 4 s
+  at 2500 RPM and 10 psi, 1.7 s at 5000 RPM.
+- **Keep the dose limit on**, and the nozzle size at what it measures. With the label's
+  60 ml/min the limit would let through nearly three times the water it means to.
 - **A running engine cannot hydrolock from this nozzle.** A cylinder needs about 80 ml
-  of liquid at once to lock (575 cc per cylinder at 8:1). The nozzle delivers 1 ml per
-  second to all four cylinders, about 0.01 ml per intake stroke at 2500 RPM.
+  of liquid at once to lock (575 cc per cylinder at 8:1). The nozzle delivers under 3 ml
+  per second to all four cylinders, about 0.03 ml per intake stroke at 2500 RPM.
 
 Hydrolock comes from fluid collecting while the engine is **not** running: the pump
 running with the engine stopped, or fluid draining or siphoning into the intake while
@@ -124,14 +130,15 @@ All use a 4 s cycle, need engine RPM and leave overboost assist off.
 | | Conservative | Mild | Standard |
 |---|---|---|---|
 | Pump runs, start → full boost | 1 s → 2 s in every 4 s | 1.5 s → 3 s | 2 s → on continuously |
-| Flow, start → full boost | 15 → 30 ml/min | 23 → 45 ml/min | 30 → 60 ml/min |
+| Flow, start → full boost | 40 → 80 ml/min | 60 → 120 ml/min | 80 → 160 ml/min |
 | Boost, start → full | 0.5 → 10 psi | 4.5 → 9 psi | 4 → 8 psi |
 | Spray limit / rest | 12 s / 6 s | 20 s / 5 s | 30 s / 4 s |
 | Run-time growth per cycle | 0.5 s | 1 s | 2 s |
 
-Conservative at full boost is about 4% of fuel at 5500 RPM: a gentle start for
-checking that nothing misfires. Standard holds the pump on at full boost and
-avoids restarting it between cycles, when the dose limit allows.
+With the measured 160 ml/min nozzle, Conservative at full boost is about 11% of fuel
+at 5500 RPM, already at the 10% dose limit, and the dose limit shortens it below
+that. Mild and Standard ask for more than the dose limit allows almost everywhere: it
+then sets the pulses, so they differ mainly in how soon a spray reaches that limit.
 
 **Custom 1–3** hold your own flow settings: choose a slot and press **Store current
 here**. A flow preset leaves the tank mix, nozzle size, early-start RPM and hot-air
@@ -178,7 +185,7 @@ The live card says when either is acting: *Injecting: early start, before boost*
 | Rest after that | 0–60 s | 6 s | 0 turns the time limit off. |
 | Run-time growth per cycle | 0–5 s | 0.5 s | Each new spray starts at the minimum run time and grows by this much per cycle. 0 jumps straight to the target. |
 | Most fluid, as % of fuel | 0–40% | 10% | The dose limit. 0 turns it off. |
-| Nozzle size | 20–1000 ml/min | 60 | Used by the dose limit and the flow readout. |
+| Nozzle size | 20–1000 ml/min | 160 | Measured on the pump test (the label says 60). Used by the dose limit and the flow readout. |
 | Hot air adds run time from | off, or a temperature | off | Air before the nozzle hotter than this lengthens the pump run. |
 | Hot air: full run time at | 68–302 °F | 158 °F | Where the hot-air addition reaches the full-boost run time. |
 | Only spray above intake temp | off, or a temperature | off | Uses the sensor before the nozzle. If set and that sensor is not reading, injection is held. |
