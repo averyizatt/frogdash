@@ -57,7 +57,7 @@ def report(state, folder=None, wall=time.time):
         bus = profile.bitrate
     if not problem and bus != profile.bitrate:
         problem = (f'the bus runs at {bus // 1000} kbit/s but {profile.label} sends at {profile.bitrate // 1000} kbit/s: '
-                   'set ecu.bitrate to match, or the ECU's CAN speed')
+                   "set ecu.bitrate to match, or the ECU's CAN speed")
     out.append(line('CAN bus', 'ECU profile', WARN if problem else OK,
                     f"{profile.label} ({profile.status}, {profile.bitrate // 1000} kbit/s)" + (f': {problem}' if problem else ''),
                     'Choose a profile that exists in the system profile (ecu.profile), at its bit rate (ecu.bitrate)'))
