@@ -24,7 +24,7 @@ import urllib.parse
 import urllib.request
 
 CLIENT_ID = 'Ov23li7DGiineMBNPBYy'   # The owner's Frogdash OAuth app (device flow on); public, not a secret
-REPO = 'averyizatt/frogdash'
+REPO = 'averyizatt/frogdash'   # The foxbody car's; another car's comes from its profile (uploads.repo)
 SCOPE = 'public_repo'
 CODE_URL = 'https://github.com/login/device/code'
 TOKEN_URL = 'https://github.com/login/oauth/access_token'
@@ -107,8 +107,13 @@ def get_user(token, timeout=15):
 
 
 class GitHubLink:
-    def __init__(self, folder, client_id=None, post=post_form, user=get_user, sleep=asyncio.sleep, wall=time.time):
+    def __init__(self, folder, client_id=None, post=post_form, user=get_user, sleep=asyncio.sleep, wall=time.time, repo=None):
         self.folder = Path(folder)
+        # Where reports go: the system profile's choice (sysconfig.py); none chosen, none sent.
+        if repo is None:
+            from . import sysconfig
+            repo = sysconfig.load()['uploads']['repo']
+        self.repo = repo
         self.client_id = client_id if client_id is not None else os.environ.get('FROGDASH_GITHUB_CLIENT_ID', CLIENT_ID)
         self.post, self.user, self.sleep, self.wall = post, user, sleep, wall
         self.link = {'state': 'idle'}
@@ -148,7 +153,7 @@ class GitHubLink:
                 'via': 'device code' if config.get('via') == 'device code' else ('token' if config.get('token') else None),
                 'expires': expires if config.get('token') else None,
                 'renewable': bool(config.get('refresh_token')),
-                'ready': bool(self.client_id), 'last': last or None, 'held': held, 'link': link,
+                'ready': bool(self.client_id and self.repo), 'last': last or None, 'held': held, 'link': link,
                 'sending': asked or status.get('state') == 'sending'}
 
     def send_now(self):
@@ -168,7 +173,7 @@ class GitHubLink:
 
     def save(self, token, account, answer=None):
         self.folder.mkdir(parents=True, exist_ok=True)
-        config = {'repo': REPO, 'account': account, 'via': 'device code',
+        config = {'repo': self.repo, 'account': account, 'via': 'device code',
                   'client_id': self.client_id, 'login_id': uuid4().hex,
                   **token_fields(answer or {'access_token': token}, self.wall())}
         write_login(self.config_path, config)
@@ -183,6 +188,8 @@ class GitHubLink:
         """Ask GitHub for a code, then wait in the background for it to be entered."""
         if not self.client_id:
             raise ValueError('This dash has no GitHub app ID yet: see hardware/frogdash/github_link.py')
+        if not self.repo:
+            raise ValueError('Choose the GitHub repository for reports first (Dash management > Setup)')
         if self.task and not self.task.done():
             return self.link
         try:

@@ -1,5 +1,5 @@
 [Unit]
-Description=Configure Frogdash MCP2515 SocketCAN at 500 kbit/s
+Description=Configure Frogdash MCP2515 SocketCAN at the system profile's bit rate (500 kbit/s unless set)
 BindsTo=sys-subsystem-net-devices-can0.device
 After=sys-subsystem-net-devices-can0.device
 Before=frogdash.service
@@ -8,9 +8,12 @@ JobTimeoutSec=10s
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+# FD_CAN_BITRATE is the system profile's ecu.bitrate (hardware/frogdash/sysconfig.py), so an
+# ECU that runs its CAN at 1 Mbit/s can be read. Without a profile: 500 kbit/s, as always.
+EnvironmentFile=-/etc/frogdash/system.env
 # The bitrate can only be set while the link is down (it may already be up by hand).
 ExecStartPre=-/usr/sbin/ip link set dev can0 down
-ExecStart=/usr/sbin/ip link set dev can0 up type can bitrate 500000 restart-ms 100
+ExecStart=/bin/sh -c 'exec /usr/sbin/ip link set dev can0 up type can bitrate "$${FD_CAN_BITRATE:-500000}" restart-ms 100'
 ExecStop=/usr/sbin/ip link set dev can0 down
 CapabilityBoundingSet=CAP_NET_ADMIN
 NoNewPrivileges=yes

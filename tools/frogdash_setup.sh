@@ -83,6 +83,28 @@ NEEDS_NET="needs the internet: press Update now with Wi-Fi connected"
 
 write_status true
 
+# --- System profile: what this Pi has (hardware/frogdash/sysconfig.py) ---
+# /etc/frogdash/system.json says which parts this car uses; the steps below read it from
+# system.env next to it. A Pi set up before profiles gets one from the foxbody preset, with
+# the options it already runs. Without one (Python failed) every FD_ value is unset, and each
+# step does what it did before profiles existed.
+VENV_PY=${FROGDASH_VENV_PY:-$REPO/.venv/bin/python}
+SYS_PY=${FROGDASH_SYS_PY:-$VENV_PY}; [ -x "$SYS_PY" ] || SYS_PY=python3
+said=""
+[ -f "$REPO/hardware/frogdash/sysconfig.py" ] && said=$(cd "$REPO" && "$SYS_PY" -m hardware.frogdash.sysconfig --etc "$ETC" sync 2>&1 | tail -n 1)
+if [ ! -f "$REPO/hardware/frogdash/sysconfig.py" ] && [ ! -f "$ETC/frogdash/system.env" ]; then
+    step "System profile" skipped "No system profile in this version"
+elif [ -f "$ETC/frogdash/system.env" ]; then
+    . "$ETC/frogdash/system.env"
+    case "$said" in
+        done:*) step "System profile" done "${said#done: }";;
+        failed:*) step "System profile" failed "${said#failed: }; the last good values are used";;
+        *) step "System profile" ok "Preset ${FD_PRESET:-unknown}";;
+    esac
+else
+    step "System profile" failed "Could not write $ETC/frogdash/system.json: ${said:-no answer}. Setup does what it did before"
+fi
+
 # --- Recovery: the guard and the rescue screen ---
 # The guard puts back the last version that ran if the dash stops starting; the rescue
 # screen replaces a black screen with what went wrong and buttons to put it right
@@ -183,8 +205,19 @@ fi
 
 # --- GPS service: start with the Pi, read at once, and open only the GPS receiver ---
 config=$ETC/default/gpsd
-if [ ! -f "$config" ]; then
-    step "GPS service" skipped "gpsd is not installed"
+GPS_OFF="No GPS in this car (system profile)"
+if [ "${FD_GPS:-}" = 1 ] && [ ! -f "$config" ] && command -v dpkg >/dev/null 2>&1; then
+    # Chosen in the profile: gpsd comes with it (a new install no longer gets it regardless).
+    if ! is_online; then step "GPS service" waiting "gpsd $NEEDS_NET"
+    elif doing "Installing gpsd (the GPS receiver)" && install_packages gpsd gpsd-clients python3-gps && [ -f "$config" ]; then
+        restart_dash=1
+    else step "GPS service" failed "Could not install gpsd"
+    fi
+fi
+if [ "${FD_GPS:-}" = 0 ]; then
+    step "GPS service" skipped "$GPS_OFF"
+elif [ ! -f "$config" ]; then
+    [ "${FD_GPS:-}" = 1 ] || step "GPS service" skipped "gpsd is not installed"
 elif grep -qx 'USBAUTO="false"' "$config" && grep -q '^DEVICES="..*"' "$config" && grep -q '^GPSD_OPTIONS=".*-n' "$config"; then
     systemctl is-enabled --quiet gpsd.service || systemctl enable gpsd.service >/dev/null 2>&1
     step "GPS service" ok "Starts with the Pi and opens only the GPS receiver"
@@ -197,7 +230,9 @@ else
 fi
 
 # --- Clock from GPS: chrony reads the time gpsd shares ---
-if [ ! -f "$REPO/hardware/chrony/frogdash-gps.conf" ] || ! command -v dpkg >/dev/null 2>&1; then
+if [ "${FD_GPS:-}" = 0 ]; then
+    step "Clock from GPS" skipped "$GPS_OFF"
+elif [ ! -f "$REPO/hardware/chrony/frogdash-gps.conf" ] || ! command -v dpkg >/dev/null 2>&1; then
     step "Clock from GPS" skipped "Not a Debian system"
 else
     result=ok; detail="chrony sets the clock from the GPS"
@@ -244,7 +279,7 @@ for folder in "$home/TunerStudioMS" "$OPT/TunerStudioMS" /usr/local/TunerStudioM
     [ -f "$folder/TunerStudio.sh" ] && found=$folder
 done
 ts_wanted=""
-{ [ -f "$STATE/tunerstudio-wanted" ] || [ -n "$found" ]; } && ts_wanted=1
+{ [ -f "$STATE/tunerstudio-wanted" ] || [ -n "$found" ] || [ "${FD_TUNERSTUDIO:-}" = 1 ]; } && ts_wanted=1
 TS_LATER="Not installed (a few hundred MB): Tune, Install TunerStudio when you want it"
 if [ -z "$ts_wanted" ]; then
     step "TunerStudio: Java and display" skipped "$TS_LATER"
@@ -299,7 +334,10 @@ fi
 # startup, and the dedicated browser skips extensions and forced accessibility.
 # The fixed 1920 x 720 EDID and matching early firmware mode, applied on updates.
 # Keep the panel's normal boot delay; removing it caused signal trouble.
-if [ ! -f "$REPO/tools/frogdash_screen.py" ]; then
+if [ "${FD_SCREEN:-}" = auto ]; then
+    # Only the car's panel needs its mode forced; another screen describes itself.
+    step "Screen and start-up" skipped "The screen's own resolution (system profile: auto)"
+elif [ ! -f "$REPO/tools/frogdash_screen.py" ]; then
     step "Screen and start-up" skipped "No screen helper in this version"
 else
     said=$(FROGDASH_STATE=$STATE python3 "$REPO/tools/frogdash_screen.py" install 2>/dev/null | tail -n 1)
@@ -315,9 +353,25 @@ fi
 # the header at 3.3 V; the MCP2515 is rated to 10 MHz. With two receive buffers, a slow read
 # loses frames when the bus is busy: after the HAT went in, every module dropped out for about
 # a second, 227 times on one drive (November 2026). Only the speed in the line is changed.
-CAN_SPI_HZ=${FROGDASH_CAN_SPI_HZ:-8000000}
+CAN_SPI_HZ=${FROGDASH_CAN_SPI_HZ:-${FD_CAN_SPI_HZ:-8000000}}
 BOOT_DIR=${FROGDASH_BOOT:-/boot/firmware}; [ -f "$BOOT_DIR/config.txt" ] || BOOT_DIR=${FROGDASH_BOOT:-/boot}
 can_line=$(grep '^dtoverlay=mcp2515' "$BOOT_DIR/config.txt" 2>/dev/null | head -n 1)
+# A CAN board in the profile and none in config.txt (a new install): its line is added, with
+# the crystal and interrupt pin the profile names. One already there is never replaced here.
+if [ -z "$can_line" ] && [ "${FD_CAN_HAT:-}" = 1 ] && [ -f "$BOOT_DIR/config.txt" ]; then
+    overlay="dtoverlay=mcp2515-can0,oscillator=$FD_CAN_OSC,interrupt=$FD_CAN_INT,spimaxfrequency=$CAN_SPI_HZ"
+    if { [ -f "$BOOT_DIR/config.txt.before-frogdash-can" ] || cp "$BOOT_DIR/config.txt" "$BOOT_DIR/config.txt.before-frogdash-can"; } &&
+            { cat "$BOOT_DIR/config.txt"; printf '\n[all]\n# Frogdash MCP2515 (%s Hz crystal, interrupt GPIO %s)\ndtparam=spi=on\n%s\n' "$FD_CAN_OSC" "$FD_CAN_INT" "$overlay"; } > "$BOOT_DIR/config.txt.frogdash-tmp" &&
+            sync && mv "$BOOT_DIR/config.txt.frogdash-tmp" "$BOOT_DIR/config.txt" && sync; then
+        step "CAN board" done "Added: $((FD_CAN_OSC / 1000000)) MHz crystal, interrupt GPIO $FD_CAN_INT, from the next start"
+        reboot_note=". Restart the Pi to apply the new boot settings"
+    else
+        rm -f "$BOOT_DIR/config.txt.frogdash-tmp"
+        step "CAN board" failed "Could not change $BOOT_DIR/config.txt"
+    fi
+elif [ "${FD_CAN_HAT:-}" = 0 ] && [ -z "$can_line" ]; then
+    step "CAN board" skipped "No CAN board in this car (system profile)"
+fi
 if [ -n "$can_line" ]; then
     if printf '%s\n' "$can_line" | grep -q "spimaxfrequency=$CAN_SPI_HZ\(,\|\$\)"; then
         step "CAN board: SPI speed" ok "$((CAN_SPI_HZ / 1000000)) MHz"
@@ -331,6 +385,19 @@ if [ -n "$can_line" ]; then
     else
         rm -f "$BOOT_DIR/config.txt.frogdash-tmp"
         step "CAN board: SPI speed" failed "Could not change $BOOT_DIR/config.txt"
+    fi
+fi
+# --- CAN bus speed: the profile's (ecu.bitrate; some ECUs run their CAN at 1 Mbit/s) ---
+# frogdash-can.service brings can0 up at FD_CAN_BITRATE. A change only takes effect when the
+# link is brought up again, so a can0 running at another speed is restarted here.
+if [ -n "${FD_CAN_BITRATE:-}" ] && command -v ip >/dev/null 2>&1 && ip link show can0 >/dev/null 2>&1; then
+    running=$(ip -details link show can0 2>/dev/null | sed -n 's/.*bitrate \([0-9][0-9]*\).*/\1/p' | head -n 1)
+    if [ "$running" = "$FD_CAN_BITRATE" ]; then
+        step "CAN bus speed" ok "$((FD_CAN_BITRATE / 1000)) kbit/s"
+    elif systemctl restart frogdash-can.service >/dev/null 2>&1; then
+        step "CAN bus speed" done "$((FD_CAN_BITRATE / 1000)) kbit/s (was ${running:-unknown})"
+    else
+        step "CAN bus speed" failed "Could not restart can0 at $((FD_CAN_BITRATE / 1000)) kbit/s"
     fi
 fi
 # rpi-eeprom-update checks for and applies a bootloader update at every start: 1.2 s of SD
@@ -368,22 +435,28 @@ start_off "Start-up: Bluetooth" bluetooth.service "not used by the dash"
 start_off "Start-up: login text on the screen" getty@tty1.service "shown before the dash; Ctrl+Alt+F2 for a login"
 # Wi-Fi radio on and a Wi-Fi country set. Without a country the built-in Wi-Fi stays blocked or
 # limited (no 5 GHz: an iPhone hotspot without "Maximize Compatibility" is 5 GHz), and in the car
-# it could not join the phone hotspot (November 2026). FROGDASH_WIFI_COUNTRY picks another country.
+# it could not join the phone hotspot (November 2026). The profile's country (locale.wifi_country)
+# is used; empty there means none was chosen yet. FROGDASH_WIFI_COUNTRY overrides both.
+wanted_country=${FROGDASH_WIFI_COUNTRY:-${FD_WIFI_COUNTRY-US}}
 if command -v iw >/dev/null 2>&1 && command -v raspi-config >/dev/null 2>&1; then
     rfkill unblock wifi >/dev/null 2>&1
     country=$(iw reg get 2>/dev/null | sed -n 's/^country \([A-Z0-9][A-Z0-9]\):.*/\1/p' | head -n 1)
     if [ -n "$country" ] && [ "$country" != 00 ]; then step "Wi-Fi country" ok "$country"
-    elif raspi-config nonint do_wifi_country "${FROGDASH_WIFI_COUNTRY:-US}" >/dev/null 2>&1; then
-        step "Wi-Fi country" done "Set to ${FROGDASH_WIFI_COUNTRY:-US}: the built-in Wi-Fi can use every channel (5 GHz too)"
+    elif [ -z "$wanted_country" ]; then step "Wi-Fi country" waiting "Not set: choose the country in the dash's Setup"
+    elif raspi-config nonint do_wifi_country "$wanted_country" >/dev/null 2>&1; then
+        step "Wi-Fi country" done "Set to $wanted_country: the built-in Wi-Fi can use every channel (5 GHz too)"
     else step "Wi-Fi country" failed "Could not set the Wi-Fi country (raspi-config nonint do_wifi_country)"
     fi
 fi
-# The car is in Grand Junction, Colorado. Imager left it on Europe/London;
-# GPS fixes UTC but cannot choose the local time zone. Honor an explicit override.
+# The profile's time zone (locale.timezone; the foxbody car is in Grand Junction, Colorado,
+# and Imager had left it on Europe/London). GPS fixes UTC but cannot choose the local zone.
+# Empty in the profile: the Pi's own is kept. FROGDASH_TIMEZONE overrides both.
 if command -v timedatectl >/dev/null 2>&1; then
     zone=$(timedatectl show -p Timezone --value 2>/dev/null)
-    wanted_zone=${FROGDASH_TIMEZONE:-America/Denver}
-    if [ "$zone" != "$wanted_zone" ]; then
+    wanted_zone=${FROGDASH_TIMEZONE:-${FD_TIMEZONE-America/Denver}}
+    if [ -z "$wanted_zone" ]; then
+        step "Time zone" ok "${zone:-Not set} (the Pi's own: choose another in the dash's Setup)"
+    elif [ "$zone" != "$wanted_zone" ]; then
         if timedatectl set-timezone "$wanted_zone" >/dev/null 2>&1; then
             restart_screen=1; restart_dash=1
             step "Time zone" done "Set to $wanted_zone (was ${zone:-not set})"
@@ -418,20 +491,21 @@ if [ -d "$CLOUD" ]; then
     fi
 fi
 
-# --- Dash options: config/frogdash-options becomes FROGDASH_ARGS, after a check ---
-# The list in the repository is what the dash runs with, so an option is turned on or off
-# by an update, never by editing /etc/default/frogdash on the Pi. A list the dash would
-# refuse (a typo, a camera option without --camera) is not used: the dash keeps what it
+# --- Dash options: the system profile becomes FROGDASH_ARGS, after a check ---
+# The profile (sysconfig.to_args) is what the dash runs with, so an option is turned on or
+# off by changing the profile (the dash's Setup), never by editing /etc/default/frogdash.
+# A list the dash would refuse (a typo in extra_args) is not used: the dash keeps what it
 # had. The file as it was before the first change is kept as frogdash.before-options.
-OPTIONS=${FROGDASH_OPTIONS:-$REPO/config/frogdash-options}
 DEFAULTS=$ETC/default/frogdash
-if [ -f "$OPTIONS" ]; then
-    wanted=$(sed -e 's/#.*//' "$OPTIONS" | tr -s ' \t\r\n' ' ' | sed 's/^ //; s/ $//')
+if [ -z "${FD_ARGS+set}" ]; then
+    step "Dash options" skipped "No system profile: the dash keeps the options it has"
+else
+    wanted=$FD_ARGS
     current=$(sed -n 's/^FROGDASH_ARGS="\(.*\)"[[:space:]]*$/\1/p' "$DEFAULTS" 2>/dev/null | tail -n 1)
     if [ "$wanted" = "$current" ]; then
         step "Dash options" ok "$wanted"
     elif printf '%s' "$wanted" | grep -q '[^A-Za-z0-9 ._/:=,-]'; then
-        step "Dash options" failed "Not used: config/frogdash-options has a character no option has"
+        step "Dash options" failed "Not used: the profile's options have a character no option has"
     elif ! problem=$(cd "$REPO" && "$VENV_PY" -c 'import sys; from hardware.frogdash.server import options; options(sys.argv[1:])' $wanted 2>&1 >/dev/null); then
         step "Dash options" failed "Not used, the dash would refuse them: $(printf '%s' "$problem" | tail -n 1 | sed 's/^.*error: //')"
     else
@@ -481,7 +555,7 @@ elif [ -f "$dropin" ]; then
     systemctl daemon-reload; restart_dash=1
     step "Terminal with sudo" done "Off, as --terminal is no longer set"
 else
-    step "Terminal with sudo" ok "Off (a --terminal line in config/frogdash-options turns on the Terminal tab at the next Update now)"
+    step "Terminal with sudo" ok "Off (the Terminal is switched on in the system profile: terminal true)"
 fi
 
 # --- Module firmware: the newest published builds, kept ready to install over the CAN bus ---
@@ -519,10 +593,13 @@ firmware_file() {  # name, step name, release URL
     fi
     rm -rf "$work"
 }
-firmware_file gateway "Gateway firmware file" "$GATEWAY_FW_URL"
-firmware_file taillights "Taillight firmware file" "$TAILLIGHT_FW_URL"
+module_firmware() {  # profile switch (1, 0 or unset: on), then firmware_file's arguments
+    if [ "$1" = 0 ]; then step "$3" skipped "Not in this car (system profile)"; else shift; firmware_file "$@"; fi
+}
+module_firmware "${FD_GATEWAY:-1}" gateway "Gateway firmware file" "$GATEWAY_FW_URL"
+module_firmware "${FD_TAILLIGHTS:-1}" taillights "Taillight firmware file" "$TAILLIGHT_FW_URL"
 # For the ESP32 water/meth board, installed over CAN from the dash.
-firmware_file watermeth "Water/meth firmware file" "$WATERMETH_FW_URL"
+module_firmware "${FD_WATERMETH:-1}" watermeth "Water/meth firmware file" "$WATERMETH_FW_URL"
 
 # --- Phone hotspot: the dash's own Wi-Fi network for logs, faults and updates from a phone ---
 # Off until switched on under Controls > Wi-Fi. Made on a Wi-Fi adapter the dash cam does
@@ -543,7 +620,7 @@ else
         done
         [ -n "$chosen" ] || chosen=$shared
         if [ -z "$chosen" ]; then problem="waiting"
-        elif python3 "$REPO/tools/setup_hotspot.py" --interface "$chosen" --ssid "Foxbody Dash" >/dev/null 2>&1 && [ -f "$hotspot" ]; then made=1
+        elif python3 "$REPO/tools/setup_hotspot.py" --interface "$chosen" --ssid "${FD_HOTSPOT_NAME:-Foxbody Dash}" >/dev/null 2>&1 && [ -f "$hotspot" ]; then made=1
         else problem="failed"
         fi
     fi

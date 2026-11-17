@@ -1,0 +1,19 @@
+{
+  "configured": false,
+  "interface": "can0",
+  "ecu": {"profile": "megasquirt", "bitrate": 500000, "base_id": 0},
+  "can_hat": {"present": true, "oscillator": 12000000, "interrupt": 25, "spi_hz": 8000000},
+  "gps": {"enabled": false, "transmit_on_can": false},
+  "recording": true,
+  "camera": {"enabled": false, "rotate": 0},
+  "dashcam": {"enabled": false},
+  "power": "none",
+  "modules": {"gateway": false, "taillights": false, "watermeth": false},
+  "tunerstudio": false,
+  "terminal": false,
+  "locale": {"timezone": "", "wifi_country": ""},
+  "hotspot_name": "Frogdash",
+  "uploads": {"repo": ""},
+  "screen": {"mode": "auto"},
+  "extra_args": []
+}

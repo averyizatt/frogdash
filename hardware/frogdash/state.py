@@ -4,7 +4,7 @@ import sys
 import time
 import traceback
 
-from .protocol import ANALOG_BITS, ECU_TIMEOUT, EVENT_IDS, TIMEOUTS, decode
+from .protocol import ANALOG_BITS, EVENT_IDS, TIMEOUTS, decode, is_ecu, timeout
 from .alerts import ecu_off_without_gps_motion
 from .controls import Controls
 from .taillight import TaillightSettings
@@ -135,23 +135,24 @@ class State:
             self.raw.popitem(last=False)
         if self.capture is not None and now <= self.capture_until and len(self.capture) < 200000:
             self.capture.append(f"({stamp / 1000:.6f}) can0 {can_id:0{8 if extended else 3}X}#{'R' if remote else data.hex().upper()}")
-        if extended or remote or error:
+        # A 29-bit frame is read only when it is the ECU's (an ECU profile with 29-bit IDs).
+        if remote or error or (extended and not is_ecu(can_id, True)):
             self.ignored += 1
             return
         if can_id in self.frames or len(self.frames) < 512:
             entry = self.frames.setdefault(can_id, {'count': 0, 'first': now, 'error': None, 'error_at': None})
             # A module that restarts goes quiet for a second or two, then reports from scratch.
-            if can_id in GAP_WATCH and 'seen' in entry and self.connected and now - entry['seen'] > max(1.0, 2 * TIMEOUTS[can_id]) \
+            if can_id in GAP_WATCH and not extended and not is_ecu(can_id) and 'seen' in entry and self.connected and now - entry['seen'] > max(1.0, 2 * TIMEOUTS[can_id]) \
                     and not (self.firmware and GAP_WATCH[can_id] in self.firmware.quiet()):   # Quiet while it is updated
                 self.gaps.append({'id': can_id, 'module': GAP_WATCH[can_id], 'seconds': round(now - entry['seen'], 1), 't': self.wall()})
             entry.update(count=entry['count'] + 1, seen=now, data=data.hex().upper())
         try:
-            signals = decode(can_id, data)
+            signals = decode(can_id, data, extended)
         except ValueError as exc:
             self.malformed += 1
             if can_id in self.frames:
                 self.frames[can_id].update(error=str(exc), error_at=now)
-            if can_id in (0x205, 0x501):
+            if can_id in (0x205, 0x501) and not extended and not is_ecu(can_id):
                 self.wheel.reset()
             self.status = str(exc)
             for (name, source), sample in self.samples.items():
@@ -169,6 +170,11 @@ class State:
             self.samples[name, can_id] = {"value": signal.value, "quality": signal.quality,
                                          "source_id": can_id, "timestamp_ms": stamp,
                                          "seen": now}
+        battery = signals.get("ecu.battery_v")
+        if battery is not None and battery.quality == "live" and isinstance(battery.value, (int, float)):
+            self.meth_black_box.battery(now, battery.value)
+        if extended or is_ecu(can_id):
+            return   # The engine computer's frame (its profile may use IDs of modules this car does not have)
         if can_id == 0x205 and self.mode == "socketcan" and self.connected:
             self.wheel.observe(data)
         elif can_id == 0x501 and self.mode == "socketcan" and self.connected:
@@ -181,6 +187,8 @@ class State:
             self.knock_detail.observe(data)
         elif can_id == BLACK_BOX_ID:
             self.meth_black_box.observe(data)
+        elif can_id == 0x300:
+            self.meth_black_box.heartbeat(now)
         elif can_id == 0x681 and self.firmware:
             self.firmware.observe(data)
         self.controls.observe(can_id, data)
@@ -195,7 +203,7 @@ class State:
             value = {k: v for k, v in sample.items() if k != "seen"}
             age = now - sample["seen"]
             # Event/config replies describe history, not current fault state.
-            limit = ECU_TIMEOUT if 0x5E8 <= source <= 0x73F else TIMEOUTS.get(source, .5)
+            limit = timeout(source)
             if source not in EVENT_IDS and (not self.connected or age > limit):
                 value["quality"] = "stale"
             previous = values.get(name)

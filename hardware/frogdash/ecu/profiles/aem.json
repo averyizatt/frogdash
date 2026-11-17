@@ -1,0 +1,224 @@
+{
+ "id": "aem",
+ "label": "AEM Infinity",
+ "manufacturer": "AEM Electronics (USA)",
+ "models": [
+  "Infinity EMS (30-71XX), V96.1 or later for MAP and pressures",
+  "AEM V2 and EMS-4 (30-6XXX): the first two frames"
+ ],
+ "firmware": "AEMnet data stream v150609",
+ "bitrate": 500000,
+ "extended": true,
+ "timeout_s": 1.0,
+ "status": "simulated",
+ "source": {
+  "title": "TA2 AEMNet Configuration: the AEM CAN Data Stream transmitted by the Infinity ECU",
+  "url": "https://documents.aemelectronics.com/techlibrary_ta2_infinity_aemnet_configuration.pdf",
+  "version": "Rev. A, 2/19/2016; AEMnet v150609"
+ },
+ "setup": [
+  "AEMnet transmission is on by default on Infinity ECUs: connect the dash to the AEMnet CAN HI and LO wires.",
+  "The stream is 29-bit at 500 kbit/s. (AEM notes the 30-2340N sends 11-bit headers at 1 Mbit/s instead: not this profile.)",
+  "Terminate the bus with 120 ohm at each end."
+ ],
+ "notes": "Read from AEM's 2016 stream document; the messages past 0x01F0A004 (more sensors, analog inputs) are not read yet. Fuel and oil pressure are sent in steps of 0.580151 psi (gauge) and given here in kPa. Lambda is given as lambda (ecu.lambda1); the dash's AFR gauge does not show it yet.",
+ "tuner": {
+  "name": "AEM Infinity Tuner",
+  "runs_on_dash": false,
+  "connection": "USB to a Windows computer",
+  "url": "https://www.aemelectronics.com/support/software_downloads/",
+  "status": "untested"
+ },
+ "check": [
+  [
+   "0x01F0A000",
+   "Engine speed, throttle, temperatures"
+  ],
+  [
+   "0x01F0A003",
+   "Lambda, speed, timing, battery"
+  ]
+ ],
+ "frames": [
+  {
+   "name": "0x01F0A000",
+   "ids": [
+    "0x01F0A000"
+   ],
+   "length": 8,
+   "comment": "Engine speed, throttle, intake air, coolant (50 Hz; AEM V2, EMS-4 and Infinity)",
+   "signals": [
+    {
+     "key": "ecu.rpm",
+     "layout": "u16@0",
+     "scale": 0.39063,
+     "unit": "rpm"
+    },
+    {
+     "key": "ecu.throttle_pct",
+     "layout": "u16@4",
+     "scale": 0.0015259,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.iat_c",
+     "layout": "s8@6",
+     "unit": "C"
+    },
+    {
+     "key": "ecu.coolant_c",
+     "layout": "s8@7",
+     "unit": "C"
+    }
+   ]
+  },
+  {
+   "name": "0x01F0A003",
+   "ids": [
+    "0x01F0A003"
+   ],
+   "length": 8,
+   "comment": "Lambda, speed, gear, timing, battery (50 Hz; AEM V2, EMS-4 and Infinity)",
+   "signals": [
+    {
+     "key": "ecu.lambda1",
+     "layout": "u8@0",
+     "scale": 0.00390625,
+     "offset": 0.5
+    },
+    {
+     "key": "ecu.lambda2",
+     "layout": "u8@1",
+     "scale": 0.00390625,
+     "offset": 0.5
+    },
+    {
+     "key": "ecu.vehicle_speed_kph",
+     "layout": "u16@2",
+     "scale": 0.0062865,
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.gear",
+     "layout": "u8@4"
+    },
+    {
+     "key": "ecu.spark_deg",
+     "layout": "u8@5",
+     "scale": 0.35156,
+     "offset": -17,
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.battery_v",
+     "layout": "u16@6",
+     "scale": 0.0002455,
+     "unit": "V"
+    }
+   ]
+  },
+  {
+   "name": "0x01F0A004",
+   "ids": [
+    "0x01F0A004"
+   ],
+   "length": 8,
+   "comment": "MAP, VE, fuel and oil pressure, lambda target, flags (50 Hz; Infinity V96.1 and later)",
+   "signals": [
+    {
+     "key": "ecu.map_kpa",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.ve1",
+     "layout": "u8@2",
+     "unit": "%"
+    },
+    {
+     "key": "ecu.fuel_pressure_kpa",
+     "layout": "u8@3",
+     "scale": 4.000000338388918,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.oil_pressure_kpa",
+     "layout": "u8@4",
+     "scale": 4.000000338388918,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.lambda_target",
+     "layout": "u8@5",
+     "scale": 0.00390625,
+     "offset": 0.5
+    },
+    {
+     "key": "ecu.fuel_pump",
+     "layout": "bit@6.0"
+    },
+    {
+     "key": "ecu.fan1",
+     "layout": "bit@6.1"
+    },
+    {
+     "key": "ecu.fan2",
+     "layout": "bit@6.2"
+    },
+    {
+     "key": "ecu.nitrous",
+     "layout": "bit@6.3"
+    },
+    {
+     "key": "ecu.o2_feedback",
+     "layout": "bit@6.4"
+    },
+    {
+     "key": "ecu.engine_protect",
+     "layout": "bit@6.5"
+    },
+    {
+     "key": "ecu.check_engine",
+     "layout": "bit@6.6"
+    },
+    {
+     "key": "ecu.lean_protect",
+     "layout": "bit@6.7"
+    },
+    {
+     "key": "ecu.oil_pressure_protect",
+     "layout": "bit@7.0"
+    },
+    {
+     "key": "ecu.two_step_fuel",
+     "layout": "bit@7.1"
+    },
+    {
+     "key": "ecu.two_step_spark",
+     "layout": "bit@7.2"
+    },
+    {
+     "key": "ecu.sync",
+     "layout": "bit@7.3"
+    },
+    {
+     "key": "ecu.ac_on",
+     "layout": "bit@7.4"
+    },
+    {
+     "key": "ecu.boost_cut",
+     "layout": "bit@7.5"
+    },
+    {
+     "key": "ecu.coolant_protect",
+     "layout": "bit@7.6"
+    },
+    {
+     "key": "ecu.dbw_error",
+     "layout": "bit@7.7"
+    }
+   ]
+  }
+ ]
+}

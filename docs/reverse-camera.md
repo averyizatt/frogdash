@@ -44,10 +44,10 @@ sudo python3 -m venv --system-site-packages --clear .venv
 sudo .venv/bin/pip install -r requirements.lock
 ```
 
-Turn it on with a `--camera` line in `config/frogdash-options` (the `#` in front of it
-taken away), with any camera options on the lines after it (`--camera-rotate 180`,
-`--camera-keep-warm` ...). The next **Update now** writes them into `/etc/default/frogdash`
-and restarts the dash.
+Turn it on in the system profile (`camera.enabled`, and `camera.rotate` 180 for a camera
+mounted upside down; other camera options such as `--camera-keep-warm` go in `extra_args`;
+see [presets.md](presets.md)). The next **Update now** writes them into
+`/etc/default/frogdash` and restarts the dash.
 
 The supplied `frogdash.service` already runs with the `video` group, which
 Raspberry Pi OS uses for camera devices; no user changes are needed. If you run

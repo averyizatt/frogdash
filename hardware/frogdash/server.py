@@ -38,6 +38,7 @@ from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
 from .paint import Paint, validate as validate_paint
 from .imports import Imports
 from . import cancheck, methtune, selftest
+from . import ecu as ecu_profiles, protocol
 from .parking import rolling
 from .logview import LogCache, LogError
 
@@ -860,6 +861,19 @@ def create_app(state, adapter=None, connectivity=None):
         # every start. index.html stays no-store: the saved look is put into it.
         return web.FileResponse(WEB / name, headers={"Cache-Control": "no-store" if name == 'index.html' else "no-cache"})
 
+    async def ecu_list(request):
+        """The ECU profile being read, why another was not (if so), and every built-in one
+        with its source document, how far it has been checked and its tuning software."""
+        def listing():
+            profiles = []
+            for name in ecu_profiles.built_in():
+                try:
+                    profiles.append(ecu_profiles.load(name).summary())
+                except ecu_profiles.ProfileError as exc:
+                    profiles.append({'id': name, 'error': str(exc)})
+            return {'active': protocol.ECU.summary(), 'problem': protocol.ECU_PROBLEM, 'profiles': profiles}
+        return web.json_response(await asyncio.to_thread(listing), headers={'Cache-Control': 'no-store'})
+
     async def import_list(request):
         require_local(request)
         if not state.imports:
@@ -1042,6 +1056,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.post('/ui/appearance', appearance_snapshot),
                     web.route('*', '/ui/appearance/image/{field:background|splash}', appearance_image),
                     web.get('/taillights/{name}', taillight_frames), web.get('/skins/{name}', skin_image), web.get('/maps/{name}', map_data),
+                    web.get('/ecu/profiles', ecu_list),
                     web.get('/ui/import', import_list), web.get('/ui/import/{name}', import_file),
                     web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),
                     web.get('/dashcam/status', dashcam_status), web.get('/dashcam/stream', dashcam_stream),
@@ -1052,7 +1067,7 @@ def create_app(state, adapter=None, connectivity=None):
 
 
 def arguments():
-    """The dash's options. Setup checks config/frogdash-options against these before using them."""
+    """The dash's options. Setup checks the system profile's (sysconfig.to_args) against these before using them."""
     parser = argparse.ArgumentParser(description="Frogdash CAN dashboard with optional USB GPS broadcast")
     parser.add_argument("--interface", default="can0")
     parser.add_argument("--port", type=int, default=8080)
@@ -1089,7 +1104,7 @@ def arguments():
 
 def options(argv=None):
     """The options, with the combinations that cannot work refused: (args, parser).
-    tools/frogdash_setup.sh runs this on config/frogdash-options before using them."""
+    tools/frogdash_setup.sh runs this on the system profile's options before using them."""
     parser = arguments()
     args = parser.parse_args(argv)
     if args.loop and not args.replay:

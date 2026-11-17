@@ -1,0 +1,543 @@
+{
+ "id": "rusefi",
+ "label": "rusEFI",
+ "manufacturer": "rusEFI (open source)",
+ "models": [
+  "rusEFI boards (Proteus, uaEFI, Hellen and others) with the verbose CAN broadcast"
+ ],
+ "firmware": "rusEFI firmware of November 2025 (rusefi/rusefi bfde8f4)",
+ "bitrate": 500000,
+ "extended": false,
+ "timeout_s": 1.0,
+ "status": "simulated",
+ "source": {
+  "title": "rusEFI_CAN_verbose.dbc and can_verbose.cpp (rusEFI verbose CAN broadcast)",
+  "url": "https://github.com/rusefi/rusefi/blob/bfde8f4945ecd33a9d3090b20aefba1521675801/firmware/controllers/can/rusEFI_CAN_verbose.dbc",
+  "version": "rusefi/rusefi commit bfde8f4 (2025-11-20)",
+  "also": [
+   "https://github.com/rusefi/rusefi/blob/bfde8f4945ecd33a9d3090b20aefba1521675801/firmware/controllers/can/can_verbose.cpp",
+   "https://wiki.rusefi.com/CAN-Broadcast-for-Dashboards/"
+  ]
+ },
+ "base": {
+  "default": "0x200",
+  "setting": "verboseCanBaseAddress (CAN settings in TunerStudio)"
+ },
+ "setup": [
+  "In TunerStudio with the rusEFI project: CAN settings, turn on \"CAN broadcast using custom rusEFI protocol\" (enableVerboseCanTx).",
+  "Leave the verbose CAN IDs at \"11 bit\" (rusefiVerbose29b off) and the CAN speed at 500 kbps (both the defaults).",
+  "The broadcast starts at ID 0x200 (512) and uses 12 IDs. In a car with the Frogdash comfort module or gateway (which use 0x200-0x20F), move it to a free range, for example 0x400 (1024), and set the same number as ecu.base_id in the dash.",
+  "It is sent every canSleepPeriodMs (50 ms by default), five times slower while TunerStudio is connected over CAN."
+ ],
+ "notes": "Lambda is given as lambda (ecu.lambda1), oil and fuel pressure in kPa (the high-pressure GDI sensor is sent in 0.1 bar steps); the dash's AFR and oil pressure gauges do not yet show these. Values the ECU has no sensor for are sent as 0 (or -1 for pedal and throttles). rusEFI's Haltech-format and other dash broadcasts are separate options and not read by this profile.",
+ "tuner": {
+  "name": "TunerStudio with the rusEFI project, or rusEFI's own console",
+  "runs_on_dash": true,
+  "connection": "The board's USB (a serial port), or TunerStudio over CAN through rusEFI's CAN-to-TCP proxy",
+  "url": "https://wiki.rusefi.com/TS-over-CAN/",
+  "status": "untested"
+ },
+ "check": [
+  [
+   "+1",
+   "Speeds (RPM, timing, vehicle speed)"
+  ],
+  [
+   "+3",
+   "Sensors (MAP, coolant, intake air, fuel level)"
+  ]
+ ],
+ "frames": [
+  {
+   "name": "BASE0",
+   "offsets": [
+    0
+   ],
+   "length": 8,
+   "comment": "Status",
+   "signals": [
+    {
+     "key": "ecu.warning_count",
+     "layout": "u16le@0"
+    },
+    {
+     "key": "ecu.last_error",
+     "layout": "u16le@2"
+    },
+    {
+     "key": "ecu.rev_limit",
+     "layout": "bit@4.0"
+    },
+    {
+     "key": "ecu.main_relay",
+     "layout": "bit@4.1"
+    },
+    {
+     "key": "ecu.fuel_pump",
+     "layout": "bit@4.2"
+    },
+    {
+     "key": "ecu.check_engine",
+     "layout": "bit@4.3"
+    },
+    {
+     "key": "ecu.ego_heater",
+     "layout": "bit@4.4"
+    },
+    {
+     "key": "ecu.lambda_protect",
+     "layout": "bit@4.5"
+    },
+    {
+     "key": "ecu.fan",
+     "layout": "bit@4.6"
+    },
+    {
+     "key": "ecu.fan2",
+     "layout": "bit@4.7"
+    },
+    {
+     "key": "ecu.gear",
+     "layout": "u8@5"
+    },
+    {
+     "key": "ecu.distance_km",
+     "layout": "u16le@6",
+     "scale": 0.1,
+     "unit": "km"
+    }
+   ]
+  },
+  {
+   "name": "BASE1",
+   "offsets": [
+    1
+   ],
+   "length": 8,
+   "comment": "Speeds",
+   "signals": [
+    {
+     "key": "ecu.rpm",
+     "layout": "u16le@0",
+     "unit": "rpm"
+    },
+    {
+     "key": "ecu.spark_deg",
+     "layout": "s16le@2",
+     "scale": 0.02,
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.injector_duty_pct",
+     "layout": "u8@4",
+     "scale": 0.5,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.coil_duty_pct",
+     "layout": "u8@5",
+     "scale": 0.5,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.vehicle_speed_kph",
+     "layout": "u8@6",
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.ethanol_pct",
+     "layout": "u8@7",
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "BASE2",
+   "offsets": [
+    2
+   ],
+   "length": 8,
+   "comment": "Pedal and throttle",
+   "signals": [
+    {
+     "key": "ecu.pedal_pct",
+     "layout": "s16le@0",
+     "scale": 0.01,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.throttle_pct",
+     "layout": "s16le@2",
+     "scale": 0.01,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.throttle2_pct",
+     "layout": "s16le@4",
+     "scale": 0.01,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.wastegate_pct",
+     "layout": "s16le@6",
+     "scale": 0.01,
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "BASE3",
+   "offsets": [
+    3
+   ],
+   "length": 8,
+   "comment": "Sensors 1",
+   "signals": [
+    {
+     "key": "ecu.map_kpa",
+     "layout": "u16le@0",
+     "scale": 0.03333333333333333,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.coolant_c",
+     "layout": "u8@2",
+     "offset": -40,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.iat_c",
+     "layout": "u8@3",
+     "offset": -40,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.aux1_temp_c",
+     "layout": "u8@4",
+     "offset": -40,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.aux2_temp_c",
+     "layout": "u8@5",
+     "offset": -40,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.mcu_temp_c",
+     "layout": "u8@6",
+     "offset": -40,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.fuel_level_pct",
+     "layout": "u8@7",
+     "scale": 0.5,
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "BASE4",
+   "offsets": [
+    4
+   ],
+   "length": 8,
+   "comment": "Sensors 2",
+   "signals": [
+    {
+     "key": "ecu.oil_pressure_kpa",
+     "layout": "u16le@2",
+     "scale": 0.03333333333333333,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.oil_temp_c",
+     "layout": "u8@4",
+     "offset": -40,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.fuel_temp_c",
+     "layout": "u8@5",
+     "offset": -40,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.battery_v",
+     "layout": "u16le@6",
+     "scale": 0.001,
+     "unit": "V"
+    }
+   ]
+  },
+  {
+   "name": "BASE5",
+   "offsets": [
+    5
+   ],
+   "length": 8,
+   "comment": "Fueling",
+   "signals": [
+    {
+     "key": "ecu.cylinder_airmass_mg",
+     "layout": "u16le@0",
+     "unit": "mg"
+    },
+    {
+     "key": "ecu.airflow_kg_h",
+     "layout": "u16le@2",
+     "scale": 0.01,
+     "unit": "kg/h"
+    },
+    {
+     "key": "ecu.pw1_ms",
+     "layout": "u16le@4",
+     "scale": 0.0033333333333333335,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.knock_count",
+     "layout": "u16le@6"
+    }
+   ]
+  },
+  {
+   "name": "BASE6",
+   "offsets": [
+    6
+   ],
+   "length": 8,
+   "comment": "Fueling 2",
+   "signals": [
+    {
+     "key": "ecu.fuel_used_g",
+     "layout": "u16le@0",
+     "unit": "g"
+    },
+    {
+     "key": "ecu.fuel_flow_g_s",
+     "layout": "u16le@2",
+     "scale": 0.005,
+     "unit": "g/s"
+    },
+    {
+     "key": "ecu.fuel_trim1_pct",
+     "layout": "s16le@4",
+     "scale": 0.01,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.fuel_trim2_pct",
+     "layout": "s16le@6",
+     "scale": 0.01,
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "BASE7",
+   "offsets": [
+    7
+   ],
+   "length": 8,
+   "comment": "Fueling 3",
+   "signals": [
+    {
+     "key": "ecu.lambda1",
+     "layout": "u16le@0",
+     "scale": 0.0001
+    },
+    {
+     "key": "ecu.lambda2",
+     "layout": "u16le@2",
+     "scale": 0.0001
+    },
+    {
+     "key": "ecu.fuel_pressure_low_kpa",
+     "layout": "u16le@4",
+     "scale": 0.03333333333333333,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.fuel_pressure_high_kpa",
+     "layout": "u16le@6",
+     "scale": 10,
+     "unit": "kPa"
+    }
+   ]
+  },
+  {
+   "name": "BASE8",
+   "offsets": [
+    8
+   ],
+   "length": 8,
+   "comment": "Cams",
+   "signals": [
+    {
+     "key": "ecu.cam1_intake_deg",
+     "layout": "s8@0",
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.cam1_intake_target_deg",
+     "layout": "s8@1",
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.cam1_exhaust_deg",
+     "layout": "s8@2",
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.cam1_exhaust_target_deg",
+     "layout": "s8@3",
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.cam2_intake_deg",
+     "layout": "s8@4",
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.cam2_intake_target_deg",
+     "layout": "s8@5",
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.cam2_exhaust_deg",
+     "layout": "s8@6",
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.cam2_exhaust_target_deg",
+     "layout": "s8@7",
+     "unit": "deg"
+    }
+   ]
+  },
+  {
+   "name": "BASE9",
+   "offsets": [
+    9
+   ],
+   "length": 8,
+   "comment": "Exhaust gas temperatures",
+   "signals": [
+    {
+     "key": "ecu.egt1_c",
+     "layout": "u8@0",
+     "scale": 5,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt2_c",
+     "layout": "u8@1",
+     "scale": 5,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt3_c",
+     "layout": "u8@2",
+     "scale": 5,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt4_c",
+     "layout": "u8@3",
+     "scale": 5,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt5_c",
+     "layout": "u8@4",
+     "scale": 5,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt6_c",
+     "layout": "u8@5",
+     "scale": 5,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt7_c",
+     "layout": "u8@6",
+     "scale": 5,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt8_c",
+     "layout": "u8@7",
+     "scale": 5,
+     "unit": "C"
+    }
+   ]
+  },
+  {
+   "name": "BASE10",
+   "offsets": [
+    10
+   ],
+   "length": 8,
+   "comment": "Knock per cylinder",
+   "signals": [
+    {
+     "key": "ecu.knock1_db",
+     "layout": "s8@0",
+     "unit": "dB"
+    },
+    {
+     "key": "ecu.knock2_db",
+     "layout": "s8@1",
+     "unit": "dB"
+    },
+    {
+     "key": "ecu.knock3_db",
+     "layout": "s8@2",
+     "unit": "dB"
+    },
+    {
+     "key": "ecu.knock4_db",
+     "layout": "s8@3",
+     "unit": "dB"
+    },
+    {
+     "key": "ecu.knock5_db",
+     "layout": "s8@4",
+     "unit": "dB"
+    },
+    {
+     "key": "ecu.knock6_db",
+     "layout": "s8@5",
+     "unit": "dB"
+    },
+    {
+     "key": "ecu.knock7_db",
+     "layout": "s8@6",
+     "unit": "dB"
+    },
+    {
+     "key": "ecu.knock8_db",
+     "layout": "s8@7",
+     "unit": "dB"
+    }
+   ]
+  },
+  {
+   "name": "BASE11",
+   "offsets": [
+    11
+   ],
+   "length": 8,
+   "comment": "Status 2",
+   "signals": [
+    {
+     "key": "ecu.brake_pedal",
+     "layout": "bit@0.0"
+    }
+   ]
+  }
+ ]
+}

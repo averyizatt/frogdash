@@ -111,6 +111,40 @@ class BlackBoxTests(unittest.IsolatedAsyncioTestCase):
                                'CAN set up again in 4 of the windows; frames not getting out in 20 of the windows; '
                                'longest control gap 180 ms; least free memory 120 KB')
 
+    def battery(self, volts):
+        """A MicroSquirt frame carrying the battery voltage (0x5EB, tenths of a volt)."""
+        tenths = round(volts * 10)
+        self.state.ingest(0x5EB, bytes([tenths >> 8, tenths & 0xFF, 0, 0, 0, 0, 0, 0]))
+
+    def test_the_microsquirt_battery_voltage_is_lined_up_with_the_record(self):
+        # The car at 14.1 V, falling to 10.8 V as the pump starts; the board's heartbeat (every
+        # 50 ms) stops at that moment and comes back 1.2 s later, then the record arrives.
+        for step in range(200):                       # 10 s before the reset, a reading every 50 ms
+            self.now = 1000.0 + step * 0.05
+            dipping = step >= 192
+            self.battery(14.1 - (step - 191) * 0.4 if dipping else 14.1)
+            self.state.ingest(0x300, bytes(8))
+        self.now += 1.2
+        for _ in range(40):                           # Back, and 2 s of heartbeats before the record
+            self.state.ingest(0x300, bytes(8))
+            self.now += 0.05
+        self.feed(frames(self.brownout_with_the_pump_starting()))
+        entry = self.entries()[0]
+        volts = [row[-1] for row in entry['detail']['rows']]
+        self.assertEqual((volts[0], volts[-1]), (14.1, 10.9))
+        self.assertTrue(entry['text'].endswith('; MicroSquirt battery 10.9 V at the end, lowest 10.9 V at the end'), entry['text'])
+
+    def test_no_voltage_is_guessed_without_a_heartbeat_silence(self):
+        # Readings, but the dash never saw the board go quiet (it started after the reset): left out.
+        for step in range(40):
+            self.now = 1000.0 + step * 0.05
+            self.battery(13.9)
+            self.state.ingest(0x300, bytes(8))
+        self.feed(frames(self.brownout_with_the_pump_starting()))
+        entry = self.entries()[0]
+        self.assertEqual({row[-1] for row in entry['detail']['rows']}, {None})
+        self.assertNotIn('MicroSquirt battery', entry['text'])
+
     @unittest.skipUnless(COMPILER, 'C++ compiler required for the firmware builders')
     async def test_the_firmware_builders_frames_put_together(self):
         built = vectors()
@@ -119,8 +153,8 @@ class BlackBoxTests(unittest.IsolatedAsyncioTestCase):
         entries = self.entries()
         self.assertEqual(len(entries), 1)
         rows = entries[0]['detail']['rows']
-        self.assertEqual(rows, [[-0.1, 32.0, 32.0, 132, 3392, 'NONE', 0x30, 0x07, 10, 21, 35, 248],
-                                [0.0, 35.0, 35.0, 132, 3392, 'NONE', 0x10, 0x03, 10, 22, 35, 248]])
+        self.assertEqual(rows, [[-0.1, 32.0, 32.0, 132, 3392, 'NONE', 0x30, 0x07, 10, 21, 35, 248, None],
+                                [0.0, 35.0, 35.0, 132, 3392, 'NONE', 0x10, 0x03, 10, 22, 35, 248, None]])
         self.assertIn('(brownout (supply dip)), the 0.2 s before it: pump on at 35%, started 0.1 s before the end', entries[0]['text'])
 
 

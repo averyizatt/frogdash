@@ -6,7 +6,7 @@ GPS, cameras, helpers, storage and power) and never transmits on the bus.
 import json
 import time
 
-from . import cancheck
+from . import cancheck, protocol
 
 OK, WARN, FAIL, SKIP = 'ok', 'warn', 'fail', 'skip'
 
@@ -47,9 +47,24 @@ def report(state, folder=None, wall=time.time):
                     f'{state.received} frames received, {state.malformed} rejected',
                     'Nothing received: no other node is powered or the bus is not connected'))
 
+    # --- The engine computer's profile (ecu/profiles/) ---
+    profile = protocol.ECU
+    problem = protocol.ECU_PROBLEM
+    try:
+        from . import sysconfig
+        bus = sysconfig.load()['ecu']['bitrate']
+    except Exception:   # pragma: no cover (sysconfig falls back by itself)
+        bus = profile.bitrate
+    if not problem and bus != profile.bitrate:
+        problem = (f'the bus runs at {bus // 1000} kbit/s but {profile.label} sends at {profile.bitrate // 1000} kbit/s: '
+                   'set ecu.bitrate to match, or the ECU's CAN speed')
+    out.append(line('CAN bus', 'ECU profile', WARN if problem else OK,
+                    f"{profile.label} ({profile.status}, {profile.bitrate // 1000} kbit/s)" + (f': {problem}' if problem else ''),
+                    'Choose a profile that exists in the system profile (ecu.profile), at its bit rate (ecu.bitrate)'))
     # --- Modules (from the CAN check) ---
     rows = cancheck.report(state)['rows']
-    for name in ('Taillights', 'Comfort gateway', 'Water/meth', 'MicroSquirt'):
+    ecu_name = protocol.ECU.label
+    for name in ('Taillights', 'Comfort gateway', 'Water/meth', ecu_name):
         mine = [r for r in rows if r['module'] == name]
         good = [r for r in mine if r['status'] == 'ok']
         bad = [r for r in mine if r['status'] in ('fault', 'rejected')]
@@ -59,13 +74,14 @@ def report(state, folder=None, wall=time.time):
                             f"{bad[0]['id']}: {note}", 'See Sensors > CAN check for each message'))
         elif good:
             missing = [r['id'] for r in mine if r['status'] in ('missing', 'stopped')]
-            optional = name == 'MicroSquirt' or all(i == '0x103' for i in missing)
+            optional = name == ecu_name or all(i == '0x103' for i in missing)
             out.append(line('Modules', name, OK if not missing or optional else WARN,
                             f"{len(good)} of {len(mine)} messages arriving" + (f" (not seen: {', '.join(missing)})" if missing else ''),
                             'A missing message usually means older module firmware or a feature switched off'))
         else:
             out.append(line('Modules', name, FAIL, 'No messages received',
-                            'Module off, not on the bus, or (MicroSquirt) broadcasting not enabled in TunerStudio'))
+                            'Module off, not on the bus, or (the ECU) its CAN broadcast not switched on: '
+                            'see its setup steps under Sensors > System check > ECU profile'))
 
     # --- Dash functions on the bus ---
     runtime = state.runtime.snapshot()

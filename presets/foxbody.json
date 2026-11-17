@@ -1,0 +1,19 @@
+{
+  "configured": true,
+  "interface": "can0",
+  "ecu": {"profile": "megasquirt", "bitrate": 500000, "base_id": 0},
+  "can_hat": {"present": true, "oscillator": 12000000, "interrupt": 25, "spi_hz": 8000000},
+  "gps": {"enabled": true, "transmit_on_can": true},
+  "recording": true,
+  "camera": {"enabled": false, "rotate": 0},
+  "dashcam": {"enabled": false},
+  "power": "pisugar3",
+  "modules": {"gateway": true, "taillights": true, "watermeth": true},
+  "tunerstudio": false,
+  "terminal": true,
+  "locale": {"timezone": "America/Denver", "wifi_country": "US"},
+  "hotspot_name": "Foxbody Dash",
+  "uploads": {"repo": "averyizatt/frogdash"},
+  "screen": {"mode": "1920x720"},
+  "extra_args": []
+}

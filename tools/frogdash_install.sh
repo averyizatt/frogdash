@@ -10,23 +10,31 @@
 #   sudo sh /opt/frogdash/tools/frogdash_install.sh --check
 #
 # Options: --user NAME (the screen's user; default: the one running sudo)
-#          --oscillator HZ (the MCP2515 board's crystal; default 12000000, the car's Waveshare
-#                           RS485 CAN HAT; 8000000 for the common blue MCP2515 + TJA1050 boards)
-#          --interrupt GPIO (default 25)
-#          --no-pisugar (skip installing the PiSugar 3 software)
-# Running it again is safe: each step looks first and changes only what is missing. From
-# then on, Update now on the dash keeps everything up to date (tools/frogdash_setup.sh).
+#          --preset NAME (what this car has, from presets/: generic, the default, for a new
+#                         car, filled in afterwards in the dash's Setup; foxbody for the car
+#                         this project was built in)
+#          --repo URL (where the dash's code comes from; default the frogdash repository)
+#          --oscillator HZ (the MCP2515 board's crystal; 12000000 for the Waveshare RS485 CAN
+#                           HAT; 8000000 for the common blue MCP2515 + TJA1050 boards)
+#          --interrupt GPIO (the MCP2515's interrupt pin; default 25)
+#          --no-pisugar (no PiSugar 3 power board)
+# What the car has is kept in /etc/frogdash/system.json (hardware/frogdash/sysconfig.py);
+# these options only fill in a new one. Running this again is safe: each step looks first
+# and changes only what is missing. From then on, Update now on the dash keeps everything
+# up to date and installs the parts the profile names (tools/frogdash_setup.sh).
 REPO=/opt/frogdash
 URL=https://github.com/averyizatt/frogdash.git
 LOG=/var/log/frogdash-install.log
-user=${SUDO_USER:-}; oscillator=12000000; interrupt=25; check=""; pisugar=1
+user=${SUDO_USER:-}; check=""; preset=generic; sets=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --user) user=$2; shift;;
-        --oscillator) oscillator=$2; shift;;
-        --interrupt) interrupt=$2; shift;;
+        --preset) preset=$2; shift;;
+        --repo) URL=$2; shift;;
+        --oscillator) sets="$sets --set can_hat.oscillator=$2"; shift;;
+        --interrupt) sets="$sets --set can_hat.interrupt=$2"; shift;;
         --check) check=1;;
-        --no-pisugar) pisugar="";;
+        --no-pisugar) sets="$sets --set power=none";;
         *) echo "Unknown option: $1"; exit 2;;
     esac
     shift
@@ -44,6 +52,9 @@ if [ -z "$user" ] || [ "$user" = root ] || ! id "$user" >/dev/null 2>&1; then
 fi
 home=$(getent passwd "$user" | cut -d: -f6)
 BOOT=/boot/firmware; [ -f $BOOT/config.txt ] || BOOT=/boot
+profile() {  # A field of this Pi's profile: true, false, a number or text
+    (cd $REPO 2>/dev/null && $REPO/.venv/bin/python -m hardware.frogdash.sysconfig get "$1" 2>/dev/null)
+}
 
 verify() {
     head_ "Checking the install"
@@ -56,12 +67,15 @@ verify() {
     if curl -fsS -m 3 http://127.0.0.1:8080/health >/dev/null 2>&1; then ok "The dash answers on http://127.0.0.1:8080"
     else bad "The dash does not answer: journalctl -u frogdash -b"
     fi
-    if ip link show can0 >/dev/null 2>&1; then
+    if [ "$(profile can_hat.present)" = false ]; then
+        ok "No CAN board in this car's profile"
+    elif ip link show can0 >/dev/null 2>&1; then
         state=$(ip -details link show can0 | sed -n 's/.*can state \([A-Z-]*\).*/\1/p')
         ok "can0 exists (state ${state:-unknown}; ERROR-ACTIVE is normal, BUS-OFF with the car on is not)"
     else bad "No can0: check the MCP2515 wiring and the overlay in $BOOT/config.txt, then restart"
     fi
-    if systemctl is-active --quiet gpsd || systemctl is-active --quiet gpsd.socket; then ok "gpsd is running"
+    if [ "$(profile gps.enabled)" = false ]; then ok "No GPS in this car's profile"
+    elif systemctl is-active --quiet gpsd || systemctl is-active --quiet gpsd.socket; then ok "gpsd is running"
     else warn "gpsd is not running (normal until the GPS receiver is plugged in)"
     fi
     for c in /sys/class/drm/card*-HDMI-A-*; do
@@ -79,10 +93,11 @@ verify() {
         if [ -z "$fails" ]; then ok "Pi setup: every step done"; else bad "Pi setup: $fails"; fi
     else warn "Pi setup has not written its status yet"
     fi
-    if command -v pisugar-server >/dev/null 2>&1 || systemctl cat pisugar-server >/dev/null 2>&1; then
+    if [ "$(profile power)" = none ]; then ok "No PiSugar in this car's profile"
+    elif command -v pisugar-server >/dev/null 2>&1 || systemctl cat pisugar-server >/dev/null 2>&1; then
         systemctl is-active --quiet frogdash-power.service && ok "PiSugar power monitor is running" || bad "PiSugar is installed but frogdash-power is not running"
         [ -x /usr/lib/systemd/system-shutdown/frogdash-pisugar-poweroff ] && ok "PiSugar output turns off after shutdown" || bad "No PiSugar shutdown hook: run the install again"
-    else warn "No PiSugar software: run this script again without --no-pisugar (the dash runs without it, but turning the key off cuts power)"
+    else warn "No PiSugar software: run this script again (the dash runs without it, but turning the key off cuts power)"
     fi
     echo
     if [ $failed = 0 ]; then echo "Everything checked is working."; else echo "$failed check(s) failed: see above."; fi
@@ -104,31 +119,17 @@ step "2/9 System packages (a few minutes)"
 export DEBIAN_FRONTEND=noninteractive
 run apt-get update -o DPkg::Lock::Timeout=600
 browser=chromium; apt-cache show chromium >/dev/null 2>&1 || browser=chromium-browser
-if run apt-get install -y -o DPkg::Lock::Timeout=600 git curl python3-venv python3-pip python3-gps gpsd gpsd-clients can-utils \
-        cage "$browser" dbus-user-session libpam-systemd kbd i2c-tools; then ok "Installed git, Python, gpsd, can-utils, Cage and $browser"
+# GPS (gpsd) and the other parts a car may not have come later, from the Pi setup (step 8).
+if run apt-get install -y -o DPkg::Lock::Timeout=600 git curl python3-venv python3-pip can-utils \
+        cage "$browser" dbus-user-session libpam-systemd kbd i2c-tools; then ok "Installed git, Python, can-utils, Cage and $browser"
 else bad "Package install failed: see $LOG"; exit 1
 fi
 
-step "3/9 SPI, I2C and the CAN board"
+step "3/9 SPI and I2C"
 if command -v raspi-config >/dev/null 2>&1; then
     run raspi-config nonint do_spi 0; run raspi-config nonint do_i2c 0; ok "SPI and I2C on"
 fi
-overlay="dtoverlay=mcp2515-can0,oscillator=$oscillator,interrupt=$interrupt,spimaxfrequency=8000000"
-if grep -qx "$overlay" $BOOT/config.txt; then
-    ok "MCP2515 overlay already set ($oscillator Hz crystal, interrupt GPIO $interrupt)"
-elif grep -q '^#*dtoverlay=mcp2515' $BOOT/config.txt; then
-    # An earlier board's line, or one commented out while testing: this one replaces it.
-    cp $BOOT/config.txt $BOOT/config.txt.before-frogdash-can
-    sed -i "s|^#*dtoverlay=mcp2515.*|$overlay|" $BOOT/config.txt
-    sed -i 's|^# Frogdash MCP2515 (.*|# Frogdash MCP2515 ('"$oscillator"' Hz crystal, interrupt GPIO '"$interrupt"')|' $BOOT/config.txt
-    grep -q '^dtparam=spi=on' $BOOT/config.txt || sed -i "s|^$overlay|dtparam=spi=on
-$overlay|" $BOOT/config.txt
-    ok "MCP2515 overlay changed to a $oscillator Hz crystal, interrupt GPIO $interrupt (restart to use it); the old file is config.txt.before-frogdash-can"
-else
-    cp $BOOT/config.txt $BOOT/config.txt.before-frogdash
-    printf '\n[all]\n# Frogdash MCP2515 (%s Hz crystal, interrupt GPIO %s)\ndtparam=spi=on\n%s\n' "$oscillator" "$interrupt" "$overlay" >> $BOOT/config.txt
-    ok "MCP2515 overlay added ($oscillator Hz crystal, interrupt GPIO $interrupt); the old file is config.txt.before-frogdash"
-fi
+# The CAN board's line in config.txt is added by the Pi setup (step 8), from the profile.
 
 step "4/9 The dash's code in $REPO"
 if [ -d $REPO/.git ]; then
@@ -141,6 +142,11 @@ step "5/9 Python environment"
 [ -x $REPO/.venv/bin/python ] || run python3 -m venv --system-site-packages $REPO/.venv
 if run $REPO/.venv/bin/pip install --disable-pip-version-check -r $REPO/requirements.lock; then ok "Packages installed in $REPO/.venv"
 else bad "pip install failed: see $LOG"; exit 1
+fi
+# What this car has: a new profile from the preset (one already there is kept).
+if said=$(cd $REPO && $REPO/.venv/bin/python -m hardware.frogdash.sysconfig --etc /etc init --preset "$preset" $sets 2>&1); then
+    ok "System profile: ${said#*: } (/etc/frogdash/system.json)"
+else bad "System profile not written: $said"; exit 1
 fi
 
 step "6/9 Services"
@@ -160,7 +166,7 @@ run systemctl restart frogdash.service
 for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do curl -fsS -m 2 http://127.0.0.1:8080/health >/dev/null 2>&1 && break; sleep 2; done
 curl -fsS -m 2 http://127.0.0.1:8080/health >/dev/null 2>&1 && ok "The dash is running" || bad "The dash did not start: journalctl -u frogdash -b"
 
-step "8/9 Pi setup: helpers, GPS, clock, hotspot, screen, recovery (several minutes)"
+step "8/9 Pi setup: the CAN board, GPS, clock, hotspot, screen, recovery, as the profile says (several minutes)"
 FROGDASH_REPO=$REPO sh $REPO/tools/frogdash_setup.sh online >> $LOG 2>&1
 python3 - /var/lib/frogdash/setup-status.json <<'EOF' >&3 2>/dev/null || warn "Could not read the setup's status"
 import json, sys
@@ -170,6 +176,7 @@ for s in json.load(open(sys.argv[1])).get('steps', []):
 EOF
 
 step "9/9 PiSugar power"
+pisugar=""; [ "$(profile power)" = pisugar3 ] && pisugar=1
 if [ -n "$pisugar" ] && ! systemctl cat pisugar-server >/dev/null 2>&1; then
     # The vendor's installer, unattended, for the PiSugar 3 Plus (vendor model name "PiSugar 3").
     if curl -fsSL -m 60 -o /tmp/pisugar-power-manager.sh https://cdn.pisugar.com/release/pisugar-power-manager.sh &&
@@ -196,7 +203,7 @@ if systemctl cat pisugar-server >/dev/null 2>&1; then
     systemctl daemon-reload; run systemctl enable --now frogdash-power.service
     [ -x /usr/lib/systemd/system-shutdown/frogdash-pisugar-poweroff ] && ok "PiSugar: the dash's shutdown on ignition loss is installed"
 else
-    warn "PiSugar skipped (--no-pisugar): the dash runs, but turning the key off cuts power"
+    warn "PiSugar skipped (none in this car's profile): the dash runs, but turning the key off cuts power"
 fi
 
 verify

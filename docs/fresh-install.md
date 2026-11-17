@@ -38,24 +38,34 @@ computer on the same Wi-Fi:
 
 ```sh
 ssh foxbody@frogdash.local
-curl -fsSL https://raw.githubusercontent.com/averyizatt/frogdash/main/tools/frogdash_install.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/averyizatt/frogdash/main/tools/frogdash_install.sh | sudo sh -s -- --preset foxbody
 ```
 
 (No computer: plug a keyboard into the Pi, log in on the screen and type the `curl` line.)
 
+`--preset foxbody` is the car this project was built in: its CAN HAT, GPS, modules, PiSugar,
+time zone and screen. **Another car** leaves it out (the `generic` preset: only what every
+car has) and adds what it has; see [Presets and the system profile](presets.md). For
+example, a common blue MCP2515 board and no PiSugar:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/averyizatt/frogdash/main/tools/frogdash_install.sh | sudo sh -s -- --oscillator 8000000 --no-pisugar
+```
+
 It shows each step as it goes, `OK` or `FAIL` with what to do:
 
 1. Internet and system
-2. System packages: git, Python, gpsd, can-utils, Cage and Chromium
-3. SPI, I2C and the CAN board: the MCP2515 overlay for the car's Waveshare RS485 CAN HAT (12 MHz crystal,
-   interrupt GPIO 25) in `/boot/firmware/config.txt`
+2. System packages: git, Python, can-utils, Cage and Chromium
+3. SPI and I2C on
 4. The dash's code in `/opt/frogdash`
-5. Its Python environment
+5. Its Python environment, and the system profile `/etc/frogdash/system.json` from the preset
 6. Services: the dash, CAN, the updater and the screen for `foxbody`
 7. The dash started and answering
-8. The Pi setup: helpers, GPS, the clock from GPS, the phone hotspot, the exact 1920 × 720
-   screen mode, the recovery guard and rescue screen, module firmware
-9. PiSugar power: the vendor software and the clean shutdown
+8. The Pi setup, for what the profile names: the CAN board's line in
+   `/boot/firmware/config.txt` (the foxbody car's Waveshare RS485 CAN HAT: 12 MHz crystal,
+   interrupt GPIO 25), helpers, GPS and the clock from GPS, the phone hotspot, the exact
+   1920 × 720 screen mode, the recovery guard and rescue screen, module firmware
+9. PiSugar power, when the profile has one: the vendor software and the clean shutdown
 
 Everything is logged in `/var/log/frogdash-install.log`. Running it again is safe.
 
@@ -72,13 +82,14 @@ sudo sh /opt/frogdash/tools/frogdash_install.sh --check
 ```
 
 It checks each service, the dash answering, `can0`, gpsd, the screen connection, the power
-flags (under-voltage) and the Pi setup's steps.
+flags (under-voltage) and the Pi setup's steps. Parts the profile does not have are not
+counted as failures.
 
 ## 4. PiSugar
 
 Step 9 installs the PiSugar Power Manager (unattended, model PiSugar 3) and the dash's
-clean shutdown on ignition loss; nothing to do separately. Add `--no-pisugar` to the
-install command to leave it out on a Pi without one. Details: [PiSugar power](pisugar-power.md).
+clean shutdown on ignition loss when the profile has one (the foxbody preset does);
+nothing to do separately. `--no-pisugar` leaves it out. Details: [PiSugar power](pisugar-power.md).
 
 ## 5. What a new card starts without
 

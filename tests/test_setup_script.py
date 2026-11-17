@@ -11,15 +11,18 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
 
+from hardware.frogdash import sysconfig
 from hardware.frogdash.helpers import stamp
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / 'tools/frogdash_setup.sh'
 SHELL = shutil.which('sh')
+CAR_ARGS = '--interface can0 --gpsd --log-dir /var/lib/frogdash/logs --terminal'   # The car's options before profiles
 UBLOX = 'usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00'
 LAST = 'for a; do last=$a; done\n'
 SHIMS = {
@@ -104,7 +107,11 @@ class SetupScriptTests(unittest.TestCase):
         self.env['FROGDASH_LIB'] = (base / 'lib').as_posix()
         self.env['FROGDASH_CLOUD_DIR'] = (base / 'cloud').as_posix()   # Absent: no cloud-init (see its own test)
         self.env['FROGDASH_BOOT'] = (base / 'boot').as_posix()     # No boot files unless a test makes them
-        self.env['FROGDASH_OPTIONS'] = (base / 'options').as_posix()  # No options list unless a test makes one
+        # The profile is made and read by the real code (hardware/frogdash/sysconfig.py). The Pi as
+        # the car's is before profiles: its options already in /etc/default/frogdash, so the
+        # profile is made from the foxbody preset, and every step does what it did before.
+        self.env['FROGDASH_SYS_PY'] = sys.executable
+        (self.etc / 'default/frogdash').write_text(f'FROGDASH_ARGS="{CAR_ARGS}"\n', newline='\n')
 
     def tearDown(self):
         self.folder.cleanup()
@@ -113,6 +120,13 @@ class SetupScriptTests(unittest.TestCase):
         done = subprocess.run([SHELL, SCRIPT.as_posix(), *args], env=self.env, capture_output=True, text=True, timeout=300)   # A busy Windows PC runs sh slowly
         status = json.loads((self.state / 'setup-status.json').read_text())
         return done.stdout.strip(), status, {s['name']: (s['result'], s['detail']) for s in status['steps']}
+
+    def profile(self, preset='foxbody', **fields):
+        """This Pi's system profile, as the dash's Setup would save it (key__sub=value)."""
+        profile = sysconfig.validate(sysconfig.preset(preset))
+        for key, value in fields.items():
+            sysconfig.assignment(f"{key.replace('__', '.')}={json.dumps(value)}", profile)
+        return sysconfig.write(profile, self.etc)
 
     def log(self, name):
         path = self.fake / name
@@ -193,10 +207,12 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn('enable --now frogdash-warm.service', self.log('systemctl.log'))
 
     def test_the_terminal_gets_sudo_only_while_it_is_switched_on(self):
+        self.profile(terminal=False)
         said, status, steps = self.run_setup('offline')
+        self.assertEqual(steps['Dash options'], ('done', 'Off: --terminal. Now: --interface can0 --gpsd --log-dir /var/lib/frogdash/logs'))
         self.assertEqual(steps['Terminal with sudo'][0], 'ok')                  # Off: nothing installed
         self.assertFalse((self.units / 'frogdash-terminal.socket').exists())
-        (self.etc / 'default/frogdash').write_text('FROGDASH_ARGS="--interface can0 --gpsd --terminal"\n', newline='\n')
+        self.profile(terminal=True)                                             # Switched on in the dash's Setup
         said, status, steps = self.run_setup('offline')
         self.assertEqual(steps['Terminal with sudo'], ('done', 'Commands from the Terminal tab now run as foxbody, so sudo works'))
         for unit in ('frogdash-terminal.socket', 'frogdash-terminal@.service'):
@@ -206,47 +222,82 @@ class SetupScriptTests(unittest.TestCase):
         self.assertIn('enable --now frogdash-terminal.socket', self.log('systemctl.log'))
         self.assertTrue(self.log('systemctl.log').rstrip().endswith('restart frogdash.service'))   # Its new group
         self.assertEqual(self.run_setup('offline')[2]['Terminal with sudo'][0], 'ok')             # Nothing more to do
-        (self.etc / 'default/frogdash').write_text('FROGDASH_ARGS="--interface can0 --gpsd"\n', newline='\n')
+        self.profile(terminal=False)
         said, status, steps = self.run_setup('offline')
         self.assertEqual(steps['Terminal with sudo'], ('done', 'Off, as --terminal is no longer set'))
         self.assertFalse((self.units / 'frogdash.service.d/terminal.conf').exists())
         self.assertIn('disable --now frogdash-terminal.socket', self.log('systemctl.log'))
 
-    def test_the_dash_options_come_from_the_list_in_the_repository(self):
-        options = Path(self.env['FROGDASH_OPTIONS'])
-        options.write_text('# The options\n--interface can0\n--gpsd   # GPS\n--terminal\n', newline='\n')
+    def test_the_dash_options_come_from_the_system_profile(self):
         defaults = self.etc / 'default/frogdash'
         defaults.write_text('# Set by hand once\nFROGDASH_ARGS="--interface can0 --gpsd"\n', newline='\n')
         said, status, steps = self.run_setup('offline')
-        self.assertEqual(steps['Dash options'], ('done', 'On: --terminal. Now: --interface can0 --gpsd --terminal'))
-        self.assertEqual(defaults.read_text(), '# Set by hand once\nFROGDASH_ARGS="--interface can0 --gpsd --terminal"\n')
+        # The car's Pi before profiles: one is made from its preset, with the options it runs.
+        self.assertEqual(steps['System profile'], ('done', 'Made from the foxbody preset'))
+        self.assertEqual(json.loads((self.etc / 'frogdash/system.json').read_text())['preset'], 'foxbody')
+        self.assertEqual(steps['Dash options'], ('done', f'On: --log-dir --terminal. Now: {CAR_ARGS}'))
+        self.assertEqual(defaults.read_text(), f'# Set by hand once\nFROGDASH_ARGS="{CAR_ARGS}"\n')
         self.assertEqual((self.etc / 'default/frogdash.before-options').read_text(), '# Set by hand once\nFROGDASH_ARGS="--interface can0 --gpsd"\n')
-        self.assertIn('options(sys.argv[1:]) --interface can0 --gpsd --terminal', self.log('venv.log'))
+        self.assertIn(f'options(sys.argv[1:]) {CAR_ARGS}', self.log('venv.log'))
         self.assertEqual(steps['Terminal with sudo'][0], 'done')       # Read from the file just written
         self.assertIn('restart frogdash.service', self.log('systemctl.log'))
-        self.assertEqual(self.run_setup('offline')[2]['Dash options'], ('ok', '--interface can0 --gpsd --terminal'))
-        # A list the dash would refuse is not used: it keeps running with what it had.
+        said, status, steps = self.run_setup('offline')
+        self.assertEqual((steps['System profile'], steps['Dash options']), (('ok', 'Preset foxbody'), ('ok', CAR_ARGS)))
+        # Options the dash would refuse are not used: it keeps running with what it had.
         (self.fake / 'venv-python').write_text('#!/bin/sh\necho "$@" >> "$FAKE/venv.log"\n'
                         'case "$*" in *--bogus*) echo "-c: error: unrecognized arguments: --bogus" >&2; exit 2;; esac\n', newline='\n')
-        options.write_text('--interface can0\n--gpsd\n--bogus\n', newline='\n')
+        self.profile(extra_args=['--bogus'])
         said, status, steps = self.run_setup('offline')
         self.assertEqual(steps['Dash options'], ('failed', 'Not used, the dash would refuse them: unrecognized arguments: --bogus'))
-        self.assertIn('--terminal"', defaults.read_text())
-        options.write_text('--interface can0 --gpsd; reboot\n', newline='\n')
-        self.assertEqual(self.run_setup('offline')[2]['Dash options'][0], 'failed')
-        self.assertIn('--terminal"', defaults.read_text())
-        # Taken out of the list: off at the next update, and the Terminal goes with it.
-        options.write_text('--interface can0\n--gpsd\n# --terminal\n', newline='\n')
+        self.assertIn(f'{CAR_ARGS}"', defaults.read_text())
+        # A damaged profile is not used: the last good values are, and System check says why.
+        (self.etc / 'frogdash/system.json').write_text('{"preset": "foxbody", "gps": "yes"}')
         said, status, steps = self.run_setup('offline')
-        self.assertEqual(steps['Dash options'], ('done', 'Off: --terminal. Now: --interface can0 --gpsd'))
-        self.assertEqual(steps['Terminal with sudo'], ('done', 'Off, as --terminal is no longer set'))
+        self.assertEqual(steps['System profile'][0], 'failed')
+        self.assertIn('the last good values are used', steps['System profile'][1])
+        self.assertIn(f'{CAR_ARGS}"', defaults.read_text())
 
-    def test_the_options_in_the_repository_are_ones_the_dash_takes(self):
-        from hardware.frogdash.server import options
-        words = ' '.join(line.split('#')[0] for line in (ROOT / 'config/frogdash-options').read_text().splitlines()).split()
-        args, parser = options(words)
-        self.assertEqual(args.interface, 'can0')
-        self.assertTrue(args.gpsd and args.log_dir)
+    def test_the_presets_options_are_ones_the_dash_takes(self):
+        try:
+            from hardware.frogdash.server import options
+        except ImportError as exc:     # pragma: no cover (CI has the dash's packages)
+            self.skipTest(f'needs the dash packages: {exc}')
+        for name in sysconfig.preset_names():
+            args, parser = options(sysconfig.to_args(sysconfig.validate(sysconfig.preset(name))).split())
+            self.assertEqual(args.interface, 'can0', name)
+            self.assertTrue(args.log_dir, name)
+
+    def test_a_new_car_on_the_generic_preset_gets_only_what_it_has(self):
+        # A fresh install: no options before, so the profile comes from the generic preset (in a
+        # real install, tools/frogdash_install.sh writes it first). A CAN board, nothing else.
+        (self.etc / 'default/frogdash').unlink()
+        boot = Path(self.env['FROGDASH_BOOT']); boot.mkdir()
+        (boot / 'config.txt').write_text('dtparam=audio=on\n', newline='\n')
+        zone = Path(self.folder.name) / 'zone'
+        self.env['FAKE_ZONE'] = zone.as_posix()
+        zone.write_text('Europe/Berlin\n')
+        said, status, steps = self.run_setup('online')
+        self.assertEqual(steps['System profile'], ('done', 'Made from the generic preset'))
+        self.assertEqual(steps['Dash options'], ('done', 'On: --interface --log-dir --no-engine-runtime. Now: '
+                                                         '--interface can0 --log-dir /var/lib/frogdash/logs --no-engine-runtime'))
+        for name in ('GPS service', 'Clock from GPS'):
+            self.assertEqual(steps[name], ('skipped', 'No GPS in this car (system profile)'), name)
+        for name in ('Gateway firmware file', 'Taillight firmware file', 'Water/meth firmware file'):
+            self.assertEqual(steps[name], ('skipped', 'Not in this car (system profile)'), name)
+        self.assertEqual(steps['Screen and start-up'][0], 'skipped')
+        self.assertNotIn('frogdash_screen.py', self.log('python.log'))
+        self.assertEqual(steps['Time zone'][0], 'ok')
+        self.assertEqual(zone.read_text().strip(), 'Europe/Berlin')                 # Its own, until chosen
+        self.assertIn('--ssid Frogdash', self.log('python.log'))
+        self.assertEqual(steps['CAN board'], ('done', 'Added: 12 MHz crystal, interrupt GPIO 25, from the next start'))
+        self.assertTrue((boot / 'config.txt').read_text().endswith(
+            '[all]\n# Frogdash MCP2515 (12000000 Hz crystal, interrupt GPIO 25)\ndtparam=spi=on\n'
+            'dtoverlay=mcp2515-can0,oscillator=12000000,interrupt=25,spimaxfrequency=8000000\n'))
+        self.assertNotEqual(steps['Terminal with sudo'][0], 'done')
+        self.assertIn('Restart the Pi', said)
+        said, status, steps = self.run_setup('online')
+        self.assertNotIn('CAN board', steps)                         # Once there, the line is the SPI step's
+        self.assertEqual(steps['CAN board: SPI speed'], ('ok', '8 MHz'))
 
     def test_first_run_without_internet_does_all_it_can_and_names_what_waits(self):
         said, status, steps = self.run_setup('offline')
@@ -291,7 +342,7 @@ class SetupScriptTests(unittest.TestCase):
             self.assertEqual(steps[name][0], 'waiting', name)
             self.assertIn('press Update now', steps[name][1])
         self.assertEqual((self.log('apt.log'), list(self.fake.glob('home/*'))), ('', []))  # Nothing was fetched.
-        self.assertEqual(said, 'Set up: Recovery guard and rescue screen, Dash helpers, GPS service, TunerStudio: serial port, Screen and start-up, Start-up: unused disk check, Phone hotspot, System log kept, Dash cam Wi-Fi. Restart the Pi to apply the screen boot settings')
+        self.assertEqual(said, 'Set up: System profile, Recovery guard and rescue screen, Dash helpers, GPS service, TunerStudio: serial port, Screen and start-up, Start-up: unused disk check, Terminal with sudo, Phone hotspot, System log kept, Dash cam Wi-Fi. Restart the Pi to apply the screen boot settings')
         # The guard and the rescue screen run from copies outside the dash's own files.
         for name in ('frogdash_guard.sh', 'frogdash_rescue.py'):
             self.assertEqual((Path(self.env['FROGDASH_LIB']) / name).read_bytes(), (ROOT / 'tools' / name).read_bytes())
@@ -410,6 +461,8 @@ class SetupScriptTests(unittest.TestCase):
         self.assertEqual(self.gpsd.read_text(), before)       # Pinning nothing would switch a working receiver off.
 
     def test_with_one_adapter_the_hotspot_shares_it_with_the_dash_cam(self):
+        self.profile(terminal=False)                          # The Terminal's own restart aside
+        (self.etc / 'default/frogdash').write_text('FROGDASH_ARGS="--interface can0 --gpsd --log-dir /var/lib/frogdash/logs"\n', newline='\n')
         (self.fake / 'no-ap').write_text('')                  # No adapter can be an access point at all.
         _, _, steps = self.run_setup('offline')
         self.assertEqual(steps['Phone hotspot'][0], 'waiting')

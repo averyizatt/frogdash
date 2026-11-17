@@ -1,0 +1,943 @@
+{
+ "id": "haltech",
+ "label": "Haltech",
+ "manufacturer": "Haltech (Australia)",
+ "models": [
+  "Elite series ECUs",
+  "Nexus series ECUs and VCUs"
+ ],
+ "firmware": "Nexus 1.25 or later; Elite 3.11 or later (earlier versions support parts of the protocol)",
+ "bitrate": 1000000,
+ "extended": false,
+ "timeout_s": 1.5,
+ "status": "simulated",
+ "source": {
+  "title": "Haltech ECU Broadcast CAN Protocol",
+  "version": "Document version 2.0",
+  "url": "https://support.haltech.com/portal/en/kb/articles/haltech-can-ecu-broadcast-protocol",
+  "also": [
+   "https://support.haltech.com/portal/en/kb/articles/haltech-can-protocol-specification"
+  ]
+ },
+ "setup": [
+  "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000), as Haltech's CAN does.",
+  "Nexus firmware 1.25 or later, Elite 3.11 or later (check in NSP while connected).",
+  "Fixed IDs 0x360-0x3E5 (and more the profile does not read yet); they cannot be moved."
+ ],
+ "notes": "Pressures other than MAP and baro are given as gauge pressure (Haltech sends them absolute; 101.3 kPa taken off, as its document says). Temperatures come in 0.1 K. Lambda is given as lambda (ecu.lambda1-4). Frames past 0x3E5 (0x3E6-0x3F3, 0x469-0x477, 0x6F0-0x701) are in the document but not read by this profile yet.",
+ "tuner": {
+  "name": "NSP (Nexus Software Programmer); ESP for older Elite firmware",
+  "runs_on_dash": false,
+  "connection": "USB to a Windows computer",
+  "url": "https://www.haltech.com/",
+  "status": "untested"
+ },
+ "check": [
+  [
+   "0x360",
+   "RPM, MAP, throttle (50 Hz)"
+  ],
+  [
+   "0x3E0",
+   "Coolant, intake air, fuel and oil temperature (5 Hz)"
+  ]
+ ],
+ "frames": [
+  {
+   "name": "0x360",
+   "ids": [
+    "0x360"
+   ],
+   "length": 8,
+   "comment": "50 Hz",
+   "signals": [
+    {
+     "key": "ecu.rpm",
+     "layout": "u16@0",
+     "unit": "rpm"
+    },
+    {
+     "key": "ecu.map_kpa",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.throttle_pct",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.coolant_pressure_kpa",
+     "layout": "u16@6",
+     "scale": 0.1,
+     "offset": -101.3,
+     "unit": "kPa"
+    }
+   ]
+  },
+  {
+   "name": "0x361",
+   "ids": [
+    "0x361"
+   ],
+   "length": 8,
+   "comment": "50 Hz",
+   "signals": [
+    {
+     "key": "ecu.fuel_pressure_kpa",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "offset": -101.3,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.oil_pressure_kpa",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "offset": -101.3,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.engine_demand_pct",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.wastegate_pressure_kpa",
+     "layout": "u16@6",
+     "scale": 0.1,
+     "offset": -101.3,
+     "unit": "kPa"
+    }
+   ]
+  },
+  {
+   "name": "0x362",
+   "ids": [
+    "0x362"
+   ],
+   "length": 8,
+   "comment": "50 Hz",
+   "signals": [
+    {
+     "key": "ecu.injector_duty_pct",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.injector2_duty_pct",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.spark_deg",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "deg"
+    }
+   ]
+  },
+  {
+   "name": "0x363",
+   "ids": [
+    "0x363"
+   ],
+   "length": 8,
+   "comment": "20 Hz",
+   "signals": [
+    {
+     "key": "ecu.wheel_slip_kph",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.wheel_diff_kph",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.launch_end_rpm",
+     "layout": "u16@6",
+     "unit": "rpm"
+    }
+   ]
+  },
+  {
+   "name": "0x364",
+   "ids": [
+    "0x364"
+   ],
+   "length": 8,
+   "comment": "50 Hz",
+   "signals": [
+    {
+     "key": "ecu.pw1_ms",
+     "layout": "u16@0",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.pw2_ms",
+     "layout": "u16@2",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.pw3_ms",
+     "layout": "u16@4",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.pw4_ms",
+     "layout": "u16@6",
+     "scale": 0.001,
+     "unit": "ms"
+    }
+   ]
+  },
+  {
+   "name": "0x368",
+   "ids": [
+    "0x368"
+   ],
+   "length": 8,
+   "comment": "20 Hz",
+   "signals": [
+    {
+     "key": "ecu.lambda1",
+     "layout": "u16@0",
+     "scale": 0.001
+    },
+    {
+     "key": "ecu.lambda2",
+     "layout": "u16@2",
+     "scale": 0.001
+    },
+    {
+     "key": "ecu.lambda3",
+     "layout": "u16@4",
+     "scale": 0.001
+    },
+    {
+     "key": "ecu.lambda4",
+     "layout": "u16@6",
+     "scale": 0.001
+    }
+   ]
+  },
+  {
+   "name": "0x369",
+   "ids": [
+    "0x369"
+   ],
+   "length": 8,
+   "comment": "20 Hz",
+   "signals": [
+    {
+     "key": "ecu.trigger_error_count",
+     "layout": "u16@0"
+    },
+    {
+     "key": "ecu.trigger_count",
+     "layout": "u16@2"
+    },
+    {
+     "key": "ecu.trigger_sync_level",
+     "layout": "u16@6"
+    }
+   ]
+  },
+  {
+   "name": "0x36A",
+   "ids": [
+    "0x36A"
+   ],
+   "length": 8,
+   "comment": "20 Hz",
+   "signals": [
+    {
+     "key": "ecu.knock1_db",
+     "layout": "u16@0",
+     "scale": 0.01,
+     "unit": "dB"
+    },
+    {
+     "key": "ecu.knock2_db",
+     "layout": "u16@2",
+     "scale": 0.01,
+     "unit": "dB"
+    }
+   ]
+  },
+  {
+   "name": "0x36B",
+   "ids": [
+    "0x36B"
+   ],
+   "length": 8,
+   "comment": "20 Hz",
+   "signals": [
+    {
+     "key": "ecu.brake_pressure_front_kpa",
+     "layout": "u16@0",
+     "offset": -101.3,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.nos_pressure_kpa",
+     "layout": "u16@2",
+     "scale": 0.22,
+     "offset": -101.3,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.turbo_speed_rpm",
+     "layout": "u16@4",
+     "scale": 10,
+     "unit": "rpm"
+    },
+    {
+     "key": "ecu.accel_lateral_ms2",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "m/s2"
+    }
+   ]
+  },
+  {
+   "name": "0x36C",
+   "ids": [
+    "0x36C"
+   ],
+   "length": 8,
+   "comment": "20 Hz",
+   "signals": [
+    {
+     "key": "ecu.wheel_speed_fl_kph",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.wheel_speed_fr_kph",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.wheel_speed_rl_kph",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.wheel_speed_rr_kph",
+     "layout": "u16@6",
+     "scale": 0.1,
+     "unit": "km/h"
+    }
+   ]
+  },
+  {
+   "name": "0x36D",
+   "ids": [
+    "0x36D"
+   ],
+   "length": 8,
+   "comment": "20 Hz",
+   "signals": [
+    {
+     "key": "ecu.cam1_exhaust_deg",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.cam2_exhaust_deg",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "deg"
+    }
+   ]
+  },
+  {
+   "name": "0x36E",
+   "ids": [
+    "0x36E"
+   ],
+   "length": 8,
+   "comment": "20 Hz",
+   "signals": [
+    {
+     "key": "ecu.engine_limiting",
+     "layout": "u16@0"
+    },
+    {
+     "key": "ecu.launch_retard_deg",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.launch_enrich_pct",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.accel_longitudinal_ms2",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "m/s2"
+    }
+   ]
+  },
+  {
+   "name": "0x36F",
+   "ids": [
+    "0x36F"
+   ],
+   "length": 8,
+   "comment": "20 Hz",
+   "signals": [
+    {
+     "key": "ecu.output1_duty_pct",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.boost_duty_pct",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "0x370",
+   "ids": [
+    "0x370"
+   ],
+   "length": 8,
+   "comment": "20 Hz",
+   "signals": [
+    {
+     "key": "ecu.vehicle_speed_kph",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.gear_selector",
+     "layout": "u8@2"
+    },
+    {
+     "key": "ecu.gear",
+     "layout": "u8@3"
+    },
+    {
+     "key": "ecu.cam1_intake_deg",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.cam2_intake_deg",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "deg"
+    }
+   ]
+  },
+  {
+   "name": "0x371",
+   "ids": [
+    "0x371"
+   ],
+   "length": 8,
+   "comment": "10 Hz",
+   "signals": [
+    {
+     "key": "ecu.fuel_flow_cc_min",
+     "layout": "u16@0",
+     "unit": "cc/min"
+    },
+    {
+     "key": "ecu.fuel_flow_return_cc_min",
+     "layout": "u16@2",
+     "unit": "cc/min"
+    }
+   ]
+  },
+  {
+   "name": "0x372",
+   "ids": [
+    "0x372"
+   ],
+   "length": 8,
+   "comment": "10 Hz",
+   "signals": [
+    {
+     "key": "ecu.battery_v",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "unit": "V"
+    },
+    {
+     "key": "ecu.boost_target_kpa",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.baro_kpa",
+     "layout": "u16@6",
+     "scale": 0.1,
+     "unit": "kPa"
+    }
+   ]
+  },
+  {
+   "name": "0x373",
+   "ids": [
+    "0x373"
+   ],
+   "length": 8,
+   "comment": "10 Hz",
+   "signals": [
+    {
+     "key": "ecu.egt1_c",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt2_c",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt3_c",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt4_c",
+     "layout": "u16@6",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    }
+   ]
+  },
+  {
+   "name": "0x374",
+   "ids": [
+    "0x374"
+   ],
+   "length": 8,
+   "comment": "10 Hz",
+   "signals": [
+    {
+     "key": "ecu.egt5_c",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt6_c",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt7_c",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt8_c",
+     "layout": "u16@6",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    }
+   ]
+  },
+  {
+   "name": "0x375",
+   "ids": [
+    "0x375"
+   ],
+   "length": 8,
+   "comment": "10 Hz",
+   "signals": [
+    {
+     "key": "ecu.egt9_c",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt10_c",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt11_c",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt12_c",
+     "layout": "u16@6",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    }
+   ]
+  },
+  {
+   "name": "0x376",
+   "ids": [
+    "0x376"
+   ],
+   "length": 8,
+   "comment": "10 Hz",
+   "signals": [
+    {
+     "key": "ecu.ambient_c",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.humidity_pct",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "0x377",
+   "ids": [
+    "0x377"
+   ],
+   "length": 8,
+   "comment": "50 Hz",
+   "signals": [
+    {
+     "key": "ecu.boost_pre_intercooler_kpa",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "unit": "kPa"
+    }
+   ]
+  },
+  {
+   "name": "0x3E0",
+   "ids": [
+    "0x3E0"
+   ],
+   "length": 8,
+   "comment": "5 Hz",
+   "signals": [
+    {
+     "key": "ecu.coolant_c",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.iat_c",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.fuel_temp_c",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.oil_temp_c",
+     "layout": "u16@6",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    }
+   ]
+  },
+  {
+   "name": "0x3E1",
+   "ids": [
+    "0x3E1"
+   ],
+   "length": 8,
+   "comment": "5 Hz",
+   "signals": [
+    {
+     "key": "ecu.gearbox_oil_temp_c",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.diff_oil_temp_c",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.ethanol_pct",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.iat_pre_intercooler_c",
+     "layout": "u16@6",
+     "scale": 0.1,
+     "offset": -273.15,
+     "unit": "C"
+    }
+   ]
+  },
+  {
+   "name": "0x3E2",
+   "ids": [
+    "0x3E2"
+   ],
+   "length": 8,
+   "comment": "5 Hz",
+   "signals": [
+    {
+     "key": "ecu.fuel_level_l",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "unit": "L"
+    },
+    {
+     "key": "ecu.fuel_flow_estimated_cc_min",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "cc/min"
+    },
+    {
+     "key": "ecu.fuel_economy_km_l",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "unit": "km/L"
+    }
+   ]
+  },
+  {
+   "name": "0x3E3",
+   "ids": [
+    "0x3E3"
+   ],
+   "length": 8,
+   "comment": "5 Hz",
+   "signals": [
+    {
+     "key": "ecu.fuel_trim_short1_pct",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.fuel_trim_short2_pct",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.fuel_trim_long1_pct",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.fuel_trim_long2_pct",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "0x3E4",
+   "ids": [
+    "0x3E4"
+   ],
+   "length": 8,
+   "comment": "5 Hz",
+   "signals": [
+    {
+     "key": "ecu.neutral_switch",
+     "layout": "bit@1.7"
+    },
+    {
+     "key": "ecu.reverse_switch",
+     "layout": "bit@1.6"
+    },
+    {
+     "key": "ecu.gear_switch",
+     "layout": "bit@1.5"
+    },
+    {
+     "key": "ecu.decel_cut",
+     "layout": "bit@1.4"
+    },
+    {
+     "key": "ecu.transient_throttle",
+     "layout": "bit@1.3"
+    },
+    {
+     "key": "ecu.brake_pedal",
+     "layout": "bit@1.2"
+    },
+    {
+     "key": "ecu.clutch_switch",
+     "layout": "bit@1.1"
+    },
+    {
+     "key": "ecu.oil_pressure_light",
+     "layout": "bit@1.0"
+    },
+    {
+     "key": "ecu.launch_control",
+     "layout": "bit@2.7"
+    },
+    {
+     "key": "ecu.launch_switch",
+     "layout": "bit@2.6"
+    },
+    {
+     "key": "ecu.aux_rev_limit",
+     "layout": "bit@2.5"
+    },
+    {
+     "key": "ecu.brake_fluid_switch",
+     "layout": "bit@2.4"
+    },
+    {
+     "key": "ecu.flat_shift_switch",
+     "layout": "bit@2.3"
+    },
+    {
+     "key": "ecu.clutch_pressure_switch",
+     "layout": "bit@2.2"
+    },
+    {
+     "key": "ecu.torque_reduction",
+     "layout": "bit@2.1"
+    },
+    {
+     "key": "ecu.traction_control_enabled",
+     "layout": "bit@3.7"
+    },
+    {
+     "key": "ecu.traction_control_active",
+     "layout": "bit@3.6"
+    },
+    {
+     "key": "ecu.ac_request",
+     "layout": "bit@3.5"
+    },
+    {
+     "key": "ecu.ac_output",
+     "layout": "bit@3.4"
+    },
+    {
+     "key": "ecu.fan4",
+     "layout": "bit@3.3"
+    },
+    {
+     "key": "ecu.fan3",
+     "layout": "bit@3.2"
+    },
+    {
+     "key": "ecu.fan2",
+     "layout": "bit@3.1"
+    },
+    {
+     "key": "ecu.fan1",
+     "layout": "bit@3.0"
+    },
+    {
+     "key": "ecu.check_engine",
+     "layout": "bit@7.7"
+    },
+    {
+     "key": "ecu.battery_light",
+     "layout": "bit@7.6"
+    },
+    {
+     "key": "ecu.hand_brake",
+     "layout": "bit@7.1"
+    },
+    {
+     "key": "ecu.traction_control_light",
+     "layout": "bit@7.0"
+    }
+   ]
+  },
+  {
+   "name": "0x3E5",
+   "ids": [
+    "0x3E5"
+   ],
+   "length": 8,
+   "comment": "50 Hz",
+   "signals": [
+    {
+     "key": "ecu.ignition_switch",
+     "layout": "u8@0"
+    },
+    {
+     "key": "ecu.turbo_timer_s",
+     "layout": "u8@1",
+     "unit": "s"
+    },
+    {
+     "key": "ecu.steering_angle_deg",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "deg"
+    }
+   ]
+  }
+ ]
+}

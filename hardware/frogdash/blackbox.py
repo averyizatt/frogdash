@@ -9,19 +9,30 @@ every 5 s until it hears 0x301 0x13 from the dash.
 The record is put back together here, written to the event log in words with every sample
 (the event log goes up with each report, so it can be read after the drive), shown on the
 Water / meth tab, and answered.
+
+The board does not measure its own supply, so each sample is given the MicroSquirt's battery
+voltage at that moment: the dash keeps the last minute of it, and the board's reset is put at
+the last 0x300 heartbeat before its latest silence (within about one heartbeat). That is the
+car's voltage at the ECU, not at the end of the board's own feed: it shows a dip the whole
+car saw (the pump starting on a weak battery), not a bad connection on the board's wire.
 """
+from collections import deque
+
 from .eventlog import RESET_REASONS
 from .methtune import HOLDS
 
 ID = 0x310
 HEADER, VERSION, SAMPLE_BYTES, PER_FRAME = 0xFF, 1, 10, 7
+SUPPLY_KEEP_S = 60     # The MicroSquirt's battery voltage kept for lining up with a record
+QUIET_S = 0.3          # A heartbeat silence this long is a restart (the board sends 0x300 every 50 ms)
+NEAREST_S = 0.25       # A voltage reading this close to a sample counts for it
 RECEIVED = bytes([0x13])          # meth_tune_command::BLACK_BOX_RECEIVED
 # black_box.h: kState's upper bits and kEvents.
 ARMED, SOFT_START, PUMP_TEST, CRASH_HOLD = 16, 32, 64, 128
 ECU_FRESH, CAN_ONLINE, PUMP_STARTED, PUMP_STOPPED = 1, 2, 4, 8
 CAN_SET_UP, CAN_SEND_FAILED, KEEPER, TANK_LOW = 16, 32, 64, 128
 COLUMNS = ['t_s', 'duty_pct', 'duty_max_pct', 'map_kpa', 'rpm', 'hold', 'state', 'events',
-           'rx_age_ms', 'loop_gap_ms', 'pre_c', 'heap_kb']
+           'rx_age_ms', 'loop_gap_ms', 'pre_c', 'heap_kb', 'ecu_battery_v']
 
 
 def rows_of(payload, window_ms):
@@ -33,7 +44,7 @@ def rows_of(payload, window_ms):
         hold = s[4] & 15
         rows.append([round((i - count + 1) * window_ms / 1000, 1), s[0] / 2, s[1] / 2, s[2] or None, s[3] * 32 or None,
                      HOLDS[hold] if hold < len(HOLDS) else hold, s[4] & 0xF0, s[5], s[6] * 10, s[7],
-                     s[8] - 40 if s[8] else None, s[9] * 2])
+                     s[8] - 40 if s[8] else None, s[9] * 2, None])
     return rows
 
 
@@ -76,6 +87,11 @@ def summary(rows, reason, window_ms):
     if any(get(row, 'state') & PUMP_TEST for row in rows):
         parts.append('a pump test was running')
     parts.append(f"least free memory {min(get(row, 'heap_kb') for row in rows)} KB")
+    volts = [(i, get(row, 'ecu_battery_v')) for i, row in enumerate(rows) if get(row, 'ecu_battery_v') is not None]
+    if volts:
+        low = min(volts, key=lambda pair: pair[1])
+        parts.append(f"MicroSquirt battery {volts[-1][1]:.1f} V at the end, lowest {low[1]:.1f} V"
+                     + (' at the end' if low[0] == volts[-1][0] else f" {ago(low[0]):.1f} s before the end"))
     return f"({RESET_REASONS.get(reason, f'reset reason {reason}')}), the {n * window_ms / 1000:.1f} s before it: " + '; '.join(parts)
 
 
@@ -86,6 +102,35 @@ class BlackBox:
         self.last = None              # The latest record, for the Water / meth tab
         self.last_payload = None      # ...as received, so a record sent again is written once
         self.answer_due = False
+        self.supply = deque()         # (dash clock, volts): the MicroSquirt's battery voltage
+        self.heard = None             # The board's latest 0x300 heartbeat
+        self.quiet_at = None          # ...and the last one before its latest silence
+
+    def battery(self, now, volts):
+        self.supply.append((now, volts))
+        while self.supply and self.supply[0][0] < now - SUPPLY_KEEP_S:
+            self.supply.popleft()
+
+    def heartbeat(self, now):
+        if self.heard is not None and now - self.heard >= QUIET_S:
+            self.quiet_at = self.heard
+        self.heard = now
+
+    def reset_at(self, now):
+        """When the board went quiet before this record, on the dash's clock (None: not seen)."""
+        at = self.heard if self.heard is not None and now - self.heard >= QUIET_S else self.quiet_at
+        return at if at is not None and now - at < SUPPLY_KEEP_S else None
+
+    def add_supply(self, rows):
+        end = self.reset_at(self.state.clock())
+        if end is None or not self.supply:
+            return
+        index = len(COLUMNS) - 1
+        for row in rows:
+            when = end + row[0]
+            nearest = min(self.supply, key=lambda pair: abs(pair[0] - when))
+            if abs(nearest[0] - when) <= NEAREST_S:
+                row[index] = nearest[1]
 
     def observe(self, data):
         if len(data) != 8:
@@ -113,6 +158,7 @@ class BlackBox:
             return   # Sent again because the answer was lost: written once
         self.last_payload = payload
         rows = rows_of(payload, header['window_ms'])
+        self.add_supply(rows)
         text = summary(rows, header['reason'], header['window_ms'])
         self.last = {'at': self.state.wall(), 'reason': header['reason'], 'text': text}
         if self.state.eventlog:

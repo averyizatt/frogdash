@@ -1,0 +1,433 @@
+{
+ "id": "ecumaster",
+ "label": "ECUMaster EMU",
+ "manufacturer": "ECUMaster (Poland)",
+ "models": [
+  "EMU Black",
+  "EMU PRO (the same CAN stream)"
+ ],
+ "firmware": "EMU Black firmware 2.169 or later; EMU PRO firmware 216.1 or later",
+ "bitrate": 500000,
+ "extended": false,
+ "timeout_s": 1.0,
+ "status": "simulated",
+ "source": {
+  "title": "EMU Black User Manual, 6. CAN Stream",
+  "url": "https://www.ecumaster.com/files/EMU_BLACK/EMU_BLACK_manual.pdf",
+  "version": "Document version 1.4, firmware 2.169 or later, published 9 July 2026",
+  "also": [
+   "https://www.ecumaster.com/files/EMU_PRO/EMU_PRO_Manual.pdf (document version 1.1, 18 April 2025: the same structure)",
+   "https://www.ecumaster.com/files/ADU/AN/emuBlack.pdf (ADU application note rev 1.01: the stream settings)"
+  ]
+ },
+ "base": {
+  "default": "0x600",
+  "setting": "EMU stream base ID (HEX), in the EMU client: CAN, Serial / CAN"
+ },
+ "setup": [
+  "EMU Black: in the EMU Black client, CAN, Serial / CAN: tick \"Send EMU stream over CAN-Bus\" and set \"CAN-Bus speed\" to 500 kbps (its default is 1 Mbps; the dash's bus runs at 500 kbps).",
+  "EMU PRO: connect the dash to CAN 2 (500 kbps by default); CAN 1 is fixed at 1 Mbps.",
+  "The stream starts at \"EMU stream base ID\" 0x600 and uses 8 IDs. If it is moved, set the same number as ecu.base_id in the dash.",
+  "Switch on the EMU's 120 ohm terminator only if it is an end of the bus."
+ ],
+ "notes": "Oil and fuel pressure are sent in steps of 1/16 bar and given here in kPa. Lambda is given as lambda (ecu.lambda1); the dash's AFR gauge does not show it yet. Fields the EMU PRO leaves unused (lambda correction, traction RPM, PWM 2, some output flags) simply stay at their raw value there. Lambda correction is a factor around 100% (75-125%).",
+ "tuner": {
+  "name": "EMU Black Client (EMU Black); EMU PRO client software",
+  "runs_on_dash": false,
+  "connection": "EMU Black: USB-C straight to a Windows computer. EMU PRO: a USB-to-CAN interface (ECUMaster USBtoCAN, Peak or Kvaser)",
+  "url": "https://www.ecumaster.com/downloads/",
+  "status": "untested"
+ },
+ "check": [
+  [
+   "+0",
+   "Engine (RPM, throttle, intake air, MAP)"
+  ],
+  [
+   "+2",
+   "Speed, oil, fuel pressure, coolant"
+  ]
+ ],
+ "frames": [
+  {
+   "name": "EMU_0",
+   "offsets": [
+    0
+   ],
+   "length": 8,
+   "comment": "Engine",
+   "signals": [
+    {
+     "key": "ecu.rpm",
+     "layout": "u16le@0",
+     "unit": "rpm"
+    },
+    {
+     "key": "ecu.throttle_pct",
+     "layout": "u8@2",
+     "scale": 0.5,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.iat_c",
+     "layout": "s8@3",
+     "unit": "C"
+    },
+    {
+     "key": "ecu.map_kpa",
+     "layout": "u16le@4",
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.pw1_ms",
+     "layout": "u16le@6",
+     "scale": 0.016129032258064516,
+     "unit": "ms"
+    }
+   ]
+  },
+  {
+   "name": "EMU_1",
+   "offsets": [
+    1
+   ],
+   "length": 8,
+   "comment": "Analog inputs 1-4",
+   "signals": [
+    {
+     "key": "ecu.analog1_v",
+     "layout": "u16le@0",
+     "scale": 0.0048828125,
+     "unit": "V"
+    },
+    {
+     "key": "ecu.analog2_v",
+     "layout": "u16le@2",
+     "scale": 0.0048828125,
+     "unit": "V"
+    },
+    {
+     "key": "ecu.analog3_v",
+     "layout": "u16le@4",
+     "scale": 0.0048828125,
+     "unit": "V"
+    },
+    {
+     "key": "ecu.analog4_v",
+     "layout": "u16le@6",
+     "scale": 0.0048828125,
+     "unit": "V"
+    }
+   ]
+  },
+  {
+   "name": "EMU_2",
+   "offsets": [
+    2
+   ],
+   "length": 8,
+   "comment": "Speed, pressures, coolant",
+   "signals": [
+    {
+     "key": "ecu.vehicle_speed_kph",
+     "layout": "u16le@0",
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.baro_kpa",
+     "layout": "u8@2",
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.oil_temp_c",
+     "layout": "u8@3",
+     "unit": "C"
+    },
+    {
+     "key": "ecu.oil_pressure_kpa",
+     "layout": "u8@4",
+     "scale": 6.25,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.fuel_pressure_kpa",
+     "layout": "u8@5",
+     "scale": 6.25,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.coolant_c",
+     "layout": "s16le@6",
+     "unit": "C"
+    }
+   ]
+  },
+  {
+   "name": "EMU_3",
+   "offsets": [
+    3
+   ],
+   "length": 8,
+   "comment": "Ignition, lambda, EGT",
+   "signals": [
+    {
+     "key": "ecu.spark_deg",
+     "layout": "s8@0",
+     "scale": 0.5,
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.dwell_ms",
+     "layout": "u8@1",
+     "scale": 0.05,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.lambda1",
+     "layout": "u8@2",
+     "scale": 0.0078125
+    },
+    {
+     "key": "ecu.lambda_correction_pct",
+     "layout": "u8@3",
+     "scale": 0.5,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.egt1_c",
+     "layout": "u16le@4",
+     "unit": "C"
+    },
+    {
+     "key": "ecu.egt2_c",
+     "layout": "u16le@6",
+     "unit": "C"
+    }
+   ]
+  },
+  {
+   "name": "EMU_4",
+   "offsets": [
+    4
+   ],
+   "length": 8,
+   "comment": "Gear, battery, flags",
+   "signals": [
+    {
+     "key": "ecu.gear",
+     "layout": "u8@0"
+    },
+    {
+     "key": "ecu.mcu_temp_c",
+     "layout": "s8@1",
+     "unit": "C"
+    },
+    {
+     "key": "ecu.battery_v",
+     "layout": "u16le@2",
+     "scale": 0.027,
+     "unit": "V"
+    },
+    {
+     "key": "ecu.error_clt",
+     "layout": "bit@4.0"
+    },
+    {
+     "key": "ecu.error_iat",
+     "layout": "bit@4.1"
+    },
+    {
+     "key": "ecu.error_map",
+     "layout": "bit@4.2"
+    },
+    {
+     "key": "ecu.error_wideband",
+     "layout": "bit@4.3"
+    },
+    {
+     "key": "ecu.error_egt1",
+     "layout": "bit@4.4"
+    },
+    {
+     "key": "ecu.error_egt2",
+     "layout": "bit@4.5"
+    },
+    {
+     "key": "ecu.egt_alarm",
+     "layout": "bit@4.6"
+    },
+    {
+     "key": "ecu.knocking",
+     "layout": "bit@4.7"
+    },
+    {
+     "key": "ecu.error_flex_sensor",
+     "layout": "bit@5.0"
+    },
+    {
+     "key": "ecu.error_dbw",
+     "layout": "bit@5.1"
+    },
+    {
+     "key": "ecu.error_fuel_pressure",
+     "layout": "bit@5.2"
+    },
+    {
+     "key": "ecu.gear_cut",
+     "layout": "bit@6.0"
+    },
+    {
+     "key": "ecu.antilag",
+     "layout": "bit@6.1"
+    },
+    {
+     "key": "ecu.launch_control",
+     "layout": "bit@6.2"
+    },
+    {
+     "key": "ecu.idle",
+     "layout": "bit@6.3"
+    },
+    {
+     "key": "ecu.table_set2",
+     "layout": "bit@6.4"
+    },
+    {
+     "key": "ecu.traction_control",
+     "layout": "bit@6.5"
+    },
+    {
+     "key": "ecu.pit_limiter",
+     "layout": "bit@6.6"
+    },
+    {
+     "key": "ecu.brake_pedal",
+     "layout": "bit@6.7"
+    },
+    {
+     "key": "ecu.ethanol_pct",
+     "layout": "u8@7",
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "EMU_5",
+   "offsets": [
+    5
+   ],
+   "length": 8,
+   "comment": "Throttle and traction",
+   "signals": [
+    {
+     "key": "ecu.dbw_position_pct",
+     "layout": "u8@0",
+     "scale": 0.5,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.dbw_target_pct",
+     "layout": "u8@1",
+     "scale": 0.5,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.tc_drpm_raw",
+     "layout": "s16le@2"
+    },
+    {
+     "key": "ecu.tc_drpm",
+     "layout": "u16le@4"
+    },
+    {
+     "key": "ecu.tc_torque_reduction_pct",
+     "layout": "u8@6",
+     "unit": "%"
+    },
+    {
+     "key": "ecu.pit_limiter_pct",
+     "layout": "u8@7",
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "EMU_6",
+   "offsets": [
+    6
+   ],
+   "length": 8,
+   "comment": "Analog 5-6, outputs",
+   "signals": [
+    {
+     "key": "ecu.analog5_v",
+     "layout": "u16le@0",
+     "scale": 0.0048828125,
+     "unit": "V"
+    },
+    {
+     "key": "ecu.analog6_v",
+     "layout": "u16le@2",
+     "scale": 0.0048828125,
+     "unit": "V"
+    },
+    {
+     "key": "ecu.output_flags1",
+     "layout": "u8@4"
+    },
+    {
+     "key": "ecu.output_flags2",
+     "layout": "u8@5"
+    },
+    {
+     "key": "ecu.output_flags3",
+     "layout": "u8@6"
+    },
+    {
+     "key": "ecu.output_flags4",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "EMU_7",
+   "offsets": [
+    7
+   ],
+   "length": 8,
+   "comment": "Boost, lambda target, fuel used",
+   "signals": [
+    {
+     "key": "ecu.boost_target_kpa",
+     "layout": "u16le@0",
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.pwm1_duty_pct",
+     "layout": "u8@2",
+     "unit": "%"
+    },
+    {
+     "key": "ecu.dsg_mode",
+     "layout": "nib@3.0"
+    },
+    {
+     "key": "ecu.lambda_target",
+     "layout": "u8@4",
+     "scale": 0.01
+    },
+    {
+     "key": "ecu.pwm2_duty_pct",
+     "layout": "u8@5",
+     "unit": "%"
+    },
+    {
+     "key": "ecu.fuel_used_l",
+     "layout": "u16le@6",
+     "scale": 0.01,
+     "unit": "L"
+    }
+   ]
+  }
+ ]
+}

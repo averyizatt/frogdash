@@ -15,10 +15,11 @@ The supplied systemd service and `config/frogdash.env` enable recording at start
 FROGDASH_ARGS="--interface can0 --gpsd --log-dir /var/lib/frogdash/logs"
 ```
 
-The options the dash runs with are the list in `config/frogdash-options`: every
-**Update now** writes them into `FROGDASH_ARGS` in `/etc/default/frogdash` and restarts
-the dash if they changed, after checking that the dash takes them (step *Dash options*
-in System check). Change recording there, for example a `--log-hz 50` line; nothing is
+The options the dash runs with come from the system profile (`/etc/frogdash/system.json`,
+see [presets.md](presets.md)): every **Update now** writes them into `FROGDASH_ARGS` in
+`/etc/default/frogdash` and restarts the dash if they changed, after checking that the dash
+takes them (step *Dash options* in System check). Recording is the profile's `recording`;
+its other options (for example `--log-hz 50`) go in `extra_args`; nothing is
 typed on the Pi.
 
 `StateDirectory=frogdash` gives the service a writable persistent directory under

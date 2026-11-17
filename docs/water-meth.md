@@ -336,6 +336,15 @@ to the end; longest control gap 21 ms*. The Water / meth tab shows the latest un
 controller restart*. After power on, a firmware update or the dash's Restart there is
 nothing to send.
 
+The board does not measure its own supply, so the dash adds the MicroSquirt's battery
+voltage to each sample (column `ecu_battery_v`). It keeps the last minute of the ECU's
+reading and puts the board's reset at its last 0x300 heartbeat (every 50 ms) before the
+silence of the restart. The words then end with, for example, *MicroSquirt battery 10.9 V
+at the end, lowest 10.9 V at the end*. This is the car's voltage at the ECU: it shows a
+dip the whole car saw, such as the pump starting on a weak battery. A bad connection on
+the board's own 12 V feed would not show in it. If the dash did not see the board go quiet
+(it started after the reset), no voltage is added rather than one guessed at.
+
 What software cannot do: if the CAN module itself latches up (a transient can leave a
 CAN chip stuck until its power is removed), no reset of the ESP32 brings it back, because
 the module keeps its power. Powering the CAN module through a small switch that a spare

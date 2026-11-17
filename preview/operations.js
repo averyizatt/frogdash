@@ -399,7 +399,7 @@
       terminalLive = !!info?.sudo;
       for (const id of ['terminal-ctrlc', 'terminal-secret-label', 'terminal-restart']) $(id).hidden = !terminalLive;
       $('terminal-run').textContent = terminalLive ? 'Send' : 'Run';
-      $('terminal-note').textContent = !info ? 'Terminal is off. A --terminal line in config/frogdash-options turns it on at the next Update now.'
+      $('terminal-note').textContent = !info ? 'Terminal is off. Switching it on in the system profile (terminal) turns it on at the next Update now.'
         : terminalLive ? 'A live shell as the screen user: sudo works, and prompts (a Wi-Fi password, yes/no) wait for your answer. Tick Hide typing before entering a password. Full-screen programs like nano and top do not draw here.'
         : 'Runs as the dash service user: no sudo and not interactive. Press Update now once with --terminal set to install the helper that makes this a live shell with sudo.';
       if (terminalLive && !dialog.querySelector('[data-ops-panel="terminal"]').hidden) terminalOpen();

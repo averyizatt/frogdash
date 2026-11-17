@@ -27,9 +27,19 @@ class InstallScriptTests(unittest.TestCase):
 
     def test_the_can_overlay_matches_the_cars_board(self):
         # The car's Waveshare RS485 CAN HAT: MCP2515 with a 12 MHz crystal, interrupt on GPIO 25.
+        # The installer only writes the profile; the setup adds the line from it.
+        from hardware.frogdash import sysconfig
+        board = sysconfig.validate(sysconfig.preset('foxbody'))['can_hat']
+        self.assertEqual((board['present'], board['oscillator'], board['interrupt']), (True, 12000000, 25))
+        setup = (ROOT / 'tools/frogdash_setup.sh').read_text(encoding='utf-8')
+        self.assertIn('dtoverlay=mcp2515-can0,oscillator=$FD_CAN_OSC,interrupt=$FD_CAN_INT,spimaxfrequency=$CAN_SPI_HZ', setup)
+
+    def test_its_options_fill_in_the_profile(self):
         text = SCRIPT.read_text(encoding='utf-8')
-        self.assertIn('oscillator=12000000', text)
-        self.assertIn('interrupt=25', text)
+        for field in re.findall(r'--set ([a-z_.]+)=', text):
+            from hardware.frogdash import sysconfig
+            sysconfig.get(sysconfig.preset('generic'), field)     # Each names a real field
+        self.assertIn('sysconfig --etc /etc init --preset "$preset" $sets', text)
 
     @unittest.skipUnless(SHELL and hasattr(os, 'geteuid') and os.geteuid() != 0, 'needs sh, not root')
     def test_asks_for_root(self):

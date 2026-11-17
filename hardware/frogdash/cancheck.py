@@ -3,7 +3,8 @@
 Built from per-ID statistics kept by State.ingest (count, last time, last payload and
 the last decode error), so it works even when a module's frames are being rejected.
 """
-from .protocol import ECU_TIMEOUT, LENGTHS, TIMEOUTS
+from . import protocol
+from .protocol import LENGTHS, timeout as frame_timeout
 
 # (module, id, what it carries, sent only on events/requests)
 EXPECTED = [
@@ -17,10 +18,14 @@ EXPECTED = [
     ('Water/meth', 0x303, 'Pressure and temperature sensors', False),
     ('Water/meth', 0x307, 'Knock monitor', False),
     ('Water/meth', 0x30F, 'Pulse tuning status and intake air temperatures', False),
-    ('MicroSquirt', 0x5E8, 'Dash broadcast (MAP, RPM, coolant, TPS)', False),
-    ('MicroSquirt', 0x5F0, 'Realtime broadcast group 0', False),
-    ('MicroSquirt', 0x5F2, 'Realtime group 2 (baro, MAP, temperatures)', False),
 ]
+
+
+def expected_rows():
+    """The modules' messages (but not an ID the ECU's profile uses in this car), then the
+    ECU's own: the frames its profile names to check, under its label."""
+    rows = [row for row in EXPECTED if not protocol.is_ecu(row[1])]
+    return rows + [(protocol.ECU.label, ident, purpose, False) for ident, purpose in protocol.ECU.checks()]
 METH_FAULTS = [
     (1, 'Tank low (float switch) or low-fluid failsafe', 'Fill the tank or check the float switch wiring'),
     (2, 'No valid manifold pressure', "The controller takes boost from the MicroSquirt's CAN broadcast "
@@ -42,7 +47,7 @@ FLOWS = ['UNKNOWN', 'OK', 'LOW_FLOW', 'NO_FLOW']
 
 
 def timeout(can_id):
-    return ECU_TIMEOUT if 0x5E8 <= can_id <= 0x73F else TIMEOUTS.get(can_id, .5)
+    return frame_timeout(can_id)
 
 
 def meth_detail(data):
@@ -75,12 +80,13 @@ def sensor_detail(data):
 def report(state):
     now = state.clock()
     rows = []
-    for module, can_id, purpose, _event in EXPECTED:
+    rows_expected = expected_rows()
+    for module, can_id, purpose, _event in rows_expected:
         seen = state.frames.get(can_id)
         row = {'module': module, 'id': f'0x{can_id:03X}', 'purpose': purpose, 'data': None, 'rate_hz': None, 'notes': []}
         if not seen:
             row['status'], row['summary'] = 'missing', 'Never received since the dash started'
-            if can_id in (0x5F0, 0x5F2):
+            if protocol.ECU.id == 'megasquirt' and can_id in (0x5F0, 0x5F2):
                 alternate = state.frames.get(can_id + 0x110)  # Base 1792 (0x700) instead of 1520.
                 if alternate:
                     seen, row['id'] = alternate, f'0x{can_id + 0x110:03X}'
@@ -118,6 +124,6 @@ def report(state):
             row['notes'].append(f'Speed {int.from_bytes(data[0:2], "big") / 10:.1f} km/h, RPM {int.from_bytes(data[2:4], "big")}, '
                                 f'fuel raw {int.from_bytes(data[4:6], "big")}, fuel ' + ('invalid' if data[6] == 255 else f'{data[6]}%'))
         rows.append(row)
-    unknown = sorted(i for i in state.frames if not any(i == e[1] for e in EXPECTED))
+    unknown = sorted(i for i in state.frames if not any(i == e[1] for e in rows_expected))
     return {'rows': rows, 'other_ids': [f'0x{i:03X}' for i in unknown][:80],
             'received': state.received, 'malformed': state.malformed, 'status': state.status}

@@ -1,0 +1,230 @@
+{
+ "id": "fueltech",
+ "label": "FuelTech",
+ "manufacturer": "FuelTech (Brazil)",
+ "models": [
+  "FT500 (IDs 0x14000600-0x14000608)",
+  "FT600, FT550, FT450 (IDs 0x14080600-0x14080608)"
+ ],
+ "firmware": "FTCAN 2.0 simplified broadcast",
+ "bitrate": 1000000,
+ "extended": true,
+ "timeout_s": 1.0,
+ "status": "simulated",
+ "source": {
+  "title": "FTCAN 2.0 protocol: Real time simple broadcast and Simplified packets, MeasureID table",
+  "url": "https://files.fueltech.net/manual/Ingles/Protocol_FTCAN20.pdf",
+  "version": "Revision 044 (17/09/2026)"
+ },
+ "setup": [
+  "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000): FTCAN 2.0 is 1 Mbit/s with 29-bit IDs.",
+  "The ECU sends the simplified packets (fixed measures, 100 Hz); make sure its CAN output is on in FTManager or on the ECU."
+ ],
+ "notes": "Only the simplified packets are read; the full FTCAN 2.0 stream (MeasureIDs, segmented packets) is not. Measures whose unit the protocol does not give (pit limit, heading, shock sensors, G-force, yaw, fuel consumption) are left out. MAP and the pressures come in bar and are given here in kPa; the protocol does not say whether MAP is absolute or relative to the atmosphere, so check it against the barometer with the engine off. Gear: -2 park, -1 reverse, 0 neutral. Lambda is given as lambda (ecu.lambda1).",
+ "tuner": {
+  "name": "FTManager",
+  "runs_on_dash": false,
+  "connection": "USB to a Windows computer, or the ECU's own touch screen",
+  "url": "https://www.fueltech.net/pages/software",
+  "status": "untested"
+ },
+ "check": [
+  [
+   "0x14080600",
+   "TPS, MAP, temperatures (FT600/550/450)"
+  ],
+  [
+   "0x14000600",
+   "TPS, MAP, temperatures (FT500)"
+  ]
+ ],
+ "frames": [
+  {
+   "name": "SIMPLE_0",
+   "ids": [
+    "0x14000600",
+    "0x14080600"
+   ],
+   "length": 8,
+   "comment": "TPS, MAP, air and engine temperature",
+   "signals": [
+    {
+     "key": "ecu.throttle_pct",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.map_kpa",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.iat_c",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.coolant_c",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "C"
+    }
+   ]
+  },
+  {
+   "name": "SIMPLE_1",
+   "ids": [
+    "0x14000601",
+    "0x14080601"
+   ],
+   "length": 8,
+   "comment": "Oil, fuel and water pressure, gear",
+   "signals": [
+    {
+     "key": "ecu.oil_pressure_kpa",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.fuel_pressure_kpa",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.coolant_pressure_kpa",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.gear",
+     "layout": "s16@6"
+    }
+   ]
+  },
+  {
+   "name": "SIMPLE_2",
+   "ids": [
+    "0x14000602",
+    "0x14080602"
+   ],
+   "length": 8,
+   "comment": "Exhaust O2, RPM, oil temperature (pit limit not read)",
+   "signals": [
+    {
+     "key": "ecu.lambda1",
+     "layout": "s16@0",
+     "scale": 0.001
+    },
+    {
+     "key": "ecu.rpm",
+     "layout": "s16@2",
+     "unit": "rpm"
+    },
+    {
+     "key": "ecu.oil_temp_c",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "C"
+    }
+   ]
+  },
+  {
+   "name": "SIMPLE_3",
+   "ids": [
+    "0x14000603",
+    "0x14080603"
+   ],
+   "length": 8,
+   "comment": "Wheel speeds",
+   "signals": [
+    {
+     "key": "ecu.wheel_speed_fr_kph",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.wheel_speed_fl_kph",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.wheel_speed_rr_kph",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.wheel_speed_rl_kph",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "km/h"
+    }
+   ]
+  },
+  {
+   "name": "SIMPLE_7",
+   "ids": [
+    "0x14000607",
+    "0x14080607"
+   ],
+   "length": 8,
+   "comment": "Lambda correction, total fuel flow, injection time banks A and B",
+   "signals": [
+    {
+     "key": "ecu.lambda_correction",
+     "layout": "s16@0",
+     "scale": 0.001
+    },
+    {
+     "key": "ecu.fuel_flow_l_min",
+     "layout": "s16@2",
+     "scale": 0.01,
+     "unit": "L/min"
+    },
+    {
+     "key": "ecu.pw1_ms",
+     "layout": "s16@4",
+     "scale": 0.01,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.pw2_ms",
+     "layout": "s16@6",
+     "scale": 0.01,
+     "unit": "ms"
+    }
+   ]
+  },
+  {
+   "name": "SIMPLE_8",
+   "ids": [
+    "0x14000608",
+    "0x14080608"
+   ],
+   "length": 8,
+   "comment": "Transmission temperature, brake pressure",
+   "signals": [
+    {
+     "key": "ecu.transmission_temp_c",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.brake_pressure_kpa",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "kPa"
+    }
+   ]
+  }
+ ]
+}

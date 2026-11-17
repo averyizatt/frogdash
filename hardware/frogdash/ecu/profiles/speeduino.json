@@ -1,0 +1,268 @@
+{
+ "id": "speeduino",
+ "label": "Speeduino",
+ "manufacturer": "Speeduino (open source)",
+ "models": [
+  "Speeduino on a board with built-in CAN: Teensy 3.5, 3.6, 4.1 or STM32 (not the Arduino Mega)"
+ ],
+ "firmware": "Speeduino firmware with the Haltech CAN broadcast (noisymime/speeduino 97ef8e8, October 2026)",
+ "bitrate": 500000,
+ "extended": false,
+ "timeout_s": 1.0,
+ "status": "simulated",
+ "source": {
+  "title": "Speeduino source: Haltech-format CAN broadcast (DashMessage in comms_CAN.cpp, IDs in comms_CAN.h)",
+  "url": "https://github.com/noisymime/speeduino/blob/97ef8e8d48b03de3acbdcefe352a6c912d539ca9/speeduino/comms_CAN.cpp",
+  "version": "noisymime/speeduino commit 97ef8e8 (2026-10-03)",
+  "also": [
+   "https://github.com/noisymime/speeduino/blob/97ef8e8d48b03de3acbdcefe352a6c912d539ca9/speeduino/comms_CAN.h"
+  ]
+ },
+ "setup": [
+  "Speeduino needs a board with built-in CAN (Teensy 3.5/3.6/4.1 or STM32); its CAN runs at 500 kbit/s.",
+  "In TunerStudio, set the CAN broadcast protocol to Haltech (CANBroadcastProtocol). The BMW and VAG options only drive those cars' clusters and are not read here.",
+  "It sends 0x360-0x3E0 at fixed IDs; they cannot be moved."
+ ],
+ "notes": "This is Speeduino's own output in Haltech's format, read as Speeduino builds it (temperatures with +273, pressures with +101.3 kPa, taken back off here); it is not Haltech's published protocol. Speeduino declares a trigger frame (0x369) but does not fill it, so it is not read. Injector duty is a whole percent; pulse widths 2-4 are 0 on boards with fewer injector channels. Lambda is given as lambda (ecu.lambda1); the dash's AFR gauge does not show it yet.",
+ "tuner": {
+  "name": "TunerStudio with the Speeduino project",
+  "runs_on_dash": true,
+  "connection": "The board's USB (a serial port)",
+  "url": "https://wiki.speeduino.com/",
+  "status": "untested"
+ },
+ "check": [
+  [
+   "0x360",
+   "DATA1 (RPM, MAP, throttle)"
+  ],
+  [
+   "0x3E0",
+   "DATA5 (coolant, intake air, fuel temperature)"
+  ]
+ ],
+ "frames": [
+  {
+   "name": "DATA1",
+   "ids": [
+    "0x360"
+   ],
+   "length": 8,
+   "comment": "DATA1 (50 Hz): RPM, MAP, TPS",
+   "signals": [
+    {
+     "key": "ecu.rpm",
+     "layout": "u16@0",
+     "unit": "rpm"
+    },
+    {
+     "key": "ecu.map_kpa",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.throttle_pct",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "DATA2",
+   "ids": [
+    "0x361"
+   ],
+   "length": 8,
+   "comment": "DATA2 (50 Hz): fuel and oil pressure, load",
+   "signals": [
+    {
+     "key": "ecu.fuel_pressure_kpa",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "offset": -101.3,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.oil_pressure_kpa",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "offset": -101.3,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.fuel_load",
+     "layout": "u16@4",
+     "scale": 0.1
+    }
+   ]
+  },
+  {
+   "name": "DATA3",
+   "ids": [
+    "0x362"
+   ],
+   "length": 8,
+   "comment": "DATA3 (50 Hz): injector duty, advance",
+   "signals": [
+    {
+     "key": "ecu.injector_duty_pct",
+     "layout": "u16@0",
+     "unit": "%"
+    },
+    {
+     "key": "ecu.spark_deg",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "deg"
+    }
+   ]
+  },
+  {
+   "name": "PW",
+   "ids": [
+    "0x364"
+   ],
+   "length": 8,
+   "comment": "PW (50 Hz): pulse widths 1-4",
+   "signals": [
+    {
+     "key": "ecu.pw1_ms",
+     "layout": "u16@0",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.pw2_ms",
+     "layout": "u16@2",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.pw3_ms",
+     "layout": "u16@4",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.pw4_ms",
+     "layout": "u16@6",
+     "scale": 0.001,
+     "unit": "ms"
+    }
+   ]
+  },
+  {
+   "name": "LAMBDA",
+   "ids": [
+    "0x368"
+   ],
+   "length": 8,
+   "comment": "LAMBDA (15 Hz): lambda 1-2",
+   "signals": [
+    {
+     "key": "ecu.lambda1",
+     "layout": "u16@0",
+     "scale": 0.001
+    },
+    {
+     "key": "ecu.lambda2",
+     "layout": "u16@2",
+     "scale": 0.001
+    }
+   ]
+  },
+  {
+   "name": "VSS",
+   "ids": [
+    "0x370"
+   ],
+   "length": 8,
+   "comment": "VSS (15 Hz): speed, gear, cams",
+   "signals": [
+    {
+     "key": "ecu.vehicle_speed_kph",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.gear",
+     "layout": "u8@3"
+    },
+    {
+     "key": "ecu.cam1_intake_deg",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.cam2_intake_deg",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "deg"
+    }
+   ]
+  },
+  {
+   "name": "DATA4",
+   "ids": [
+    "0x372"
+   ],
+   "length": 8,
+   "comment": "DATA4 (10 Hz): battery, boost target, baro",
+   "signals": [
+    {
+     "key": "ecu.battery_v",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "unit": "V"
+    },
+    {
+     "key": "ecu.boost_target_kpa",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.baro_kpa",
+     "layout": "u16@6",
+     "scale": 0.1,
+     "unit": "kPa"
+    }
+   ]
+  },
+  {
+   "name": "DATA5",
+   "ids": [
+    "0x3E0"
+   ],
+   "length": 8,
+   "comment": "DATA5 (10 Hz): temperatures",
+   "signals": [
+    {
+     "key": "ecu.coolant_c",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "offset": -273,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.iat_c",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "offset": -273,
+     "unit": "C"
+    },
+    {
+     "key": "ecu.fuel_temp_c",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "offset": -273,
+     "unit": "C"
+    }
+   ]
+  }
+ ]
+}

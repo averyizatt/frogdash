@@ -1,0 +1,445 @@
+{
+ "id": "holley_sniper",
+ "label": "Holley Sniper",
+ "manufacturer": "Holley Performance (USA)",
+ "models": [
+  "Sniper EFI products with V2 software/firmware or later"
+ ],
+ "firmware": "Sniper V2 or later",
+ "bitrate": 1000000,
+ "extended": true,
+ "timeout_s": 1.0,
+ "status": "simulated",
+ "source": {
+  "title": "Holley EFI 1st Party CAN Communications Protocol, and Holley's published DBC",
+  "version": "Revision 1 (8 November 2024); Sniper V2.dbc",
+  "url": "https://www.holley.com/support/fuel_injection/terminator_x_and_x_max/",
+  "also": [
+   "Sniper V2.dbc"
+  ]
+ },
+ "id_mask": "0x1FFFF800",
+ "setup": [
+  "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000): Holley's CAN is 1 Mbit/s, 29-bit IDs.",
+  "The ECU broadcasts all the time; the low 11 bits of each ID are its serial number, so any Holley ECU is read.",
+  "Connect to the ECU's CAN wires, with the bus terminated at both ends."
+ ],
+ "notes": "Holley sends each channel as a float in its own frame, with a status in byte 7 (kept as ecu.holley_status_*; its meaning is not documented). Temperatures come in degrees F, pressures in psi and speed in mph: converted here to C, kPa and km/h. Holley's DBC labels oil and fuel pressure \"PSIa\"; whether they are absolute is not confirmed, so they are converted as sent. Holley's tuning goes through its 558-443 CAN-to-USB interface, whose driver Holley says does not work on ARM.",
+ "tuner": {
+  "name": "Holley EFI software (Terminator X / HP / Dominator) or Sniper software",
+  "runs_on_dash": false,
+  "connection": "Holley 558-443 CAN-to-USB interface from a Windows computer (its driver does not work on ARM)",
+  "url": "https://www.holley.com/support/fuel_injection/",
+  "status": "untested"
+ },
+ "check": [
+  [
+   "0x1E005000",
+   "RPM"
+  ],
+  [
+   "0x1E05D000",
+   "MAP"
+  ]
+ ],
+ "frames": [
+  {
+   "name": "RPM",
+   "ids": [
+    "0x1E005000"
+   ],
+   "length": 8,
+   "comment": "Holley channel RPM",
+   "signals": [
+    {
+     "key": "ecu.rpm",
+     "layout": "f32@0",
+     "unit": "rpm"
+    },
+    {
+     "key": "ecu.holley_status_rpm",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "Inj_PW",
+   "ids": [
+    "0x1E009000"
+   ],
+   "length": 8,
+   "comment": "Holley channel Inj_PW",
+   "signals": [
+    {
+     "key": "ecu.pw1_ms",
+     "layout": "f32@0",
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.holley_status_pw1_ms",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "Duty_Cycle",
+   "ids": [
+    "0x1E00D000"
+   ],
+   "length": 8,
+   "comment": "Holley channel Duty_Cycle",
+   "signals": [
+    {
+     "key": "ecu.injector_duty_pct",
+     "layout": "f32@0",
+     "unit": "%"
+    },
+    {
+     "key": "ecu.holley_status_injector_duty_pct",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "CL_Comp",
+   "ids": [
+    "0x1E011000"
+   ],
+   "length": 8,
+   "comment": "Holley channel CL_Comp",
+   "signals": [
+    {
+     "key": "ecu.closed_loop_comp_pct",
+     "layout": "f32@0",
+     "unit": "%"
+    },
+    {
+     "key": "ecu.holley_status_closed_loop_comp_pct",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "Target_AFR",
+   "ids": [
+    "0x1E015000"
+   ],
+   "length": 8,
+   "comment": "Holley channel Target_AFR",
+   "signals": [
+    {
+     "key": "ecu.afr_target",
+     "layout": "f32@0"
+    },
+    {
+     "key": "ecu.holley_status_afr_target",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "AirFuel_Ratio",
+   "ids": [
+    "0x1E019000"
+   ],
+   "length": 8,
+   "comment": "Holley channel AirFuel_Ratio",
+   "signals": [
+    {
+     "key": "ecu.afr",
+     "layout": "f32@0"
+    },
+    {
+     "key": "ecu.holley_status_afr",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "Current_Learn",
+   "ids": [
+    "0x1E02D000"
+   ],
+   "length": 8,
+   "comment": "Holley channel Current_Learn",
+   "signals": [
+    {
+     "key": "ecu.learn_pct",
+     "layout": "f32@0",
+     "unit": "%"
+    },
+    {
+     "key": "ecu.holley_status_learn_pct",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "Fuel_Flow",
+   "ids": [
+    "0x1E039000"
+   ],
+   "length": 8,
+   "comment": "Holley channel Fuel_Flow",
+   "signals": [
+    {
+     "key": "ecu.fuel_flow_lb_h",
+     "layout": "f32@0",
+     "unit": "lb/h"
+    },
+    {
+     "key": "ecu.holley_status_fuel_flow_lb_h",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "Estimated_VE",
+   "ids": [
+    "0x1E045000"
+   ],
+   "length": 8,
+   "comment": "Holley channel Estimated_VE",
+   "signals": [
+    {
+     "key": "ecu.ve1",
+     "layout": "f32@0",
+     "unit": "%"
+    },
+    {
+     "key": "ecu.holley_status_ve1",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "Ignition_Timing",
+   "ids": [
+    "0x1E049000"
+   ],
+   "length": 8,
+   "comment": "Holley channel Ignition_Timing",
+   "signals": [
+    {
+     "key": "ecu.spark_deg",
+     "layout": "f32@0",
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.holley_status_spark_deg",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "IAC_Position",
+   "ids": [
+    "0x1E059000"
+   ],
+   "length": 8,
+   "comment": "Holley channel IAC_Position",
+   "signals": [
+    {
+     "key": "ecu.idle_position_pct",
+     "layout": "f32@0",
+     "unit": "%"
+    },
+    {
+     "key": "ecu.holley_status_idle_position_pct",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "MAP",
+   "ids": [
+    "0x1E05D000"
+   ],
+   "length": 8,
+   "comment": "Holley channel MAP",
+   "signals": [
+    {
+     "key": "ecu.map_kpa",
+     "layout": "f32@0",
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.holley_status_map_kpa",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "TPS",
+   "ids": [
+    "0x1E061000"
+   ],
+   "length": 8,
+   "comment": "Holley channel TPS",
+   "signals": [
+    {
+     "key": "ecu.throttle_pct",
+     "layout": "f32@0",
+     "unit": "%"
+    },
+    {
+     "key": "ecu.holley_status_throttle_pct",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "MAT",
+   "ids": [
+    "0x1E065000"
+   ],
+   "length": 8,
+   "comment": "Holley channel MAT",
+   "signals": [
+    {
+     "key": "ecu.iat_c",
+     "layout": "f32@0",
+     "convert": "degF_to_C",
+     "unit": "C"
+    },
+    {
+     "key": "ecu.holley_status_iat_c",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "CTS",
+   "ids": [
+    "0x1E069000"
+   ],
+   "length": 8,
+   "comment": "Holley channel CTS",
+   "signals": [
+    {
+     "key": "ecu.coolant_c",
+     "layout": "f32@0",
+     "convert": "degF_to_C",
+     "unit": "C"
+    },
+    {
+     "key": "ecu.holley_status_coolant_c",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "Battery",
+   "ids": [
+    "0x1E06D000"
+   ],
+   "length": 8,
+   "comment": "Holley channel Battery",
+   "signals": [
+    {
+     "key": "ecu.battery_v",
+     "layout": "f32@0",
+     "unit": "V"
+    },
+    {
+     "key": "ecu.holley_status_battery_v",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "Boost_PSIG",
+   "ids": [
+    "0x1E101000"
+   ],
+   "length": 8,
+   "comment": "Holley channel Boost_PSIG",
+   "signals": [
+    {
+     "key": "ecu.boost_kpa",
+     "layout": "f32@0",
+     "scale": 6.894757293168361,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.holley_status_boost_kpa",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "Speed",
+   "ids": [
+    "0x1E1C1000"
+   ],
+   "length": 8,
+   "comment": "Holley channel Speed",
+   "signals": [
+    {
+     "key": "ecu.vehicle_speed_kph",
+     "layout": "f32@0",
+     "scale": 1.609344,
+     "unit": "km/h"
+    },
+    {
+     "key": "ecu.holley_status_vehicle_speed_kph",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "Gear",
+   "ids": [
+    "0x1E1BD000"
+   ],
+   "length": 8,
+   "comment": "Holley channel Gear",
+   "signals": [
+    {
+     "key": "ecu.gear",
+     "layout": "f32@0"
+    },
+    {
+     "key": "ecu.holley_status_gear",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "Fan_1",
+   "ids": [
+    "0x1E081000"
+   ],
+   "length": 8,
+   "comment": "Holley channel Fan_1",
+   "signals": [
+    {
+     "key": "ecu.fan1",
+     "layout": "f32@0"
+    },
+    {
+     "key": "ecu.holley_status_fan1",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "Fan_2",
+   "ids": [
+    "0x1E085000"
+   ],
+   "length": 8,
+   "comment": "Holley channel Fan_2",
+   "signals": [
+    {
+     "key": "ecu.fan2",
+     "layout": "f32@0"
+    },
+    {
+     "key": "ecu.holley_status_fan2",
+     "layout": "u8@7"
+    }
+   ]
+  }
+ ]
+}

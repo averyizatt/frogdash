@@ -175,8 +175,9 @@ older updater.
 Still by hand, because they are choices or need a password, not requirements of an
 update: the first install of the Pi, the dash cam's Wi-Fi profile, and
 flashing the ESP32 modules. The dash's options (`--terminal`, `--camera`,
-`--dashcam` ...) are not among them since November 2026: they are the list in
-`config/frogdash-options`, applied by every update (step *Dash options*).
+`--dashcam` ...) are not among them since November 2026: they come from the system
+profile (`/etc/frogdash/system.json`, [presets.md](presets.md)), applied by every update
+(step *Dash options*).
 
 The Pi needs internet on its built-in Wi-Fi. Join a network from the dash:
 **Controls → Wi-Fi → Internet (for updates)**: Scan, pick the network, type the

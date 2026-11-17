@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from functools import reduce
 from operator import xor
 
+from . import ecu as ecu_profiles
+
 
 @dataclass(frozen=True)
 class Signal:
@@ -25,6 +27,7 @@ TIMEOUTS = {0x100: .5, 0x103: 1.5, 0x200: 1.5, 0x202: .5, 0x203: 2, 0x204: 2, 0x
             0x300: .5, 0x303: 1.5, 0x304: 3, 0x307: .5,
             0x309: .5, 0x30B: 1, 0x30C: 5, 0x30D: 5, 0x30E: 2, 0x30F: 1.5}
 # MicroSquirt broadcast groups can run at a few Hz; allow 1 s before calling them stale.
+# Another ECU's profile says its own (timeout() below).
 ECU_TIMEOUT = 1.0
 EVENT_IDS = {0x102, 0x302, 0x308, 0x305, 0x306, 0x30A}
 ANALOG_BITS = {"engine.oil_pressure_psi": 0, "engine.fuel_pressure_psi": 1,
@@ -33,15 +36,97 @@ ANALOG_BITS = {"engine.oil_pressure_psi": 0, "engine.fuel_pressure_psi": 1,
                "environment.ambient_c": 6, "environment.cabin_c": 7}
 
 
-def decode(can_id, data):
-    """Return normalized signals, {} for unknown IDs; reject malformed known IDs."""
+# The IDs of each Frogdash module, and those the dash itself sends. An ECU profile may not
+# use the IDs of a module the car has (that module's frames would be taken for the ECU's),
+# nor those the dash sends. The IDs of modules the car does not have are free: a rusEFI
+# broadcasting at its default 0x200 is fine in a car without the comfort module.
+MODULE_RANGES = {'taillights': ((0x100, 0x10F),),
+                 'gateway': ((0x200, 0x20F), (0x500, 0x50F)),
+                 'watermeth': ((0x300, 0x31F),)}
+DASH_SENDS = {0x680, 0x681}           # Module firmware updates and restarts
+GPS_ID = 0x203                        # The dash's GPS on CAN (gps.transmit_on_can)
+
+
+def owned_ranges(settings=None):
+    """The ID ranges taken in this car, from the system profile (all of them by default)."""
+    if settings is None:
+        return [r for ranges in MODULE_RANGES.values() for r in ranges] + [(i, i) for i in sorted(DASH_SENDS)]
+    out = [r for name, ranges in MODULE_RANGES.items() if settings['modules'].get(name) for r in ranges]
+    out += [(i, i) for i in sorted(DASH_SENDS)]
+    if settings['gps']['enabled'] and settings['gps']['transmit_on_can']:
+        out.append((GPS_ID, GPS_ID))
+    return out
+
+
+def clashes(profile, owned=None):
+    """The taken IDs a profile would use, if any."""
+    owned = owned_ranges() if owned is None else owned
+    taken = sorted(f'0x{i:03X}' for i in profile.frames if any(a <= i <= b for a, b in owned))
+    taken += [f'0x{a:03X}-0x{b:03X}' for a, b in profile.claims for ra, rb in owned if a <= rb and ra <= b]
+    return taken
+
+
+def use(profile, owned=None):
+    """Read the engine computer with this ECU profile from now on (ecu/__init__.py)."""
+    global ECU, ECU_PROBLEM, OWNED
+    owned = OWNED if owned is None else owned
+    taken = clashes(profile, owned)
+    if taken:
+        raise ecu_profiles.ProfileError(f'{profile.label} would use IDs this car\'s modules or the dash use: '
+                                        f'{", ".join(taken)}. Move its broadcast (ecu.base_id) if it can be moved')
+    ECU, ECU_PROBLEM, OWNED = profile, None, owned
+
+
+def is_ecu(can_id, extended=False):
+    """The engine computer's frame: an ID of its profile, in the ID format it uses (11 or
+    29 bits), and for 11-bit IDs not one this car's modules use."""
+    if extended != ECU.extended or not ECU.is_ecu(can_id):
+        return False
+    return extended or not any(a <= can_id <= b for a, b in OWNED)
+
+
+def timeout(can_id):
+    """How long a reading from this ID stays live."""
+    return ECU.timeout_s if is_ecu(can_id) or is_ecu(can_id, True) else TIMEOUTS.get(can_id, .5)
+
+
+def _start():
+    """The system profile's ECU and modules, read once at start (before log_channels lists
+    its channels). A profile that cannot be used leaves MegaSquirt, saying why."""
+    global ECU, ECU_PROBLEM, OWNED
+    ECU, ECU_PROBLEM, OWNED = ecu_profiles.load(ecu_profiles.DEFAULT), None, owned_ranges()
+    profile, problem = ecu_profiles.chosen()
+    try:
+        from . import sysconfig
+        owned = owned_ranges(sysconfig.load())
+    except Exception:   # pragma: no cover (sysconfig falls back by itself)
+        owned = owned_ranges()
+    try:
+        use(profile, owned)
+        ECU_PROBLEM = problem
+    except ecu_profiles.ProfileError as exc:
+        ECU_PROBLEM = f'{exc}; reading {ecu_profiles.DEFAULT} instead'
+
+
+_start()
+
+
+def decode(can_id, data, extended=False):
+    """Return normalized signals, {} for unknown IDs; reject malformed known IDs. A 29-bit
+    frame is only ever the ECU's (the modules use 11-bit IDs)."""
     d = data
-    ecu = 0x5E8 <= can_id <= 0x5EC or 0x5F0 <= can_id <= 0x62F or 0x700 <= can_id <= 0x73F
-    expected = 8 if ecu else LENGTHS.get(can_id)
+    ecu = is_ecu(can_id, extended)
+    if extended and not ecu:
+        return {}
+    expected = ECU.length(can_id) if ecu else LENGTHS.get(can_id)
     if expected is None:
         return {}
     if len(d) != expected:
         raise ValueError(f"0x{can_id:03X}: expected DLC {expected}, got {len(d)}")
+    if ecu:
+        # The engine computer, read with its profile (ecu/profiles/), before any module's
+        # decoder. Each ECU source stays separate: an unrelated frame cannot refresh a gauge.
+        return {key: Signal(value) for key, value in ECU.decode(can_id, d).items()}
     out = {}
 
     def put(key, value, quality="live"):
@@ -227,70 +312,4 @@ def decode(can_id, data):
     elif can_id == 0x30D:
         fields("knock.config", "bandwidth_hz sample_rate_hz samples_per_update bias_alpha rms_alpha envelope_alpha bore_mm reserved",
                [d[0] * 100, d[1] * 100, d[2], d[3] / 1000, d[4] / 100, d[5] / 100, d[6], d[7]])
-    elif ecu:
-        # Keep ECU sources separate: an unrelated frame cannot refresh a gauge.
-        if can_id <= 0x5EC:
-            group = can_id - 0x5E8
-            if group == 0:
-                fields("ecu", "map_kpa rpm coolant_c throttle_pct", [s(0) / 10, u(2), c(4), s(6) / 10])
-            elif group == 1:
-                fields("ecu", "pw1_ms pw2_ms iat_c spark_deg", [u(0) / 1000, u(2) / 1000, c(4), s(6) / 10])
-            elif group == 2:
-                fields("ecu", "afr_target afr ego_correction_pct", [d[0] / 10, d[1] / 10, s(2) / 10])
-                put("ecu.pwseq1_ms", s(6) / 1000)
-            elif group == 3:
-                fields("ecu", "battery_v sensor1 sensor2 knock_retard_deg", [s(0) / 10, s(2) / 10, s(4) / 10, d[6] / 10])
-        else:
-            group = can_id - (0x700 if can_id >= 0x700 else 0x5F0)
-            if group == 0:
-                fields("ecu", "seconds pw1_ms pw2_ms rpm", [u(0), u(2) / 1000, u(4) / 1000, u(6)])
-            elif group == 1:
-                fields("ecu", "spark_deg injection_flags engine_flags afr_target afr2_target", [s(0) / 10, d[2], d[3], d[4] / 10, d[5] / 10])
-            elif group == 2:
-                fields("ecu", "baro_kpa map_kpa iat_c coolant_c", [s(0) / 10, s(2) / 10, c(4), c(6)])
-            elif group == 3:
-                fields("ecu", "throttle_pct battery_v afr afr2", [s(i) / 10 for i in (0, 2, 4, 6)])
-            elif group == 4:
-                fields("ecu", "knock_pct ego_correction_pct ego2_correction_pct air_correction_pct", [s(i) / 10 for i in (0, 2, 4, 6)])
-            elif group == 5:
-                fields("ecu", "warmup_correction_pct tps_accel_pct tps_fuel_cut_pct baro_correction_pct", [s(i) / 10 for i in (0, 2, 4, 6)])
-            elif group == 6:
-                fields("ecu", "total_correction_pct ve1 ve2", [s(i) / 10 for i in (0, 2, 4)])
-                put("ecu.idle_output_raw", s(6))
-            elif group == 7:
-                fields("ecu", "cold_advance_deg tps_rate_pct_s map_rate_kpa_s rpm_rate_rpm_s",
-                       [s(0) / 10, s(2) / 10, s(4), s(6) * 10])
-            elif group == 8:
-                fields("ecu", "maf_load fuel_load flex_fuel_correction_pct maf_g_s",
-                       [s(0) / 10, s(2) / 10, s(4) / 10, s(6) / 100])
-            elif group == 11:
-                fields("ecu", "fuel_load2 ignition_load ignition_load2 estimated_iat_c",
-                       [s(0) / 10, s(2) / 10, s(4) / 10, c(6)])
-            elif group == 9:
-                fields("ecu", "ego1_v ego2_v dwell_ms trailing_dwell_ms", [s(0) / 100, s(2) / 100, u(4) / 10, u(6) / 10])
-            elif group == 10:
-                fields("ecu", "status1 status2 status3 status4 status5 status6 status7", [*d[:4], s(4), d[6], d[7]])
-            elif group == 12:
-                fields("ecu", "wall_fuel1_us wall_fuel2_us", [int.from_bytes(d[i:i + 4], "big", signed=True) / 100 for i in (0, 4)])
-            elif group in (13, 14):
-                for i in range(4):
-                    put(f"ecu.sensor{(group - 13) * 4 + i + 1}", s(i * 2) / 10)
-            elif group == 15:
-                fields("ecu", "sensor9 sensor10", [s(0) / 10, s(2) / 10])
-            elif group == 17:
-                fields("ecu", "boost_target_kpa boost_duty_pct maf_v", [s(0) / 10, d[4], s(6) / 1000])
-            elif group == 18:
-                for i in range(4):
-                    put(f"ecu.pwseq{i + 1}_ms", s(i * 2) / 1000)
-            elif group == 26:
-                fields("ecu", "nitrous_added_pw_ms nitrous_retard_deg", [s(4) / 1000, s(6) / 10])
-            elif group == 27:
-                for i in range(4):
-                    put(f"ecu.can_pwm_period{i + 1}", s(i * 2))
-            elif group == 28:
-                fields("ecu", "idle_target_rpm tps_adc eae_load afr_load", [u(0), s(2), s(4) / 10, s(6) / 10])
-            elif group == 29:
-                fields("ecu", "eae_correction1_pct eae_correction2_pct", [u(0) / 10, u(2) / 10])
-            elif group == 43:
-                fields("ecu", "sync_loss_count sync_loss_reason timing_error_pct", [d[0], d[1], int.from_bytes(d[7:], "big", signed=True)])
     return out

@@ -1,0 +1,902 @@
+{
+ "id": "megasquirt",
+ "label": "MicroSquirt",
+ "manufacturer": "MegaSquirt (Bowling & Grippo, DIYAutoTune)",
+ "models": [
+  "MicroSquirt (MS2/Extra)",
+  "MegaSquirt-II (MS2/Extra)"
+ ],
+ "firmware": "MS2/Extra 3.4.x",
+ "bitrate": 500000,
+ "extended": false,
+ "timeout_s": 1.0,
+ "status": "car",
+ "source": {
+  "title": "Megasquirt CAN Broadcast",
+  "url": "https://www.msextra.com/doc/pdf/Megasquirt_CAN_Broadcast.pdf",
+  "version": "2016 specification (as pinned in hardware/can_contract/sources.json)"
+ },
+ "setup": [
+  "In TunerStudio, CAN-Bus/Testmodes: CAN on.",
+  "Dash Broadcasting on (ID 1512).",
+  "Realtime Data Broadcasting on, base ID 1520 (or 1792), groups 0-11 at 10-20 Hz.",
+  "Burn. The CAN node number is not the broadcast ID: leave it as it is."
+ ],
+ "notes": "The 11-bit dash and realtime broadcasts only. MegaSquirt's 29-bit CAN protocol (TunerStudio passthrough and module requests) is a different protocol and is not read. MS3-only fields (VSS, EGT at 1516) are not interpreted.",
+ "tuner": {
+  "name": "TunerStudio MS",
+  "runs_on_dash": true,
+  "connection": "RS232 serial through a USB adapter, 115200 baud (the dash's Tune tab)",
+  "url": "https://www.tunerstudio.com/",
+  "status": "car"
+ },
+ "claims": [
+  [
+   "0x5E8",
+   "0x5EC"
+  ],
+  [
+   "0x5F0",
+   "0x62F"
+  ],
+  [
+   "0x700",
+   "0x73F"
+  ]
+ ],
+ "check": [
+  [
+   "0x5E8",
+   "Dash broadcast (MAP, RPM, coolant, TPS)"
+  ],
+  [
+   "0x5F0",
+   "Realtime broadcast group 0"
+  ],
+  [
+   "0x5F2",
+   "Realtime group 2 (baro, MAP, temperatures)"
+  ]
+ ],
+ "frames": [
+  {
+   "name": "MS_DASH_0",
+   "ids": [
+    "0x5E8"
+   ],
+   "length": 8,
+   "comment": "Simplified dash broadcast",
+   "signals": [
+    {
+     "key": "ecu.map_kpa",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.rpm",
+     "layout": "u16@2",
+     "unit": "rpm"
+    },
+    {
+     "key": "ecu.coolant_c",
+     "layout": "s16@4",
+     "convert": "degF_tenths_to_C",
+     "unit": "C"
+    },
+    {
+     "key": "ecu.throttle_pct",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "MS_DASH_1",
+   "ids": [
+    "0x5E9"
+   ],
+   "length": 8,
+   "comment": "Simplified dash broadcast",
+   "signals": [
+    {
+     "key": "ecu.pw1_ms",
+     "layout": "u16@0",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.pw2_ms",
+     "layout": "u16@2",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.iat_c",
+     "layout": "s16@4",
+     "convert": "degF_tenths_to_C",
+     "unit": "C"
+    },
+    {
+     "key": "ecu.spark_deg",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "deg"
+    }
+   ]
+  },
+  {
+   "name": "MS_DASH_2",
+   "ids": [
+    "0x5EA"
+   ],
+   "length": 8,
+   "comment": "Simplified dash broadcast",
+   "signals": [
+    {
+     "key": "ecu.afr_target",
+     "layout": "u8@0",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.afr",
+     "layout": "u8@1",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.ego_correction_pct",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.pwseq1_ms",
+     "layout": "s16@6",
+     "scale": 0.001,
+     "unit": "ms"
+    }
+   ]
+  },
+  {
+   "name": "MS_DASH_3",
+   "ids": [
+    "0x5EB"
+   ],
+   "length": 8,
+   "comment": "Simplified dash broadcast",
+   "signals": [
+    {
+     "key": "ecu.battery_v",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "V"
+    },
+    {
+     "key": "ecu.sensor1",
+     "layout": "s16@2",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.sensor2",
+     "layout": "s16@4",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.knock_retard_deg",
+     "layout": "u8@6",
+     "scale": 0.1,
+     "unit": "deg"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_00",
+   "ids": [
+    "0x5F0",
+    "0x700"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 0 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.seconds",
+     "layout": "u16@0",
+     "unit": "s"
+    },
+    {
+     "key": "ecu.pw1_ms",
+     "layout": "u16@2",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.pw2_ms",
+     "layout": "u16@4",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.rpm",
+     "layout": "u16@6",
+     "unit": "rpm"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_01",
+   "ids": [
+    "0x5F1",
+    "0x701"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 1 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.spark_deg",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.injection_flags",
+     "layout": "u8@2"
+    },
+    {
+     "key": "ecu.engine_flags",
+     "layout": "u8@3"
+    },
+    {
+     "key": "ecu.afr_target",
+     "layout": "u8@4",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.afr2_target",
+     "layout": "u8@5",
+     "scale": 0.1
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_02",
+   "ids": [
+    "0x5F2",
+    "0x702"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 2 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.baro_kpa",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.map_kpa",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.iat_c",
+     "layout": "s16@4",
+     "convert": "degF_tenths_to_C",
+     "unit": "C"
+    },
+    {
+     "key": "ecu.coolant_c",
+     "layout": "s16@6",
+     "convert": "degF_tenths_to_C",
+     "unit": "C"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_03",
+   "ids": [
+    "0x5F3",
+    "0x703"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 3 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.throttle_pct",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.battery_v",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "V"
+    },
+    {
+     "key": "ecu.afr",
+     "layout": "s16@4",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.afr2",
+     "layout": "s16@6",
+     "scale": 0.1
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_04",
+   "ids": [
+    "0x5F4",
+    "0x704"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 4 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.knock_pct",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.ego_correction_pct",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.ego2_correction_pct",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.air_correction_pct",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_05",
+   "ids": [
+    "0x5F5",
+    "0x705"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 5 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.warmup_correction_pct",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.tps_accel_pct",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.tps_fuel_cut_pct",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.baro_correction_pct",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_06",
+   "ids": [
+    "0x5F6",
+    "0x706"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 6 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.total_correction_pct",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.ve1",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.ve2",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.idle_output_raw",
+     "layout": "s16@6"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_07",
+   "ids": [
+    "0x5F7",
+    "0x707"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 7 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.cold_advance_deg",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "deg"
+    },
+    {
+     "key": "ecu.tps_rate_pct_s",
+     "layout": "s16@2",
+     "scale": 0.1,
+     "unit": "%/s"
+    },
+    {
+     "key": "ecu.map_rate_kpa_s",
+     "layout": "s16@4",
+     "unit": "kPa/s"
+    },
+    {
+     "key": "ecu.rpm_rate_rpm_s",
+     "layout": "s16@6",
+     "scale": 10,
+     "unit": "rpm/s"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_08",
+   "ids": [
+    "0x5F8",
+    "0x708"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 8 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.maf_load",
+     "layout": "s16@0",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.fuel_load",
+     "layout": "s16@2",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.flex_fuel_correction_pct",
+     "layout": "s16@4",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.maf_g_s",
+     "layout": "s16@6",
+     "scale": 0.01,
+     "unit": "g/s"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_09",
+   "ids": [
+    "0x5F9",
+    "0x709"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 9 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.ego1_v",
+     "layout": "s16@0",
+     "scale": 0.01,
+     "unit": "V"
+    },
+    {
+     "key": "ecu.ego2_v",
+     "layout": "s16@2",
+     "scale": 0.01,
+     "unit": "V"
+    },
+    {
+     "key": "ecu.dwell_ms",
+     "layout": "u16@4",
+     "scale": 0.1,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.trailing_dwell_ms",
+     "layout": "u16@6",
+     "scale": 0.1,
+     "unit": "ms"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_10",
+   "ids": [
+    "0x5FA",
+    "0x70A"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 10 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.status1",
+     "layout": "u8@0"
+    },
+    {
+     "key": "ecu.status2",
+     "layout": "u8@1"
+    },
+    {
+     "key": "ecu.status3",
+     "layout": "u8@2"
+    },
+    {
+     "key": "ecu.status4",
+     "layout": "u8@3"
+    },
+    {
+     "key": "ecu.status5",
+     "layout": "s16@4"
+    },
+    {
+     "key": "ecu.status6",
+     "layout": "u8@6"
+    },
+    {
+     "key": "ecu.status7",
+     "layout": "u8@7"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_11",
+   "ids": [
+    "0x5FB",
+    "0x70B"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 11 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.fuel_load2",
+     "layout": "s16@0",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.ignition_load",
+     "layout": "s16@2",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.ignition_load2",
+     "layout": "s16@4",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.estimated_iat_c",
+     "layout": "s16@6",
+     "convert": "degF_tenths_to_C",
+     "unit": "C"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_12",
+   "ids": [
+    "0x5FC",
+    "0x70C"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 12 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.wall_fuel1_us",
+     "layout": "s32@0",
+     "scale": 0.01,
+     "unit": "us"
+    },
+    {
+     "key": "ecu.wall_fuel2_us",
+     "layout": "s32@4",
+     "scale": 0.01,
+     "unit": "us"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_13",
+   "ids": [
+    "0x5FD",
+    "0x70D"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 13 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.sensor1",
+     "layout": "s16@0",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.sensor2",
+     "layout": "s16@2",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.sensor3",
+     "layout": "s16@4",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.sensor4",
+     "layout": "s16@6",
+     "scale": 0.1
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_14",
+   "ids": [
+    "0x5FE",
+    "0x70E"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 14 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.sensor5",
+     "layout": "s16@0",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.sensor6",
+     "layout": "s16@2",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.sensor7",
+     "layout": "s16@4",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.sensor8",
+     "layout": "s16@6",
+     "scale": 0.1
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_15",
+   "ids": [
+    "0x5FF",
+    "0x70F"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 15 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.sensor9",
+     "layout": "s16@0",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.sensor10",
+     "layout": "s16@2",
+     "scale": 0.1
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_17",
+   "ids": [
+    "0x601",
+    "0x711"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 17 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.boost_target_kpa",
+     "layout": "s16@0",
+     "scale": 0.1,
+     "unit": "kPa"
+    },
+    {
+     "key": "ecu.boost_duty_pct",
+     "layout": "u8@4",
+     "unit": "%"
+    },
+    {
+     "key": "ecu.maf_v",
+     "layout": "s16@6",
+     "scale": 0.001,
+     "unit": "V"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_18",
+   "ids": [
+    "0x602",
+    "0x712"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 18 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.pwseq1_ms",
+     "layout": "s16@0",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.pwseq2_ms",
+     "layout": "s16@2",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.pwseq3_ms",
+     "layout": "s16@4",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.pwseq4_ms",
+     "layout": "s16@6",
+     "scale": 0.001,
+     "unit": "ms"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_26",
+   "ids": [
+    "0x60A",
+    "0x71A"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 26 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.nitrous_added_pw_ms",
+     "layout": "s16@4",
+     "scale": 0.001,
+     "unit": "ms"
+    },
+    {
+     "key": "ecu.nitrous_retard_deg",
+     "layout": "s16@6",
+     "scale": 0.1,
+     "unit": "deg"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_27",
+   "ids": [
+    "0x60B",
+    "0x71B"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 27 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.can_pwm_period1",
+     "layout": "s16@0"
+    },
+    {
+     "key": "ecu.can_pwm_period2",
+     "layout": "s16@2"
+    },
+    {
+     "key": "ecu.can_pwm_period3",
+     "layout": "s16@4"
+    },
+    {
+     "key": "ecu.can_pwm_period4",
+     "layout": "s16@6"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_28",
+   "ids": [
+    "0x60C",
+    "0x71C"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 28 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.idle_target_rpm",
+     "layout": "u16@0",
+     "unit": "rpm"
+    },
+    {
+     "key": "ecu.tps_adc",
+     "layout": "s16@2"
+    },
+    {
+     "key": "ecu.eae_load",
+     "layout": "s16@4",
+     "scale": 0.1
+    },
+    {
+     "key": "ecu.afr_load",
+     "layout": "s16@6",
+     "scale": 0.1
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_29",
+   "ids": [
+    "0x60D",
+    "0x71D"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 29 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.eae_correction1_pct",
+     "layout": "u16@0",
+     "scale": 0.1,
+     "unit": "%"
+    },
+    {
+     "key": "ecu.eae_correction2_pct",
+     "layout": "u16@2",
+     "scale": 0.1,
+     "unit": "%"
+    }
+   ]
+  },
+  {
+   "name": "MS_RT_43",
+   "ids": [
+    "0x61B",
+    "0x72B"
+   ],
+   "length": 8,
+   "comment": "Realtime broadcast group 43 (base 1520, or 1792)",
+   "signals": [
+    {
+     "key": "ecu.sync_loss_count",
+     "layout": "u8@0"
+    },
+    {
+     "key": "ecu.sync_loss_reason",
+     "layout": "u8@1"
+    },
+    {
+     "key": "ecu.timing_error_pct",
+     "layout": "s8@7",
+     "unit": "%"
+    }
+   ]
+  }
+ ]
+}

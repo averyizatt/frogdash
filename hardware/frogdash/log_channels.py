@@ -4,6 +4,7 @@ from hashlib import sha1
 import math
 
 from .mlg import Field
+from . import protocol
 from .protocol import LENGTHS, decode
 from .state import ALIASES, UNAVAILABLE
 from .trip import SIGNALS as TRIP_SIGNALS
@@ -119,7 +120,7 @@ def channels():
     # config replies and fault/event channels even if they haven't arrived yet.
     keys = set(ALIASES) | set(UNAVAILABLE) | {'gps.satellites_in_view'}
     definitions = dict(LENGTHS)
-    definitions.update({i: 8 for start, end in ((0x5E8, 0x5ED), (0x5F0, 0x630), (0x700, 0x740)) for i in range(start, end)})
+    definitions.update(protocol.ECU.ids())   # The ECU profile's frames (ecu/profiles/)
     for can_id, length in definitions.items():
         frame = bytes(length) if can_id != 0x30A else bytes([0, 0, 0, 2])
         if can_id == 0x205:
