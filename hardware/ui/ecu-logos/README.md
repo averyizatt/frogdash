@@ -1,8 +1,21 @@
 # ECU logos for the setup wizard
 
-Put an ECU maker's logo here as `<profile id>.svg` or `<profile id>.png` (for example
-`haltech.svg`, `megasquirt.png`; `holley.svg` also serves `holley_sniper`). The wizard's
-engine-computer page shows it on that ECU's card; without one the card shows the ECU's name.
+The engine-computer page shows `<profile id>.svg` or `.png` from here on that ECU's card
+(`holley.svg` also serves `holley_sniper`); an ECU without one shows its name.
 
-The logos belong to their makers: add one only as its maker's terms allow (most publish a
-media or press kit), and keep it small (under 50 KB, about 300 x 80 px).
+Each logo is its maker's trademark, shown only to name the ECU a profile reads. Frogdash is
+not made, endorsed or supported by any of them.
+
+| File | Source |
+|---|---|
+| aem.png | AEM Electronics, documents.aemelectronics.com |
+| ecumaster.svg | ECUMaster, ecumaster.com |
+| fueltech.png | FuelTech, fueltech.net |
+| haltech.svg | Haltech, haltech.com |
+| holley.svg | Wikimedia Commons, "Holley Performance Products logo.svg" (public domain, trademarked) |
+| maxxecu.svg | MaxxECU, maxxecu.com |
+| megasquirt.svg | MegaSquirt, megasquirt.info |
+| rusefi.png | rusEFI, rusefi.com |
+| speeduino.png | Speeduino, github.com/speeduino/speeduino (reference/speeduino_logo.png) |
+
+A maker who would rather its logo were not here: open an issue and it goes.

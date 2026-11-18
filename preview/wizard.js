@@ -79,6 +79,15 @@
   }
   const offers = key => (ecuProfile().offers || []).includes(key);
 
+  const ICON_PATHS = {
+    generic: 'M12 3v18M3 12h18', foxbody: 'M3 15h18v3H3zM5 15l2-5h10l2 5M7 18v2M17 18v2',
+    usb: 'M9 2h6v6H9zM7 8h10v6a5 5 0 0 1-10 0zM12 19v3', can: 'M3 8h18M3 16h18M7 8v8M12 8v8M17 8v8', none: 'M5 5l14 14M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18',
+    waveshare: 'M6 6h12v12H6zM9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3', other: 'M12 8a4 4 0 1 0 0 8a4 4 0 0 0 0-8M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2',
+    true: 'M6 6h12v12H6zM9 3v3M15 3v3M9 18v3M15 18v3', false: 'M9 2h6v6H9zM7 8h10v6a5 5 0 0 1-10 0zM12 19v3',
+    pisugar3: 'M3 8h16v8H3zM19 11h2v2M6 11h6', 'power-none': 'M13 2L5 14h6l-1 8 8-12h-6z',
+  };
+  const icon = key => ICON_PATHS[key] ? `<svg class="wizard-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICON_PATHS[key]}"/></svg>` : '';
+
   // --- Fields ---
   function toggle(path, label, help = '', disabled = false, checked = get(path)) {
     return `<label class="wizard-toggle${disabled ? ' off' : ''}"><input type="checkbox" data-wizard-path="${path}"${checked ? ' checked' : ''}${disabled ? ' disabled' : ''}>
@@ -93,11 +102,17 @@
     return `<label class="wizard-field"><span>${esc(label)}</span><input type="text" data-wizard-path="${path}" value="${esc(value)}" placeholder="${esc(placeholder)}" autocomplete="off" spellcheck="false">${help ? `<small>${help}</small>` : ''}</label>`;
   }
   // Big buttons for one choice of a few (data-wizard-pick="path" data-value="...").
-  function cards(path, options, extraClass = '') {
-    return `<div class="wizard-cards ${extraClass}">${options.map(([value, title, help]) =>
-      `<button type="button" class="wizard-card" data-wizard-pick="${path}" data-value="${esc(value)}" aria-pressed="${String(get(path)) === String(value)}"><b>${esc(title)}</b><small>${help}</small></button>`).join('')}</div>`;
+  // Big buttons for one choice of a few (data-wizard-pick="path" data-value="..."), filling the row.
+  function cards(path, options, iconFor = value => value) {
+    return `<div class="wizard-choices" style="--n:${options.length}">${options.map(([value, title, help]) =>
+      `<button type="button" class="wizard-card wizard-choice" data-wizard-pick="${path}" data-value="${esc(value)}" aria-pressed="${String(get(path)) === String(value)}">
+        ${icon(iconFor(value))}<b>${esc(title)}</b><small>${help}</small></button>`).join('')}</div>`;
   }
-
+  // A small one-of-a-few choice inside a card.
+  function segments(path, label, options) {
+    return `<div class="wizard-segments"><span>${esc(label)}</span><div class="signal-sources">${options.map(([value, text]) =>
+      `<button type="button" data-wizard-pick="${path}" data-value="${esc(value)}" aria-pressed="${String(get(path)) === String(value)}">${esc(text)}</button>`).join('')}</div></div>`;
+  }
   // --- Pages ---
   const PRESET_TEXT = {
     generic: ['A new build', 'Nothing assumed: choose your screen, ECU and parts on the next pages.'],
@@ -106,9 +121,9 @@
   function startPage() {
     const names = Object.keys(data.presets);
     return `<p class="wizard-lead">Pick the closest starting point. Every choice can be changed on the pages that follow, and again later from Dash management.</p>
-      <div class="wizard-cards">${names.map(name => {
+      <div class="wizard-choices" style="--n:${names.length}">${names.map(name => {
         const [title, help] = PRESET_TEXT[name] || [name, 'A preset in presets/.'];
-        return `<button type="button" class="wizard-card" data-wizard-preset="${esc(name)}" aria-pressed="${draft.preset === name}"><b>${esc(title)}</b><small>${esc(help)}</small></button>`;
+        return `<button type="button" class="wizard-card wizard-choice" data-wizard-preset="${esc(name)}" aria-pressed="${draft.preset === name}">${icon(name)}<b>${esc(title)}</b><small>${esc(help)}</small></button>`;
       }).join('')}</div>`;
   }
   function screenPage() {
@@ -180,9 +195,11 @@
   }
   function camerasPage() {
     return `<p class="wizard-lead">Cameras are optional. The reverse camera opens by itself on the reverse signal.</p>
-      ${toggle('camera.enabled', 'Reverse camera', 'A Raspberry Pi camera on the Pi camera connector (CSI); it opens when reverse is engaged.')}
-      ${choice('camera.rotate', 'Reverse camera picture', [[0, 'As it comes'], [180, 'Turned upside down']])}
-      ${toggle('dashcam.enabled', 'Wi-Fi dash cam', 'A dash cam whose own Wi-Fi the dash joins with its second adapter, to show and save its picture.')}`;
+      <div class="wizard-pair">
+        <div class="wizard-panel">${toggle('camera.enabled', 'Reverse camera', 'A Raspberry Pi camera on the Pi camera connector (CSI); it opens when reverse is engaged.')}
+          ${get('camera.enabled') ? segments('camera.rotate', 'Picture', [[0, 'As it comes'], [180, 'Upside down']]) : ''}</div>
+        <div class="wizard-panel">${toggle('dashcam.enabled', 'Wi-Fi dash cam', 'A dash cam whose own Wi-Fi the dash joins with its second adapter, to show and save its picture.')}</div>
+      </div>`;
   }
   // Where each car signal can come from in this car.
   function sources(name, ecuKey) {
@@ -207,7 +224,8 @@
       const pins = FREE_PINS.filter(p => !taken.has(p));
       if (!pins.includes(spec.pin)) spec.pin = pins[0];
       fields = `${choice(`${path}.pin`, 'Pi pin', pins.map(p => [p, `GPIO ${p}`]))}
-        ${toggle(`${path}.active_low`, 'On when pulled to ground', 'Most optocoupler boards: the signal\'s 12 V lights the opto, which pulls the pin low.')}`;
+        ${segments(`${path}.active_low`, 'Signal when on', [[false, 'High'], [true, 'Low']])}
+        <small class="wizard-small">Low for most optocoupler boards: the 12 V lights the opto, which pulls the pin to ground.</small>`;
     } else if (spec.source === 'adc') {
       fields = `${choice(`${path}.adc_channel`, 'ADS1115 input', [0, 1, 2, 3].map(n => [n, `A${n}`]))}
         ${text(`${path}.empty_mv`, 'Volts when empty', '', '0.5', (spec.empty_mv / 1000).toFixed(2))}
@@ -243,16 +261,16 @@
   function powerPage() {
     return `<p class="wizard-lead">How the Pi gets power. Pulling 12 V with the key can damage the SD card; a power board lets the Pi shut down cleanly.</p>
       ${cards('power', [['none', 'Ignition 12 V only', 'The Pi is on while the key is. Simple; a sudden power cut can corrupt the card.'],
-                        ['pisugar3', 'PiSugar 3', 'A battery board: at key-off the dash counts down and the Pi shuts down by itself. Installs its driver.']])}`;
+                        ['pisugar3', 'PiSugar 3', 'A battery board: at key-off the dash counts down and the Pi shuts down by itself. Installs its driver.']],
+              value => value === 'none' ? 'power-none' : value)}`;
   }
   function localePage() {
-    return `<div class="wizard-row">${text('locale.timezone', 'Time zone', 'As in the tz database. Empty keeps the Pi\'s own.', 'America/Denver')}
-      ${text('locale.wifi_country', 'Wi-Fi country', 'Two letters: US, GB, DE… Empty keeps the Pi\'s own.', 'US')}</div>
+    return `<div class="wizard-grid3">${text('locale.timezone', 'Time zone', 'As in the tz database. Empty keeps the Pi\'s own.', 'America/Denver')}
+      ${text('locale.wifi_country', 'Wi-Fi country', 'Two letters: US, GB, DE… Empty keeps the Pi\'s own.', 'US')}
+      <div class="wizard-field">${segments('locale.units', 'Units on the gauges', [['us', 'US: mph, °F, psi'], ['metric', 'Metric: km/h, °C, kPa']])}<small>Each screen can still pick its own.</small></div></div>
       <div class="wizard-row">${text('hotspot_name', 'The dash\'s own Wi-Fi name', 'The hotspot a phone joins to reach the dash.')}
-      ${text('uploads.repo', 'GitHub repository for reports (optional)', 'owner/name. After each update the Pi uploads its diagnostics and the newest drive there. Empty: no uploads.', 'you/frogdash')}</div>
-      ${choice('locale.units', 'Units on the gauges', [['us', 'US: mph, °F, psi, US mpg'], ['metric', 'Metric: km/h, °C, kPa, L/100 km']], 'Each screen can still pick its own under Dash management.')}`;
+      ${text('uploads.repo', 'GitHub repository for reports (optional)', 'owner/name: after each update the Pi uploads its diagnostics and newest drive there.', 'you/frogdash')}</div>`;
   }
-
   // --- Review ---
   const LABELS = {'screen.size': 'Screen', 'screen.mode': 'Forced at boot', 'ecu.profile': 'ECU', 'ecu.bitrate': 'CAN bus speed', 'ecu.base_id': 'ECU first ID',
     'can_hat.board': 'CAN board', 'can_hat.present': 'CAN board type', 'can_hat.oscillator': 'Board crystal', 'can_hat.interrupt': 'Board interrupt',
@@ -268,7 +286,7 @@
     const s = profile.signals?.[name];
     if (!s) return '';
     return {module: name === 'fuel' ? 'Frogdash gateway' : 'Frogdash taillight board', ecu: 'From the ECU', none: 'Not used',
-            gpio: `Pi pin GPIO ${s.pin}${s.active_low ? ' (on when low)' : ' (on when high)'}`,
+            gpio: `Pi pin GPIO ${s.pin}, ${s.active_low ? 'low' : 'high'} when on`,
             adc: `ADS1115 A${s.adc_channel}, ${(s.empty_mv / 1000).toFixed(2)} V empty, ${(s.full_mv / 1000).toFixed(2)} V full`,
             can: `CAN 0x${s.can_id.toString(16).toUpperCase()} ${name === 'fuel' ? `byte ${s.byte}` : `byte ${s.bit >> 3} bit ${s.bit & 7}`}`}[s.source] || s.source;
   }
@@ -327,14 +345,25 @@
   const RENDER = {start: startPage, screen: screenPage, ecu: ecuPage, can: canPage, gps: gpsPage, cameras: camerasPage, signals: signalsPage,
                   features: featuresPage, power: powerPage, locale: localePage, review: reviewPage};
 
+  let rendering = false;
   function render() {
+    // Replacing a focused text field fires its change event (blur), which renders again:
+    // commit it first, and never start a render inside another.
+    if (rendering) return;
+    rendering = true;
+    try {
+      if (dialog.contains(document.activeElement) && document.activeElement.matches('input[type="text"]')) document.activeElement.blur();
+      draw();
+    } finally { rendering = false; }
+  }
+  function draw() {
     const name = PAGES[page];
     const scroll = $('wizard-body').scrollTop;
     $('wizard-title').textContent = TITLES[name];
     $('wizard-steps').innerHTML = PAGES.map((p, i) => `<li><button type="button" data-wizard-page="${i}" title="${TITLES[p]}" aria-current="${i === page ? 'step' : 'false'}">${i + 1}</button></li>`).join('');
-    $('wizard-body').innerHTML = RENDER[name]();
-    $('wizard-body').scrollTop = render.page === page ? scroll : 0;
-    render.page = page;
+    $('wizard-body').innerHTML = `<div class="wizard-page wizard-page-${name}">${RENDER[name]()}</div>`;
+    $('wizard-body').scrollTop = draw.page === page ? scroll : 0;
+    draw.page = page;
     $('wizard-back').disabled = page === 0 || applying;
     $('wizard-next').textContent = name === 'review' ? (DEMO ? 'Apply (preview)' : 'Apply') : 'Next';
     $('wizard-next').disabled = applying;
@@ -374,7 +403,7 @@
     const pick = event.target.closest('[data-wizard-pick]');
     if (pick) {
       const path = pick.dataset.wizardPick, raw = pick.dataset.value;
-      set(path, raw === 'true' ? true : raw === 'false' ? false : raw);
+      set(path, raw === 'true' ? true : raw === 'false' ? false : typeof get(path) === 'number' ? Number(raw) : raw);
       if (path === 'can_hat.board' && raw === 'waveshare') Object.assign(draft.can_hat, WAVESHARE);
       if (path === 'gps.source') { draft.gps.enabled = raw === 'usb'; if (raw !== 'usb') draft.gps.transmit_on_can = false; }
       render(); return;

@@ -90,7 +90,7 @@ async def main(browser_path):
         assert found['Screen'] == '1024 × 600' and found['Forced at boot'] == 'Yes, 1024 × 600', found
         assert found['ECU'] == 'Haltech' and found['CAN bus speed'] == '1000 kbit/s', found
         assert found['CAN board'] == 'Other' and found['CAN board type'] == 'USB adapter', found
-        assert found['Left turn signal'] == 'Pi pin GPIO 17 (on when low)', found
+        assert found['Left turn signal'] == 'Pi pin GPIO 17, low when on', found
         assert found['Fuel level'] == 'ADS1115 A0, 0.50 V empty, 0.45 V full', found
         all_rows = await page.evaluate("[...document.querySelectorAll('.wizard-review tr')].map(r => r.className)")
         assert all_rows[:len(rows)] == ['changed'] * len(rows)                                       # Changes first

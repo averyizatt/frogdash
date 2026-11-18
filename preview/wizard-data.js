@@ -117,6 +117,7 @@ window.frogdashSystemDemo = {
    "firmware": "MS2/Extra 3.4.x",
    "id": "megasquirt",
    "label": "MicroSquirt",
+   "logo": "ecu-logos/megasquirt.svg",
    "manufacturer": "MegaSquirt (Bowling & Grippo, DIYAutoTune)",
    "models": [
     "MicroSquirt (MS2/Extra)",
@@ -154,6 +155,7 @@ window.frogdashSystemDemo = {
     "firmware": "AEMnet data stream v150609",
     "id": "aem",
     "label": "AEM Infinity",
+    "logo": "ecu-logos/aem.png",
     "manufacturer": "AEM Electronics (USA)",
     "matches": 0,
     "models": [
@@ -196,6 +198,7 @@ window.frogdashSystemDemo = {
     "firmware": "EMU Black firmware 2.169 or later; EMU PRO firmware 216.1 or later",
     "id": "ecumaster",
     "label": "ECUMaster EMU",
+    "logo": "ecu-logos/ecumaster.svg",
     "manufacturer": "ECUMaster (Poland)",
     "matches": 0,
     "models": [
@@ -239,6 +242,7 @@ window.frogdashSystemDemo = {
     "firmware": "FTCAN 2.0 simplified broadcast",
     "id": "fueltech",
     "label": "FuelTech",
+    "logo": "ecu-logos/fueltech.png",
     "manufacturer": "FuelTech (Brazil)",
     "matches": 0,
     "models": [
@@ -273,6 +277,7 @@ window.frogdashSystemDemo = {
     "firmware": "Nexus 1.25 or later; Elite 3.11 or later (earlier versions support parts of the protocol)",
     "id": "haltech",
     "label": "Haltech",
+    "logo": "ecu-logos/haltech.svg",
     "manufacturer": "Haltech (Australia)",
     "matches": 0,
     "models": [
@@ -314,6 +319,7 @@ window.frogdashSystemDemo = {
     "firmware": "Terminator X V1-V3; HP and Dominator V4 or later",
     "id": "holley",
     "label": "Holley Terminator X / HP / Dominator",
+    "logo": "ecu-logos/holley.svg",
     "manufacturer": "Holley Performance (USA)",
     "matches": 0,
     "models": [
@@ -354,6 +360,7 @@ window.frogdashSystemDemo = {
     "firmware": "Sniper V2 or later",
     "id": "holley_sniper",
     "label": "Holley Sniper",
+    "logo": "ecu-logos/holley.svg",
     "manufacturer": "Holley Performance (USA)",
     "matches": 0,
     "models": [
@@ -393,6 +400,7 @@ window.frogdashSystemDemo = {
     "firmware": "Protocol v1.3 rows need ECU firmware 1.135 or newer (v1.2 rows: 1.67+, user inputs 1.79+)",
     "id": "maxxecu",
     "label": "MaxxECU",
+    "logo": "ecu-logos/maxxecu.svg",
     "manufacturer": "MaxxECU (Sweden)",
     "matches": 0,
     "models": [
@@ -433,6 +441,7 @@ window.frogdashSystemDemo = {
     "firmware": "MS2/Extra 3.4.x",
     "id": "megasquirt",
     "label": "MicroSquirt",
+    "logo": "ecu-logos/megasquirt.svg",
     "manufacturer": "MegaSquirt (Bowling & Grippo, DIYAutoTune)",
     "matches": 18,
     "models": [
@@ -474,6 +483,7 @@ window.frogdashSystemDemo = {
     "firmware": "rusEFI firmware of November 2025 (rusefi/rusefi bfde8f4)",
     "id": "rusefi",
     "label": "rusEFI",
+    "logo": "ecu-logos/rusefi.png",
     "manufacturer": "rusEFI (open source)",
     "matches": 0,
     "models": [
@@ -517,6 +527,7 @@ window.frogdashSystemDemo = {
     "firmware": "Speeduino firmware with the Haltech CAN broadcast (noisymime/speeduino 97ef8e8, October 2026)",
     "id": "speeduino",
     "label": "Speeduino",
+    "logo": "ecu-logos/speeduino.png",
     "manufacturer": "Speeduino (open source)",
     "matches": 0,
     "models": [
