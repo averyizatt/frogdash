@@ -41,11 +41,22 @@ PATTERNS = {
     'locale.wifi_country': r'(|[A-Z]{2})',
     'hotspot_name': r'[A-Za-z0-9 _.-]{1,32}',
     'uploads.repo': r'(|[A-Za-z0-9_.-]{1,39}/[A-Za-z0-9_.-]{1,100})',
-    'screen.mode': r'auto|1920x720',
+    'screen.mode': r'auto|\d{3,4}x\d{3,4}',     # A size to force at boot (tools/frogdash_screen.py), or the screen's own
     'screen.size': r'auto|\d{3,4}x\d{3,4}',     # The screen the owner said they have (the wizard's Screen page)
     'locale.units': r'us|metric',
     'interface': r'[a-z0-9]{1,15}',
+    'can_hat.board': r'waveshare|other',     # The Waveshare RS485 CAN HAT (12 MHz, GPIO 25), or one set by hand
+    'gps.source': r'usb|can|none',           # A USB receiver (gpsd), position from an ECU on the CAN bus, or none
+    **{f'signals.{name}.source': r'module|ecu|gpio|can|none' for name in ('turn_left', 'turn_right', 'brake', 'lights', 'reverse')},
+    'signals.fuel.source': r'module|ecu|adc|can|none',
 }
+# Car signals (inputs.py): where each comes from. module: the reference car's own boards;
+# ecu: the ECU profile's reading; gpio: a Pi pin (through an optocoupler: never 12 V on a
+# pin); adc: an ADS1115 on I2C (the fuel sender); can: a bit (or, for fuel, a byte) of any
+# CAN frame; none: not shown.
+SIGNALS = ('turn_left', 'turn_right', 'brake', 'lights', 'reverse', 'fuel')
+# Pins a car signal may not use: I2C (2, 3), SPI0 for the CAN HAT (7-11) and the UART (14, 15).
+RESERVED_PINS = {2, 3, 7, 8, 9, 10, 11, 14, 15}
 RANGES = {
     'ecu.bitrate': (125000, 1000000),
     'ecu.base_id': (0, 0x1FFFFFFF),     # The ECU's first CAN ID where it can be moved (0: its profile's default)
@@ -53,6 +64,14 @@ RANGES = {
     'can_hat.interrupt': (0, 27),
     'can_hat.spi_hz': (100000, 10000000),
     'camera.rotate': (0, 180),
+    **{f'signals.{name}.pin': (0, 27) for name in ('turn_left', 'turn_right', 'brake', 'lights', 'reverse')},
+    **{f'signals.{name}.can_id': (0, 0x1FFFFFFF) for name in ('turn_left', 'turn_right', 'brake', 'lights', 'reverse', 'fuel')},
+    **{f'signals.{name}.bit': (0, 63) for name in ('turn_left', 'turn_right', 'brake', 'lights', 'reverse')},
+    'signals.fuel.adc_channel': (0, 3),
+    'signals.fuel.empty_mv': (0, 5000),
+    'signals.fuel.full_mv': (0, 5000),
+    'signals.fuel.byte': (0, 7),
+    'signals.fuel.full_raw': (1, 255),
 }
 # Extra options for the dash, one word each (e.g. --camera-size 1280x720): the characters
 # the options step in tools/frogdash_setup.sh accepts.
@@ -129,6 +148,20 @@ def validate(profile):
         raise ProfileError(f'Missing field {sorted(missing)[0]!r}')
     if profile['camera']['rotate'] not in (0, 180):
         raise ProfileError('camera.rotate should be 0 or 180')
+    pins = {}
+    for name in SIGNALS[:-1]:
+        signal = profile['signals'][name]
+        if signal['source'] != 'gpio':
+            continue
+        pin = signal['pin']
+        if pin in RESERVED_PINS or (profile['can_hat']['present'] and pin == profile['can_hat']['interrupt']):
+            raise ProfileError(f'signals.{name}: GPIO {pin} is used by the CAN board, I2C or the serial port')
+        if pin in pins:
+            raise ProfileError(f'signals.{name}: GPIO {pin} is already {pins[pin]}')
+        pins[pin] = name
+    fuel = profile['signals']['fuel']
+    if fuel['source'] == 'adc' and fuel['empty_mv'] == fuel['full_mv']:
+        raise ProfileError('signals.fuel: empty and full should be different voltages')
     preset(profile['preset'])   # It must name a preset that exists
     return profile
 
@@ -215,6 +248,9 @@ def shell(profile):
         'FD_TAILLIGHTS': yes(profile['modules']['taillights']),
         'FD_WATERMETH': yes(profile['modules']['watermeth']),
         'FD_TUNERSTUDIO': yes(profile['tunerstudio']),
+        'FD_WINDOWS_TUNER': yes(profile['windows_tuner']),
+        'FD_GPIO_INPUTS': yes(any(profile['signals'][n]['source'] == 'gpio' for n in SIGNALS[:-1])),
+        'FD_ADC_INPUTS': yes(profile['signals']['fuel']['source'] == 'adc'),
         'FD_TIMEZONE': profile['locale']['timezone'],
         'FD_WIFI_COUNTRY': profile['locale']['wifi_country'],
         'FD_HOTSPOT_NAME': profile['hotspot_name'],

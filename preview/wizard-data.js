@@ -5,6 +5,11 @@ window.frogdashSystemDemo = {
   "ecu_ids_heard": 18,
   "ids_heard": 24
  },
+ "custom": {
+  "id": "custom",
+  "missing": "No custom ECU profile yet",
+  "path": "/etc/frogdash/ecu/custom.json"
+ },
  "ecu": {
   "active": {
    "bitrate": 500000,
@@ -18,6 +23,7 @@ window.frogdashSystemDemo = {
     "MegaSquirt-II (MS2/Extra)"
    ],
    "notes": "The 11-bit dash and realtime broadcasts only. MegaSquirt's 29-bit CAN protocol (TunerStudio passthrough and module requests) is a different protocol and is not read. MS3-only fields (VSS, EGT at 1516) are not interpreted.",
+   "offers": [],
    "origin": "built in",
    "setup": [
     "In TunerStudio, CAN-Bus/Testmodes: CAN on.",
@@ -55,6 +61,9 @@ window.frogdashSystemDemo = {
      "AEM V2 and EMS-4 (30-6XXX): the first two frames"
     ],
     "notes": "Read from AEM's 2016 stream document; the messages past 0x01F0A004 (more sensors, analog inputs) are not read yet. Fuel and oil pressure are sent in steps of 0.580151 psi (gauge) and given here in kPa. Lambda is given as lambda (ecu.lambda1); the dash's AFR gauge shows it as AFR (lambda x 14.7).",
+    "offers": [
+     "ecu.vehicle_speed_kph"
+    ],
     "origin": "built in",
     "setup": [
      "AEMnet transmission is on by default on Infinity ECUs: connect the dash to the AEMnet CAN HI and LO wires.",
@@ -94,6 +103,10 @@ window.frogdashSystemDemo = {
      "EMU PRO (the same CAN stream)"
     ],
     "notes": "Oil and fuel pressure are sent in steps of 1/16 bar and given here in kPa. Lambda is given as lambda (ecu.lambda1); the dash's AFR gauge shows it as AFR (lambda x 14.7). Fields the EMU PRO leaves unused (lambda correction, traction RPM, PWM 2, some output flags) simply stay at their raw value there. Lambda correction is a factor around 100% (75-125%).",
+    "offers": [
+     "ecu.brake_pedal",
+     "ecu.vehicle_speed_kph"
+    ],
     "origin": "built in",
     "setup": [
      "EMU Black: in the EMU Black client, CAN, Serial / CAN: tick \"Send EMU stream over CAN-Bus\" and set \"CAN-Bus speed\" to 500 kbps (its default is 1 Mbps; the dash's bus runs at 500 kbps).",
@@ -133,6 +146,7 @@ window.frogdashSystemDemo = {
      "FT600, FT550, FT450 (IDs 0x14080600-0x14080608)"
     ],
     "notes": "Only the simplified packets are read; the full FTCAN 2.0 stream (MeasureIDs, segmented packets) is not. Measures whose unit the protocol does not give (pit limit, heading, shock sensors, G-force, yaw, fuel consumption) are left out. MAP and the pressures come in bar and are given here in kPa; the protocol does not say whether MAP is absolute or relative to the atmosphere, so check it against the barometer with the engine off. Gear: -2 park, -1 reverse, 0 neutral. Lambda is given as lambda (ecu.lambda1).",
+    "offers": [],
     "origin": "built in",
     "setup": [
      "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000): FTCAN 2.0 is 1 Mbit/s with 29-bit IDs.",
@@ -166,6 +180,10 @@ window.frogdashSystemDemo = {
      "Nexus series ECUs and VCUs"
     ],
     "notes": "Pressures other than MAP and baro are given as gauge pressure (Haltech sends them absolute; 101.3 kPa taken off, as its document says). Temperatures come in 0.1 K. Lambda is given as lambda (ecu.lambda1-4). Frames past 0x3E5 (0x3E6-0x3F3, 0x469-0x477, 0x6F0-0x701) are in the document but not read by this profile yet.",
+    "offers": [
+     "ecu.brake_pedal",
+     "ecu.vehicle_speed_kph"
+    ],
     "origin": "built in",
     "setup": [
      "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000), as Haltech's CAN does.",
@@ -203,6 +221,9 @@ window.frogdashSystemDemo = {
      "HP and Dominator (V4 software and later)"
     ],
     "notes": "Holley sends each channel as a float in its own frame, with a status in byte 7 (kept as ecu.holley_status_*; its meaning is not documented). Temperatures come in degrees F, pressures in psi and speed in mph: converted here to C, kPa and km/h. Holley's DBC labels oil and fuel pressure \"PSIa\"; whether they are absolute is not confirmed, so they are converted as sent. Holley's tuning goes through its 558-443 CAN-to-USB interface, whose driver Holley says does not work on ARM.",
+    "offers": [
+     "ecu.vehicle_speed_kph"
+    ],
     "origin": "built in",
     "setup": [
      "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000): Holley's CAN is 1 Mbit/s, 29-bit IDs.",
@@ -239,6 +260,9 @@ window.frogdashSystemDemo = {
      "Sniper EFI products with V2 software/firmware or later"
     ],
     "notes": "Holley sends each channel as a float in its own frame, with a status in byte 7 (kept as ecu.holley_status_*; its meaning is not documented). Temperatures come in degrees F, pressures in psi and speed in mph: converted here to C, kPa and km/h. Holley's DBC labels oil and fuel pressure \"PSIa\"; whether they are absolute is not confirmed, so they are converted as sent. Holley's tuning goes through its 558-443 CAN-to-USB interface, whose driver Holley says does not work on ARM.",
+    "offers": [
+     "ecu.vehicle_speed_kph"
+    ],
     "origin": "built in",
     "setup": [
      "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000): Holley's CAN is 1 Mbit/s, 29-bit IDs.",
@@ -275,6 +299,10 @@ window.frogdashSystemDemo = {
      "MaxxECU STREET, SPORT, RACE, PRO, MINI, V-series with the default CAN output protocol"
     ],
     "notes": "Lambda is given as lambda (ecu.lambda, lambda1, lambda2), pressures in kPa; the dash's AFR gauge shows it as AFR (lambda x 14.7), and the pressures in psi. MaxxECU's DBC marks most fields unsigned while its protocol page lists them as int16: this profile reads them signed, as the page says (the same for every value below 3276.7, and right for temperatures below 0). The firmware version and error code fields are left out: the page and the DBC give different scales for them.",
+    "offers": [
+     "ecu.brake_pedal",
+     "ecu.vehicle_speed_kph"
+    ],
     "origin": "built in",
     "setup": [
      "In MTune, CAN bus settings: turn on the MaxxECU default CAN output protocol, version 1.3 (it adds about 13% bus load).",
@@ -312,6 +340,7 @@ window.frogdashSystemDemo = {
      "MegaSquirt-II (MS2/Extra)"
     ],
     "notes": "The 11-bit dash and realtime broadcasts only. MegaSquirt's 29-bit CAN protocol (TunerStudio passthrough and module requests) is a different protocol and is not read. MS3-only fields (VSS, EGT at 1516) are not interpreted.",
+    "offers": [],
     "origin": "built in",
     "setup": [
      "In TunerStudio, CAN-Bus/Testmodes: CAN on.",
@@ -351,6 +380,11 @@ window.frogdashSystemDemo = {
      "rusEFI boards (Proteus, uaEFI, Hellen and others) with the verbose CAN broadcast"
     ],
     "notes": "Lambda is given as lambda (ecu.lambda1), oil and fuel pressure in kPa (the high-pressure GDI sensor is sent in 0.1 bar steps); the dash's AFR gauge shows it as AFR (lambda x 14.7), and the pressures in psi. Values the ECU has no sensor for are sent as 0 (or -1 for pedal and throttles). rusEFI's Haltech-format and other dash broadcasts are separate options and not read by this profile.",
+    "offers": [
+     "ecu.brake_pedal",
+     "ecu.fuel_level_pct",
+     "ecu.vehicle_speed_kph"
+    ],
     "origin": "built in",
     "setup": [
      "In TunerStudio with the rusEFI project: CAN settings, turn on \"CAN broadcast using custom rusEFI protocol\" (enableVerboseCanTx).",
@@ -389,6 +423,9 @@ window.frogdashSystemDemo = {
      "Speeduino on a board with built-in CAN: Teensy 3.5, 3.6, 4.1 or STM32 (not the Arduino Mega)"
     ],
     "notes": "This is Speeduino's own output in Haltech's format, read as Speeduino builds it (temperatures with +273, pressures with +101.3 kPa, taken back off here); it is not Haltech's published protocol. Speeduino declares a trigger frame (0x369) but does not fill it, so it is not read. Injector duty is a whole percent; pulse widths 2-4 are 0 on boards with fewer injector channels. Lambda is given as lambda (ecu.lambda1); the dash's AFR gauge shows it as AFR (lambda x 14.7).",
+    "offers": [
+     "ecu.vehicle_speed_kph"
+    ],
     "origin": "built in",
     "setup": [
      "Speeduino needs a board with built-in CAN (Teensy 3.5/3.6/4.1 or STM32); its CAN runs at 500 kbit/s.",
@@ -423,6 +460,7 @@ window.frogdashSystemDemo = {
     "rotate": 0
    },
    "can_hat": {
+    "board": "waveshare",
     "interrupt": 25,
     "oscillator": 12000000,
     "present": true,
@@ -444,6 +482,7 @@ window.frogdashSystemDemo = {
    },
    "gps": {
     "enabled": true,
+    "source": "usb",
     "transmit_on_can": true
    },
    "hotspot_name": "Foxbody Dash",
@@ -465,11 +504,58 @@ window.frogdashSystemDemo = {
     "mode": "1920x720",
     "size": "1920x720"
    },
+   "signals": {
+    "brake": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "module"
+    },
+    "fuel": {
+     "adc_channel": 0,
+     "byte": 0,
+     "can_id": 0,
+     "empty_mv": 500,
+     "full_mv": 3000,
+     "full_raw": 100,
+     "source": "module"
+    },
+    "lights": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "module"
+    },
+    "reverse": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "module"
+    },
+    "turn_left": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "module"
+    },
+    "turn_right": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "module"
+    }
+   },
    "terminal": true,
    "tunerstudio": false,
    "uploads": {
     "repo": "averyizatt/frogdash"
-   }
+   },
+   "windows_tuner": false
   },
   "generic": {
    "camera": {
@@ -477,6 +563,7 @@ window.frogdashSystemDemo = {
     "rotate": 0
    },
    "can_hat": {
+    "board": "waveshare",
     "interrupt": 25,
     "oscillator": 12000000,
     "present": true,
@@ -498,6 +585,7 @@ window.frogdashSystemDemo = {
    },
    "gps": {
     "enabled": false,
+    "source": "none",
     "transmit_on_can": false
    },
    "hotspot_name": "Frogdash",
@@ -519,11 +607,58 @@ window.frogdashSystemDemo = {
     "mode": "auto",
     "size": "auto"
    },
+   "signals": {
+    "brake": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "none"
+    },
+    "fuel": {
+     "adc_channel": 0,
+     "byte": 0,
+     "can_id": 0,
+     "empty_mv": 500,
+     "full_mv": 3000,
+     "full_raw": 100,
+     "source": "none"
+    },
+    "lights": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "none"
+    },
+    "reverse": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "none"
+    },
+    "turn_left": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "none"
+    },
+    "turn_right": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "none"
+    }
+   },
    "terminal": false,
    "tunerstudio": false,
    "uploads": {
     "repo": ""
-   }
+   },
+   "windows_tuner": false
   }
  },
  "profile": {
@@ -532,6 +667,7 @@ window.frogdashSystemDemo = {
    "rotate": 0
   },
   "can_hat": {
+   "board": "waveshare",
    "interrupt": 25,
    "oscillator": 12000000,
    "present": true,
@@ -553,6 +689,7 @@ window.frogdashSystemDemo = {
   },
   "gps": {
    "enabled": true,
+   "source": "usb",
    "transmit_on_can": true
   },
   "hotspot_name": "Foxbody Dash",
@@ -574,12 +711,60 @@ window.frogdashSystemDemo = {
    "mode": "1920x720",
    "size": "1920x720"
   },
+  "signals": {
+   "brake": {
+    "active_low": true,
+    "bit": 0,
+    "can_id": 0,
+    "pin": 0,
+    "source": "module"
+   },
+   "fuel": {
+    "adc_channel": 0,
+    "byte": 0,
+    "can_id": 0,
+    "empty_mv": 500,
+    "full_mv": 3000,
+    "full_raw": 100,
+    "source": "module"
+   },
+   "lights": {
+    "active_low": true,
+    "bit": 0,
+    "can_id": 0,
+    "pin": 0,
+    "source": "module"
+   },
+   "reverse": {
+    "active_low": true,
+    "bit": 0,
+    "can_id": 0,
+    "pin": 0,
+    "source": "module"
+   },
+   "turn_left": {
+    "active_low": true,
+    "bit": 0,
+    "can_id": 0,
+    "pin": 0,
+    "source": "module"
+   },
+   "turn_right": {
+    "active_low": true,
+    "bit": 0,
+    "can_id": 0,
+    "pin": 0,
+    "source": "module"
+   }
+  },
   "terminal": true,
   "tunerstudio": false,
   "uploads": {
    "repo": "averyizatt/frogdash"
-  }
+  },
+  "windows_tuner": false
  },
  "setup": null,
+ "signals_now": {},
  "status": null
 };

@@ -1,8 +1,10 @@
-"""The setup wizard (wizard.js), in the preview: ?wizard opens it on the first page; every
-built-in ECU profile is offered; choosing one sets the CAN bus to its speed and keeps
-water/meth (which needs a MegaSquirt) off; the review lists the changes first; Apply in the
-preview saves nothing and says so; ?wizard=4 opens the fourth page; Dash management opens
-it too; no errors."""
+"""The setup wizard (wizard.js), in the preview: ?wizard opens it on the first page; the
+screen page forces whichever size is picked; every built-in ECU profile is offered, plus a
+custom one; the CAN board is the Waveshare HAT or "Other" with its own crystal and pin; GPS
+from USB, the CAN bus or none; each car signal picks a source and its settings; the tuning
+software follows the ECU; the reference car's own boards are not offered; the review lists
+the changes first; Apply in the preview saves nothing and says so; ?wizard=4 opens page 4;
+Dash management opens it too; no errors."""
 import argparse
 import asyncio
 import json
@@ -20,56 +22,86 @@ async def main(browser_path):
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
         url = (ROOT / 'preview/dash.html').as_uri()
+        title = lambda: page.text_content('#wizard-title')
+        go = lambda n: page.click(f'[data-wizard-page="{n}"]')
         await page.goto(url + '?wizard')
         await page.wait_for_selector('#setup-wizard[open]', timeout=20000)
-        assert await page.text_content('#wizard-title') == 'Start from'
+        assert await title() == 'Start from'
         assert await page.get_attribute('[data-wizard-preset="foxbody"]', 'aria-pressed') == 'true'   # The car as it is
+        await page.click('[data-wizard-preset="generic"]')                                           # A new build
+
         await page.click('#wizard-next')
-        assert await page.text_content('#wizard-title') == 'Screen'
-        assert await page.get_attribute('[data-wizard-screen="1920x720"]', 'aria-pressed') == 'true'
-        assert await page.is_checked('input[data-wizard-path="screen.mode"]')                     # The car's panel is forced
-        await page.click('[data-wizard-screen="800x480"]')
-        assert not await page.is_checked('input[data-wizard-path="screen.mode"]')
-        assert await page.is_disabled('input[data-wizard-path="screen.mode"]')                    # Only the bar panel is forced
+        assert await title() == 'Screen'
+        assert await page.is_disabled('input[data-wizard-path="screen.mode"]')                       # auto: nothing to force
+        await page.click('[data-wizard-screen="1024x600"]')
+        await page.click('input[data-wizard-path="screen.mode"]')
+        assert 'Force 1024 × 600 at boot' in await page.text_content('.wizard-toggle')
+
         await page.click('#wizard-next')
-        offered = await page.evaluate("[...document.querySelectorAll('[data-wizard-ecu]')].map(b => b.dataset.wizardEcu).sort()")
-        assert offered == PROFILES, offered
+        assert await title() == 'Engine computer'
+        offered = await page.evaluate("[...document.querySelectorAll('[data-wizard-ecu]')].map(b => b.dataset.wizardEcu)")
+        assert sorted(offered) == sorted(PROFILES + ['custom']), offered
+        body = await page.text_content('#wizard-body')
+        assert 'simulated' not in body.lower() and 'heard now' not in body and 'Running in a car' not in body, body
         await page.click('[data-wizard-ecu="haltech"]')
-        assert await page.get_attribute('[data-wizard-ecu="haltech"]', 'aria-pressed') == 'true'
-        assert await page.input_value('select[data-wizard-path="ecu.bitrate"]') == '1000000'          # Haltech's 1 Mbit/s
-        for _ in range(4):
-            await page.click('#wizard-next')
-        assert await page.text_content('#wizard-title') == 'Frogdash modules'
-        assert await page.is_disabled('input[data-wizard-path="modules.watermeth"]')
-        assert not await page.is_checked('input[data-wizard-path="modules.watermeth"]')
+
         await page.click('#wizard-next')
-        assert await page.text_content('#wizard-title') == 'On the dash'
-        await page.click('input[data-wizard-path="features.race"]')
-        await page.click('[data-wizard-page="10"]')                                                  # Straight to the review
-        assert await page.text_content('#wizard-title') == 'Review and apply'
-        rows = await page.evaluate("[...document.querySelectorAll('.wizard-review tr')].map(r => [r.className, r.cells[0].textContent, r.cells[1].textContent])")
-        changed = [r[1:] for r in rows if r[0] == 'changed']
-        assert changed == [['ECU', 'Haltech'], ['CAN bus speed', '1000 kbit/s'], ['Water/meth', 'Off'], ['Screen', '800 × 480'],
-                           ['Force 1920 × 720', 'Off'], ['Race timer', 'Off']], changed
-        assert all(r[0] == 'changed' for r in rows[:len(changed)])                                   # Changes first
+        assert await title() == 'CAN board'
+        assert not await page.locator('select[data-wizard-path="can_hat.oscillator"]').count()       # Waveshare: nothing to set
+        await page.click('[data-wizard-pick="can_hat.board"][data-value="other"]')
+        await page.select_option('select[data-wizard-path="can_hat.oscillator"]', '8000000')
+        await page.click('[data-wizard-pick="can_hat.present"][data-value="false"]')                 # A USB adapter
+        assert not await page.locator('select[data-wizard-path="can_hat.oscillator"]').count()
+
+        await page.click('#wizard-next')
+        assert await title() == 'GPS'
+        await page.click('[data-wizard-pick="gps.source"][data-value="usb"]')
+
+        await page.click('#wizard-next')
+        assert await title() == 'Cameras'
+        await page.click('#wizard-next')
+        assert await title() == 'Car signals'
+        assert not await page.locator('[data-value="module"]').count()                               # No Frogdash boards in a new build
+        assert await page.locator('[data-wizard-pick="signals.brake.source"][data-value="ecu"]').count()   # Haltech sends the brake switch
+        await page.click('[data-wizard-pick="signals.turn_left.source"][data-value="gpio"]')
+        await page.select_option('select[data-wizard-path="signals.turn_left.pin"]', '17')
+        await page.click('[data-wizard-pick="signals.fuel.source"][data-value="adc"]')
+        await page.fill('input[data-wizard-path="signals.fuel.full_mv"]', '0.45')
+        await page.locator('input[data-wizard-path="signals.fuel.full_mv"]').evaluate('n => n.dispatchEvent(new Event("change", {bubbles: true}))')
+
+        await page.click('#wizard-next')
+        assert await title() == 'On the dash'
+        body = await page.text_content('#wizard-body')
+        assert 'water/meth' not in body.lower() and 'taillight' not in body.lower(), body
+        assert 'Install NSP on the dash (experimental)' in body, body                                 # Haltech's own tuner
+        assert not await page.locator('input[data-wizard-path="tunerstudio"]').count()
+
+        await go(10)
+        assert await title() == 'Review and apply'
+        rows = await page.evaluate("[...document.querySelectorAll('.wizard-review tr.changed')].map(r => [r.cells[0].textContent, r.cells[1].textContent])")
+        found = dict(rows)
+        assert found['Screen'] == '1024 × 600' and found['Forced at boot'] == 'Yes, 1024 × 600', found
+        assert found['ECU'] == 'Haltech' and found['CAN bus speed'] == '1000 kbit/s', found
+        assert found['CAN board'] == 'Other' and found['CAN board type'] == 'USB adapter', found
+        assert found['Left turn signal'] == 'Pi pin GPIO 17 (on when low)', found
+        assert found['Fuel level'] == 'ADS1115 A0, 0.50 V empty, 0.45 V full', found
+        all_rows = await page.evaluate("[...document.querySelectorAll('.wizard-review tr')].map(r => r.className)")
+        assert all_rows[:len(rows)] == ['changed'] * len(rows)                                       # Changes first
         await page.click('#wizard-next')
         await page.wait_for_function("document.getElementById('wizard-progress').textContent.includes('Nothing was saved')", timeout=8000)
         await page.click('#wizard-close')
-        assert not await page.evaluate("document.getElementById('setup-wizard').open")
 
         await page.goto(url + '?wizard=4')
         await page.wait_for_selector('#setup-wizard[open]', timeout=20000)
-        assert await page.text_content('#wizard-title') == 'CAN board'
+        assert await title() == 'CAN board'
         await page.click('#wizard-close')
         await page.evaluate("window.frogdashLater")
         await page.evaluate("document.getElementById('operations-dialog').showModal()")             # Dash management
         await page.click('#operations-dialog .ops-wizard-open')                                      # Setup checklist's box
         await page.wait_for_selector('#setup-wizard[open]', timeout=8000)
-        assert await page.text_content('#wizard-title') == 'Start from'
-
         assert not errors, errors
         await browser.close()
-    print(f'Setup wizard: {len(PROFILES)} ECU profiles offered, Haltech sets 1 Mbit/s, review lists {json.dumps(changed)}; passed.')
+    print(f'Setup wizard: {len(PROFILES)} ECU profiles and a custom one, car signals, review {json.dumps(found)}; passed.')
 
 
 if __name__ == '__main__':

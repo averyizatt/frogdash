@@ -38,7 +38,7 @@ from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
 from .paint import Paint, validate as validate_paint
 from .imports import Imports
 from . import cancheck, methtune, selftest
-from . import ecu as ecu_profiles, protocol, sysconfig
+from . import ecu as ecu_profiles, inputs, protocol, sysconfig
 from .parking import rolling
 from .logview import LogCache, LogError
 
@@ -76,7 +76,11 @@ async def preset_pause():
 def create_app(state, adapter=None, connectivity=None):
     if state.features is None:
         try:
-            state.features = sysconfig.ui_features(sysconfig.load())
+            profile = sysconfig.load()
+            state.features = sysconfig.ui_features(profile)
+            if state.inputs is None:
+                state.inputs = inputs.Inputs(profile['signals'])
+                inputs.start(state.inputs)
         except Exception:   # pragma: no cover (load falls back by itself): show every screen
             state.features = None
     @web.middleware
@@ -878,7 +882,8 @@ def create_app(state, adapter=None, connectivity=None):
             try:
                 body = await request.json()
                 wanted = sysconfig.complete({**body['profile'], 'configured': True})
-                ecu_profiles.load(wanted['ecu']['profile'], wanted['ecu']['base_id'])
+                if wanted['ecu']['profile'] != ecu_profiles.CUSTOM:     # A custom one may be written afterwards
+                    ecu_profiles.load(wanted['ecu']['profile'], wanted['ecu']['base_id'])
             except (KeyError, TypeError, AttributeError, ValueError) as error:
                 raise web.HTTPBadRequest(text=str(error) or 'Invalid setup request')
             await asyncio.to_thread(atomic_write, folder / 'config-request.json', {'profile': wanted})
@@ -889,6 +894,12 @@ def create_app(state, adapter=None, connectivity=None):
                 return json.loads((folder / name).read_text(encoding='utf-8')) if folder else None
             except (OSError, ValueError):
                 return None
+
+        def custom_profile():
+            try:
+                return ecu_profiles.load(ecu_profiles.CUSTOM).summary()
+            except ecu_profiles.ProfileError as exc:
+                return {'id': ecu_profiles.CUSTOM, 'missing': str(exc), 'path': str(ecu_profiles.USER / 'custom.json')}
 
         def listing():
             now = state.wall() * 1000
@@ -906,6 +917,8 @@ def create_app(state, adapter=None, connectivity=None):
                     'ecu': {'active': protocol.ECU.summary(), 'problem': protocol.ECU_PROBLEM, 'profiles': profiles},
                     'bus': {'connected': state.connected, 'ids_heard': len(recent),
                             'ecu_ids_heard': sum(protocol.is_ecu(f['id'], f['extended']) for f in recent)},
+                    'custom': custom_profile(),
+                    'signals_now': state.inputs.view() if state.inputs else {},
                     'pending': bool(folder and (folder / 'config-request.json').exists()),
                     'status': read_status('config-status.json'), 'setup': read_status('setup-status.json')}
         return web.json_response(await asyncio.to_thread(listing), headers={'Cache-Control': 'no-store'})
@@ -949,6 +962,13 @@ def create_app(state, adapter=None, connectivity=None):
         if not SKIN_FILE.fullmatch(name) or not (WEB / 'skins' / name).is_file():
             raise web.HTTPNotFound()
         return web.FileResponse(WEB / 'skins' / name, headers={'Cache-Control': 'no-cache'})
+
+    async def ecu_logo(request):
+        # ECU makers' logos for the setup wizard (hardware/ui/ecu-logos, added by the owner).
+        name = request.match_info['name']
+        if not re.fullmatch(r'[a-z0-9_-]{1,40}\.(svg|png)', name) or not (WEB / 'ecu-logos' / name).is_file():
+            raise web.HTTPNotFound()
+        return web.FileResponse(WEB / 'ecu-logos' / name, headers={'Cache-Control': 'no-cache'})
 
     async def map_data(request):
         # Offline street maps built by tools/make_map.py (OpenStreetMap, ODbL).
@@ -1104,7 +1124,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get('/operations/{action}', operations), web.post('/operations/{action}', operations),
                     web.post('/ui/appearance', appearance_snapshot),
                     web.route('*', '/ui/appearance/image/{field:background|splash}', appearance_image),
-                    web.get('/taillights/{name}', taillight_frames), web.get('/skins/{name}', skin_image), web.get('/maps/{name}', map_data),
+                    web.get('/taillights/{name}', taillight_frames), web.get('/skins/{name}', skin_image), web.get('/ecu-logos/{name}', ecu_logo), web.get('/maps/{name}', map_data),
                     web.get('/ecu/profiles', ecu_list), web.get('/system', system), web.post('/system', system),
                     web.get('/ui/import', import_list), web.get('/ui/import/{name}', import_file),
                     web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),

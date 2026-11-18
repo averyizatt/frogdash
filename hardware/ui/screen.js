@@ -14,7 +14,7 @@
   dialog.className = 'screen-trial';
   dialog.setAttribute('aria-labelledby', 'screen-trial-title');
   dialog.innerHTML = '<h2 id="screen-trial-title">Is the dash showing properly?</h2>' +
-    '<p>The Pi is trying exact 1920 × 720. If the whole dash fits the screen and looks sharp, keep it.</p>' +
+    '<p>The Pi is trying <span id="screen-trial-size">exact 1920 × 720</span>. If the whole dash fits the screen and looks sharp, keep it.</p>' +
     '<p class="screen-trial-count" id="screen-trial-count" role="status"></p>' +
     '<div class="screen-trial-buttons"><button type="button" id="screen-keep">KEEP 1920 × 720</button>' +
     '<button type="button" id="screen-undo">Go back now</button></div>';
@@ -26,7 +26,7 @@
   // What the Pi sees on its HDMI ports, in a few words.
   function screens(s) {
     return (s.connectors || []).filter(c => c.status === 'connected').map(c => {
-      const sees = c.edid_ok ? (c.panel_1920x720 ? '' : ', none of them 1920 × 720') : ', its own description cannot be read';
+      const sees = c.edid_ok ? (c.panel_1920x720 ? '' : `, none of them ${(c.size || '1920 x 720').replace(' x ', ' × ')}`) : ', its own description cannot be read';
       return `${c.name}: ${c.mode_count} mode${c.mode_count === 1 ? '' : 's'}${sees}`;
     }).join(' · ');
   }
@@ -41,6 +41,10 @@
     $('screen-status').textContent = `${text}${extra ? ` · ${extra}` : ''}`;
     // The question during a trial, over everything else.
     if (status.state === 'trial') {
+      // The size being tried (the setup wizard's choice; 1920 x 720 in the reference car).
+      const size = ((status.connectors || []).find(c => c.size) || {}).size || '1920 x 720';
+      $('screen-trial-size').textContent = `exact ${size.replace(' x ', ' × ')}`;
+      $('screen-keep').textContent = `KEEP ${size.replace(' x ', ' × ')}`;
       if (!dialog.open) { dialog.showModal(); $('screen-keep').focus(); }
       const left = Math.max(0, Math.round((status.started || 0) + (status.deadline_s || 60) - Date.now() / 1000));
       $('screen-trial-count').textContent = status.pending ? 'Answer sent…' : `Without an answer it goes back by itself in ${left} s.`;

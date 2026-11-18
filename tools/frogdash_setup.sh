@@ -329,7 +329,7 @@ else
     step "TunerStudio: serial port" failed "Could not add $user to the dialout group"
 fi
 
-# --- Screen and start-up: fixed 1920 x 720 ---
+# --- Screen and start-up: the size chosen in the setup wizard (1920 x 720 in the car) ---
 # The updater also refreshes the console unit: start_console.sh now records Cage
 # startup, and the dedicated browser skips extensions and forced accessibility.
 # The fixed 1920 x 720 EDID and matching early firmware mode, applied on updates.
@@ -340,7 +340,7 @@ if [ "${FD_SCREEN:-}" = auto ]; then
 elif [ ! -f "$REPO/tools/frogdash_screen.py" ]; then
     step "Screen and start-up" skipped "No screen helper in this version"
 else
-    said=$(FROGDASH_STATE=$STATE python3 "$REPO/tools/frogdash_screen.py" install 2>/dev/null | tail -n 1)
+    said=$(FROGDASH_STATE=$STATE FROGDASH_SCREEN_SIZE=${FD_SCREEN:-1920x720} python3 "$REPO/tools/frogdash_screen.py" install 2>/dev/null | tail -n 1)
     case "$said" in
         done:*) step "Screen and start-up" done "${said#done: }"; reboot_note=". Restart the Pi to apply the screen boot settings";;
         ok:*) step "Screen and start-up" ok "${said#ok: }";;
@@ -489,6 +489,29 @@ if [ -d "$CLOUD" ]; then
         step "Start-up: first-boot settings (cloud-init)" done "Switched off: the Imager settings are kept (9-10 s at every start)"
     else step "Start-up: first-boot settings (cloud-init)" failed "Could not write $CLOUD/cloud-init.disabled"
     fi
+fi
+
+# --- Car signals wired to the Pi (system profile: signals; hardware/frogdash/inputs.py) ---
+# Only in a car that uses them: turn, brake, lights or reverse on a Pi pin need libgpiod's
+# Python module; a fuel sender on an ADS1115 needs I2C on.
+if [ "${FD_GPIO_INPUTS:-0}" = 1 ]; then
+    if have python3-libgpiod; then step "Car signals: Pi pins" ok "python3-libgpiod is installed"
+    elif ! is_online; then step "Car signals: Pi pins" waiting "python3-libgpiod $NEEDS_NET"
+    elif doing "Installing python3-libgpiod (car signals on Pi pins)" && install_packages python3-libgpiod && have python3-libgpiod; then
+        step "Car signals: Pi pins" done "Installed python3-libgpiod"; restart_dash=1
+    else step "Car signals: Pi pins" failed "Could not install python3-libgpiod"
+    fi
+fi
+if [ "${FD_ADC_INPUTS:-0}" = 1 ]; then
+    if grep -q '^dtparam=i2c_arm=on' "$BOOT_DIR/config.txt" 2>/dev/null; then step "Car signals: fuel sender (ADS1115)" ok "I2C is on"
+    elif [ -f "$BOOT_DIR/config.txt" ] && { printf '\n[all]\n# Frogdash: I2C for the ADS1115 (fuel sender)\ndtparam=i2c_arm=on\n' >> "$BOOT_DIR/config.txt"; } && sync; then
+        step "Car signals: fuel sender (ADS1115)" done "I2C switched on, from the next start"; reboot_note=". Restart the Pi to apply the new boot settings"
+    else step "Car signals: fuel sender (ADS1115)" failed "Could not switch I2C on in $BOOT_DIR/config.txt"
+    fi
+fi
+# Tuning software that only runs on Windows, on the dash: chosen in the wizard, not built yet.
+if [ "${FD_WINDOWS_TUNER:-0}" = 1 ]; then
+    step "Tuning software on the dash" skipped "Not available yet: a Windows tuner on the Pi (Box64 and Wine) is still being built. Tune from a laptop for now"
 fi
 
 # --- Dash options: the system profile becomes FROGDASH_ARGS, after a check ---

@@ -318,5 +318,41 @@ class EndpointTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual((await client.post('/screen', json={'action': 'keep'})).status, 200)     # KEEP always works
 
 
+
+class ChosenSizeTests(unittest.TestCase):
+    """The setup wizard's screen size (system.env FD_SCREEN) is the mode forced."""
+    def load(self, **env):
+        import importlib.util, os
+        from unittest import mock
+        with mock.patch.dict(os.environ, env):
+            spec = importlib.util.spec_from_file_location('screen_sized', Path(__file__).resolve().parents[1] / 'tools' / 'frogdash_screen.py')
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+        return module
+
+    def test_the_car_keeps_exactly_its_1920x720_timing(self):
+        screen = self.load(FROGDASH_SCREEN_SIZE='')
+        t = screen.parse_dtd(screen.cvt_rb())
+        self.assertEqual((t['h'], t['hblank'], t['v'], t['vblank'], t['clock_khz']), (1920, 160, 720, 21, 92250))
+        self.assertEqual(screen.EDID_NAME, 'frogdash-1920x720.bin')
+
+    def test_another_size_from_the_system_profile(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as etc:
+            (Path(etc) / 'frogdash').mkdir()
+            (Path(etc) / 'frogdash' / 'system.env').write_text("FD_SCREEN='1280x800'" + chr(10), encoding='utf-8')
+            screen = self.load(FROGDASH_SCREEN_SIZE='', FROGDASH_ETC=etc)
+        self.assertEqual((screen.W, screen.H, screen.EDID_NAME), (1280, 800, 'frogdash-1280x800.bin'))
+        t = screen.parse_dtd(screen.cvt_rb())
+        self.assertEqual((t['h'], t['v'], t['vblank'], t['clock_khz']), (1280, 800, 23, 71000))   # VESA CVT-RB 1280x800
+        self.assertIn('video=HDMI-A-1:1280x800@60D', screen.screen_cmdline('quiet', ['HDMI-A-1']))
+        edid = screen.build_edid(screen.cvt_rb())
+        self.assertTrue(screen.edid_ok(edid))
+        self.assertEqual([t['h'] for _, t in screen.timings(edid)], [1280])
+
+    def test_auto_or_nonsense_falls_back_to_1920x720(self):
+        for text in ('auto', '99999x1', 'big'):
+            self.assertEqual(self.load(FROGDASH_SCREEN_SIZE=text).SIZE, '1920 x 720')
+
 if __name__ == '__main__':
     unittest.main()

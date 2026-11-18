@@ -63,7 +63,8 @@ def wizard_data():
             'presets': {name: sysconfig.preset(name) for name in sysconfig.preset_names()},
             'ecu': {'active': active, 'problem': None, 'profiles': profiles},
             'bus': {'connected': True, 'ids_heard': 24, 'ecu_ids_heard': 18},
-            'pending': False, 'status': None, 'setup': None}
+            'custom': {'id': 'custom', 'missing': 'No custom ECU profile yet', 'path': '/etc/frogdash/ecu/custom.json'},
+            'signals_now': {}, 'pending': False, 'status': None, 'setup': None}
 
 
 def assets():
@@ -141,6 +142,7 @@ def binary_folder(source):
 
 
 BINARY_FOLDERS = {'maps': ROOT / 'hardware' / 'maps', 'art': ROOT / 'hardware' / 'art', 'taillights': ROOT / 'hardware' / 'ui' / 'taillights',
+                  'ecu-logos': ROOT / 'hardware' / 'ui' / 'ecu-logos',
                   'skins': ROOT / 'hardware' / 'ui' / 'skins'}
 
 

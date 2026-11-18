@@ -14,6 +14,18 @@ on the Firmware page shows the version it runs and the version available.
 
 ## Unreleased
 
+- **Car signals for any car:** turn signals, brake, lights, reverse and fuel level can come
+  from a Pi pin (through an optocoupler; turn signals stay on between flashes), an ADS1115
+  (the fuel sender, averaged), any CAN frame's bit or byte, or the ECU's own reading, chosen
+  per signal in the wizard ([docs/car-signals.md](docs/car-signals.md)). Setup installs
+  python3-libgpiod or switches I2C on only when used.
+- **Wizard, after the owner's review:** the screen page forces whichever size is picked (the
+  screen helper now makes the EDID for any size; 1920 x 720 is byte for byte as before); the
+  ECU page is a card per ECU with its logo (hardware/ui/ecu-logos) and a custom one
+  (/etc/frogdash/ecu/custom.json), without test status; the CAN board is the Waveshare HAT or
+  "Other"; GPS from USB, the CAN bus or none; the Frogdash modules page is gone; the tuning
+  software offered follows the ECU (a Windows tuner on the dash can be chosen; installing it
+  is not built yet and setup says so).
 - **Setup wizard** on the dash's screen: nine pages from the preset to a review of the
   changes; Apply saves the system profile (the old one kept as a backup) and runs the Pi
   setup through the new root-owned `frogdash-config.path`. It opens by itself on a new

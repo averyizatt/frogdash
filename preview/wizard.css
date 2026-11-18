@@ -70,3 +70,24 @@
 .ops-wizard-box h3 { margin-bottom:2px; }
 .ops-wizard-box .control-note { margin:0; }
 #operations-dialog .ops-wizard-open { flex:none; min-height:48px; padding:8px 18px; border-radius:10px; border:1px solid var(--accent); background:var(--accent); color:#06120d; font-size:17px; font-weight:800; }
+
+/* ECU page: a logo (hardware/ui/ecu-logos/<id>.svg or .png) or the name as a badge. */
+.ecu-card { padding-top:12px; }
+.ecu-logo { display:flex; align-items:center; justify-content:center; height:44px; min-width:120px; max-width:100%; padding:0 12px; margin-bottom:4px; border-radius:8px; background:#0b1216; border:1px solid var(--line); }
+.ecu-logo img { max-height:36px; max-width:200px; object-fit:contain; }
+.ecu-logo-text { font-size:19px; font-weight:850; letter-spacing:.5px; color:var(--text); }
+.ecu-logo-text.custom { color:var(--accent); border-style:dashed; }
+/* Car signals page: one row per signal, its sources as a segmented choice. */
+.signal-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
+.signal-row { display:flex; flex-direction:column; gap:10px; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+.signal-head { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:18px; }
+.signal-head i { font-style:normal; font-size:13px; font-weight:750; color:var(--muted); }
+.signal-head i.good { color:var(--accent); }
+.signal-head i.bad { color:var(--danger); }
+.signal-sources { display:flex; flex-wrap:wrap; gap:6px; }
+.signal-sources button { min-height:44px; padding:6px 12px; border-radius:8px; border:1px solid var(--line); background:var(--raised); color:var(--muted); font-size:14px; font-weight:750; }
+.signal-sources button[aria-pressed="true"] { border-color:var(--accent); background:#12291f; color:var(--accent); }
+.signal-fields { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; align-items:start; }
+.signal-fields .wizard-toggle { padding:10px 12px; }
+.signal-fields .wizard-field select, .signal-fields .wizard-field input { min-height:44px; }
+@media (max-width: 900px) { .signal-grid { grid-template-columns:1fr; } }

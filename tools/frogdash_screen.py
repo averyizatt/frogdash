@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""The dash screen's mode: exactly 1920 x 720, tried safely first. Run as root.
+"""The dash screen's mode: exactly the size chosen in the setup wizard, tried safely first.
+Run as root.
+
+The size is the system profile's screen.mode (FD_SCREEN in /etc/frogdash/system.env, or
+FROGDASH_SCREEN_SIZE): 1920 x 720 in the reference car, whose panel this was written for.
+What follows says 1920 x 720; any other size is handled the same way.
 
 The 1920 x 720 panel's own EDID offers a list of other modes (or cannot be read at all),
 so the Pi picks one, the panel scales it, and every mode change on the way up (firmware,
@@ -19,6 +24,7 @@ normally, which is the old setup, untouched.
   frogdash_screen.py            act on screen-request: trial, keep, revert (path unit)
 """
 import json
+import math
 import os
 import re
 import shutil
@@ -33,7 +39,28 @@ DRM = Path(os.environ.get('FROGDASH_DRM', '/sys/class/drm'))
 FIRMWARE = Path(os.environ.get('FROGDASH_FIRMWARE', '/lib/firmware'))
 PROC = Path(os.environ.get('FROGDASH_PROC', '/proc'))
 TRYBOOT_FLAG = PROC / 'device-tree/chosen/bootloader/tryboot'
-EDID_NAME = 'frogdash-1920x720.bin'
+
+
+def screen_size():
+    """(width, height) to force: FROGDASH_SCREEN_SIZE, else FD_SCREEN in the system profile's
+    system.env, else 1920 x 720 (the reference car, as before profiles)."""
+    text = os.environ.get('FROGDASH_SCREEN_SIZE', '')
+    if not text:
+        env = Path(os.environ.get('FROGDASH_ETC', '/etc')) / 'frogdash' / 'system.env'
+        try:
+            found = re.search(r"^FD_SCREEN='?([0-9a-z]+)'?$", env.read_text(encoding='utf-8'), re.M)
+            text = found.group(1) if found else ''
+        except OSError:
+            pass
+    match = re.fullmatch(r'(\d{3,4})x(\d{3,4})', text)
+    if match and 320 <= int(match[1]) <= 3840 and 200 <= int(match[2]) <= 2160:
+        return int(match[1]), int(match[2])
+    return 1920, 720
+
+
+W, H = screen_size()
+SIZE = f'{W} x {H}'
+EDID_NAME = f'frogdash-{W}x{H}.bin'
 OUR_MAKER = bytes.fromhex('19f8')   # "FOX": tells our own EDID from the panel's
 TRIAL_CMDLINE = 'frogdash-cmdline-trial.txt'
 TRYBOOT_MARK = '# Written by the dash for a screen trial (tools/frogdash_screen.py); removed after it.'
@@ -85,11 +112,12 @@ def timings(edid):
     return found
 
 
-def native_1920x720(edid):
-    """The panel's own 1920 x 720 timing near 60 Hz, if its EDID has one."""
+def native_mode(edid, w=None, h=None):
+    """The panel's own timing for the chosen size near 60 Hz, if its EDID has one."""
+    w, h = w or W, h or H
     best = None
     for raw, t in timings(edid):
-        if t['h'] != 1920 or t['v'] != 720 or t['interlaced']:
+        if t['h'] != w or t['v'] != h or t['interlaced']:
             continue
         refresh = t['clock_khz'] * 1000 / ((t['h'] + t['hblank']) * (t['v'] + t['vblank']))
         if 50 <= refresh <= 75 and (best is None or abs(refresh - 60) < best[0]):
@@ -97,12 +125,19 @@ def native_1920x720(edid):
     return best[1] if best else None
 
 
-def cvt_rb_1920x720():
-    """1920 x 720 at 60 Hz, VESA CVT reduced blanking: 2080 x 741 total, 92.25 MHz, H+ V-."""
-    h, hfp, hsync, hblank = 1920, 48, 32, 160
-    v, vfp, vsync, vblank = 720, 3, 10, 21
-    clock = 9225  # x 10 kHz
-    width_mm, height_mm = 292, 110  # A typical 12.3 inch 1920 x 720 bar panel
+def cvt_rb(h=None, v=None, hz=60):
+    """The chosen size at 60 Hz, VESA CVT reduced blanking (v1), H+ V-. For 1920 x 720:
+    2080 x 741 total, 92.25 MHz, as it has always been in the reference car."""
+    h, v = h or W, v or H
+    hfp, hsync, hblank, vfp, min_vbp = 48, 32, 160, 3, 6
+    ratio = h / v
+    vsync = next((n for r, n in ((4 / 3, 4), (16 / 9, 5), (16 / 10, 6), (5 / 4, 7), (15 / 9, 7)) if abs(ratio - r) < 0.01), 10)
+    h_period_us = (1e6 / hz - 460) / v
+    vblank = max(int(460 / h_period_us) + 1, vfp + vsync + min_vbp)
+    clock = math.floor(hz * (v + vblank) * (h + hblank) / 1e4 / 25) * 25 // 1  # x 10 kHz, in 0.25 MHz steps
+    clock = int(clock)
+    # A typical panel of this shape (the EDID's size in mm: only the shape matters here).
+    width_mm, height_mm = (292, 110) if (h, v) == (1920, 720) else (300, max(1, round(300 * v / h)))
     return bytes([
         clock & 0xFF, clock >> 8,
         h & 0xFF, hblank & 0xFF, (h >> 8) << 4 | hblank >> 8,
@@ -113,6 +148,14 @@ def cvt_rb_1920x720():
         0, 0,
         0x1A,  # Digital separate sync, vsync negative, hsync positive
     ])
+
+
+def cvt_rb_1920x720():
+    return cvt_rb(1920, 720)
+
+
+def native_1920x720(edid):
+    return native_mode(edid, 1920, 720)
 
 
 def text_descriptor(tag, text):
@@ -197,13 +240,13 @@ def screen_cmdline(cmdline, forced):
     """The kernel command line with the 1920 x 720 EDID, keeping every forced connector forced."""
     words = [w for w in cmdline.split() if not w.startswith(('video=HDMI-', 'drm.edid_firmware='))]
     words.append(f'drm.edid_firmware=edid/{EDID_NAME}')
-    words += [f'video={name}:1920x720@60D' for name in forced]
+    words += [f'video={name}:{W}x{H}@60D' for name in forced]
     return ' '.join(words) + '\n'
 
 
 def plain_cmdline(cmdline):
     return ' '.join(w for w in cmdline.split() if not w.startswith('drm.edid_firmware=edid/frogdash')
-                    and not re.fullmatch(r'video=HDMI-A-\d:1920x720@60D?', w)) + '\n'
+                    and not re.fullmatch(rf'video=HDMI-A-\d:{W}x{H}@60D?', w)) + '\n'
 
 
 SCREEN_CONFIG = ['disable_fw_kms_setup=1',
@@ -219,8 +262,8 @@ def firmware_mode(boot):
     Do not force hotplug on both ports (that creates a phantom second display).
     """
     edid = read(boot / EDID_NAME, True)
-    d = native_1920x720(edid) if edid_ok(edid) else None
-    d = d or cvt_rb_1920x720()
+    d = native_mode(edid) if edid_ok(edid) else None
+    d = d or cvt_rb()
     t = parse_dtd(d)
     hfp = d[8] | ((d[11] >> 6) & 3) << 8
     hsync = d[9] | ((d[11] >> 4) & 3) << 8
@@ -273,7 +316,7 @@ def connectors():
         edid = read(folder / 'edid', True)
         modes = list(dict.fromkeys(read(folder / 'modes').split()))
         found.append({'name': folder.name.split('-', 1)[1], 'status': read(status).strip(), 'edid_bytes': len(edid),
-                      'edid_ok': edid_ok(edid), 'panel_1920x720': bool(native_1920x720(edid)) if edid_ok(edid) else False,
+                      'edid_ok': edid_ok(edid), 'panel_1920x720': bool(native_mode(edid)) if edid_ok(edid) else False, 'size': SIZE,
                       'modes': modes[:30], 'mode_count': len(modes)})
     return found
 
@@ -344,7 +387,7 @@ def install():
     if not boot:
         return 'skipped', 'No Raspberry Pi boot partition found'
     changed = force(boot, edid_files(boot))
-    note = 'The screen gets exactly 1920 x 720, from start-up on'
+    note = f'The screen gets exactly {SIZE}, from start-up on'
     return ('done' if changed else 'ok'), note + ('. Takes effect at the next start' if changed else '')
 
 
@@ -355,7 +398,7 @@ def edid_files(boot):
     if panel is None and edid_ok(current) and current[8:10] == OUR_MAKER:
         edid = current     # Ours is in use, so the panel's own cannot be read: keep what was tried.
     else:
-        edid = build_edid(native_1920x720(panel or b'') or cvt_rb_1920x720())
+        edid = build_edid(native_mode(panel or b'') or cvt_rb())
     changed = []
     for target in (FIRMWARE / 'edid' / EDID_NAME, boot / EDID_NAME):
         if read(target, True) != edid:
@@ -381,7 +424,7 @@ def force(boot, changed):
                         ['[all]', *SCREEN_CONFIG, *firmware_mode(boot), *NO_SPLASH])
     if wanted != config:
         write_atomic(boot / 'config.txt', wanted)
-        changed.append('config.txt: the firmware uses 1920 x 720 too')
+        changed.append(f'config.txt: the firmware uses {SIZE} too')
     cmdline = read(boot / 'cmdline.txt')
     token = f'drm.edid_firmware=edid/{EDID_NAME}'
     words = [w for w in cmdline.split() if not w.startswith('drm.edid_firmware=') or w == token]
@@ -395,7 +438,7 @@ def force(boot, changed):
         if not (boot / 'cmdline.txt.frogdash-before').exists():
             shutil.copy2(boot / 'cmdline.txt', boot / 'cmdline.txt.frogdash-before')
         write_atomic(boot / 'cmdline.txt', ' '.join(words) + '\n')
-        changed.append('cmdline.txt: Linux uses 1920 x 720')
+        changed.append(f'cmdline.txt: Linux uses {SIZE}')
     for leftover in (boot / TRIAL_CMDLINE,):
         if leftover.exists():
             leftover.unlink()
@@ -422,7 +465,7 @@ def request_trial():
     write_atomic(tryboot_txt, TRYBOOT_MARK + '\n' + with_block(config, 'screen-trial', ['[all]', f'cmdline={TRIAL_CMDLINE}', *SCREEN_CONFIG]))
     write_atomic(boot / 'config.txt', with_block(config, 'screen-trial', ['[tryboot]', f'cmdline={TRIAL_CMDLINE}', *SCREEN_CONFIG]))
     write_atomic(TRIAL, json.dumps({'boot_id': boot_id(), 'started': int(time.time())}))
-    status('restarting', 'Restarting to try exact 1920 x 720. If the screen stays dark, wait: it goes back by itself within two minutes')
+    status('restarting', f'Restarting to try exact {SIZE}. If the screen stays dark, wait: it goes back by itself within two minutes')
     sync()
     subprocess.run(['/usr/sbin/reboot', '0 tryboot'], timeout=30)
     return None
@@ -454,7 +497,7 @@ def request_keep():
     write_atomic(boot / 'cmdline.txt', read(boot / TRIAL_CMDLINE))
     write_atomic(boot / 'config.txt', with_block(read(boot / 'config.txt'), 'screen', ['[all]', *SCREEN_CONFIG]))
     end_trial(boot)
-    return status('kept', 'The screen now gets exactly 1920 x 720 at every start', **survey())
+    return status('kept', f'The screen now gets exactly {SIZE} at every start', **survey())
 
 
 def request_revert():
@@ -500,7 +543,7 @@ def after_start(wait=time.sleep, clock=time.monotonic):
     if trial and trial.get('boot_id') != boot_id():
         if not in_tryboot():
             end_trial(boot)
-            status('failed', 'The Pi started normally instead of trying 1920 x 720: its bootloader may be too old for a trial start. Nothing was changed')
+            status('failed', f'The Pi started normally instead of trying {SIZE}: its bootloader may be too old for a trial start. Nothing was changed')
         elif not trial_applied():
             # The trial start ran without the trial command line: do not judge or keep it.
             end_trial(boot)
@@ -510,7 +553,7 @@ def after_start(wait=time.sleep, clock=time.monotonic):
             return
         else:
             deadline = clock() + KEEP_WINDOW_S
-            status('trial', 'Trying exact 1920 x 720. Press KEEP if the dash looks right', deadline_s=KEEP_WINDOW_S, started=int(time.time()))
+            status('trial', f'Trying exact {SIZE}. Press KEEP if the dash looks right', deadline_s=KEEP_WINDOW_S, started=int(time.time()))
             while clock() < deadline:
                 if not TRIAL.exists():  # KEEP arrived (request_keep ended the trial)
                     break
@@ -524,9 +567,9 @@ def after_start(wait=time.sleep, clock=time.monotonic):
     elif read_state() in ('restarting', 'trial', 'reverting'):
         applied = bool(boot) and has_block(read(boot / 'config.txt'), 'screen')
         if read_state() == 'reverting':
-            status('original', 'Exact 1920 x 720 was not kept, so the screen is back to its own modes')
+            status('original', f'Exact {SIZE} was not kept, so the screen is back to its own modes')
         else:
-            status('applied' if applied else 'original', 'Exact 1920 x 720 is in use' if applied else "The screen uses its own modes")
+            status('applied' if applied else 'original', f'Exact {SIZE} is in use' if applied else "The screen uses its own modes")
     # How long the start took is known once it is over.
     wait(45)
     status(read_state(), message(), **survey())

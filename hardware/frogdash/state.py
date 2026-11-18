@@ -43,7 +43,10 @@ FROM_ECU = (("engine.oil_pressure_psi", "ecu.oil_pressure_kpa", lambda kpa: kpa 
             ("engine.fuel_pressure_psi", "ecu.fuel_pressure_kpa", lambda kpa: kpa / KPA_PER_PSI),
             ("engine.oil_temp_c", "ecu.oil_temp_c", None),
             ("vehicle.fuel_pct", "ecu.fuel_level_pct", None),
-            ("vehicle.speed_kph", "ecu.vehicle_speed_kph", None))
+            ("vehicle.speed_kph", "ecu.vehicle_speed_kph", None),
+            # An ECU with a GPS of its own (gps.source "can" in the system profile).
+            ("gps.latitude", "ecu.gps_latitude", None), ("gps.longitude", "ecu.gps_longitude", None),
+            ("gps.track_deg", "ecu.gps_heading_deg", None))
 
 
 def fill_from_ecu(values, pairs):
@@ -100,6 +103,7 @@ class State:
         self.dashcam = None
         self.terminal_enabled = False
         self.features = None      # Which screens to show (sysconfig.ui_features); None shows them all
+        self.inputs = None        # Inputs: car signals from Pi pins, an ADS1115, any CAN frame or the ECU (inputs.py)
         self.paint = None
         self.imports = None
         self.race = Race(clock=clock, wall=wall)
@@ -161,6 +165,8 @@ class State:
             self.raw.popitem(last=False)
         if self.capture is not None and now <= self.capture_until and len(self.capture) < 200000:
             self.capture.append(f"({stamp / 1000:.6f}) can0 {can_id:0{8 if extended else 3}X}#{'R' if remote else data.hex().upper()}")
+        if self.inputs and self.inputs.by_id and not (remote or error):
+            self.guarded('car signals', lambda: self.inputs.ingest(can_id, data))
         # A 29-bit frame is read only when it is the ECU's (an ECU profile with 29-bit IDs).
         if remote or error or (extended and not is_ecu(can_id, True)):
             self.ignored += 1
@@ -268,6 +274,8 @@ class State:
             if name != 'vehicle.fuel_pct' or name not in values:
                 values[name] = dict(missing)
         fill_from_ecu(values, FROM_ECU)
+        if self.inputs:
+            values.update(self.guarded('car signals', lambda: self.inputs.values(values, int(self.wall() * 1000)), {}))
         # The gateway's fuel sender sits in a tank with no baffles: damp the slosh and ride
         # through brief dropouts (fuel.py). A separate fuel controller (0x204) filters its own.
         fuel = values.get('vehicle.fuel_pct')

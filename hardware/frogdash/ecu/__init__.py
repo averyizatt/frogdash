@@ -35,6 +35,16 @@ import re
 
 HERE = Path(__file__).resolve().parent
 BUILT_IN = HERE / 'profiles'
+# A profile the owner wrote for an ECU with no built-in one: /etc/frogdash/ecu/custom.json.
+USER = Path(__import__('os').environ.get('FROGDASH_ETC', '/etc')) / 'frogdash' / 'ecu'
+CUSTOM = 'custom'
+# The ECU's logo for the setup wizard, if one is there: hardware/ui/ecu-logos/<id>.svg or .png
+# (the makers' own logos are theirs: add them only as their terms allow).
+LOGOS = HERE.parents[1] / 'ui' / 'ecu-logos'
+# Car signals and GPS an ECU may broadcast (inputs.ECU_KEYS, state.FROM_ECU): the wizard
+# offers "from the ECU" only for what the chosen profile has.
+OFFERS = ('ecu.turn_left', 'ecu.turn_right', 'ecu.brake_pedal', 'ecu.headlights', 'ecu.reverse', 'ecu.fuel_level_pct',
+          'ecu.gps_latitude', 'ecu.gps_longitude', 'ecu.vehicle_speed_kph')
 DEFAULT = 'megasquirt'
 STATUSES = ('car', 'simulated', 'documented')
 
@@ -202,7 +212,13 @@ class Profile:
         """What the dash shows about the profile (the setup wizard and System check)."""
         keep = ('id', 'label', 'manufacturer', 'models', 'firmware', 'bitrate', 'extended', 'status',
                 'source', 'setup', 'notes', 'tuner')
-        out = {**{k: self.data[k] for k in keep if k in self.data}, 'origin': self.origin, 'signals': len(self.keys())}
+        keys = set(self.keys())
+        out = {**{k: self.data[k] for k in keep if k in self.data}, 'origin': self.origin, 'signals': len(keys),
+               'offers': [k for k in OFFERS if k in keys]}
+        logo = next((f'ecu-logos/{p.name}' for name in dict.fromkeys((self.id, self.id.split('_')[0]))
+                     for p in (LOGOS / f'{name}.svg', LOGOS / f'{name}.png') if p.is_file()), None)
+        if logo:
+            out['logo'] = logo
         if self.base is not None:
             out['base'] = {**self.data['base'], 'used': f'0x{self.base:03X}'}
         return out
@@ -217,13 +233,17 @@ def load(name, base=None):
     if not re.fullmatch(r'[a-z0-9_-]{1,40}', name or ''):
         raise ProfileError(f'No ECU profile named {name!r}')
     path = BUILT_IN / f'{name}.json'
+    if name == CUSTOM:
+        path = USER / f'{name}.json'
     try:
         data = json.loads(path.read_text(encoding='utf-8'))
     except FileNotFoundError:
+        if name == CUSTOM:
+            raise ProfileError(f'No custom ECU profile yet: write one to {path} (docs/ecu-support.md)') from None
         raise ProfileError(f'No ECU profile named {name!r} (there are: {", ".join(built_in())})') from None
     except ValueError as exc:
         raise ProfileError(f'{path.name} is not valid JSON: {exc}') from None
-    profile = Profile(data, base=base or None)
+    profile = Profile(data, origin='yours' if name == CUSTOM else 'built in', base=base or None)
     if profile.id != name:
         raise ProfileError(f'{path.name} says its id is {profile.id!r}')
     return profile

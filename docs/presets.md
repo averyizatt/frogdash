@@ -8,11 +8,16 @@ Frogdash reads it, so another car can use the same code.
 
 On the dash's screen: it opens by itself while `configured` is false (a new install), and
 from **Dash management → Setup checklist → Setup wizard** at any time. Eleven pages: the
-preset to start from, the screen (common sizes, each drawn with the dash fitted in), the ECU (each profile with its status, bus speed, what to set in the
+preset to start from, the screen (common sizes, each drawn with the dash fitted in, and
+the chosen size forced at boot if wanted), the ECU (a card per profile with its logo, and
+a custom one) (each profile with its status, bus speed, what to set in the
 ECU, its tuning software, and how many of its frames are on the bus right now), the CAN
-board with a live check, GPS, cameras, Frogdash modules, what the dash shows (map, race
-timer, recording, terminal, tuning software), power, place, units and network, then a
-review that lists the changes first.
+board (the Waveshare HAT, or another with its crystal and pin, or a USB adapter) with a
+live check, GPS (USB, from the CAN bus, or none), cameras, car signals
+([car-signals.md](car-signals.md)), what the dash shows (map, race timer, recording,
+terminal, the ECU's tuning software), power, place, units and network, then a review that
+lists the changes first. The reference car's own boards are not offered: they stay as the
+preset has them.
 
 **Apply** posts the profile to the dash (`POST /system`), which checks it and writes
 `config-request.json`. The root-owned `frogdash-config.path` runs
@@ -35,7 +40,9 @@ The dash's screen hides the map, the race timer and a missing module's screens t
 | `configured` | The car's choices have been made (the setup wizard sets it; while it is false the wizard opens by itself) |
 | `interface` | The Linux CAN interface (`can0`) |
 | `ecu.profile`, `ecu.bitrate` | The engine computer on the bus (`megasquirt` until 1.4 adds others) and the bus speed |
+| `can_hat.board` | `waveshare` (the Waveshare RS485 CAN HAT: 12 MHz, GPIO 25) or `other` (set by hand below) |
 | `can_hat.present`, `.oscillator`, `.interrupt`, `.spi_hz` | The MCP2515 CAN board: there or not, its crystal (12000000 for the Waveshare RS485 CAN HAT, 8000000 for the common blue boards), its interrupt pin, its SPI clock |
+| `gps.source` | `usb` (a receiver on the Pi, through gpsd), `can` (position from an ECU profile's `ecu.gps_latitude`/`ecu.gps_longitude`) or `none` |
 | `gps.enabled`, `.transmit_on_can` | A USB GPS receiver (gpsd), and whether its position is also sent on the bus as 0x203 (for the comfort module) |
 | `recording` | Drive recordings (MLG logs) |
 | `camera.enabled`, `.rotate` | Reverse camera on the Pi's camera connector |
@@ -43,14 +50,16 @@ The dash's screen hides the map, the race timer and a missing module's screens t
 | `power` | `pisugar3` or `none` |
 | `modules.gateway`, `.taillights`, `.watermeth` | The Frogdash modules on the bus. A module's own screens (knock monitor and water/meth panel; taillight controls) are shown only with it |
 | `features.map`, `.race` | The map and the race timer on the dash's screen |
-| `tunerstudio` | TunerStudio on the dash screen |
+| `signals.<name>` | Where each car signal comes from (`turn_left`, `turn_right`, `brake`, `lights`, `reverse`, `fuel`): `module`, `ecu`, `gpio` (with `pin`, `active_low`), `adc` (fuel: `adc_channel`, `empty_mv`, `full_mv`), `can` (`can_id` and `bit`; fuel: `byte`, `full_raw`) or `none`. See [car-signals.md](car-signals.md) |
+| `tunerstudio` | TunerStudio on the dash screen (MegaSquirt, Speeduino, rusEFI) |
+| `windows_tuner` | The ECU's Windows tuning software on the dash (experimental, not available yet: setup says so) |
 | `terminal` | The Terminal tab, with sudo |
 | `locale.timezone`, `.wifi_country` | Empty: the Pi keeps its own |
 | `locale.units` | `us` or `metric`: the gauges' units on a screen that has not picked its own |
 | `hotspot_name` | The dash's own Wi-Fi network for the phone page |
 | `uploads.repo` | The GitHub repository reports and drives go to (`owner/name`); empty, none |
 | `screen.size` | The screen the dash is on (`1920x720`, `800x480`…, or `auto`): the wizard shows how the dash fits it |
-| `screen.mode` | `auto` (the screen's own) or `1920x720` (forced, for the foxbody car's panel) |
+| `screen.mode` | `auto` (the screen's own modes) or a size to force at boot, such as `1920x720` (the foxbody car's panel) or `1024x600`: tried once first, and undone by itself if the picture is wrong |
 | `extra_args` | Further dash options, one word each (for example `--log-hz`, `50`) |
 
 The file keeps only the preset's name and what differs from the preset. A change to the
