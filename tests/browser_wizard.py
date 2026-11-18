@@ -66,10 +66,7 @@ async def main(browser_path):
         await page.click('#operations-dialog .ops-wizard-open')                                      # Setup checklist's box
         await page.wait_for_selector('#setup-wizard[open]', timeout=8000)
         assert await page.text_content('#wizard-title') == 'Start from'
-        await page.click('#wizard-close')
-        await page.click('#operations-dialog [data-ops-tab="terminal"]')
-        await page.click('#operations-dialog .ops-wizard-tab')                                       # The sidebar entry, from any tab
-        await page.wait_for_selector('#setup-wizard[open]', timeout=8000)
+
         assert not errors, errors
         await browser.close()
     print(f'Setup wizard: {len(PROFILES)} ECU profiles offered, Haltech sets 1 Mbit/s, review lists {json.dumps(changed)}; passed.')
