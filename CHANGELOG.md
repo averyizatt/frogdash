@@ -12,6 +12,11 @@ repositories and a `vX.Y` tag on each:
 The dash's Software card and Support tab show the version the Pi runs. Each module's row
 on the Firmware page shows the version it runs and the version available.
 
+## 1.2.1 (2026-11-17)
+
+- **Fix:** the System check's bus-speed warning had a quote mark that stopped
+  `selftest.py` from loading in 1.2. Install 1.2.1, not 1.2.
+
 ## 1.2 (2026-11-17)
 
 Toward Frogdash in other cars: what a car has now lives in one file on the Pi.
