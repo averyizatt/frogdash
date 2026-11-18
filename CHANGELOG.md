@@ -12,6 +12,25 @@ repositories and a `vX.Y` tag on each:
 The dash's Software card and Support tab show the version the Pi runs. Each module's row
 on the Firmware page shows the version it runs and the version available.
 
+## Unreleased
+
+- **Setup wizard** on the dash's screen: nine pages from the preset to a review of the
+  changes; Apply saves the system profile (the old one kept as a backup) and runs the Pi
+  setup through the new root-owned `frogdash-config.path`. It opens by itself on a new
+  install, from Dash management → Setup checklist at any time, and in the live preview
+  with `?wizard` (the real presets and ECU profiles; nothing saved). The ECU page shows,
+  for each profile, how many of its frames are on the bus now. Eleven pages: preset, screen
+  (common sizes drawn with the dash fitted in), ECU, CAN board, GPS, cameras, modules, what the
+  dash shows, power, place/units/network, review.
+- **The dash shows what the car has:** the map and race timer can be switched off, and the
+  knock monitor, water/meth panel and taillight controls are hidden in a car without that
+  module. New profile fields `features`, `locale.units` and `screen.size`; the reference car
+  keeps everything.
+- **Gauges with any ECU:** an ECU that sends lambda shows on the AFR gauge as AFR (lambda ×
+  14.7); oil and fuel pressure in kPa show in psi; oil temperature, fuel level and speed come
+  from the ECU when no module gives them. Only where nothing else gives the reading live, so the
+  reference car is unchanged.
+
 ## 1.2.1 (2026-11-17)
 
 - **Fix:** the System check's bus-speed warning had a quote mark that stopped

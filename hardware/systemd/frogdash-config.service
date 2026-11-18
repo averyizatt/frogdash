@@ -1,0 +1,8 @@
+[Unit]
+Description=Write the Frogdash system profile chosen in the setup wizard and set up the Pi to match
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/frogdash/tools/frogdash_config.py
+# The Pi setup may install packages (gpsd, Java for TunerStudio) on the first run.
+TimeoutStartSec=3600

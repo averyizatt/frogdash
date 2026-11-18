@@ -23,7 +23,7 @@
   "In a car with a VAG DSG gearbox use version 1.2 instead: v1.3's 0x540 collides with the DSG. Fewer readings arrive; the rest are the same.",
   "500 kbit/s, 11-bit. CAN 1 has a built-in terminator (an external 120 ohm is recommended for a bus over 1 m); CAN 2 on the PRO has none."
  ],
- "notes": "Lambda is given as lambda (ecu.lambda, lambda1, lambda2), pressures in kPa; the dash's AFR and oil pressure gauges do not show these yet. MaxxECU's DBC marks most fields unsigned while its protocol page lists them as int16: this profile reads them signed, as the page says (the same for every value below 3276.7, and right for temperatures below 0). The firmware version and error code fields are left out: the page and the DBC give different scales for them.",
+ "notes": "Lambda is given as lambda (ecu.lambda, lambda1, lambda2), pressures in kPa; the dash's AFR gauge shows it as AFR (lambda x 14.7), and the pressures in psi. MaxxECU's DBC marks most fields unsigned while its protocol page lists them as int16: this profile reads them signed, as the page says (the same for every value below 3276.7, and right for temperatures below 0). The firmware version and error code fields are left out: the page and the DBC give different scales for them.",
  "tuner": {
   "name": "MTune",
   "runs_on_dash": false,

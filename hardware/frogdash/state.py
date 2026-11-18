@@ -32,6 +32,31 @@ ALIASES = {
 }
 UNAVAILABLE = ("vehicle.fuel_pct", "lighting.highbeam", "engine.oil_temp_c")
 
+# Readings the dash shows in one form that some ECUs send in another, and readings the
+# owner's modules give that other ECUs broadcast themselves. Each is filled from the ECU
+# only when it has no live value of its own, so a car whose modules or ECU send it keeps
+# exactly what it had. (dash value, ECU value, conversion)
+STOICH_AFR = 14.7   # petrol: the AFR gauge's scale, for an ECU that sends lambda
+KPA_PER_PSI = 6.894757293168361
+AFR_FROM_LAMBDA = (("ecu.afr", "ecu.lambda1"), ("ecu.afr2", "ecu.lambda2"), ("ecu.afr_target", "ecu.lambda_target"))
+FROM_ECU = (("engine.oil_pressure_psi", "ecu.oil_pressure_kpa", lambda kpa: kpa / KPA_PER_PSI),
+            ("engine.fuel_pressure_psi", "ecu.fuel_pressure_kpa", lambda kpa: kpa / KPA_PER_PSI),
+            ("engine.oil_temp_c", "ecu.oil_temp_c", None),
+            ("vehicle.fuel_pct", "ecu.fuel_level_pct", None),
+            ("vehicle.speed_kph", "ecu.vehicle_speed_kph", None))
+
+
+def fill_from_ecu(values, pairs):
+    """Put an ECU reading in for a dash value that has none live (see FROM_ECU)."""
+    for target, source, convert in pairs:
+        have, ecu = values.get(target), values.get(source)
+        if ecu is None or (have and have["quality"] == "live") or (have and ecu["quality"] != "live"):
+            continue
+        value = ecu["value"]
+        if convert and isinstance(value, (int, float)):
+            value = convert(value)
+        values[target] = {**ecu, "value": value, "from": source}
+
 
 def file_name(path):
     return path.replace('\\', '/').rsplit('/', 1)[-1]
@@ -74,6 +99,7 @@ class State:
         self.camera = None
         self.dashcam = None
         self.terminal_enabled = False
+        self.features = None      # Which screens to show (sysconfig.ui_features); None shows them all
         self.paint = None
         self.imports = None
         self.race = Race(clock=clock, wall=wall)
@@ -231,6 +257,7 @@ class State:
         ecu_iat = values.get("ecu.iat_c")
         if ecu_iat and ecu_iat["quality"] == "live":
             values["engine.iat_c"] = dict(ecu_iat)
+        fill_from_ecu(values, [(afr, lam, lambda v: v * STOICH_AFR) for afr, lam in AFR_FROM_LAMBDA])
         for target, sources in ALIASES.items():
             candidates = [values[s] for s in sources if s in values]
             chosen = next((v for v in candidates if v["quality"] == "live"), candidates[0] if candidates else missing)
@@ -240,6 +267,7 @@ class State:
         for name in UNAVAILABLE:
             if name != 'vehicle.fuel_pct' or name not in values:
                 values[name] = dict(missing)
+        fill_from_ecu(values, FROM_ECU)
         # The gateway's fuel sender sits in a tank with no baffles: damp the slosh and ride
         # through brief dropouts (fuel.py). A separate fuel controller (0x204) filters its own.
         fuel = values.get('vehicle.fuel_pct')
@@ -287,7 +315,7 @@ class State:
             matching = [v for v in values.values() if v["source_id"] in sources]
             modules[name] = "live" if any(v["quality"] == "live" for v in matching) else "stale" if matching else "unavailable"
         result = {"type": "state", "seq": self.seq, "timestamp_ms": int(self.wall() * 1000),
-                "mode": self.mode, "values": values, "modules": modules,
+                "mode": self.mode, "values": values, "modules": modules, "features": self.features,
                 "transport": {"connected": self.connected, "status": self.status,
                               "received": self.received, "malformed": self.malformed, "ignored": self.ignored,
                               "tx_full": self.tx_full},

@@ -21,7 +21,7 @@
   "The stream is 29-bit at 500 kbit/s. (AEM notes the 30-2340N sends 11-bit headers at 1 Mbit/s instead: not this profile.)",
   "Terminate the bus with 120 ohm at each end."
  ],
- "notes": "Read from AEM's 2016 stream document; the messages past 0x01F0A004 (more sensors, analog inputs) are not read yet. Fuel and oil pressure are sent in steps of 0.580151 psi (gauge) and given here in kPa. Lambda is given as lambda (ecu.lambda1); the dash's AFR gauge does not show it yet.",
+ "notes": "Read from AEM's 2016 stream document; the messages past 0x01F0A004 (more sensors, analog inputs) are not read yet. Fuel and oil pressure are sent in steps of 0.580151 psi (gauge) and given here in kPa. Lambda is given as lambda (ecu.lambda1); the dash's AFR gauge shows it as AFR (lambda x 14.7).",
  "tuner": {
   "name": "AEM Infinity Tuner",
   "runs_on_dash": false,

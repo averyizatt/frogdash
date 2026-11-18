@@ -4,6 +4,27 @@ Frogdash was built in one car, a Fox body Mustang. Since version 1.2 everything 
 particular to a car is kept in one file on the Pi, the **system profile**. The rest of
 Frogdash reads it, so another car can use the same code.
 
+## The setup wizard
+
+On the dash's screen: it opens by itself while `configured` is false (a new install), and
+from **Dash management → Setup checklist → Setup wizard** at any time. Eleven pages: the
+preset to start from, the screen (common sizes, each drawn with the dash fitted in), the ECU (each profile with its status, bus speed, what to set in the
+ECU, its tuning software, and how many of its frames are on the bus right now), the CAN
+board with a live check, GPS, cameras, Frogdash modules, what the dash shows (map, race
+timer, recording, terminal, tuning software), power, place, units and network, then a
+review that lists the changes first.
+
+**Apply** posts the profile to the dash (`POST /system`), which checks it and writes
+`config-request.json`. The root-owned `frogdash-config.path` runs
+`tools/frogdash_config.py`: it keeps the old profile as `/etc/frogdash/system.json.bak`,
+writes the new one and runs the Pi setup, whose steps the wizard shows. A change to the
+CAN board or the screen asks for a restart. Try it in the
+[live preview](https://averyizatt.github.io/frogdash/?wizard) (`?wizard=2` opens the second
+page); there Apply saves nothing.
+
+The dash's screen hides the map, the race timer and a missing module's screens to match
+(`sysconfig.ui_features`, sent with every snapshot as `features`).
+
 ## The system profile
 
 `/etc/frogdash/system.json` says what this car has:
@@ -11,7 +32,7 @@ Frogdash reads it, so another car can use the same code.
 | Field | What it means |
 |---|---|
 | `preset` | The preset the profile starts from (below) |
-| `configured` | The car's choices have been made (the setup wizard, from 1.3, sets it) |
+| `configured` | The car's choices have been made (the setup wizard sets it; while it is false the wizard opens by itself) |
 | `interface` | The Linux CAN interface (`can0`) |
 | `ecu.profile`, `ecu.bitrate` | The engine computer on the bus (`megasquirt` until 1.4 adds others) and the bus speed |
 | `can_hat.present`, `.oscillator`, `.interrupt`, `.spi_hz` | The MCP2515 CAN board: there or not, its crystal (12000000 for the Waveshare RS485 CAN HAT, 8000000 for the common blue boards), its interrupt pin, its SPI clock |
@@ -20,12 +41,15 @@ Frogdash reads it, so another car can use the same code.
 | `camera.enabled`, `.rotate` | Reverse camera on the Pi's camera connector |
 | `dashcam.enabled` | Wi-Fi dash cam view |
 | `power` | `pisugar3` or `none` |
-| `modules.gateway`, `.taillights`, `.watermeth` | The Frogdash modules on the bus |
+| `modules.gateway`, `.taillights`, `.watermeth` | The Frogdash modules on the bus. A module's own screens (knock monitor and water/meth panel; taillight controls) are shown only with it |
+| `features.map`, `.race` | The map and the race timer on the dash's screen |
 | `tunerstudio` | TunerStudio on the dash screen |
 | `terminal` | The Terminal tab, with sudo |
 | `locale.timezone`, `.wifi_country` | Empty: the Pi keeps its own |
+| `locale.units` | `us` or `metric`: the gauges' units on a screen that has not picked its own |
 | `hotspot_name` | The dash's own Wi-Fi network for the phone page |
 | `uploads.repo` | The GitHub repository reports and drives go to (`owner/name`); empty, none |
+| `screen.size` | The screen the dash is on (`1920x720`, `800x480`…, or `auto`): the wizard shows how the dash fits it |
 | `screen.mode` | `auto` (the screen's own) or `1920x720` (forced, for the foxbody car's panel) |
 | `extra_args` | Further dash options, one word each (for example `--log-hz`, `50`) |
 

@@ -42,6 +42,8 @@ PATTERNS = {
     'hotspot_name': r'[A-Za-z0-9 _.-]{1,32}',
     'uploads.repo': r'(|[A-Za-z0-9_.-]{1,39}/[A-Za-z0-9_.-]{1,100})',
     'screen.mode': r'auto|1920x720',
+    'screen.size': r'auto|\d{3,4}x\d{3,4}',     # The screen the owner said they have (the wizard's Screen page)
+    'locale.units': r'us|metric',
     'interface': r'[a-z0-9]{1,15}',
 }
 RANGES = {
@@ -184,6 +186,15 @@ def to_args(profile):
         words.append('--no-engine-runtime')
     words += profile['extra_args']
     return ' '.join(words)
+
+
+def ui_features(profile):
+    """Which of the dash's screens to show (the snapshot's `features`): the map and race
+    timer as chosen, and each module's own screens only when the car has that module."""
+    modules = profile['modules']
+    return {'map': profile['features']['map'], 'race': profile['features']['race'],
+            'knock': modules['watermeth'], 'watermeth': modules['watermeth'], 'taillights': modules['taillights'],
+            'units': profile['locale']['units']}
 
 
 def shell(profile):

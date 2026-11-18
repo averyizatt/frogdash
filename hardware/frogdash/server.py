@@ -38,7 +38,7 @@ from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
 from .paint import Paint, validate as validate_paint
 from .imports import Imports
 from . import cancheck, methtune, selftest
-from . import ecu as ecu_profiles, protocol
+from . import ecu as ecu_profiles, protocol, sysconfig
 from .parking import rolling
 from .logview import LogCache, LogError
 
@@ -74,6 +74,11 @@ async def preset_pause():
 
 
 def create_app(state, adapter=None, connectivity=None):
+    if state.features is None:
+        try:
+            state.features = sysconfig.ui_features(sysconfig.load())
+        except Exception:   # pragma: no cover (load falls back by itself): show every screen
+            state.features = None
     @web.middleware
     async def recovery_guard(request, handler):
         if request.method == 'POST' and state.operations.restoring:
@@ -861,6 +866,50 @@ def create_app(state, adapter=None, connectivity=None):
         # every start. index.html stays no-store: the saved look is put into it.
         return web.FileResponse(WEB / name, headers={"Cache-Control": "no-store" if name == 'index.html' else "no-cache"})
 
+    async def system(request):
+        """The setup wizard: this Pi's system profile, the presets, the ECU profiles and what
+        the CAN bus carries right now (GET); Apply writes config-request.json, which the
+        root-owned frogdash-config.path turns into the profile and a Pi setup (POST)."""
+        folder = state.paint.path.parent if state.paint else None
+        if request.method == 'POST':
+            require_local(request)
+            if not folder or state.mode == 'replay':
+                raise web.HTTPNotFound()
+            try:
+                body = await request.json()
+                wanted = sysconfig.complete({**body['profile'], 'configured': True})
+                ecu_profiles.load(wanted['ecu']['profile'], wanted['ecu']['base_id'])
+            except (KeyError, TypeError, AttributeError, ValueError) as error:
+                raise web.HTTPBadRequest(text=str(error) or 'Invalid setup request')
+            await asyncio.to_thread(atomic_write, folder / 'config-request.json', {'profile': wanted})
+            return web.json_response({'pending': True})
+
+        def read_status(name):
+            try:
+                return json.loads((folder / name).read_text(encoding='utf-8')) if folder else None
+            except (OSError, ValueError):
+                return None
+
+        def listing():
+            now = state.wall() * 1000
+            recent = [f for f in list(state.raw.values()) if not f['error'] and now - (f['timestamp_ms'] or 0) < 3000]
+            profiles = []
+            for name in ecu_profiles.built_in():
+                try:
+                    found = ecu_profiles.load(name)
+                    # Which ECU is this? The IDs on the bus now that each profile would read.
+                    matches = sum(f['extended'] == found.extended and found.key(f['id']) in found.frames for f in recent)
+                    profiles.append({**found.summary(), 'matches': matches})
+                except ecu_profiles.ProfileError as exc:
+                    profiles.append({'id': name, 'error': str(exc)})
+            return {'profile': sysconfig.load(), 'presets': {n: sysconfig.preset(n) for n in sysconfig.preset_names()},
+                    'ecu': {'active': protocol.ECU.summary(), 'problem': protocol.ECU_PROBLEM, 'profiles': profiles},
+                    'bus': {'connected': state.connected, 'ids_heard': len(recent),
+                            'ecu_ids_heard': sum(protocol.is_ecu(f['id'], f['extended']) for f in recent)},
+                    'pending': bool(folder and (folder / 'config-request.json').exists()),
+                    'status': read_status('config-status.json'), 'setup': read_status('setup-status.json')}
+        return web.json_response(await asyncio.to_thread(listing), headers={'Cache-Control': 'no-store'})
+
     async def ecu_list(request):
         """The ECU profile being read, why another was not (if so), and every built-in one
         with its source document, how far it has been checked and its tuning software."""
@@ -1056,7 +1105,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.post('/ui/appearance', appearance_snapshot),
                     web.route('*', '/ui/appearance/image/{field:background|splash}', appearance_image),
                     web.get('/taillights/{name}', taillight_frames), web.get('/skins/{name}', skin_image), web.get('/maps/{name}', map_data),
-                    web.get('/ecu/profiles', ecu_list),
+                    web.get('/ecu/profiles', ecu_list), web.get('/system', system), web.post('/system', system),
                     web.get('/ui/import', import_list), web.get('/ui/import/{name}', import_file),
                     web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),
                     web.get('/dashcam/status', dashcam_status), web.get('/dashcam/stream', dashcam_stream),

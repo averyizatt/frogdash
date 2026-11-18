@@ -9,11 +9,12 @@
   "dashcam": {"enabled": false},
   "power": "none",
   "modules": {"gateway": false, "taillights": false, "watermeth": false},
+  "features": {"map": true, "race": true},
   "tunerstudio": false,
   "terminal": false,
-  "locale": {"timezone": "", "wifi_country": ""},
+  "locale": {"timezone": "", "wifi_country": "", "units": "us"},
   "hotspot_name": "Frogdash",
   "uploads": {"repo": ""},
-  "screen": {"mode": "auto"},
+  "screen": {"mode": "auto", "size": "auto"},
   "extra_args": []
 }

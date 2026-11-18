@@ -9,11 +9,12 @@
   "dashcam": {"enabled": false},
   "power": "pisugar3",
   "modules": {"gateway": true, "taillights": true, "watermeth": true},
+  "features": {"map": true, "race": true},
   "tunerstudio": false,
   "terminal": true,
-  "locale": {"timezone": "America/Denver", "wifi_country": "US"},
+  "locale": {"timezone": "America/Denver", "wifi_country": "US", "units": "us"},
   "hotspot_name": "Foxbody Dash",
   "uploads": {"repo": "averyizatt/frogdash"},
-  "screen": {"mode": "1920x720"},
+  "screen": {"mode": "1920x720", "size": "1920x720"},
   "extra_args": []
 }

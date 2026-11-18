@@ -29,7 +29,7 @@
   "The broadcast starts at ID 0x200 (512) and uses 12 IDs. In a car with the Frogdash comfort module or gateway (which use 0x200-0x20F), move it to a free range, for example 0x400 (1024), and set the same number as ecu.base_id in the dash.",
   "It is sent every canSleepPeriodMs (50 ms by default), five times slower while TunerStudio is connected over CAN."
  ],
- "notes": "Lambda is given as lambda (ecu.lambda1), oil and fuel pressure in kPa (the high-pressure GDI sensor is sent in 0.1 bar steps); the dash's AFR and oil pressure gauges do not yet show these. Values the ECU has no sensor for are sent as 0 (or -1 for pedal and throttles). rusEFI's Haltech-format and other dash broadcasts are separate options and not read by this profile.",
+ "notes": "Lambda is given as lambda (ecu.lambda1), oil and fuel pressure in kPa (the high-pressure GDI sensor is sent in 0.1 bar steps); the dash's AFR gauge shows it as AFR (lambda x 14.7), and the pressures in psi. Values the ECU has no sensor for are sent as 0 (or -1 for pedal and throttles). rusEFI's Haltech-format and other dash broadcasts are separate options and not read by this profile.",
  "tuner": {
   "name": "TunerStudio with the rusEFI project, or rusEFI's own console",
   "runs_on_dash": true,

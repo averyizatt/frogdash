@@ -204,11 +204,14 @@ This guide takes you from a box of parts to Frogdash on your dash. You do not ne
 Linux: you will type two commands, and each is given in full. Plan on an afternoon for the
 wiring and about 30 minutes for the software, most of it waiting for downloads.
 
-> **Before you buy parts:** today Frogdash reads **MegaSquirt and MicroSquirt** ECUs (see
-> [What it works with](#what-it-works-with)). Engine gauges, alerts, logging, GPS, the map,
-> the log viewer and the cameras work in any car with one. Turn signals, brake and fuel
-> level need a device on the CAN bus that sends them (see [Car signals](#car-signals)).
-> More ECUs, an on-screen setup wizard and inputs wired straight to the Pi are on the way.
+> **Before you buy parts:** check your ECU in [What it works with](#what-it-works-with).
+> MegaSquirt and MicroSquirt run in the reference car; the other profiles are written from
+> their makers' documents and not yet proven in a car. Turn signals, brake and fuel level
+> need a device on the CAN bus that sends them, or an ECU that does (see
+> [Car signals](#car-signals)). Inputs wired straight to the Pi are on the way.
+>
+> **See the setup wizard first:** [open it in the live preview](https://averyizatt.github.io/frogdash/?wizard).
+> On a new install it opens by itself on the dash's screen.
 
 ### 1. What you need
 
@@ -361,7 +364,9 @@ The [documentation](docs/README.md) covers every part in depth.
 The [live preview](https://averyizatt.github.io/frogdash/) is the production dashboard with
 a simulated drive in place of the car: open it in any browser, or open
 [`preview/index.html`](preview/index.html) from disk. Everything is clickable; the
-**DEMO · SIMULATED** badge marks generated readings.
+**DEMO · SIMULATED** badge marks generated readings. Add `?wizard` to the address
+([like this](https://averyizatt.github.io/frogdash/?wizard)) to walk through the setup
+wizard with the real presets and ECU profiles; nothing is saved.
 
 ## Develop
 
@@ -395,10 +400,10 @@ preview check, and deploys `preview/` to GitHub Pages.
 
 ## Status
 
-Version 1.1, running in the reference car with diagnostics uploaded after each update;
-desktop and browser tests cover every feature. Opening it up to other cars (the system
-profile, a setup wizard, inputs on the Pi, more ECUs) is the work in progress: see the
-[changelog](CHANGELOG.md).
+Version 1.2, running in the reference car with diagnostics uploaded after each update;
+desktop and browser tests cover every feature. Opening it up to other cars is the work in
+progress: the system profile, ECU profiles and the setup wizard are in; inputs on the Pi and
+more ECUs are next. See the [changelog](CHANGELOG.md).
 
 **One version for the whole system:** the dash and the three modules'
 firmware (gateway, taillights, water/meth) share one number, in the `VERSION` file of each

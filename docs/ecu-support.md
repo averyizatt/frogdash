@@ -84,6 +84,14 @@ described at the top of `hardware/frogdash/ecu/__init__.py`. In short:
    existing `ecu.*` names where the reading is the same (`ecu.rpm`, `ecu.map_kpa`,
    `ecu.coolant_c`, `ecu.iat_c`, `ecu.throttle_pct`, `ecu.afr`, `ecu.battery_v`…), so
    gauges and alerts pick it up.
+
+   An ECU that sends **lambda** instead of AFR: give `ecu.lambda1` (and `ecu.lambda2`,
+   `ecu.lambda_target`). The AFR gauge then shows lambda × 14.7, the petrol scale, as
+   `ecu.afr`. The same goes for readings the owner's modules give in the reference car:
+   `ecu.oil_pressure_kpa` and `ecu.fuel_pressure_kpa` (gauge pressure) show on the oil and
+   fuel pressure gauges in psi, and `ecu.oil_temp_c`, `ecu.fuel_level_pct` and
+   `ecu.vehicle_speed_kph` stand in for oil temperature, fuel level and speed. Each is used
+   only when nothing else gives that reading live (`state.FROM_ECU`).
 3. Add tests to `tests/test_ecu_profiles.py` that build frames from the document's own
    examples and check the values. That makes it `simulated`.
 4. With a CAN capture from a real car (Sensors → Raw CAN → Record), it becomes `car`.
@@ -110,8 +118,8 @@ described at the top of `hardware/frogdash/ecu/__init__.py`. In short:
 rusEFI notes: its default base 0x200 shares IDs with the Frogdash comfort module and
 gateway. In a car without them it is used as it is; with them, move rusEFI's base (for
 example to 0x400) and set `ecu.base_id` to match, or the dash refuses the profile and says
-so. Lambda is given as lambda and pressures in kPa: the dash's AFR and oil pressure gauges
-do not show these yet (next step). rusEFI's Haltech-format dash broadcast is a separate
+so. Lambda is given as lambda and pressures in kPa; the gauges show them as AFR and psi
+(see below). rusEFI's Haltech-format dash broadcast is a separate
 option, not read by this profile.
 
 Not read: MegaSquirt's separate **29-bit** CAN protocol (TunerStudio passthrough and module

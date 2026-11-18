@@ -253,6 +253,17 @@
     commands.clear(); testRequested = false;
     render();
   }
+  // The screens this car has (the system profile, sysconfig.ui_features): a button tagged
+  // data-feature="map" is hidden while the map is off. No features (the preview, an older
+  // service) shows everything. The profile's units are this display's until it picks its own.
+  let featuresShown = '';
+  function applyFeatures(features) {
+    const key = JSON.stringify(features || null);
+    if (key === featuresShown) return;
+    featuresShown = key;
+    document.querySelectorAll('[data-feature]').forEach(node => { node.hidden = !!features && features[node.dataset.feature] === false; });
+    if (features?.units && localStorage.getItem('frogdash.units.v1') === null) window.FrogdashUnits?.set(features.units);
+  }
   function connect() {
     ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/state`);
     ws.onmessage = event => {
@@ -270,6 +281,7 @@
         const speed = next.values['vehicle.speed_kph'];
         if (speed && next.mode !== 'demo') next.values['vehicle.speed_kph'] = smoothSpeed(speed, speed.timestamp_ms ?? next.timestamp_ms);
         snapshot = next; connected = true; lastMessage = performance.now(); retry = 250;
+        applyFeatures(next.features);
         render();
       } catch { ws.close(); }
     };

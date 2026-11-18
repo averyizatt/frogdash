@@ -1,0 +1,9 @@
+[Unit]
+Description=Apply the Frogdash setup wizard's choices
+
+[Path]
+PathExists=/var/lib/private/frogdash/config-request.json
+Unit=frogdash-config.service
+
+[Install]
+WantedBy=multi-user.target

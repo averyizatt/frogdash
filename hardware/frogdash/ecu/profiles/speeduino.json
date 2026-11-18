@@ -23,7 +23,7 @@
   "In TunerStudio, set the CAN broadcast protocol to Haltech (CANBroadcastProtocol). The BMW and VAG options only drive those cars' clusters and are not read here.",
   "It sends 0x360-0x3E0 at fixed IDs; they cannot be moved."
  ],
- "notes": "This is Speeduino's own output in Haltech's format, read as Speeduino builds it (temperatures with +273, pressures with +101.3 kPa, taken back off here); it is not Haltech's published protocol. Speeduino declares a trigger frame (0x369) but does not fill it, so it is not read. Injector duty is a whole percent; pulse widths 2-4 are 0 on boards with fewer injector channels. Lambda is given as lambda (ecu.lambda1); the dash's AFR gauge does not show it yet.",
+ "notes": "This is Speeduino's own output in Haltech's format, read as Speeduino builds it (temperatures with +273, pressures with +101.3 kPa, taken back off here); it is not Haltech's published protocol. Speeduino declares a trigger frame (0x369) but does not fill it, so it is not read. Injector duty is a whole percent; pulse widths 2-4 are 0 on boards with fewer injector channels. Lambda is given as lambda (ecu.lambda1); the dash's AFR gauge shows it as AFR (lambda x 14.7).",
  "tuner": {
   "name": "TunerStudio with the Speeduino project",
   "runs_on_dash": true,

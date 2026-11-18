@@ -30,7 +30,7 @@
   "The stream starts at \"EMU stream base ID\" 0x600 and uses 8 IDs. If it is moved, set the same number as ecu.base_id in the dash.",
   "Switch on the EMU's 120 ohm terminator only if it is an end of the bus."
  ],
- "notes": "Oil and fuel pressure are sent in steps of 1/16 bar and given here in kPa. Lambda is given as lambda (ecu.lambda1); the dash's AFR gauge does not show it yet. Fields the EMU PRO leaves unused (lambda correction, traction RPM, PWM 2, some output flags) simply stay at their raw value there. Lambda correction is a factor around 100% (75-125%).",
+ "notes": "Oil and fuel pressure are sent in steps of 1/16 bar and given here in kPa. Lambda is given as lambda (ecu.lambda1); the dash's AFR gauge shows it as AFR (lambda x 14.7). Fields the EMU PRO leaves unused (lambda correction, traction RPM, PWM 2, some output flags) simply stay at their raw value there. Lambda correction is a factor around 100% (75-125%).",
  "tuner": {
   "name": "EMU Black Client (EMU Black); EMU PRO client software",
   "runs_on_dash": false,
