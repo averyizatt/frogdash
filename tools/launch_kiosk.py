@@ -250,6 +250,102 @@ class Tuner:
             self.close()
 
 
+class WindowsTuner:
+    """Windows tuning software over the dash, through Wine and Box64 (tools/frogdash_wine.py;
+    the dash side is hardware/frogdash/wintune.py). Like Tuner: the dash asks, this runs it
+    in the screen's session, maps the USB serial ports to COM ports first, and reports."""
+    OPEN = 'Open over the dash. Close it, or hold OFF on the wheel, to return to the dash'
+
+    def __init__(self, port, wine=None, popen=subprocess.Popen, alive=group_alive, stop=stop_group, clock=time.monotonic,
+                 env=os.environ, post=None):
+        if wine is None:
+            try:
+                from tools import frogdash_wine as wine
+            except ImportError:
+                import frogdash_wine as wine
+        self.wine, self.popen, self.alive, self.stop, self.clock, self.env = wine, popen, alive, stop, clock, env
+        self.post = post or self.http_post(port)
+        self.process, self.started, self.note, self.failed, self.what = None, 0, '', False, ''
+
+    @staticmethod
+    def http_post(port):
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        def post(report):
+            request = urllib.request.Request(f'http://127.0.0.1:{port}/tune/windows/kiosk', json.dumps(report).encode(),
+                                             {'Content-Type': 'application/json'})
+            with opener.open(request, timeout=1) as response:
+                return json.load(response).get('action')
+        return post
+
+    def running(self):
+        return self.process is not None and (self.process.poll() is None or self.alive(self.process.pid))
+
+    def start(self, kind, target):
+        if self.running():
+            return
+        if not self.env.get('DISPLAY'):
+            self.failed, self.note = True, 'The screen has no X display for Windows programs (xwayland). Press Update now with internet'
+            return
+        try:
+            argv = self.wine.argv(kind, target)
+            self.wine.map_ports()
+            self.process = self.popen(argv, stdin=subprocess.DEVNULL, start_new_session=True, env=self.wine.environment(self.env))
+        except (OSError, ValueError) as error:
+            self.failed, self.note = True, f'Could not start it: {error}'
+            return
+        self.what = Path(target).stem
+        self.started, self.failed, self.note = self.clock(), False, ''
+        print(f'Frogdash kiosk: Windows {kind} started ({self.what})', flush=True)
+
+    def close(self):
+        if self.running():
+            self.stop(self.process)
+        if self.process is not None:
+            self.process, self.failed, self.note = None, False, f'{self.what} closed'
+
+    def step(self):
+        if self.process is not None and not self.running():
+            code = self.process.returncode
+            quick = bool(code) and self.clock() - self.started < 20
+            self.process, self.failed = None, quick
+            self.note = (f'{self.what} closed right after starting (exit code {code}): Wine or Box64 could not run it. '
+                         'Windows tuners are experimental on the Pi; a Windows PC with USB sharing always works') if quick else f'{self.what} closed'
+            print(f'Frogdash kiosk: Windows program exited ({code})', flush=True)
+        status = self.wine.status()
+        state = 'running' if self.running() else 'failed' if self.failed else 'idle'
+        message = self.OPEN if state == 'running' else self.note or ('Ready' if status['ready'] else status['why'])
+        try:
+            want = self.post({**status, 'state': state, 'message': message})
+        except (OSError, ValueError, urllib.error.URLError):
+            return
+        if isinstance(want, dict):
+            if want.get('action') == 'close':
+                self.close()
+            elif want.get('action') in ('install', 'open'):
+                self.start('install' if want['action'] == 'install' else 'run', want.get('target') or '')
+
+
+class Tuners:
+    """TunerStudio and the Windows tuners side by side: each step on its own, so one failing
+    never stops the other or the dash screen."""
+    def __init__(self, *tuners):
+        self.tuners = tuners
+
+    def step(self):
+        for tuner in self.tuners:
+            try:
+                tuner.step()
+            except Exception as error:
+                print(f'Frogdash kiosk: tuner helper error: {error}', flush=True)
+
+    def running(self):
+        return any(t.running() for t in self.tuners)
+
+    def close(self):
+        for tuner in self.tuners:
+            tuner.close()
+
+
 def supervise(args, port, token, tuner=None):
     launched = time.monotonic()
     process = subprocess.Popen(args, start_new_session=True)
@@ -327,7 +423,7 @@ def main():
     token = uuid4().hex
     command = browser_args(binary, args.port, args.wayland, profile, args.allow_audio)
     command[-1] += '?kiosk=' + token
-    raise SystemExit(supervise(command, args.port, token, Tuner(args.port)))
+    raise SystemExit(supervise(command, args.port, token, Tuners(Tuner(args.port), WindowsTuner(args.port))))
 
 
 if __name__ == '__main__':

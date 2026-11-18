@@ -5,6 +5,7 @@ import codecs
 import json
 import os
 import re
+import subprocess
 import time
 from collections import deque
 from contextlib import suppress
@@ -38,7 +39,7 @@ from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
 from .paint import Paint, validate as validate_paint
 from .imports import Imports
 from . import cancheck, methtune, selftest
-from . import ecu as ecu_profiles, ecucheck, inputs, protocol, sysconfig
+from . import ecu as ecu_profiles, ecucheck, inputs, obd2, protocol, sysconfig, wintune
 from .parking import rolling
 from .logview import LogCache, LogError
 
@@ -81,6 +82,8 @@ def create_app(state, adapter=None, connectivity=None):
             if state.inputs is None:
                 state.inputs = inputs.Inputs(profile['signals'])
                 inputs.start(state.inputs)
+            if state.obd is None and protocol.ECU.obd2:
+                state.obd = obd2.Poller(extended=protocol.ECU.extended)
         except Exception:   # pragma: no cover (load falls back by itself): show every screen
             state.features = None
     @web.middleware
@@ -520,6 +523,50 @@ def create_app(state, adapter=None, connectivity=None):
         except (ValueError, AttributeError, TypeError) as error:
             raise web.HTTPConflict(text=str(error) or 'Invalid preset request')
         return web.json_response({'message': message, **mirror.preset_list()}, headers={'Cache-Control': 'no-store'})
+
+    async def tune_windows(request):
+        """Windows tuning (wintune.py): GET what Wine has, the USB devices and the USB stick;
+        POST install/open/close (for the kiosk to do) or a root job (USB stick, USB sharing)."""
+        require_local(request)
+        folder = state.paint.path.parent if state.paint else None
+        if request.method == 'POST':
+            try:
+                body = await request.json()
+                action = body.get('action')
+                if action in ('install', 'open', 'close'):
+                    return web.json_response(state.wintune.request(action, body.get('target')))
+                if action not in ('usb_scan', 'usb_copy', 'usb_eject', 'share', 'unshare'):
+                    raise ValueError('Unknown tuning action')
+                arg = body.get('arg')
+                if arg is not None and (not isinstance(arg, str) or len(arg) > 200):
+                    raise ValueError('Invalid tuning request')
+                if not folder or state.mode == 'replay':
+                    raise ValueError('Only on the dash in the car')
+                await asyncio.to_thread(atomic_write, folder / 'tuning-request.json', {'action': action, 'arg': arg})
+                return web.json_response({'pending': True})
+            except (ValueError, AttributeError, TypeError) as error:
+                raise web.HTTPConflict(text=str(error) or 'Invalid tuning request')
+
+        def listing():
+            try:
+                status = json.loads((folder / 'tuning-status.json').read_text(encoding='utf-8')) if folder else None
+            except (OSError, ValueError):
+                status = None
+            try:
+                said = subprocess.run(['ip', '-4', '-o', 'addr', 'show'], capture_output=True, text=True, timeout=3).stdout
+                addresses = [a for a in re.findall(r'inet (\d+\.\d+\.\d+\.\d+)', said) if not a.startswith('127.')]
+            except (OSError, subprocess.SubprocessError):
+                addresses = []
+            return {**state.wintune.snapshot(), 'usb': wintune.usb_devices(), 'helper': status, 'addresses': addresses,
+                    'pending': bool(folder and (folder / 'tuning-request.json').exists())}
+        return web.json_response(await asyncio.to_thread(listing), headers={'Cache-Control': 'no-store'})
+
+    async def tune_windows_kiosk(request):
+        require_local(request)
+        try:
+            return web.json_response({'action': state.wintune.report(await request.json())})
+        except (ValueError, AttributeError, TypeError):
+            raise web.HTTPBadRequest(text='Invalid kiosk report')
 
     async def tune_kiosk(request):
         # The kiosk launcher's 2 s report; the reply is what it should do now.
@@ -1136,7 +1183,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/snapshot", snapshot_page), web.post("/ui/error", screen_error), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.get("/can/frogdash.dbc", can_dbc), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/events', events), web.get('/uploads', uploads), web.post('/uploads', uploads), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log), web.get('/logs/{name}/view', log_view), web.get('/logs/{name}/series', log_series),
+                    web.get("/ui/display", display_info), web.get("/snapshot", snapshot_page), web.post("/ui/error", screen_error), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.get("/can/frogdash.dbc", can_dbc), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.get("/tune/windows", tune_windows), web.post("/tune/windows", tune_windows), web.post("/tune/windows/kiosk", tune_windows_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/events', events), web.get('/uploads', uploads), web.post('/uploads', uploads), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log), web.get('/logs/{name}/view', log_view), web.get('/logs/{name}/series', log_series),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.get('/drive/alerts', drive_alerts), web.post('/drive/settings', drive_settings),

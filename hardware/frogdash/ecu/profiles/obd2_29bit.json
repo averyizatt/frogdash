@@ -1,0 +1,41 @@
+{
+ "id": "obd2_29bit",
+ "label": "Generic OBD-II (29-bit)",
+ "manufacturer": "Any car whose OBD-II port has CAN (most cars from 2008 in the US, 2004 to 2006 in Europe)",
+ "firmware": "SAE J1979 mode 01 (show current data), ISO 15765-4",
+ "bitrate": 500000,
+ "type": "obd2",
+ "status": "simulated",
+ "source": {
+  "title": "SAE J1979 / ISO 15031-5 mode 01 PIDs, ISO 15765-4 CAN",
+  "url": "https://en.wikipedia.org/wiki/OBD-II_PIDs",
+  "version": "J1979 mode 01"
+ },
+ "notes": "The ECU answers requests rather than broadcasting: the dash asks for each reading in turn (about 20 a second, read-only mode 01 requests, as a scan tool does). Which readings come depends on the car: it says which it supports. Lambda (PID 0x24, wideband sensors only) shows as AFR.",
+ "models": [
+  "OBD-II on 29-bit CAN at 500 kbit/s (some GM and other cars)"
+ ],
+ "extended": true,
+ "setup": [
+  "Connect the dash's CAN to the OBD-II port: pin 6 CAN high, pin 14 CAN low (and pin 4 or 5 ground if the CAN board needs it). The car terminates the bus already: leave the dash's 120 ohm resistor off.",
+  "Key on: the ECU answers only with the ignition on.",
+  "The dash sends requests on this bus (only mode 01 \"read current data\"); it never changes anything in the car."
+ ],
+ "check": [
+  [
+   "0x18DAF110",
+   "The engine ECU's answers"
+  ]
+ ],
+ "frames": [
+  {
+   "name": "OBD answers",
+   "ids": [
+    "0x18DAF100"
+   ],
+   "length": 8,
+   "signals": []
+  }
+ ],
+ "id_mask": "0x1FFFFF00"
+}

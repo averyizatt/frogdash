@@ -14,6 +14,15 @@ on the Firmware page shows the version it runs and the version available.
 
 ## Unreleased
 
+- **Generic OBD-II** (`obd2`, `obd2_29bit` ECU profiles): any car with CAN on its OBD port. The
+  dash asks which readings the car supports, then requests them in turn (read-only mode 01,
+  20 a second) and shows them on the same gauges. The wizard's connection test explains that
+  the car answers only when asked.
+- **Windows tuning** (experimental, docs/windows-tuning.md): Wine 11.0 and Box64 on the dash
+  (the 4 KB kernel on a Pi 5), tuners installed from a USB stick and opened over the dash with
+  the USB serial cable as a COM port; and USB sharing (USB/IP) to a Windows PC on the dash's
+  Wi-Fi for cables that need the maker's own driver. The Tuning page (renamed from
+  TunerStudio) shows each plugged-in device's route.
 - **Is the ECU talking?** The wizard's engine-computer page listens to the CAN bus every 2 s and
   tests the ECU picked (`GET /system/check`, ecucheck.py): live readings when it talks, else
   the likely reason in plain words (no CAN interface, nothing heard, bus errors, a bus speed

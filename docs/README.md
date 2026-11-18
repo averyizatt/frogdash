@@ -5,6 +5,7 @@ Back to the [project overview](../README.md).
 ## Install and hardware
 - [Fresh install on a new SD card](fresh-install.md): one script, then restart
 - [Presets and the system profile](presets.md): what this car has, in one file on the Pi
+- [Tuning with Windows software](windows-tuning.md): Wine and Box64 on the dash, or USB sharing to a Windows PC
 - [Car signals](car-signals.md): turn signals, brake, lights, reverse and fuel level from Pi pins, an ADS1115, CAN or the ECU
 - [ECU support](ecu-support.md): ECU profiles, adding an ECU, tuning software and what has been checked
 - [CAN + USB GPS installation](can-integration.md): the service, `gpsd` and the protocol

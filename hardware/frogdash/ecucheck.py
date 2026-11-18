@@ -47,6 +47,10 @@ def check(candidate, frames, bus_bitrate, connected, errors=0, others=(), owned=
         return result('wrong_speed', f'{name} sends at {speed(candidate.bitrate)} and the dash\'s CAN bus runs at '
                       f'{speed(bus_bitrate)}, so they cannot hear each other yet. Apply the setup (it changes the bus '
                       'speed), and this test runs again.', hints=hints)
+    if getattr(candidate, 'obd2', False):
+        return result('silent', f'No answers to OBD-II requests yet. The car answers only when asked: once {name} is '
+                      'applied, the dash asks (about 20 times a second). Then: key on, and the CAN from the dash on the OBD '
+                      'port, pins 6 (high) and 14 (low).', hints=hints)
     if not frames:
         if errors:
             return result('errors', f'The bus shows errors and no messages: usually CAN H and CAN L swapped, a missing '

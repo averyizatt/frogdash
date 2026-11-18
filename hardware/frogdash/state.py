@@ -22,6 +22,7 @@ from .wheel import SteeringWheel
 from .runtime import EngineRuntime
 from .nav import Navigator
 from .tune import Tune
+from .wintune import WinTune
 
 ALIASES = {
     "engine.rpm": ("ecu.rpm", "tach.rpm", "gateway.rpm"),
@@ -104,6 +105,7 @@ class State:
         self.terminal_enabled = False
         self.features = None      # Which screens to show (sysconfig.ui_features); None shows them all
         self.inputs = None        # Inputs: car signals from Pi pins, an ADS1115, any CAN frame or the ECU (inputs.py)
+        self.obd = None           # obd2.Poller when the ECU profile is generic OBD-II: what to ask the car next
         self.paint = None
         self.imports = None
         self.race = Race(clock=clock, wall=wall)
@@ -122,6 +124,7 @@ class State:
         self.fuel_gauge = FuelGauge(clock)  # Display damping only: no sender, calibration or settings.
         self.runtime = EngineRuntime(self, enabled=mode == 'socketcan')
         self.tune = Tune(self)
+        self.wintune = WinTune(self)   # Windows tuners in Wine, and USB sharing to a Windows PC (wintune.py)
         self.nav = Navigator(clock, wall)
         self.controls = Controls(self)
 
@@ -165,6 +168,8 @@ class State:
             self.raw.popitem(last=False)
         if self.capture is not None and now <= self.capture_until and len(self.capture) < 200000:
             self.capture.append(f"({stamp / 1000:.6f}) can0 {can_id:0{8 if extended else 3}X}#{'R' if remote else data.hex().upper()}")
+        if self.obd and not (remote or error) and is_ecu(can_id, extended):
+            self.obd.seen(data)
         if self.inputs and self.inputs.by_id and not (remote or error):
             self.guarded('car signals', lambda: self.inputs.ingest(can_id, data))
         # A 29-bit frame is read only when it is the ECU's (an ECU profile with 29-bit IDs).

@@ -162,6 +162,11 @@ class Profile:
                     raise ProfileError(f'Frame 0x{ident:03X} is listed twice')
                 self.frames[ident] = (length, signals)
         self.claims = [(number(a), number(b)) for a, b in data.get('claims') or []]
+        # Generic OBD-II: the ECU answers requests (obd2.py); one decoder for every answer.
+        self.obd2 = data.get('type') == 'obd2'
+        if self.obd2:
+            from .. import obd2
+            self._obd2 = obd2
         self.mask = number(data['id_mask']) if data.get('id_mask') else None
         if not self.frames:
             raise ProfileError('A profile needs at least one frame')
@@ -194,6 +199,8 @@ class Profile:
         frame = self.frames.get(self.key(can_id))
         if not frame:
             return {}
+        if self.obd2:
+            return self._obd2.decode(data)
         return {key: convert(read(data)) for key, read, convert in frame[1]}
 
     def checks(self):
@@ -206,11 +213,13 @@ class Profile:
         return [(ident, 'ECU broadcast') for ident in sorted(self.frames)[:2]]
 
     def keys(self):
+        if self.obd2:
+            return self._obd2.keys()
         return sorted({key for _, signals in self.frames.values() for key, _, _ in signals})
 
     def summary(self):
         """What the dash shows about the profile (the setup wizard and System check)."""
-        keep = ('id', 'label', 'manufacturer', 'models', 'firmware', 'bitrate', 'extended', 'status',
+        keep = ('id', 'label', 'manufacturer', 'models', 'firmware', 'bitrate', 'extended', 'status', 'type',
                 'source', 'setup', 'notes', 'tuner')
         keys = set(self.keys())
         out = {**{k: self.data[k] for k in keep if k in self.data}, 'origin': self.origin, 'signals': len(keys),

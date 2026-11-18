@@ -250,7 +250,7 @@
     const gps = get('gps.source') !== 'none';
     const tuning = !tuner ? `<p class="wizard-small">No tuning software is known for ${esc(ecu.label)}.</p>`
       : tuner.runs_on_dash ? toggle('tunerstudio', `Install ${tuner.name}`, `Java and ${esc(tuner.name)} on the Pi: tune from the dash screen over the ECU's USB serial cable.`)
-      : toggle('windows_tuner', `Install ${tuner.name} on the dash (experimental)`, `${esc(tuner.name)} is a Windows program: on the Pi it would run through Box64 and Wine, and its USB connection may not work. <b>Not available yet:</b> choose it now and it is installed once that is ready. Until then, tune from a laptop (${esc(tuner.connection || 'USB')}); the dash keeps reading the bus while you tune.`);
+      : toggle('windows_tuner', `Windows tuning for ${tuner.name} (experimental)`, `${esc(tuner.name)} is a Windows program. Setup adds Wine and Box64 so it can run on the dash (installed from a USB stick on the Tuning page), and USB sharing: when the ECU's USB needs ${esc(tuner.name)}'s own Windows driver, which Wine cannot load, the dash shares it with a Windows PC on its Wi-Fi and the tuner runs there with the real driver. The Tuning page shows which route the plugged-in cable needs. About 300 MB.`);
     return `<p class="wizard-lead">What the dash shows and does.</p>
       <div class="wizard-row">${toggle('features.map', 'Map', gps ? 'The moving map with the offline tiles.' : 'The map needs GPS for where the car is (the GPS page).')}
       ${toggle('features.race', 'Race timer', gps ? 'Lap and drag timing from GPS, with results kept on the Pi.' : 'Timing needs GPS (the GPS page).')}</div>

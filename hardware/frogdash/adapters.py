@@ -93,6 +93,17 @@ async def socketcan(state, interface):
                             runtime.sent(False, exc)
                         else:
                             runtime.sent(True)
+                    # Generic OBD-II: the car answers only when asked (obd2.py), about 20 times a second.
+                    obd = state.obd
+                    if obd and obd.due(now):
+                        request = obd.frame(now)
+                        if request:
+                            try:
+                                await send_control(*request, wait=False)
+                            except OSError as exc:
+                                obd.sent(False, exc)
+                            else:
+                                obd.sent(True)
                     try:
                         packet = await asyncio.wait_for(loop.sock_recv(bus, CAN_FRAME.size), .1)
                     except TimeoutError:

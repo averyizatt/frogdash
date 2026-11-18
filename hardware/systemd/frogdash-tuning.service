@@ -1,0 +1,7 @@
+[Unit]
+Description=Read a USB stick for a tuner installer, or share a USB device with a Windows PC (Frogdash Tuning page)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/frogdash/tools/frogdash_tuning.py
+TimeoutStartSec=600

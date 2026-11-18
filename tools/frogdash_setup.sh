@@ -27,6 +27,11 @@ WATERMETH_FW_URL=${FROGDASH_WATERMETH_FW_URL:-https://github.com/averyizatt/DIYW
 # TunerStudio MS for Linux, from its publisher. The archive must match this SHA-256.
 TS_URL=${FROGDASH_TS_URL:-https://www.tunerstudio.com/downloads2/TunerStudioMS_v3.3.01.tar.gz}
 TS_SHA=${FROGDASH_TS_SHA:-4f4781a6ff90127ef36672cc43d3edc78c4f61ef682dca38a02f9e17e652517f}
+# Wine for Windows tuners (x86-64, run through Box64): Kron4ek's build of the stable release.
+WINE_VERSION=11.0
+WINE_URL=${FROGDASH_WINE_URL:-https://github.com/Kron4ek/Wine-Builds/releases/download/11.0/wine-11.0-amd64.tar.xz}
+WINE_SHA=${FROGDASH_WINE_SHA:-632f2c8e9150841c26d277000e76b82c425cd4564bfb050780705b9d37b2567f}
+WINE_DIR=${FROGDASH_WINE_ROOT:-$OPT/frogdash-wine}
 # The dash compares this with its own copy of the file to see whether setup has run.
 STAMP=$(sha256sum "$0" 2>/dev/null | cut -c1-12)
 online=${1:-}   # 'online' from the updater, which has just reached GitHub; else found out when needed
@@ -509,9 +514,52 @@ if [ "${FD_ADC_INPUTS:-0}" = 1 ]; then
     else step "Car signals: fuel sender (ADS1115)" failed "Could not switch I2C on in $BOOT_DIR/config.txt"
     fi
 fi
-# Tuning software that only runs on Windows, on the dash: chosen in the wizard, not built yet.
+# --- Windows tuning (experimental; hardware/frogdash/wintune.py, tools/frogdash_wine.py) ---
+# The ECU's Windows tuner on the dash through Wine (x86-64) and Box64, and USB sharing
+# (USB/IP) for a cable that needs its maker's Windows driver, which Wine cannot load: a
+# Windows PC on the dash's network attaches it and runs the tuner with the real driver.
+# Only when chosen in the setup wizard (windows_tuner): Wine is about 75 MB, 300 MB unpacked.
 if [ "${FD_WINDOWS_TUNER:-0}" = 1 ]; then
-    step "Tuning software on the dash" skipped "Not available yet: a Windows tuner on the Pi (Box64 and Wine) is still being built. Tune from a laptop for now"
+    # Box64 runs only on a kernel with 4 KB pages; the Pi 5's own kernel uses 16 KB.
+    if [ "$(getconf PAGESIZE 2>/dev/null)" = 16384 ]; then
+        if grep -q '^kernel=kernel8.img' "$BOOT_DIR/config.txt" 2>/dev/null; then
+            step "Windows tuning: 4 KB kernel" waiting "Chosen: restart the Pi to use it"
+        elif [ -f "$BOOT_DIR/config.txt" ] && { [ -f "$BOOT_DIR/config.txt.before-frogdash-kernel" ] || cp "$BOOT_DIR/config.txt" "$BOOT_DIR/config.txt.before-frogdash-kernel"; } &&
+                printf '\n[all]\n# Frogdash: Box64 (Windows tuners) needs 4 KB memory pages\nkernel=kernel8.img\n' >> "$BOOT_DIR/config.txt" && sync; then
+            step "Windows tuning: 4 KB kernel" done "The Pi 5 starts the 4 KB-page kernel from the next start"; reboot_note=". Restart the Pi to apply the new boot settings"
+        else step "Windows tuning: 4 KB kernel" failed "Could not change $BOOT_DIR/config.txt"
+        fi
+    fi
+    need=""
+    for package in box64 xwayland usbip; do have $package || need="$need $package"; done
+    if [ -z "$need" ]; then step "Windows tuning: Box64, display, USB sharing" ok "Installed"
+    elif ! is_online; then step "Windows tuning: Box64, display, USB sharing" waiting "Missing$need: $NEEDS_NET"
+    elif doing "Installing$need (Windows tuning)" && install_packages $need; then
+        restart_screen=1; step "Windows tuning: Box64, display, USB sharing" done "Installed$need"
+    else step "Windows tuning: Box64, display, USB sharing" failed "Could not install$need (Box64 comes with Debian 13 and later)"
+    fi
+    if [ -x "$WINE_DIR/wine/bin/wine" ]; then step "Windows tuning: Wine" ok "In $WINE_DIR/wine ($WINE_VERSION)"
+    elif ! is_online; then step "Windows tuning: Wine" waiting "Not downloaded yet: $NEEDS_NET"
+    else
+        work=$(mktemp -d)
+        doing "Downloading Wine $WINE_VERSION (about 75 MB)"
+        if ! fetch "$WINE_URL" "$work/wine.tar.xz" 1800; then
+            step "Windows tuning: Wine" failed "Download failed from github.com"
+        elif [ "$(sha256sum "$work/wine.tar.xz" | cut -c1-64)" != "$WINE_SHA" ]; then
+            step "Windows tuning: Wine" failed "The download is not the expected file, so it was not installed"
+        elif mkdir -p "$WINE_DIR/unpack" && tar -xJf "$work/wine.tar.xz" -C "$WINE_DIR/unpack" --no-same-owner &&
+                rm -rf "$WINE_DIR/wine" && mv "$WINE_DIR/unpack/"wine-* "$WINE_DIR/wine" && [ -x "$WINE_DIR/wine/bin/wine" ]; then
+            chmod -R a+rX "$WINE_DIR"; step "Windows tuning: Wine" done "Installed Wine $WINE_VERSION in $WINE_DIR/wine"
+        else
+            step "Windows tuning: Wine" failed "Could not unpack into $WINE_DIR"
+        fi
+        rm -rf "$work" "$WINE_DIR/unpack"
+    fi
+    mkdir -p "$WINE_DIR/installers" 2>/dev/null && chmod 755 "$WINE_DIR" "$WINE_DIR/installers" 2>/dev/null
+    user=$(kiosk_user)
+    if [ -n "$user" ] && ! id -nG "$user" 2>/dev/null | tr ' ' '\n' | grep -qx dialout; then
+        usermod -aG dialout "$user" >/dev/null 2>&1 && restart_screen=1
+    fi
 fi
 
 # --- Dash options: the system profile becomes FROGDASH_ARGS, after a check ---

@@ -80,7 +80,7 @@ async def main(browser_path):
         assert await title() == 'On the dash'
         body = await page.text_content('#wizard-body')
         assert 'water/meth' not in body.lower() and 'taillight' not in body.lower(), body
-        assert 'Install NSP on the dash (experimental)' in body, body                                 # Haltech's own tuner
+        assert 'Windows tuning for NSP (experimental)' in body, body                                 # Haltech's own tuner
         assert not await page.locator('input[data-wizard-path="tunerstudio"]').count()
 
         await go(10)

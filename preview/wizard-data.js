@@ -88,6 +88,26 @@ window.frogdashSystemDemo = {
    ],
    "state": "ok"
   },
+  "obd2": {
+   "ecu": "obd2",
+   "hints": [
+    "Connect the dash's CAN to the OBD-II port: pin 6 CAN high, pin 14 CAN low (and pin 4 or 5 ground if the CAN board needs it). The car terminates the bus already: leave the dash's 120 ohm resistor off.",
+    "Key on: the ECU answers only with the ignition on.",
+    "The dash sends requests on this bus (only mode 01 \"read current data\"); it never changes anything in the car."
+   ],
+   "message": "No answers to OBD-II requests yet. The car answers only when asked: once Generic OBD-II is applied, the dash asks (about 20 times a second). Then: key on, and the CAN from the dash on the OBD port, pins 6 (high) and 14 (low).",
+   "state": "silent"
+  },
+  "obd2_29bit": {
+   "ecu": "obd2_29bit",
+   "hints": [
+    "Connect the dash's CAN to the OBD-II port: pin 6 CAN high, pin 14 CAN low (and pin 4 or 5 ground if the CAN board needs it). The car terminates the bus already: leave the dash's 120 ohm resistor off.",
+    "Key on: the ECU answers only with the ignition on.",
+    "The dash sends requests on this bus (only mode 01 \"read current data\"); it never changes anything in the car."
+   ],
+   "message": "No answers to OBD-II requests yet. The car answers only when asked: once Generic OBD-II (29-bit) is applied, the dash asks (about 20 times a second). Then: key on, and the CAN from the dash on the OBD port, pins 6 (high) and 14 (low).",
+   "state": "silent"
+  },
   "rusefi": {
    "ecu": "rusefi",
    "hints": [],
@@ -471,6 +491,68 @@ window.frogdashSystemDemo = {
      "status": "car",
      "url": "https://www.tunerstudio.com/"
     }
+   },
+   {
+    "bitrate": 500000,
+    "extended": false,
+    "firmware": "SAE J1979 mode 01 (show current data), ISO 15765-4",
+    "id": "obd2",
+    "label": "Generic OBD-II",
+    "manufacturer": "Any car whose OBD-II port has CAN (most cars from 2008 in the US, 2004 to 2006 in Europe)",
+    "matches": 0,
+    "models": [
+     "OBD-II on 11-bit CAN at 500 kbit/s (nearly every car with CAN on the OBD port)"
+    ],
+    "notes": "The ECU answers requests rather than broadcasting: the dash asks for each reading in turn (about 20 a second, read-only mode 01 requests, as a scan tool does). Which readings come depends on the car: it says which it supports. Lambda (PID 0x24, wideband sensors only) shows as AFR.",
+    "offers": [
+     "ecu.fuel_level_pct",
+     "ecu.vehicle_speed_kph"
+    ],
+    "origin": "built in",
+    "setup": [
+     "Connect the dash's CAN to the OBD-II port: pin 6 CAN high, pin 14 CAN low (and pin 4 or 5 ground if the CAN board needs it). The car terminates the bus already: leave the dash's 120 ohm resistor off.",
+     "Key on: the ECU answers only with the ignition on.",
+     "The dash sends requests on this bus (only mode 01 \"read current data\"); it never changes anything in the car."
+    ],
+    "signals": 21,
+    "source": {
+     "title": "SAE J1979 / ISO 15031-5 mode 01 PIDs, ISO 15765-4 CAN",
+     "url": "https://en.wikipedia.org/wiki/OBD-II_PIDs",
+     "version": "J1979 mode 01"
+    },
+    "status": "simulated",
+    "type": "obd2"
+   },
+   {
+    "bitrate": 500000,
+    "extended": true,
+    "firmware": "SAE J1979 mode 01 (show current data), ISO 15765-4",
+    "id": "obd2_29bit",
+    "label": "Generic OBD-II (29-bit)",
+    "manufacturer": "Any car whose OBD-II port has CAN (most cars from 2008 in the US, 2004 to 2006 in Europe)",
+    "matches": 0,
+    "models": [
+     "OBD-II on 29-bit CAN at 500 kbit/s (some GM and other cars)"
+    ],
+    "notes": "The ECU answers requests rather than broadcasting: the dash asks for each reading in turn (about 20 a second, read-only mode 01 requests, as a scan tool does). Which readings come depends on the car: it says which it supports. Lambda (PID 0x24, wideband sensors only) shows as AFR.",
+    "offers": [
+     "ecu.fuel_level_pct",
+     "ecu.vehicle_speed_kph"
+    ],
+    "origin": "built in",
+    "setup": [
+     "Connect the dash's CAN to the OBD-II port: pin 6 CAN high, pin 14 CAN low (and pin 4 or 5 ground if the CAN board needs it). The car terminates the bus already: leave the dash's 120 ohm resistor off.",
+     "Key on: the ECU answers only with the ignition on.",
+     "The dash sends requests on this bus (only mode 01 \"read current data\"); it never changes anything in the car."
+    ],
+    "signals": 21,
+    "source": {
+     "title": "SAE J1979 / ISO 15031-5 mode 01 PIDs, ISO 15765-4 CAN",
+     "url": "https://en.wikipedia.org/wiki/OBD-II_PIDs",
+     "version": "J1979 mode 01"
+    },
+    "status": "simulated",
+    "type": "obd2"
    },
    {
     "base": {

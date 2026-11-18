@@ -1,0 +1,9 @@
+[Unit]
+Description=Run a Frogdash tuning request (USB stick, USB sharing)
+
+[Path]
+PathExists=/var/lib/private/frogdash/tuning-request.json
+Unit=frogdash-tuning.service
+
+[Install]
+WantedBy=multi-user.target

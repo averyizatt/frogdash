@@ -73,6 +73,12 @@ described at the top of `hardware/frogdash/ecu/__init__.py`. In short:
   `ecu.bitrate` (500 kbit/s unless set): `frogdash-can.service` reads it from
   `/etc/frogdash/system.env`, and setup restarts can0 when it changes. System check warns
   when the ECU profile's bit rate is not the bus's.
+- **Generic OBD-II** (`obd2`, `obd2_29bit`): the ECU answers requests, so the dash sends
+  standard read-only mode 01 requests (obd2.py): it first asks which readings the car supports,
+  then cycles through them with RPM, speed, throttle and MAP in between, 20 a second.
+- **Windows tuners** (Holley, AEM, Haltech, FuelTech, ECUMaster, MaxxECU, Link): see
+  [windows-tuning.md](windows-tuning.md): Wine and Box64 on the dash for USB serial cables,
+  USB sharing to a Windows PC for cables that need the maker's driver.
 - `GET /ecu/profiles` lists the built-in profiles with their source, status, setup steps and
   tuning software. The setup wizard will use it to offer the choice.
 
@@ -114,6 +120,8 @@ described at the top of `hardware/frogdash/ecu/__init__.py`. In short:
 
 | AEM Infinity (AEMnet data stream) | Supported: 3 frames, 31 signals: RPM, throttle, intake air, coolant, lambda 1-2 and target, vehicle speed, gear, timing, battery, MAP, VE, fuel and oil pressure, status flags | AEM's [TA2 AEMNet Configuration](https://documents.aemelectronics.com/techlibrary_ta2_infinity_aemnet_configuration.pdf) (Rev. A, 2016; AEMnet v150609) | 500 kbit/s, **29-bit**, big-endian, fixed IDs 0x01F0A000-0x01F0A004; on by default | AEM Infinity Tuner | USB to a Windows computer | No | **Simulated** |
 | FuelTech FT500 / FT600 / FT550 / FT450 (FTCAN 2.0 simplified broadcast) | Supported: 6 packets, 21 signals: TPS, MAP, air and engine temperature, oil/fuel/water pressure, gear, lambda, RPM, oil temperature, wheel speeds, lambda correction, fuel flow, injection times, transmission temperature, brake pressure | [FTCAN 2.0 protocol](https://files.fueltech.net/manual/Ingles/Protocol_FTCAN20.pdf), revision 044 (17/09/2026) | **1 Mbit/s, 29-bit**, signed 16-bit big-endian, 100 Hz; FT500 0x14000600-608, others 0x14080600-608 | FTManager | USB to a Windows computer (or the ECU's screen) | No | **Simulated**; whether MAP is absolute is not stated in the protocol |
+
+| Generic OBD-II (11-bit and 29-bit) | Supported: the car's own ECU over the OBD-II port. RPM, speed, throttle, MAP, coolant, intake air, load, fuel trims, timing, MAF, fuel level, baro, module voltage, ambient, oil temperature, wideband lambda, fuel rate: whichever the car supports | SAE J1979 mode 01 PIDs on ISO 15765-4 CAN | 500 kbit/s; the dash **asks** (about 20 requests a second, read-only mode 01) and reads the answers on 0x7E8-0x7EF (or 0x18DAF1xx) | Not a tuning protocol | | | **Simulated** |
 
 rusEFI notes: its default base 0x200 shares IDs with the Frogdash comfort module and
 gateway. In a car without them it is used as it is; with them, move rusEFI's base (for
