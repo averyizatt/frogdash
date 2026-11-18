@@ -58,7 +58,7 @@ async def check(browser, url, state):
         await page.wait_for_function('!document.getElementById("controls-dialog").open')
         # Old event history is never replayed after a reload.
         await page.reload()
-        await page.wait_for_timeout(300)
+        await page.wait_for_function('window.frogdashLaterLoaded', timeout=20000)   # The wheel's code too, before pressing
         assert not await page.locator('#controls-dialog').evaluate('(el) => el.open')
         # Edit mode prevents arrows on an unfocused input from changing values.
         await page.locator('#controls-launch').click()

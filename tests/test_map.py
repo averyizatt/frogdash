@@ -43,6 +43,29 @@ class MapRouteTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((await client.get('/maps/..%2Fui%2Fapp.js')).status, 404)
             self.assertEqual((await client.get('/map.js')).status, 200)
 
+    async def test_a_map_downloaded_for_where_the_car_is(self):
+        import tempfile
+        from unittest import mock
+        from hardware.frogdash.paint import Paint
+        road = {'elements': [{'type': 'way', 'tags': {'highway': 'primary', 'name': 'High Street'},
+                              'geometry': [{'lat': 51.75, 'lon': -1.26}, {'lat': 51.76, 'lon': -1.25}]}]}
+        with tempfile.TemporaryDirectory() as folder:
+            state = State()
+            state.paint = Paint(Path(folder) / 'appearance-paint.json')
+            async with TestClient(TestServer(create_app(state))) as client:
+                with mock.patch.object(make_map, 'download', return_value=road),                      mock.patch('importlib.util.spec_from_file_location', return_value=spec),                      mock.patch('importlib.util.module_from_spec', return_value=make_map),                      mock.patch.object(spec.loader, 'exec_module', lambda module: None):
+                    response = await client.post('/maps/download', json={'lat': 51.752, 'lon': -1.258})
+                self.assertEqual(response.status, 200, await response.text())
+                name = (await response.json())['name']
+                maps = await (await client.get('/maps/index.json')).json()
+                self.assertEqual(maps[0]['name'], name)                                   # The Pi's own first
+                self.assertIn('grand-junction', [m['name'] for m in maps])
+                south, west, north, east = maps[0]['bounds']
+                self.assertTrue(south < 51.752 < north and west < -1.258 < east)
+                data = await (await client.get(f'/maps/{name}.json')).json()
+                self.assertIn('High Street', data['names'])
+                self.assertEqual((await client.post('/maps/download', json={'lat': 'x'})).status, 409)
+
 
 if __name__ == '__main__':
     unittest.main()

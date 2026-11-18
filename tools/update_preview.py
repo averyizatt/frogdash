@@ -62,15 +62,21 @@ def wizard_data():
     # The connection test on a recording from the car (MicroSquirt and the modules), as the
     # dash would answer /system/check for each ECU: the same messages as on a real bus.
     from hardware.frogdash import ecucheck
-    frames = {}
-    for line in (ROOT / 'tests' / 'fixtures' / 'demo.candump').read_text(encoding='utf-8').splitlines()[:4000]:
+    frames, samples = {}, {}
+    for n, line in enumerate((ROOT / 'tests' / 'fixtures' / 'demo.candump').read_text(encoding='utf-8').splitlines()[:4000]):
         match = re.search(r'\s([0-9A-F]{3,8})#([0-9A-F]*)', line)
         if match:
             frames[int(match[1], 16)] = (int(match[1], 16), len(match[1]) > 3, bytes.fromhex(match[2]))
+            if n % 40 == 0 or int(match[1], 16) not in samples:     # The custom ECU editor's bus, changing each second
+                samples.setdefault(int(match[1], 16), []).append(match[2])
+    raw_demo = [{'id': i, 'extended': i > 0x7FF, 'samples': list(dict.fromkeys(found))[-12:]} for i, found in sorted(samples.items())]
     built = [ecu.load(name) for name in ecu.built_in()]
     from hardware.frogdash.protocol import owned_ranges
     owned = owned_ranges(sysconfig.validate(sysconfig.preset('foxbody')))
     checks = {p.id: ecucheck.check(p, list(frames.values()), 500000, True, 0, built, owned) for p in built}
+    # And what each ECU with another bus speed gives while the dash listens at that speed: the
+    # recording's frames are the MicroSquirt's at 500 kbit/s, so at another speed nothing is heard.
+    trial = {p.id: ecucheck.check(p, [], p.bitrate, True, 0, built, owned) for p in built if p.bitrate != 500000}
     checks['custom'] = {'state': 'no_profile', 'ecu': 'custom', 'hints': [],
                         'message': 'No custom ECU profile yet: write one to /etc/frogdash/ecu/custom.json (docs/ecu-support.md)'}
     return {'profile': sysconfig.validate(sysconfig.preset('foxbody')),
@@ -78,7 +84,7 @@ def wizard_data():
             'ecu': {'active': active, 'problem': None, 'profiles': profiles},
             'bus': {'connected': True, 'ids_heard': 24, 'ecu_ids_heard': 18},
             'custom': {'id': 'custom', 'missing': 'No custom ECU profile yet', 'path': '/etc/frogdash/ecu/custom.json'},
-            'signals_now': {}, 'checks': checks, 'pending': False, 'status': None, 'setup': None}
+            'signals_now': {}, 'checks': checks, 'checks_trial': trial, 'catalog': ecu.CATALOG, 'raw_demo': raw_demo, 'position': {'lat': 39.0672, 'lon': -108.5645}, 'pending': False, 'status': None, 'setup': None}
 
 
 def assets():
@@ -109,7 +115,7 @@ def assets():
     demo = (ROOT / 'preview' / 'demo.js').read_text(encoding='utf-8')
     offline = (ROOT / 'preview' / 'offline.js').read_text(encoding='utf-8')
     personalize = (source / 'personalize.js').read_text(encoding='utf-8')
-    extra = {name: (source / name).read_text(encoding='utf-8') for name in ('viewport.js', 'responsive.css', 'instruments.js', 'instruments.css', 'skins.js', 'navigation.js', 'driving.js', 'trip.js', 'operations.js', 'units.js', 'review.js', 'review.css', 'camera.js', 'camera.css', 'dashcam.js', 'map.js', 'boot.js', 'taillights.js', 'taillights.css', 'taillight-settings.js', 'meth-tune.js', 'knock.js', 'knock.css', 'screen.js', 'keyboard.js', 'keyboard.css', 'summary.js', 'wizard.js', 'wizard.css', 'tuning.js', 'later.js', 'graphs.js', 'graphs.css', 'mlgplot.js', 'mlgplot.css', 'uPlot.iife.min.js', 'uPlot.min.css', 'alerts.js', 'alerts.css')}
+    extra = {name: (source / name).read_text(encoding='utf-8') for name in ('viewport.js', 'responsive.css', 'instruments.js', 'instruments.css', 'skins.js', 'navigation.js', 'driving.js', 'trip.js', 'operations.js', 'units.js', 'review.js', 'review.css', 'camera.js', 'camera.css', 'dashcam.js', 'map.js', 'boot.js', 'taillights.js', 'taillights.css', 'taillight-settings.js', 'meth-tune.js', 'knock.js', 'knock.css', 'screen.js', 'keyboard.js', 'keyboard.css', 'summary.js', 'ecu-editor.js', 'wizard.js', 'wizard.css', 'tuning.js', 'later.js', 'graphs.js', 'graphs.css', 'mlgplot.js', 'mlgplot.css', 'uPlot.iife.min.js', 'uPlot.min.css', 'alerts.js', 'alerts.css')}
     # The setup wizard's data, made from the real presets and ECU profiles: the preview has
     # no Pi to ask (wizard.js uses window.frogdashSystemDemo instead of /system).
     assert '  "wizard.js",\n' in html, 'wizard.js is no longer in the later list'

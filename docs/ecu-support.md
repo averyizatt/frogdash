@@ -46,7 +46,11 @@ described at the top of `hardware/frogdash/ecu/__init__.py`. In short:
 ```
 
 - **Layouts:** `u8 s8`; `u16 s16 u32 s32` big-endian; `u16le s16le u32le s32le`
-  little-endian; `bit@B.b`; `nib@B.b`. Each is checked against the frame's length.
+  little-endian; `bit@B.b`; `nib@B.b`; and any run of bits as a DBC file numbers them,
+  `ule@S:L`/`sle@S:L` (Intel, from start bit S) and `ube@S:L`/`sbe@S:L` (Motorola, S the
+  most significant bit), up to 32 bits. Each is checked against the frame's length.
+- **Units:** a signal the ECU sends in another unit than the key's says so with `from`
+  (`degF`, `K`, `psi`, `bar`, `mph`): the value after scale and offset is converted.
 - **A broadcast that can be moved** (rusEFI's starts wherever its base address is set):
   frames are given as `offsets` from a `base` with its default, and the system profile's
   `ecu.base_id` says where it is in this car (0: the default).
@@ -80,7 +84,34 @@ described at the top of `hardware/frogdash/ecu/__init__.py`. In short:
   [windows-tuning.md](windows-tuning.md): Wine and Box64 on the dash for USB serial cables,
   USB sharing to a Windows PC for cables that need the maker's driver.
 - `GET /ecu/profiles` lists the built-in profiles with their source, status, setup steps and
-  tuning software. The setup wizard will use it to offer the choice.
+  tuning software.
+
+### A custom ECU, on the dash's screen
+
+For an ECU with no built-in profile, pick **Custom ECU** on the setup wizard's ECU page and
+**Make the profile**. The editor (`hardware/ui/ecu-editor.js`):
+
+- **On the bus now** lists the CAN IDs heard in the last 3 seconds with their bytes. Tap
+  one to add it as a frame (or **+ Frame** and type the ID).
+- The frame's bytes are shown live, bit by bit. **+ Add a reading**, then pick what it is
+  (engine speed, coolant, MAP…, or a name of your own, kept in the logs), how big it is
+  (1, 2 or 4 bytes, a float, one bit, or bits as a DBC file gives them), signed or not, the
+  byte order, scale and offset, and for a temperature, pressure or speed the unit the ECU
+  sends it in. The value is decoded live from the bus as it is set, by the same rules as the
+  dash (a browser test checks the two agree), so a wrong byte shows at once: rev the engine
+  and watch RPM follow.
+- **Import DBC** reads the DBC file many ECU makers publish: each frame and signal, its
+  bits, scale and offset, the unit converted where the dash knows it. Which reading each
+  signal is gets guessed from its name (RPM, CLT, MAP, TPS…); a signal nobody could guess
+  keeps its own name and is marked **check**. Multiplexed signals, CAN FD frames and frames
+  of the other ID kind are left out, and the editor says so. A profile exported before
+  (**Export**, a JSON file) can be loaded the same way.
+- **Done** checks the profile as the dash would load it (`/system/custom/check`), including
+  that no frame uses an ID of this car's own modules or the dash. **Apply** at the end of
+  the wizard saves it as `/etc/frogdash/ecu/custom.json` (the one before kept as
+  `custom.json.bak`) and restarts the dash to read it.
+
+The file can still be written by hand in the format above, with `"id": "custom"`.
 
 ### Adding an ECU
 

@@ -55,6 +55,25 @@ class ConfigHelperTests(unittest.TestCase):
         self.assertEqual((self.etc / 'frogdash' / 'system.json').read_text(encoding='utf-8'), before)
         self.assertFalse((self.etc / 'frogdash' / 'system.json.bak').exists())
 
+    def test_a_custom_ecu_profile_is_saved_with_the_old_one_kept(self):
+        folder = self.etc / 'frogdash' / 'ecu'
+        folder.mkdir(parents=True)
+        (folder / 'custom.json').write_text('{"old": 1}', encoding='utf-8')
+        mine = {'id': 'custom', 'label': 'Mine', 'frames': [{'ids': ['0x360'], 'signals': [{'key': 'ecu.rpm', 'layout': 'u16@0'}]}]}
+        wanted = self.config.profiles.preset('generic')
+        wanted['ecu']['profile'] = 'custom'
+        self.config.apply({'profile': wanted, 'custom': mine}, self.etc, run_setup=False)
+        self.assertEqual(json.loads((folder / 'custom.json').read_text(encoding='utf-8')), mine)
+        self.assertEqual((folder / 'custom.json.bak').read_text(encoding='utf-8'), '{"old": 1}')
+        self.assertEqual(self.saved()['ecu']['profile'], 'custom')
+
+    def test_a_bad_custom_profile_changes_nothing(self):
+        before = (self.etc / 'frogdash' / 'system.json').read_text(encoding='utf-8')
+        with self.assertRaises(self.config.profiles.ProfileError):
+            self.config.apply({'profile': self.config.profiles.preset('generic'), 'custom': {'id': 'custom', 'frames': []}}, self.etc, run_setup=False)
+        self.assertEqual((self.etc / 'frogdash' / 'system.json').read_text(encoding='utf-8'), before)
+        self.assertFalse((self.etc / 'frogdash' / 'ecu' / 'custom.json').exists())
+
     def test_a_changed_can_board_asks_for_a_restart(self):
         wanted = self.config.profiles.preset('foxbody')
         wanted['can_hat']['oscillator'] = 16000000

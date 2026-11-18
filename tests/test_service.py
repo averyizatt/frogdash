@@ -1,3 +1,5 @@
+import json
+import re
 import asyncio
 from pathlib import Path
 import tempfile
@@ -85,6 +87,13 @@ class ServiceTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((await client.get('/raw')).status, 200)
             self.assertEqual((await client.get('/state', headers={'Origin': 'http://elsewhere.invalid'})).status, 403)
             self.assertEqual((await client.get('/secrets.env')).status, 404)
+            # Every file the page loads, at once or later (later.js), is served.
+            html_files = re.findall(r'(?:src|href)="([\w.-]+\.(?:js|css))"', html)
+            html_files += json.loads(re.search(r'id="later-files">(.*?)</script>', html, re.S).group(1))
+            for name in html_files:
+                self.assertEqual((await client.get('/' + name)).status, 200, name)
+            for name in ('..%2Fserver.py', '.hidden.js', 'skins'):
+                self.assertEqual((await client.get('/' + name)).status, 404, name)
 
     async def test_replay_preserves_timing_and_stales_at_end(self):
         with tempfile.TemporaryDirectory() as directory:

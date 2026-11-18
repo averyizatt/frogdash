@@ -50,7 +50,10 @@ async def main(browser_path):
         await page.click('#wizard-check .wizard-check-use')                                          # "Use MicroSquirt"
         assert await page.get_attribute('[data-wizard-ecu="megasquirt"]', 'aria-pressed') == 'true'
         await page.click('[data-wizard-ecu="haltech"]')
-        await page.wait_for_selector('#wizard-check[data-state="wrong_speed"]', timeout=5000)        # 1 Mbit/s, the bus 500k
+        # Haltech is 1 Mbit/s, the bus 500k: the dash listens at 1 Mbit/s by itself, then says what it heard.
+        await page.wait_for_selector('#wizard-check[data-state="listening"]', timeout=5000)
+        await page.wait_for_selector('#wizard-check[data-state="silent"]', timeout=10000)
+        assert 'Listened at 1 Mbit/s' in await page.text_content('#wizard-check')
 
         await page.click('#wizard-next')
         assert await title() == 'CAN board'

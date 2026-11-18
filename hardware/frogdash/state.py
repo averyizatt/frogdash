@@ -4,7 +4,7 @@ import sys
 import time
 import traceback
 
-from .protocol import ANALOG_BITS, EVENT_IDS, TIMEOUTS, decode, is_ecu, timeout
+from .protocol import ANALOG_BITS, EVENT_IDS, TIMEOUTS, decode, has_module, is_ecu, timeout
 from .alerts import ecu_off_without_gps_motion
 from .controls import Controls
 from .taillight import TaillightSettings
@@ -179,7 +179,7 @@ class State:
         if can_id in self.frames or len(self.frames) < 512:
             entry = self.frames.setdefault(can_id, {'count': 0, 'first': now, 'error': None, 'error_at': None})
             # A module that restarts goes quiet for a second or two, then reports from scratch.
-            if can_id in GAP_WATCH and not extended and not is_ecu(can_id) and 'seen' in entry and self.connected and now - entry['seen'] > max(1.0, 2 * TIMEOUTS[can_id]) \
+            if can_id in GAP_WATCH and has_module(GAP_WATCH[can_id]) and not extended and not is_ecu(can_id) and 'seen' in entry and self.connected and now - entry['seen'] > max(1.0, 2 * TIMEOUTS[can_id]) \
                     and not (self.firmware and GAP_WATCH[can_id] in self.firmware.quiet()):   # Quiet while it is updated
                 self.gaps.append({'id': can_id, 'module': GAP_WATCH[can_id], 'seconds': round(now - entry['seen'], 1), 't': self.wall()})
             entry.update(count=entry['count'] + 1, seen=now, data=data.hex().upper())
@@ -325,6 +325,8 @@ class State:
         # The comfort module is live from its dashboard heartbeat or its sensor-gateway frames.
         for name, sources in (("taillights", (0x100,)), ("comfort", (0x200, 0x500, 0x501, 0x503)),
                               ("watermeth", (0x300,)), ("knock", (0x307,))):
+            if not has_module(name):
+                continue   # Not in this car (system profile): no health to show or alert on
             matching = [v for v in values.values() if v["source_id"] in sources]
             modules[name] = "live" if any(v["quality"] == "live" for v in matching) else "stale" if matching else "unavailable"
         result = {"type": "state", "seq": self.seq, "timestamp_ms": int(self.wall() * 1000),

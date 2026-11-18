@@ -81,10 +81,12 @@
       recordingState === 'recording' ? `${recording.file} · ${recording.rows} samples · ${recording.dropped} dropped` :
       recordingState === 'error' ? `Recording paused: ${recording.error}` : recordingState === 'disabled' ? 'Recording disabled. Enable a log directory in the service configuration.' : 'Waiting for recorder';
     // Module status lives under Sensors; flag the Sensors icon when any module is not live.
-    $('diagnostics-launch').dataset.warning = String([...$('module-strip').children].some(tag => tag.dataset.quality && tag.dataset.quality !== 'live'));
+    // Only the modules this car has are in snapshot.modules (the system profile).
+    $('diagnostics-launch').dataset.warning = String([...$('module-strip').children].some(tag => tag.dataset.module in snapshot.modules && tag.dataset.quality && tag.dataset.quality !== 'live'));
     for (const tag of $('module-strip').children) {
       const quality = connected ? (snapshot.modules[tag.dataset.module] || 'unavailable') : 'stale';
       tag.dataset.quality = quality;
+      tag.hidden = !(tag.dataset.module in snapshot.modules);
       tag.querySelector('b').textContent = quality === 'live' ? 'Online' : quality === 'stale' ? 'Offline' : 'No signal';
     }
     for (const card of instrumentCards) {

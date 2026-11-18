@@ -8,6 +8,8 @@ when the dash writes tuning-request.json; the result goes to tuning-status.json.
   share BUSID     share a USB device (an ECU or tuning cable that needs its maker's Windows
                   driver) with a Windows PC on the dash's network, over USB/IP (port 3240)
   unshare BUSID   stop sharing it; it is the Pi's again
+  can_try SPEED   run the CAN bus at another speed for 20 s while the wizard listens for an
+                  ECU, then back to the system profile's speed
 
 Sharing: the PC runs usbip-win2 and attaches the device (usbip attach -r <dash> -b <busid>);
 Windows then loads the maker's own driver and the tuner works as if the cable were plugged
@@ -140,7 +142,35 @@ def unshare(busid):
     return 'No longer shared: the device is the Pi\'s again'
 
 
-ACTIONS = {'usb_scan': lambda arg: usb_scan(), 'usb_copy': usb_copy, 'usb_eject': lambda arg: usb_eject(),
+CAN_SPEEDS = (125000, 250000, 500000, 1000000)
+CAN_TRY_S = 20
+TRIAL = STATE / 'can-trial.json'
+
+
+def can_try(bitrate, sleep=time.sleep):
+    """The setup wizard's connection test for an ECU at another bus speed: can0 at that
+    speed for CAN_TRY_S, while the dash listens (can-trial.json tells it the speed), then
+    back to the profile's own speed through frogdash-can.service, which always uses it."""
+    if not str(bitrate).isdigit() or int(bitrate) not in CAN_SPEEDS:
+        raise ValueError('Not a CAN bus speed')
+    bitrate = int(bitrate)
+    tmp = TRIAL.with_name(TRIAL.name + '.tmp')
+    tmp.write_text(json.dumps({'bitrate': bitrate, 'until': time.time() + CAN_TRY_S}) + chr(10), encoding='utf-8')
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, TRIAL)
+    try:
+        run('ip', 'link', 'set', 'dev', 'can0', 'down')
+        code, said = run('ip', 'link', 'set', 'dev', 'can0', 'up', 'type', 'can', 'bitrate', str(bitrate), 'restart-ms', '100')
+        if code:
+            raise ValueError(f'The CAN board could not run at {bitrate // 1000} kbit/s: {said[:160]}')
+        sleep(CAN_TRY_S)
+    finally:
+        TRIAL.unlink(missing_ok=True)
+        run('systemctl', 'restart', 'frogdash-can.service', timeout=30)
+    return f'Listened at {bitrate // 1000} kbit/s for {CAN_TRY_S} s; the bus is back at its own speed'
+
+
+ACTIONS = {'usb_scan': lambda arg: usb_scan(), 'usb_copy': usb_copy, 'usb_eject': lambda arg: usb_eject(), 'can_try': can_try,
            'share': share, 'unshare': unshare}
 
 

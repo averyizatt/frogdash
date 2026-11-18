@@ -43,10 +43,15 @@
   const FREE_PINS = [4, 5, 6, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27];
   const WAVESHARE = {present: true, oscillator: 12000000, interrupt: 25};
   let data = null, draft = null, page = 0, applying = false, poll = null, listen = null;
+  // The custom ECU editor's profile (ecu-editor.js), saved with Apply; null: unchanged.
+  let customDraft = null;
+  // Car signals and GPS an ECU profile may give (ecu/__init__.py OFFERS).
+  const OFFERS = ['ecu.turn_left', 'ecu.turn_right', 'ecu.brake_pedal', 'ecu.headlights', 'ecu.reverse', 'ecu.fuel_level_pct',
+                  'ecu.gps_latitude', 'ecu.gps_longitude', 'ecu.vehicle_speed_kph'];
   // The connection test (/system/check, ecucheck.py): a title for each answer.
   const CHECK_TITLES = {ok: 'Connected', wrong_speed: 'Bus speed differs', silent: 'Nothing heard', errors: 'Bus errors',
     other_ecu: 'Another ECU found', wrong_ids: 'Different kind of CAN IDs', not_this_ecu: "Not this ECU's messages",
-    no_interface: 'No CAN interface', no_profile: 'No profile yet'};
+    no_interface: 'No CAN interface', no_profile: 'No profile yet', listening: 'Listening'};
 
   const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
   const copy = value => JSON.parse(JSON.stringify(value));
@@ -74,6 +79,11 @@
   }
 
   function ecuProfile(id = draft.ecu.profile) {
+    if (id === 'custom' && customDraft) {
+      const keys = customDraft.frames.flatMap(f => f.signals.map(x => x.key));
+      return {id, label: customDraft.label || 'Custom ECU', bitrate: customDraft.bitrate, extended: customDraft.extended,
+              offers: OFFERS.filter(k => keys.includes(k)), signals: keys.length, frames: customDraft.frames.length, edited: true};
+    }
     if (id === 'custom') return {id, label: 'Custom ECU', bitrate: draft.ecu.bitrate, offers: data.custom?.offers || [], ...(data.custom?.missing ? {} : data.custom || {})};
     return data.ecu.profiles.find(p => p.id === id) || {id, label: id};
   }
@@ -157,10 +167,12 @@
         ${logo(p)}<b>${esc(p.label)}</b><small>${esc((p.models || []).join(' · ') || p.manufacturer || '')}</small></button>`).join('');
     let detail;
     if (active.id === 'custom') {
-      const ready = data.custom && !data.custom.missing;
-      detail = `<h3>Custom ECU</h3><p>${ready ? `Your profile is in place: ${esc(data.custom.label)}, ${data.custom.signals} readings.`
-        : `Describe your ECU's CAN frames in a profile and save it as <code>${esc(data.custom?.path || '/etc/frogdash/ecu/custom.json')}</code> (the format is in docs/ecu-support.md). Until then the dash reads nothing from the ECU.`}</p>
-        <div class="wizard-row">${choice('ecu.bitrate', 'CAN bus speed', [[125000, '125 kbit/s'], [250000, '250 kbit/s'], [500000, '500 kbit/s'], [1000000, '1 Mbit/s']], 'The speed your ECU\'s CAN runs at.')}</div>`;
+      const saved = data.custom && !data.custom.missing;
+      const what = customDraft ? `Edited: ${esc(active.label)}, ${active.frames} frame${active.frames === 1 ? '' : 's'}, ${active.signals} reading${active.signals === 1 ? '' : 's'}, at ${speed(active.bitrate)}. Apply saves it.`
+        : saved ? `Your profile is in place: ${esc(data.custom.label)}, ${data.custom.signals} readings, at ${speed(data.custom.bitrate || 500000)}.`
+        : 'Describe what your ECU sends: pick the IDs on the bus, then which bytes are which reading, and see each value live as you set it. Or import the DBC file your ECU\'s maker publishes.';
+      detail = `<div class="wizard-custom"><div><h3>Custom ECU</h3><p>${what}</p></div>
+        <button type="button" class="wizard-check-use" data-wizard-custom-edit>${customDraft || saved ? 'Edit the profile' : 'Make the profile'}</button></div>`;
     } else {
       const base = active.base ? text('ecu.base_id', `First CAN ID (${active.base.setting || 'set in the ECU'})`, `0 uses the default, ${esc(active.base.default)}. Write it as 0x400 or as a number.`) : '';
       detail = `<h3>${esc(active.label)}</h3>${(active.setup || []).length ? `<p><b>Set in the ECU:</b></p><ul>${active.setup.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}
@@ -245,6 +257,62 @@
     return `<p class="wizard-lead">Where the dash gets the turn signals, brake, lights, reverse and fuel level. <b>Never connect 12 V to a Pi pin:</b> use an optocoupler board (docs/car-signals.md). "Now" shows each reading as the dash is set up at the moment.</p>
       <div class="signal-grid">${SIGNALS.map(signalRow).join('')}</div>`;
   }
+  // The offline map (map.js): where and how much, downloaded now from OpenStreetMap.
+  const MAP_SIZES = [[10, 'Town', 'about 20 km across'], [25, 'City', 'about 50 km across'], [40, 'Region', 'about 80 km across, slower']];
+  const mapPick = {where: 'here', place: null, radius: 10, results: [], status: '', maps: null, busy: false};
+  async function loadMaps() {
+    try { mapPick.maps = await (await fetch('maps/index.json', {cache: 'no-cache'})).json(); } catch { mapPick.maps = []; }
+    const list = $('wizard-maps');
+    if (list) list.innerHTML = mapList();
+  }
+  const mapList = () => mapPick.maps === null ? 'Checking…' : mapPick.maps.length ? mapPick.maps.map(m => esc(m.title)).join(' · ') : 'None yet';
+  function mapPanel() {
+    if (mapPick.maps === null && !mapPick.loading) { mapPick.loading = true; loadMaps().finally(() => { mapPick.loading = false; }); }
+    const here = data.position;
+    const pick = (key, value, label, help = '') => `<button type="button" data-wizard-map="${key}" data-value="${esc(value)}" aria-pressed="${String(mapPick[key]) === String(value)}">${esc(label)}${help ? ` <small>${esc(help)}</small>` : ''}</button>`;
+    const results = mapPick.where === 'place' ? `<div class="wizard-map-search"><input type="text" id="wizard-map-q" value="${esc(mapPick.q || '')}" placeholder="Town or city, e.g. Grand Junction" autocomplete="off" spellcheck="false">
+        <button type="button" data-wizard-map-search>Search</button></div>
+      <div class="signal-sources">${mapPick.results.map((r, i) => `<button type="button" data-wizard-map-place="${i}" aria-pressed="${mapPick.place === r}">${esc(r.title.split(',').slice(0, 3).join(','))}</button>`).join('')}</div>` : '';
+    const target = mapPick.where === 'here' ? here : mapPick.place;
+    const hint = target ? '' : mapPick.where === 'here' ? 'The car has no position yet: GPS needs a fix' : 'Search for a place first';
+    return `<div class="wizard-detail wizard-map"><h3>Offline map</h3>
+      <p class="wizard-small">On the Pi now: <span id="wizard-maps">${mapList()}</span>. The map screen shows the one the car is in, and offers to download one wherever there is none.</p>
+      <div class="wizard-segments"><span>Where</span><div class="signal-sources">${pick('where', 'here', 'Where the car is now', here ? '' : '(no position yet)')}${pick('where', 'place', 'A town or city')}</div></div>
+      ${results}
+      <div class="wizard-segments"><span>How much</span><div class="signal-sources">${MAP_SIZES.map(([km, label, help]) => pick('radius', km, label, help)).join('')}</div></div>
+      <div class="wizard-map-go"><button type="button" class="wizard-check-use" data-wizard-map-get${!target || mapPick.busy ? ' disabled' : ''}>Download this map</button>
+        <span id="wizard-map-status" class="wizard-small">${esc(mapPick.status || hint)}</span></div></div>`;
+  }
+  async function mapAction(target) {
+    const status = text => { mapPick.status = text; const box = $('wizard-map-status'); if (box) box.textContent = text; };
+    if ('wizardMapSearch' in target.dataset) {
+      const q = mapPick.q = ($('wizard-map-q')?.value || '').trim();
+      if (DEMO) { status('Preview: searching needs the dash and internet'); return; }
+      status('Searching…');
+      try {
+        const response = await fetch(`/maps/search?q=${encodeURIComponent(q)}`, {cache: 'no-store'});
+        if (!response.ok) throw new Error(await response.text());
+        mapPick.results = (await response.json()).places; mapPick.place = mapPick.results[0] || null;
+        mapPick.status = mapPick.results.length ? '' : 'Nothing found by that name';
+      } catch (error) { mapPick.status = error.message; }
+      render(); return;
+    }
+    if ('wizardMapGet' in target.dataset) {
+      const at = mapPick.where === 'here' ? data.position : mapPick.place;
+      if (!at) return;
+      if (DEMO) { status('Preview: nothing is downloaded; on the dash this fetches the streets from OpenStreetMap'); return; }
+      mapPick.busy = true; mapPick.status = 'Downloading the streets from OpenStreetMap… a large area takes a minute or two'; render();
+      try {
+        const response = await fetch('/maps/download', {method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({lat: at.lat, lon: at.lon, radius_km: mapPick.radius, title: at.title ? at.title.split(',').slice(0, 2).join(',') : ''})});
+        if (!response.ok) throw new Error(await response.text());
+        const got = await response.json();
+        mapPick.status = `Downloaded: ${got.title} (${got.ways} roads), kept on the Pi`; mapPick.maps = null;
+      } catch (error) { mapPick.status = error.message; }
+      mapPick.busy = false; render();
+    }
+  }
+
   function featuresPage() {
     const ecu = ecuProfile(), tuner = ecu.tuner && {...ecu.tuner, name: ecu.tuner.name.split(/[;(]/)[0].trim()};   // NSP, not its whole description
     const gps = get('gps.source') !== 'none';
@@ -254,6 +322,7 @@
     return `<p class="wizard-lead">What the dash shows and does.</p>
       <div class="wizard-row">${toggle('features.map', 'Map', gps ? 'The moving map with the offline tiles.' : 'The map needs GPS for where the car is (the GPS page).')}
       ${toggle('features.race', 'Race timer', gps ? 'Lap and drag timing from GPS, with results kept on the Pi.' : 'Timing needs GPS (the GPS page).')}</div>
+      ${get('features.map') ? mapPanel() : ''}
       <div class="wizard-row">${toggle('recording', 'Record every drive', 'MLG logs for TunerStudio and MegaLogViewer, kept on the Pi, and the drive review.')}
       ${toggle('terminal', 'Terminal on the dash', 'A Linux shell with sudo, for someone who knows what they are doing.')}</div>
       <div class="wizard-detail"><h3>Tuning software</h3>${tuning}</div>`;
@@ -308,27 +377,71 @@
     const keys = Object.keys(LABELS).filter(k => after.has(k));
     const order = [...keys.filter(changed), ...keys.filter(k => !changed(k))];
     const rows = order.map(k => `<tr class="${changed(k) ? 'changed' : ''}"><th>${esc(LABELS[k])}</th><td>${esc(value(draft, after, k))}</td><td>${changed(k) ? `was ${esc(value(data.profile, before, k))}` : ''}</td></tr>`).join('');
-    const changes = keys.filter(changed).length;
+    const custom = customDraft && draft.ecu.profile === 'custom';
+    const changes = keys.filter(changed).length + (custom ? 1 : 0);
     return `<p class="wizard-lead">${changes ? `${changes} change${changes === 1 ? '' : 's'} from how this dash is set up now, listed first.` : 'The same as this dash is set up now.'} Apply saves them (the old setup is kept as a backup) and sets up the Pi to match: it may install packages and restart the dash.</p>
-      <div class="wizard-review"><table>${rows}</table></div><div id="wizard-progress" class="wizard-progress"></div>`;
+      <div class="wizard-review"><table>${custom ? `<tr class="changed"><th>Custom ECU profile</th><td>${esc(customDraft.label)}: ${customDraft.frames.length} frames, ${customDraft.frames.reduce((n, f) => n + f.signals.length, 0)} readings</td><td>${data.custom?.missing ? 'new' : 'replaces the one saved'}</td></tr>` : ''}${rows}</table></div><div id="wizard-progress" class="wizard-progress"></div>`;
   }
   // --- Connection test: is the ECU picked talking? ---
+  // When the ECU picked runs its CAN at another speed than the dash's bus, the dash listens
+  // at the ECU's speed for 20 s by itself (POST /system/check, frogdash_tuning.py can_try),
+  // then says what it found. One try per ECU and speed while the wizard is open.
+  const trials = {};
+  let demoTrial = null;
+  const speed = bitrate => bitrate >= 1000000 ? '1 Mbit/s' : `${bitrate / 1000} kbit/s`;
   async function connection() {
-    if (DEMO) return data.checks?.[draft.ecu.profile] || {state: 'silent', message: 'No answer in the preview.', hints: []};
+    if (draft.ecu.profile === 'custom' && customDraft)
+      return {state: 'draft', title: 'Checked in the editor', hints: [],
+              message: 'The editor shows each reading live from the bus. Apply saves the profile; this test then uses it.'};
+    if (DEMO) {
+      const id = draft.ecu.profile;
+      if (demoTrial && demoTrial.ecu === id && Date.now() < demoTrial.until)
+        return {...(data.checks_trial?.[id] || {state: 'silent', message: 'Nothing heard.', hints: []}), trial: {bitrate: demoTrial.bitrate, left_s: Math.ceil((demoTrial.until - Date.now()) / 1000)}};
+      return data.checks?.[id] || {state: 'silent', message: 'No answer in the preview.', hints: []};
+    }
     const response = await fetch(`/system/check?ecu=${encodeURIComponent(draft.ecu.profile)}&base_id=${draft.ecu.base_id || 0}`, {cache: 'no-store'});
     if (!response.ok) throw new Error(await response.text());
     return response.json();
   }
+  async function startTrial(bitrate) {
+    if (DEMO) { demoTrial = {ecu: draft.ecu.profile, bitrate, until: Date.now() + 4000}; return; }
+    const response = await fetch('/system/check', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({bitrate})});
+    if (!response.ok) throw new Error(await response.text());
+  }
   function checkHtml(c) {
     const suggest = c.suggest ? `<button type="button" class="wizard-check-use" data-wizard-ecu="${esc(c.suggest)}">Use ${esc(c.suggest_label)}</button>` : '';
-    return `<div class="wizard-check-text"><b>${esc(CHECK_TITLES[c.state] || c.state)}</b><p>${esc(c.message)}</p>
+    return `<div class="wizard-check-text"><b>${esc(c.title || CHECK_TITLES[c.state] || c.state)}</b><p>${esc(c.message)}</p>
       ${(c.hints || []).length ? `<ul>${c.hints.map(h => `<li>${esc(h)}</li>`).join('')}</ul>` : ''}</div>${suggest}`;
+  }
+  // What to show for the answer c, starting a speed trial when the speeds differ.
+  async function judge(c) {
+    const p = ecuProfile(), key = `${p.id}@${p.bitrate}`, t = trials[key] || (trials[key] = {});
+    if (c.trial?.bitrate) {                                    // Listening at the ECU's speed now
+      t.during = c;
+      if (c.state === 'ok') t.found = c;
+      return {state: 'listening', title: `Listening at ${speed(c.trial.bitrate)}`, hints: [],
+              message: `The dash's bus is at ${p.label}'s speed for ${c.trial.left_s} s more. ${c.state === 'ok' ? c.message : 'Nothing from it yet…'}`};
+    }
+    if (c.trial?.starting) return {state: 'listening', title: `Switching to ${speed(p.bitrate)}`, hints: [], message: 'Changing the dash\'s bus speed to listen…'};
+    if (c.state !== 'wrong_speed') return c;
+    if (t.found) return {...t.found, title: `Found at ${speed(p.bitrate)}`,
+                         message: `${t.found.message} Apply sets the dash's bus to ${speed(p.bitrate)} for good.`};
+    if (t.during) return {...t.during, message: `Listened at ${speed(p.bitrate)}: ${t.during.message}`,
+                          hints: (t.during.hints || []).filter(h => !/must run at/.test(h))};
+    if (t.error) return {...c, message: `${c.message} ${t.error}`};
+    if (!t.asked) {
+      t.asked = true;
+      try { await startTrial(p.bitrate); } catch (error) { t.error = error.message || String(error); return {...c, message: `${c.message} ${t.error}`}; }
+      return {state: 'listening', title: `Switching to ${speed(p.bitrate)}`, hints: [],
+              message: `${p.label} runs its CAN at ${speed(p.bitrate)}, the dash at ${speed(c.bus_bitrate || 500000)}: listening at ${speed(p.bitrate)} for 20 s, then back.`};
+    }
+    return {state: 'listening', title: `Switching to ${speed(p.bitrate)}`, hints: [], message: 'Changing the dash\'s bus speed to listen…'};
   }
   async function listenOnce() {
     const box = $('wizard-check');
     if (!box) return;
     try {
-      const c = await connection();
+      const c = await judge(await connection());
       if (!$('wizard-check')) return;
       box.dataset.state = c.state; box.innerHTML = checkHtml(c);
     } catch (error) {
@@ -339,7 +452,7 @@
     clearInterval(listen); listen = null;
     if (PAGES[page] !== 'ecu' || !dialog.open) return;
     listenOnce();
-    if (!DEMO) listen = setInterval(listenOnce, 2000);
+    listen = setInterval(listenOnce, DEMO ? 1000 : 2000);
   }
 
   const RENDER = {start: startPage, screen: screenPage, ecu: ecuPage, can: canPage, gps: gpsPage, cameras: camerasPage, signals: signalsPage,
@@ -408,15 +521,29 @@
       if (path === 'gps.source') { draft.gps.enabled = raw === 'usb'; if (raw !== 'usb') draft.gps.transmit_on_can = false; }
       render(); return;
     }
+    if (event.target.closest('[data-wizard-custom-edit]')) {
+      window.frogdashEcuEditor?.open({profile: customDraft || data.custom?.profile, catalog: data.catalog || [], demo: DEMO ? data.raw_demo || [] : null,
+        onDone: profile => { customDraft = profile; draft.ecu.profile = 'custom'; draft.ecu.bitrate = profile.bitrate; draft.ecu.base_id = 0; render(); }});
+      return;
+    }
     const ecu = event.target.closest('[data-wizard-ecu]');
     if (ecu) {
       const chosen = ecuProfile(ecu.dataset.wizardEcu);
       draft.ecu.profile = chosen.id; draft.ecu.base_id = 0;
-      if (chosen.id !== 'custom') draft.ecu.bitrate = chosen.bitrate || 500000;
+      draft.ecu.bitrate = chosen.bitrate || 500000;
       if (!chosen.tuner?.runs_on_dash) draft.tunerstudio = false;
       if (chosen.tuner?.runs_on_dash || !chosen.tuner) draft.windows_tuner = false;
       render(); return;
     }
+    const mapChoice = event.target.closest('[data-wizard-map]');
+    if (mapChoice) {
+      const key = mapChoice.dataset.wizardMap, raw = mapChoice.dataset.value;
+      mapPick[key] = key === 'radius' ? Number(raw) : raw; mapPick.status = ''; render(); return;
+    }
+    const placeChoice = event.target.closest('[data-wizard-map-place]');
+    if (placeChoice) { mapPick.place = mapPick.results[Number(placeChoice.dataset.wizardMapPlace)]; render(); return; }
+    const mapButton = event.target.closest('[data-wizard-map-search], [data-wizard-map-get]');
+    if (mapButton) { mapAction(mapButton); return; }
     const step = event.target.closest('[data-wizard-page]');
     if (step && !applying) { page = Number(step.dataset.wizardPage); render(); }
   });
@@ -452,7 +579,8 @@
       applying = false; $('wizard-next').disabled = true; $('wizard-back').disabled = false; return;
     }
     try {
-      const response = await fetch('/system', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({profile: draft})});
+      const body = {profile: draft, ...(customDraft && draft.ecu.profile === 'custom' ? {custom: customDraft} : {})};
+      const response = await fetch('/system', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
       if (!response.ok) throw new Error(await response.text());
     } catch (error) {
       applying = false; render(); progress(`<p class="bad">Not applied: ${esc(error.message || error)}</p>`); return;
@@ -467,6 +595,7 @@
         progress(`<p class="${status.state === 'failed' ? 'bad' : status.state === 'done' ? 'good' : ''}">${esc(status.message)}</p><ol>${steps(now.setup)}</ol>`);
         if (status.state !== 'applying') {
           clearInterval(poll); poll = null; applying = false; data = now; $('wizard-back').disabled = false;
+          if (status.state === 'done') customDraft = null;          // Saved: the dash's own from now on
           $('wizard-next').disabled = status.state === 'done';
           if (status.state === 'done') afterApply();
         }
@@ -480,7 +609,7 @@
     } catch (error) {
       window.alert?.(`The setup could not be read: ${error.message || error}`); return;
     }
-    draft = copy(data.profile); page = at; applying = false;
+    draft = copy(data.profile); page = at; applying = false; customDraft = null;
     if (!dialog.open) dialog.showModal();
     render();
     $('wizard-next').focus();

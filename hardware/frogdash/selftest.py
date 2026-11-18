@@ -64,7 +64,7 @@ def report(state, folder=None, wall=time.time):
     # --- Modules (from the CAN check) ---
     rows = cancheck.report(state)['rows']
     ecu_name = protocol.ECU.label
-    for name in ('Taillights', 'Comfort gateway', 'Water/meth', ecu_name):
+    for name in [m for m in ('Taillights', 'Comfort gateway', 'Water/meth') if protocol.has_module(m)] + [ecu_name]:
         mine = [r for r in rows if r['module'] == name]
         good = [r for r in mine if r['status'] == 'ok']
         bad = [r for r in mine if r['status'] in ('fault', 'rejected')]
@@ -89,18 +89,21 @@ def report(state, folder=None, wall=time.time):
                     FAIL if runtime['conflict'] else OK if runtime['tx_count'] else SKIP if not runtime['enabled'] else WARN,
                     runtime['status'], 'Another node also sends 0x309, or nothing acknowledges frames from the Pi'))
     tail = state.taillight.snapshot()
-    out.append(line('Dash on the bus', 'Taillight settings link',
+    if protocol.has_module('taillights'):
+      out.append(line('Dash on the bus', 'Taillight settings link',
                     OK if tail['supported'] and tail['complete'] else WARN,
                     'Settings read back from the taillights' if tail['supported'] and tail['complete'] else
                     'Reading settings…' if tail['supported'] else 'No settings status (0x103)',
                     'Flash the taillight PCB firmware with CAN settings (esp32-s3-pcb)'))
     wheel = state.wheel.snapshot(state.connected and state.mode == 'socketcan')
-    out.append(line('Dash on the bus', 'Steering wheel buttons', OK if wheel['status'] == 'ready' else WARN,
+    if protocol.has_module('gateway'):
+      out.append(line('Dash on the bus', 'Steering wheel buttons', OK if wheel['status'] == 'ready' else WARN,
                     {'ready': 'Receiving button reports', 'release buttons': 'A button reads as held: release all buttons',
                      'unavailable': 'No button reports (0x501)'}[wheel['status']],
                     'Check the gateway is running and no button input is stuck (Sensors > CAN check, 0x501)'))
     interior = [state.controls.live(f'interior.{side}.brightness', 0x503, 1) for side in ('upper', 'lower')]
-    out.append(line('Dash on the bus', 'Interior lights', OK if any(v is not None for v in interior) else WARN,
+    if protocol.has_module('gateway'):
+      out.append(line('Dash on the bus', 'Interior lights', OK if any(v is not None for v in interior) else WARN,
                     'Gateway reports both light zones' if all(v is not None for v in interior) else 'No interior light state (0x503)',
                     'Needs the comfort module sensor-gateway firmware'))
 

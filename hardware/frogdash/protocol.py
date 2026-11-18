@@ -90,6 +90,20 @@ def timeout(can_id):
     return ECU.timeout_s if is_ecu(can_id) or is_ecu(can_id, True) else TIMEOUTS.get(can_id, .5)
 
 
+# The Frogdash modules this car has (the system profile's `modules`): checks, alerts, the
+# firmware page and the module strip leave out the others. All of them until _start reads it.
+MODULES_PRESENT = {'gateway': True, 'taillights': True, 'watermeth': True}
+# The dash's own names for each module's parts (snapshot['modules'], GAP_WATCH, cancheck).
+MODULE_OF = {'taillights': 'taillights', 'comfort': 'gateway', 'watermeth': 'watermeth', 'knock': 'watermeth',
+             'Taillights': 'taillights', 'Comfort gateway': 'gateway', 'Water/meth': 'watermeth',
+             'sensor gateway': 'gateway', 'water/meth': 'watermeth'}
+
+
+def has_module(name):
+    """Does this car have the module a name belongs to? Names that are not a module: yes."""
+    return MODULES_PRESENT.get(MODULE_OF.get(name, name), True)
+
+
 def _start():
     """The system profile's ECU and modules, read once at start (before log_channels lists
     its channels). A profile that cannot be used leaves MegaSquirt, saying why."""
@@ -98,7 +112,9 @@ def _start():
     profile, problem = ecu_profiles.chosen()
     try:
         from . import sysconfig
-        owned = owned_ranges(sysconfig.load())
+        settings = sysconfig.load()
+        owned = owned_ranges(settings)
+        MODULES_PRESENT.update({k: bool(v) for k, v in settings['modules'].items() if k in MODULES_PRESENT})
     except Exception:   # pragma: no cover (sysconfig falls back by itself)
         owned = owned_ranges()
     try:

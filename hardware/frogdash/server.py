@@ -4,9 +4,13 @@ import asyncio
 import codecs
 import json
 import os
+import importlib.util
+import math
 import re
 import subprocess
 import time
+import urllib.parse
+import urllib.request
 from collections import deque
 from contextlib import suppress
 from pathlib import Path
@@ -40,6 +44,7 @@ from .paint import Paint, validate as validate_paint
 from .imports import Imports
 from . import cancheck, methtune, selftest
 from . import ecu as ecu_profiles, ecucheck, inputs, obd2, protocol, sysconfig, wintune
+from .ecu import dbc as ecu_dbc
 from .parking import rolling
 from .logview import LogCache, LogError
 
@@ -73,6 +78,8 @@ def save_recording(folder, lines, wall):
 async def preset_pause():
     await asyncio.sleep(.3)  # Controls space commands at least 0.25 s apart.
 
+
+UI_FILE = re.compile(r'[a-zA-Z0-9][a-zA-Z0-9_.-]{0,60}\.(html|js|css|json)')
 
 def create_app(state, adapter=None, connectivity=None):
     if state.features is None:
@@ -906,7 +913,9 @@ def create_app(state, adapter=None, connectivity=None):
 
     async def asset(request):
         name = request.match_info.get("name", "index.html")
-        if name not in {"index.html", "app.js", "style.css", "keyboard.js", "keyboard.css", "summary.js", "later.js", "alert-rules.json", "alerts.js", "alerts.css", "graphs.js", "graphs.css", "uPlot.iife.min.js", "uPlot.min.css", "viewport.js", "responsive.css", "instruments.js", "instruments.css", "skins.js", "personalize.js", "driving.js", "trip.js", "operations.js", "units.js", "review.js", "review.css", "navigation.js", "camera.js", "camera.css", "dashcam.js", "map.js", "boot.js", "taillights.js", "taillights.css", "taillight-settings.js", "meth-tune.js", "knock.js", "knock.css", "screen.js"}:
+        # Any page file directly in hardware/ui (a list by hand missed the wizard, the Tuning page and
+        # the log viewer, which the dash then never loaded); no folders, nothing hidden.
+        if not UI_FILE.fullmatch(name) or not (WEB / name).is_file():
             raise web.HTTPNotFound()
         if name == 'index.html' and state.paint and state.paint.value:
             page = await asyncio.to_thread((WEB / name).read_text, encoding='utf-8')
@@ -929,11 +938,15 @@ def create_app(state, adapter=None, connectivity=None):
             try:
                 body = await request.json()
                 wanted = sysconfig.complete({**body['profile'], 'configured': True})
+                request_body = {'profile': wanted}
+                if body.get('custom') is not None:      # The custom ECU editor's profile, saved with the rest
+                    check_custom(body['custom'], wanted)
+                    request_body['custom'] = body['custom']
                 if wanted['ecu']['profile'] != ecu_profiles.CUSTOM:     # A custom one may be written afterwards
                     ecu_profiles.load(wanted['ecu']['profile'], wanted['ecu']['base_id'])
             except (KeyError, TypeError, AttributeError, ValueError) as error:
                 raise web.HTTPBadRequest(text=str(error) or 'Invalid setup request')
-            await asyncio.to_thread(atomic_write, folder / 'config-request.json', {'profile': wanted})
+            await asyncio.to_thread(atomic_write, folder / 'config-request.json', request_body)
             return web.json_response({'pending': True})
 
         def read_status(name):
@@ -944,7 +957,8 @@ def create_app(state, adapter=None, connectivity=None):
 
         def custom_profile():
             try:
-                return ecu_profiles.load(ecu_profiles.CUSTOM).summary()
+                found = ecu_profiles.load(ecu_profiles.CUSTOM)
+                return {**found.summary(), 'profile': found.data}       # The whole of it, for the editor
             except ecu_profiles.ProfileError as exc:
                 return {'id': ecu_profiles.CUSTOM, 'missing': str(exc), 'path': str(ecu_profiles.USER / 'custom.json')}
 
@@ -964,14 +978,68 @@ def create_app(state, adapter=None, connectivity=None):
                     'ecu': {'active': protocol.ECU.summary(), 'problem': protocol.ECU_PROBLEM, 'profiles': profiles},
                     'bus': {'connected': state.connected, 'ids_heard': len(recent),
                             'ecu_ids_heard': sum(protocol.is_ecu(f['id'], f['extended']) for f in recent)},
-                    'custom': custom_profile(),
+                    'custom': custom_profile(), 'catalog': ecu_profiles.CATALOG,
+                    'position': ({'lat': round(state.nav.position[0], 5), 'lon': round(state.nav.position[1], 5)}
+                                 if getattr(state.nav, 'position', None) else None),
                     'signals_now': state.inputs.view() if state.inputs else {},
                     'pending': bool(folder and (folder / 'config-request.json').exists()),
                     'status': read_status('config-status.json'), 'setup': read_status('setup-status.json')}
         return web.json_response(await asyncio.to_thread(listing), headers={'Cache-Control': 'no-store'})
 
+    def check_custom(data, settings=None):
+        """A custom ECU profile from the editor: as the dash would load it, and clear of the
+        IDs this car's own modules and the dash use."""
+        found = ecu_profiles.custom(data)
+        taken = protocol.clashes(found, protocol.owned_ranges(settings or sysconfig.load()))
+        if taken:
+            raise ecu_profiles.ProfileError(f'These IDs are used by this car\'s modules or the dash: {", ".join(taken)}')
+        return found
+
+    async def system_custom(request):
+        """The custom ECU editor: check a profile (action check) or read a DBC file into one
+        (action dbc, the file's text). Nothing is saved: Apply saves it with the setup."""
+        require_local(request)
+        try:
+            body = await request.json()
+            if request.match_info['action'] == 'dbc':
+                text = body.get('text')
+                if not isinstance(text, str) or len(text) > 4_000_000:
+                    raise ValueError('Send the DBC file as text (up to 4 MB)')
+                return web.json_response(await asyncio.to_thread(ecu_dbc.read, text))
+            found = await asyncio.to_thread(check_custom, body.get('profile'))
+            return web.json_response({'ok': True, 'summary': found.summary()})
+        except (TypeError, AttributeError, ValueError) as error:
+            raise web.HTTPBadRequest(text=str(error) or 'Not a profile')
+
     async def system_check(request):
-        """The wizard's connection test: is the ECU chosen (?ecu=, &base_id=) talking now?"""
+        """The wizard's connection test: is the ECU chosen (?ecu=, &base_id=) talking now?
+        POST {bitrate}: listen at the ECU's own speed for a moment when it is not the bus's
+        (frogdash_tuning.py can_try; parked only, and the bus goes back by itself)."""
+        folder = state.paint.path.parent if state.paint else None
+        if request.method == 'POST':
+            require_local(request)
+            try:
+                bitrate = int((await request.json()).get('bitrate'))
+                if bitrate not in (125000, 250000, 500000, 1000000):
+                    raise ValueError('Not a CAN bus speed')
+                if not folder or state.mode == 'replay':
+                    raise ValueError('Only on the dash in the car')
+                if rolling(state):
+                    raise ValueError('Stop the car first: the bus speed is changed for a moment to listen')
+                if (folder / 'tuning-request.json').exists():
+                    raise ValueError('The Pi is busy with another request')
+            except (ValueError, TypeError, AttributeError) as error:
+                raise web.HTTPConflict(text=str(error) or 'Invalid request')
+            await asyncio.to_thread(atomic_write, folder / 'tuning-request.json', {'action': 'can_try', 'arg': str(bitrate)})
+            return web.json_response({'pending': True})
+
+        def trial():
+            try:
+                data = json.loads((folder / 'can-trial.json').read_text(encoding='utf-8')) if folder else None
+            except (OSError, ValueError):
+                return None
+            return data if data and data.get('until', 0) > time.time() else None
+
         def run():
             name = request.query.get('ecu', protocol.ECU.id)
             try:
@@ -980,7 +1048,10 @@ def create_app(state, adapter=None, connectivity=None):
             except (ValueError, ecu_profiles.ProfileError) as exc:
                 return {'state': 'no_profile', 'ecu': name, 'message': str(exc), 'hints': []}
             now = state.wall() * 1000
-            recent = [f for f in list(state.raw.values()) if now - (f['timestamp_ms'] or 0) < 3000]
+            trying = trial()
+            # During a speed trial only what came after the switch counts (CAN_TRY_S = 20 s).
+            since = (trying['until'] - 20 + 0.5) * 1000 if trying else 0
+            recent = [f for f in list(state.raw.values()) if now - (f['timestamp_ms'] or 0) < 3000 and (f['timestamp_ms'] or 0) >= since]
             frames = [(f['id'], f['extended'], bytes.fromhex(f['data'])) for f in recent if not f['error'] and not f.get('remote')]
             others = []
             for other in ecu_profiles.built_in():
@@ -988,8 +1059,12 @@ def create_app(state, adapter=None, connectivity=None):
                     others.append(ecu_profiles.load(other))
                 except ecu_profiles.ProfileError:
                     pass
-            return ecucheck.check(candidate, frames, sysconfig.load()['ecu']['bitrate'], state.connected,
-                                  sum(1 for f in recent if f['error']), others, protocol.OWNED)
+            pending = bool(folder and (folder / 'tuning-request.json').exists())
+            bus = trying['bitrate'] if trying else sysconfig.load()['ecu']['bitrate']
+            result = ecucheck.check(candidate, frames, bus, state.connected, sum(1 for f in recent if f['error']), others, protocol.OWNED)
+            result['bus_bitrate'] = bus
+            result['trial'] = {'bitrate': trying['bitrate'], 'left_s': round(trying['until'] - time.time())} if trying else ({'starting': True} if pending else None)
+            return result
         return web.json_response(await asyncio.to_thread(run), headers={'Cache-Control': 'no-store'})
 
     async def ecu_list(request):
@@ -1039,13 +1114,86 @@ def create_app(state, adapter=None, connectivity=None):
             raise web.HTTPNotFound()
         return web.FileResponse(WEB / 'ecu-logos' / name, headers={'Cache-Control': 'no-cache'})
 
+    def user_maps():
+        """Maps downloaded on this Pi (Map > Download the map around here), beside the dash's state."""
+        return state.paint.path.parent / 'maps' if state.paint else None
+
+    def read_index(folder):
+        try:
+            return json.loads((folder / 'index.json').read_text(encoding='utf-8')) if folder else []
+        except (OSError, ValueError):
+            return []
+
     async def map_data(request):
-        # Offline street maps built by tools/make_map.py (OpenStreetMap, ODbL).
+        # Offline street maps built by tools/make_map.py (OpenStreetMap, ODbL): the ones in the
+        # repository and the ones downloaded on this Pi. The map screen picks the one the car is in.
         name = request.match_info['name']
-        path = WEB.parent / 'maps' / name
-        if not re.fullmatch(r'[a-z0-9-]{1,40}\.json', name) or not path.is_file():
+        if not re.fullmatch(r'[a-z0-9-]{1,40}\.json', name):
             raise web.HTTPNotFound()
-        return web.FileResponse(path, headers={'Cache-Control': 'no-cache'})
+        if name == 'index.json':
+            built_in, mine = read_index(WEB.parent / 'maps'), read_index(user_maps())
+            return web.json_response(mine + [m for m in built_in if m['name'] not in {x['name'] for x in mine}],
+                                     headers={'Cache-Control': 'no-cache'})
+        for folder in (user_maps(), WEB.parent / 'maps'):
+            if folder and (folder / name).is_file():
+                return web.FileResponse(folder / name, headers={'Cache-Control': 'no-cache'})
+        raise web.HTTPNotFound()
+
+    MAP_SIZES_KM = (10.0, 25.0, 40.0)   # Half the width: a town, a city, a region
+
+    async def map_search(request):
+        """Places matching a name, for the wizard's map choice (OpenStreetMap's Nominatim)."""
+        require_local(request)
+        query = request.query.get('q', '').strip()
+        if not 2 <= len(query) <= 100:
+            raise web.HTTPConflict(text='Type a town or city')
+
+        def search():
+            url = 'https://nominatim.openstreetmap.org/search?' + urllib.parse.urlencode({'q': query, 'format': 'json', 'limit': 5})
+            with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': 'frogdash-map/1.0'}), timeout=20) as response:
+                found = json.load(response)
+            return [{'title': str(p.get('display_name', ''))[:120], 'lat': float(p['lat']), 'lon': float(p['lon'])} for p in found[:5]]
+        try:
+            return web.json_response({'places': await asyncio.to_thread(search)})
+        except (OSError, ValueError, KeyError) as error:
+            raise web.HTTPConflict(text=f'The search did not work (internet needed): {error}')
+
+    async def map_download(request):
+        """The streets around a position, from OpenStreetMap (Overpass), kept on this Pi."""
+        require_local(request)
+        folder = user_maps()
+        try:
+            body = await request.json()
+            lat, lon = float(body['lat']), float(body['lon'])
+            radius = float(body.get('radius_km', 10))
+            if not (-85 < lat < 85 and -180 <= lon <= 180) or not folder:
+                raise ValueError('No position to fetch a map for')
+            if radius not in MAP_SIZES_KM:
+                raise ValueError('Choose one of the map sizes')
+            place = str(body.get('title') or '').strip()[:60]
+        except (KeyError, TypeError, ValueError) as error:
+            raise web.HTTPConflict(text=str(error) or 'No position')
+        half_lat = radius / 111.32
+        half_lon = half_lat / max(0.2, math.cos(math.radians(lat)))
+        bounds = (round(lat - half_lat, 3), round(lon - half_lon, 3), round(lat + half_lat, 3), round(lon + half_lon, 3))
+        name = f'area-{lat:.2f}-{lon:.2f}-{int(radius)}'.replace('.', '-').replace('--', '-m')
+        title = place or f'Around {lat:.2f}, {lon:.2f}'
+
+        def fetch():
+            spec = importlib.util.spec_from_file_location('frogdash_make_map', Path(__file__).resolve().parents[2] / 'tools' / 'make_map.py')
+            maker = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(maker)
+            result = maker.build(maker.download(*bounds), bounds, title)
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / f'{name}.json').write_text(json.dumps(result, separators=(',', ':'), ensure_ascii=False), encoding='utf-8')
+            index = [m for m in read_index(folder) if m['name'] != name] + [{'name': name, 'title': title, 'bounds': list(bounds)}]
+            (folder / 'index.json').write_text(json.dumps(index, indent=1) + chr(10), encoding='utf-8')
+            return len(result['ways'])
+        try:
+            ways = await asyncio.to_thread(fetch)
+        except (OSError, ValueError) as error:
+            raise web.HTTPConflict(text=f'The map could not be downloaded (internet needed): {error}')
+        return web.json_response({'name': name, 'title': title, 'ways': ways})
 
     async def appearance_snapshot(request):
         # The dashboard's current look, written to disk so the next start paints it first.
@@ -1193,8 +1341,9 @@ def create_app(state, adapter=None, connectivity=None):
                     web.get('/operations/{action}', operations), web.post('/operations/{action}', operations),
                     web.post('/ui/appearance', appearance_snapshot),
                     web.route('*', '/ui/appearance/image/{field:background|splash}', appearance_image),
-                    web.get('/taillights/{name}', taillight_frames), web.get('/skins/{name}', skin_image), web.get('/ecu-logos/{name}', ecu_logo), web.get('/maps/{name}', map_data),
-                    web.get('/ecu/profiles', ecu_list), web.get('/system', system), web.post('/system', system), web.get('/system/check', system_check),
+                    web.get('/taillights/{name}', taillight_frames), web.get('/skins/{name}', skin_image), web.get('/ecu-logos/{name}', ecu_logo), web.get('/maps/search', map_search), web.get('/maps/{name}', map_data), web.post('/maps/download', map_download),
+                    web.get('/ecu/profiles', ecu_list), web.get('/system', system), web.post('/system', system), web.get('/system/check', system_check), web.post('/system/check', system_check),
+                    web.post('/system/custom/{action:check|dbc}', system_custom),
                     web.get('/ui/import', import_list), web.get('/ui/import/{name}', import_file),
                     web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),
                     web.get('/dashcam/status', dashcam_status), web.get('/dashcam/stream', dashcam_stream),

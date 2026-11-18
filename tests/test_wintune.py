@@ -160,5 +160,37 @@ class StickTests(unittest.TestCase):
             tuning.usb_copy('../../etc/shadow')
 
 
+
+class SpeedTrialTests(unittest.TestCase):
+    def test_listens_at_the_ecus_speed_then_goes_back(self):
+        import tools.frogdash_tuning as tuning
+        with tempfile.TemporaryDirectory() as tmp:
+            calls, seen = [], []
+            with mock.patch.object(tuning, 'TRIAL', Path(tmp) / 'can-trial.json'),                  mock.patch.object(tuning, 'run', side_effect=lambda *a, **k: (calls.append(a), (0, ''))[1]):
+                said = tuning.can_try('1000000', sleep=lambda s: seen.append((Path(tmp) / 'can-trial.json').exists()))
+                self.assertFalse((Path(tmp) / 'can-trial.json').exists())
+        self.assertEqual(seen, [True])                                   # The dash knew the speed while listening
+        self.assertIn(('ip', 'link', 'set', 'dev', 'can0', 'up', 'type', 'can', 'bitrate', '1000000', 'restart-ms', '100'), calls)
+        self.assertEqual(calls[-1], ('systemctl', 'restart', 'frogdash-can.service'))   # Back to the profile's speed
+        self.assertIn('1000 kbit/s', said)
+
+    def test_only_real_can_speeds(self):
+        import tools.frogdash_tuning as tuning
+        for bad in ('12345', 'fast', None):
+            with self.assertRaises(ValueError):
+                tuning.can_try(bad)
+
+    def test_goes_back_even_when_the_board_refuses(self):
+        import tools.frogdash_tuning as tuning
+        with tempfile.TemporaryDirectory() as tmp:
+            calls = []
+            def run(*a, **k):
+                calls.append(a)
+                return (2, 'RTNETLINK answers: Invalid argument') if 'bitrate' in a else (0, '')
+            with mock.patch.object(tuning, 'TRIAL', Path(tmp) / 'can-trial.json'), mock.patch.object(tuning, 'run', side_effect=run):
+                with self.assertRaises(ValueError):
+                    tuning.can_try('1000000', sleep=lambda s: None)
+        self.assertEqual(calls[-1], ('systemctl', 'restart', 'frogdash-can.service'))
+
 if __name__ == '__main__':
     unittest.main()

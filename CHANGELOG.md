@@ -14,6 +14,30 @@ on the Firmware page shows the version it runs and the version available.
 
 ## Unreleased
 
+- **Custom ECU editor:** on the setup wizard's ECU page, Custom ECU opens an editor on the
+  dash's screen: the CAN IDs on the bus now, each frame's bytes live, and each reading set
+  with buttons (which bytes, order, sign, scale, offset, the unit the ECU sends) with its
+  value decoded live as it is set. A DBC file can be imported, with each reading guessed from
+  its name and the guesses to check marked. Apply saves it as `/etc/frogdash/ecu/custom.json`.
+  ECU profiles gain any run of bits as DBC files number them, and a `from` unit.
+- **Fix:** the dash never served the setup wizard, the Tuning page or the log viewer's files
+  (`wizard.js`, `tuning.js`, `mlgplot.js` and their styles): its list of page files was kept
+  by hand and they were missing, so on the Pi they did not load. Every file in the page's
+  folder is served now, and a test checks each file the page loads.
+- **Fix:** Apply restarts the dash when setup is done, so a new ECU, car signals or screens
+  take effect without restarting the Pi.
+- **Other cars' checks:** System check, the CAN check, the module alerts (MOD-01/02/03), the
+  firmware page, the module strip and the module gap log follow the system profile's
+  `modules`: a car without the reference car's boards is not told they are missing.
+- **Maps anywhere:** the map screen shows the offline map the car is in, and offers to download
+  the streets around it when there is none. The setup wizard's map choice downloads one for
+  where the car is or a town searched by name, in three sizes (about 20, 50 or 80 km across),
+  from OpenStreetMap; maps are kept on the Pi beside the repository's.
+- **Bus speed found by itself:** when the ECU picked runs its CAN at another speed, the wizard's
+  connection test listens at that speed for 20 s (parked only; the bus goes back by itself) and
+  says what it heard.
+- README: the install guide ends in the setup wizard; ECU, tuning, car signal and map support
+  as they are now.
 - **Generic OBD-II** (`obd2`, `obd2_29bit` ECU profiles): any car with CAN on its OBD port. The
   dash asks which readings the car supports, then requests them in turn (read-only mode 01,
   20 a second) and shows them on the same gauges. The wizard's connection test explains that

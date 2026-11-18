@@ -43,6 +43,14 @@ class SystemEndpointTests(unittest.IsolatedAsyncioTestCase):
                 haltech = await (await client.get('/system/check?ecu=haltech')).json()
                 self.assertEqual(haltech['state'], 'wrong_speed', haltech)
                 self.assertEqual((await (await client.get('/system/check?ecu=nope')).json())['state'], 'no_profile')
+                # Listening at Haltech's speed: a request for the root helper; a speed CAN does not use is refused.
+                self.assertEqual((await client.post('/system/check', json={'bitrate': 12345})).status, 409)
+                self.assertEqual((await client.post('/system/check', json={'bitrate': 1000000})).status, 200)
+                trial = json.loads((Path(folder) / 'tuning-request.json').read_text(encoding='utf-8'))
+                self.assertEqual(trial, {'action': 'can_try', 'arg': '1000000'})
+                self.assertEqual((await client.post('/system/check', json={'bitrate': 1000000})).status, 409)   # Busy
+                self.assertEqual((await (await client.get('/system/check?ecu=haltech')).json())['trial'], {'starting': True})
+                (Path(folder) / 'tuning-request.json').unlink()
 
                 wanted = sysconfig.preset('generic')
                 wanted['ecu'].update(profile='haltech', bitrate=1000000)

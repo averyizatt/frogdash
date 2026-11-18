@@ -67,3 +67,4 @@ jobs:
       - run: python tests/browser_load_order.py
       - run: python tests/browser_logview.py
       - run: python tests/browser_wizard.py
+      - run: python tests/browser_ecu_editor.py

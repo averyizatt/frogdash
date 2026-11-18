@@ -20,6 +20,11 @@ Layouts, byte numbers from 0:
   f32@B f32le@B             a 32-bit IEEE float, big- or little-endian
   bit@B.b                   one bit (b = 0 is the lowest)
   nib@B.b                   four bits from bit b
+  ule@S:L sle@S:L           L bits from start bit S, Intel order, as a DBC file numbers them
+  ube@S:L sbe@S:L           the same in Motorola order (S is the most significant bit)
+
+A signal may say what unit the ECU sends it in, `from` (one of FROM_UNITS), when that is not
+the dash's own: the value after scale and offset is converted (a temperature in F to C).
 
 Frames are found by `ids`, or, for an ECU whose broadcast can be moved, by `offsets` from a
 `base`: {"default": "0x200", "setting": "where it is set in the ECU's software"}. The base
@@ -56,6 +61,40 @@ CONVERT = {
     # Holley sends degrees F as a float.
     'degF_to_C': lambda raw: (raw - 32) * 5 / 9,
 }
+# Units an ECU may send that the dash keeps in another (the key's): value after scale and offset.
+FROM_UNITS = {
+    'degF': lambda v: (v - 32) * 5 / 9, 'K': lambda v: v - 273.15,
+    'psi': lambda v: v * 6.894757293168361, 'bar': lambda v: v * 100,
+    'mph': lambda v: v * 1.609344,
+}
+# The readings a custom profile can fill, for its editor: (key, what it is, the dash's unit,
+# then the other units an ECU may send it in). Other ecu.<name> keys are kept in the logs.
+TEMPERATURE, PRESSURE, SPEED = ('°C', 'degF', 'K'), ('kPa', 'psi', 'bar'), ('km/h', 'mph')
+CATALOG = (
+    ('Engine', [('ecu.rpm', 'Engine speed', 'rpm'), ('ecu.map_kpa', 'Manifold pressure (MAP)', *PRESSURE),
+                ('ecu.baro_kpa', 'Barometric pressure', *PRESSURE), ('ecu.throttle_pct', 'Throttle position', '%'),
+                ('ecu.pedal_pct', 'Accelerator pedal', '%'), ('ecu.coolant_c', 'Coolant temperature', *TEMPERATURE),
+                ('ecu.iat_c', 'Intake air temperature', *TEMPERATURE), ('ecu.battery_v', 'Battery voltage', 'V'),
+                ('ecu.spark_deg', 'Ignition timing', '°'), ('ecu.knock_retard_deg', 'Knock retard', '°'),
+                ('ecu.idle_target_rpm', 'Idle target', 'rpm'), ('ecu.boost_target_kpa', 'Boost target', *PRESSURE)]),
+    ('Fuel', [('ecu.afr', 'Air-fuel ratio', 'AFR'), ('ecu.afr_target', 'AFR target', 'AFR'), ('ecu.lambda1', 'Lambda', 'λ'),
+              ('ecu.lambda_target', 'Lambda target', 'λ'), ('ecu.pw1_ms', 'Injector pulse width', 'ms'),
+              ('ecu.injector_duty_pct', 'Injector duty', '%'), ('ecu.ve1', 'Volumetric efficiency', '%'),
+              ('ecu.ego_correction_pct', 'O2 correction', '%'), ('ecu.ethanol_pct', 'Ethanol content', '%'),
+              ('ecu.fuel_pressure_kpa', 'Fuel pressure', *PRESSURE), ('ecu.fuel_temp_c', 'Fuel temperature', *TEMPERATURE),
+              ('ecu.fuel_level_pct', 'Fuel level', '%')]),
+    ('Oil and drivetrain', [('ecu.oil_pressure_kpa', 'Oil pressure', *PRESSURE), ('ecu.oil_temp_c', 'Oil temperature', *TEMPERATURE),
+                            ('ecu.transmission_temp_c', 'Transmission temperature', *TEMPERATURE),
+                            ('ecu.vehicle_speed_kph', 'Vehicle speed', *SPEED), ('ecu.gear', 'Gear', ''),
+                            ('ecu.egt1_c', 'Exhaust gas temperature', *TEMPERATURE)]),
+    ('Switches (1 = on)', [('ecu.check_engine', 'Check engine light', 'on/off'), ('ecu.fan1', 'Cooling fan', 'on/off'),
+                           ('ecu.launch_control', 'Launch control', 'on/off'), ('ecu.turn_left', 'Left turn signal', 'on/off'),
+                           ('ecu.turn_right', 'Right turn signal', 'on/off'), ('ecu.brake_pedal', 'Brake pedal', 'on/off'),
+                           ('ecu.headlights', 'Headlights', 'on/off'), ('ecu.reverse', 'Reverse', 'on/off')]),
+    ('GPS', [('ecu.gps_latitude', 'GPS latitude', '°'), ('ecu.gps_longitude', 'GPS longitude', '°'),
+             ('ecu.gps_heading_deg', 'GPS heading', '°')]),
+)
+GENERAL = re.compile(r'([us])(le|be)@(\d{1,2}):(\d{1,2})')
 LAYOUT = re.compile(r'(u8|s8|u16|s16|u32|s32|u16le|s16le|u32le|s32le)@(\d)|(bit|nib)@(\d)\.(\d)|(f32|f32le)@(\d)')
 KEY = re.compile(r'ecu\.[a-z0-9_]{1,48}')
 
@@ -75,6 +114,9 @@ def number(text):
 
 def reader(layout, length):
     """A function bytes -> raw integer for one layout, checked against the frame length."""
+    general = GENERAL.fullmatch(layout or '')
+    if general:
+        return bits(general[1] == 's', general[2], int(general[3]), int(general[4]), length)
     match = LAYOUT.fullmatch(layout or '')
     if not match:
         raise ProfileError(f'Layout {layout!r} is not one of the kinds in ecu/__init__.py')
@@ -99,9 +141,36 @@ def reader(layout, length):
     return lambda d: d[byte] >> bit & mask
 
 
+def bits(signed, order, start, size, length):
+    """Any run of bits, numbered as in a DBC file: Intel (le) from its lowest bit, Motorola
+    (be) from its highest, where bit 7 of byte 0 is the frame's first."""
+    if not 1 <= size <= 32 or start >= length * 8:
+        raise ProfileError(f'{size} bits from bit {start} is not inside a {length}-byte frame')
+    if order == 'le':
+        shift, ends = start, start + size
+    else:
+        first = start // 8 * 8 + 7 - start % 8          # Counted from the frame's first bit
+        shift, ends = length * 8 - first - size, first + size
+    if ends > length * 8 or shift < 0:
+        raise ProfileError(f"{size} bits from bit {start} run past the frame's {length} bytes")
+    mask, top = (1 << size) - 1, 1 << (size - 1)
+    endian = 'little' if order == 'le' else 'big'
+
+    def read(d):
+        raw = int.from_bytes(bytes(d[:length]), endian) >> shift & mask
+        return raw - (1 << size) if signed and raw & top else raw
+    return read
+
+
 def converter(spec):
     """raw -> value. A scale that is one over a whole number divides, as the dash's own
     decoders did (123 / 10, not 123 * 0.1), so values match theirs exactly."""
+    unit = spec.get('from')
+    if unit is not None:
+        if unit not in FROM_UNITS:
+            raise ProfileError(f'Unknown unit {unit!r} (one of {", ".join(FROM_UNITS)})')
+        plain, change = converter({k: v for k, v in spec.items() if k != 'from'}), FROM_UNITS[unit]
+        return lambda raw: change(plain(raw))
     if 'convert' in spec:
         if spec['convert'] not in CONVERT:
             raise ProfileError(f"Unknown conversion {spec['convert']!r}")
@@ -256,6 +325,17 @@ def load(name, base=None):
     if profile.id != name:
         raise ProfileError(f'{path.name} says its id is {profile.id!r}')
     return profile
+
+
+def custom(data):
+    """A custom profile from the setup wizard's editor, checked as the dash would load it."""
+    if not isinstance(data, dict) or data.get('id') != CUSTOM:
+        raise ProfileError('A custom profile has the id "custom"')
+    if data.get('type') or data.get('base') or data.get('id_mask'):
+        raise ProfileError('A custom profile lists its frames by ID')
+    if len(json.dumps(data)) > 200000:
+        raise ProfileError('The profile is too large')
+    return Profile(data, origin='yours')
 
 
 def chosen():

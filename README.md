@@ -42,12 +42,13 @@ Frogdash was developed in a turbocharged Foxbody Mustang, where it has run since
 
 | | Works today | On the way |
 |---|---|---|
-| **ECU** | **MegaSquirt / MicroSquirt** (MS2/Extra dash and realtime broadcasts), in a car. **Haltech** Elite/Nexus, **Holley** Terminator X/HP/Dominator and Sniper, **AEM Infinity**, **FuelTech**, **rusEFI**, **MaxxECU**, **ECUMaster EMU Black / PRO** and **Speeduino**, each written from the manufacturer's own documents and tested with simulated frames; not yet in a car. | Link, Emtron and Syvecs, each once its published CAN format is in. Generic **OBD-II** for stock ECUs. Your own CAN layout, described on the dash. [ECU support](docs/ecu-support.md) |
-| **Tuning software** | **TunerStudio** runs on the dash itself, over the gauges (MegaSquirt; rusEFI and Speeduino use it too, untested from the Pi). MaxxECU and ECUMaster software is Windows-only: tune from a laptop while the dash keeps reading. | For ECUs whose software is Windows-only (Holley EFI, AEM, Haltech NSP, Link PCLink…), you tune from a laptop as usual; the dash keeps reading the CAN bus meanwhile and says how to connect. |
+| **ECU** | **MegaSquirt / MicroSquirt** (MS2/Extra dash and realtime broadcasts), in a car. **Haltech** Elite/Nexus, **Holley** Terminator X/HP/Dominator and Sniper, **AEM Infinity**, **FuelTech**, **rusEFI**, **MaxxECU**, **ECUMaster EMU Black / PRO**, **Speeduino** and **generic OBD-II** (any car with CAN on its OBD port), each written from the published documents and tested with simulated frames; not yet in a car. Or any other ECU that broadcasts on CAN, described in the setup wizard's **custom ECU editor**: pick its IDs on the bus and see each reading live as you set it, or import its DBC file. The setup wizard tests the connection live. | Link, Emtron and Syvecs once their CAN format is in. [ECU support](docs/ecu-support.md) |
+| **Tuning software** | **TunerStudio** runs on the dash itself, over the gauges (MegaSquirt; rusEFI and Speeduino use it too). Windows-only tuners (Holley EFI, AEM, Haltech NSP, FTManager, EMU Client, MTune, PCLink): **experimentally** on the dash through Wine and Box64 when the cable is a USB serial port, or on a Windows laptop with the dash sharing the cable over Wi-Fi (USB/IP). [Windows tuning](docs/windows-tuning.md) | Proven in a car |
 | **CAN board** | Any MCP2515 board: the Waveshare RS485 CAN HAT (recommended) or the common blue modules | |
 | **GPS** | USB receivers through gpsd (u-blox tested), or GPS sent on the CAN bus | |
-| **Screen** | Any HDMI screen; made for 12.3-inch 1920 × 720 bar displays, other sizes get their own layout. Touch optional. | |
-| **Turn signals, brake, fuel level…** | From a device on the CAN bus (see [Car signals](#car-signals)) | Wired straight to the Pi: inputs and a fuel sender board |
+| **Screen** | Any HDMI screen; made for 1920 × 720 bar displays, other sizes scale to fit. A size can be forced at boot for a screen that does not describe itself. Touch optional. | |
+| **Turn signals, brake, fuel level…** | Pi pins (through an optocoupler board), an ADS1115 for the fuel sender, any CAN message, or the ECU's own reading (see [Car signals](#car-signals)) | |
+| **Map** | Offline street maps from OpenStreetMap, downloaded on the dash for where the car is or a town you pick | |
 | **Power** | A 5 V supply on the ignition; a PiSugar 3 Plus for clean shutdowns | |
 
 ## Features
@@ -142,13 +143,17 @@ Engine readings come from the ECU. A few readings come from the car's body: turn
 brake, running lights, reverse (which also opens the reverse camera), high beam, fuel
 level, vehicle speed. Most ECUs do not see those, so Frogdash takes them from elsewhere.
 
-| Reading | Where Frogdash takes it from today | Coming |
-|---|---|---|
-| Turn signals, brake, running lights, hazards, reverse | Any device on the CAN bus that sends them in Frogdash's format (`0x100`, [taillights](docs/taillights.md)). In the reference car, the taillight board reads the car's own lamp wires through optocouplers. | Wired to the Pi's pins through a small optocoupler board; or any CAN message you point it at |
-| Fuel level | A CAN message with the percentage (`0x204`, [fuel over CAN](docs/fuel-can.md)), from any small board that reads the sender. In the reference car, the sensor gateway. | A fuel sender board on the Pi (ADS1115) with a calibration on the dash |
-| Vehicle speed | GPS, or a CAN message (`0x500`) from a board reading the speed sensor | From the ECU, where it broadcasts speed |
-| Oil and fuel pressure | 0.5–4.5 V senders read by a module on the CAN bus | Read on the Pi (ADS1115) |
-| High beam | Not yet | Pi input or CAN message |
+Each is chosen in the setup wizard (Car signals page), per reading:
+
+| Reading | Sources |
+|---|---|
+| Turn signals, brake, lights, reverse | A **Pi pin** through an optocoupler board (turn signals stay lit between flashes; reverse also opens the reverse camera); **any CAN message** (an ID and a bit); the **ECU**, where it broadcasts it (Haltech, MaxxECU, ECUMaster and rusEFI send the brake switch); or Frogdash's own taillight board (`0x100`, [taillights](docs/taillights.md)) as in the reference car |
+| Fuel level | A **fuel sender on an ADS1115** (empty and full voltages from the wizard, averaged against slosh); **any CAN message** (an ID and a byte); the **ECU** (rusEFI, OBD-II); or Frogdash's gateway / `0x204` ([fuel over CAN](docs/fuel-can.md)) |
+| Vehicle speed | GPS, the ECU (most profiles and OBD-II broadcast it), or the gateway reading the speed sensor |
+| Oil and fuel pressure, oil temperature | The ECU where it has them (shown in psi and °F like the reference car's sensors), or 0.5–4.5 V senders on a module |
+| High beam | Not yet |
+
+Wiring and safety (never 12 V on a Pi pin): [car signals](docs/car-signals.md).
 
 Anything that is not there is shown as *no signal*, never as a made-up value.
 
@@ -205,10 +210,10 @@ Linux: you will type two commands, and each is given in full. Plan on an afterno
 wiring and about 30 minutes for the software, most of it waiting for downloads.
 
 > **Before you buy parts:** check your ECU in [What it works with](#what-it-works-with).
-> MegaSquirt and MicroSquirt run in the reference car; the other profiles are written from
-> their makers' documents and not yet proven in a car. Turn signals, brake and fuel level
-> need a device on the CAN bus that sends them, or an ECU that does (see
-> [Car signals](#car-signals)). Inputs wired straight to the Pi are on the way.
+> MegaSquirt and MicroSquirt run in the reference car; the other profiles, OBD-II included,
+> are written from published documents and not yet proven in a car. Turn signals, brake and
+> fuel level need an optocoupler board and an ADS1115 on the Pi, a CAN message, or an ECU
+> that sends them (see [Car signals](#car-signals)).
 >
 > **See the setup wizard first:** [open it in the live preview](https://averyizatt.github.io/frogdash/?wizard).
 > On a new install it opens by itself on the dash's screen.
@@ -307,8 +312,14 @@ Then copy this line, paste it, and press Enter:
 curl -fsSL https://raw.githubusercontent.com/averyizatt/frogdash/main/tools/frogdash_install.sh | sudo sh
 ```
 
-Add options at the end, after `sudo sh -s --`, for what your car has. For example, a blue
-MCP2515 board and no PiSugar:
+That is all you type. When the Pi restarts, the **setup wizard** opens on the dash's screen
+and asks, page by page, for the screen, the ECU (with a live test that it is talking), the
+CAN board, GPS, cameras, car signals, what the dash shows (map, race timer, tuning software)
+and power; **Apply** installs what you chose. You can open it again any time from **Dash
+management → Setup checklist**. [Try it in the preview](https://averyizatt.github.io/frogdash/?wizard).
+
+The installer also takes options, if you prefer (the wizard can change them later). For
+example, a blue MCP2515 board and no PiSugar:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/averyizatt/frogdash/main/tools/frogdash_install.sh | sudo sh -s -- --oscillator 8000000 --no-pisugar
@@ -329,8 +340,9 @@ minutes. Running it again is safe.
 sudo reboot
 ```
 
-The dash comes up about 10 seconds after power. With the ECU on, the RPM, coolant and the
-other gauges should be live. To check every part, connect again and run:
+The dash comes up about 10 seconds after power, with the setup wizard on a new install. Once
+it is applied and the ECU is on, the RPM, coolant and the other gauges should be live. To
+check every part, connect again and run:
 
 ```sh
 sudo sh /opt/frogdash/tools/frogdash_install.sh --check
@@ -343,8 +355,8 @@ power → Update now** brings the newest version. It needs Wi-Fi with internet: 
 home network or your phone's hotspot under **Controls → Wi-Fi → Internet (for updates)**. Each update is tried before it
 is used, and put back by itself if it does not start.
 
-What this car has (GPS, camera, modules, time zone) is kept on the Pi in one file, the
-[system profile](docs/presets.md).
+What this car has (ECU, GPS, cameras, car signals, time zone) is kept on the Pi in one file,
+the [system profile](docs/presets.md); the setup wizard writes it.
 
 ### If something does not work
 
@@ -402,8 +414,9 @@ preview check, and deploys `preview/` to GitHub Pages.
 
 Version 1.2, running in the reference car with diagnostics uploaded after each update;
 desktop and browser tests cover every feature. Opening it up to other cars is the work in
-progress: the system profile, ECU profiles and the setup wizard are in; inputs on the Pi and
-more ECUs are next. See the [changelog](CHANGELOG.md).
+progress: the system profile, ECU profiles (OBD-II included), the setup wizard, car signals
+on the Pi, Windows tuning and a custom ECU editor are in, proven so far in simulation.
+Next: each of these in a real car. See the [changelog](CHANGELOG.md).
 
 **One version for the whole system:** the dash and the three modules'
 firmware (gateway, taillights, water/meth) share one number, in the `VERSION` file of each

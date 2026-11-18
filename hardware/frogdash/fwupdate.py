@@ -573,8 +573,9 @@ class Firmware:
 
     def __init__(self, state, folder, sleep=asyncio.sleep, modules=MODULES):
         self.sleep = sleep
+        from . import protocol
         self.modules = {name: ModuleFirmware(state, folder, name, label, target, sleep, title, warning, *silent)
-                        for name, label, title, target, warning, *silent in modules}
+                        for name, label, title, target, warning, *silent in modules if protocol.has_module(name)}
         for module in self.modules.values():
             module.blocked = lambda module=module: any(other.busy() for other in self.modules.values() if other is not module)
 

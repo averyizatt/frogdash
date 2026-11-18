@@ -14,10 +14,21 @@
   let map = null, grid = null, error = '', latest = {}, fix = null, lastFix = null, track = 0, demoAngle = 0, timer = null;
   const CELL = 1000; // grid cell in map units (0.01 degree)
 
+  // The offline maps (the repository's and any downloaded on this Pi): the one the car is in
+  // is drawn; outside all of them, the map offers to download the streets around the car.
+  let maps = [], loadedName = null, switching = null, offMap = false;
+  const inside = (m, f) => f && m && f.lat >= m.bounds[0] && f.lat <= m.bounds[2] && f.lon >= m.bounds[1] && f.lon <= m.bounds[3];
+  const pick = f => maps.find(m => inside(m, f));
   async function load() {
     try {
-      const maps = await (await fetch('maps/index.json', {cache: 'no-cache'})).json();
-      const data = await (await fetch(`maps/${maps[0].name}.json`, {cache: 'no-cache'})).json();
+      maps = await (await fetch('maps/index.json', {cache: 'no-cache'})).json();
+      await loadMap(pick(lastFix || position()) || maps[0]);
+    } catch { error = 'Map data unavailable'; }
+    draw();
+  }
+  async function loadMap(entry) {
+    try {
+      const data = await (await fetch(`maps/${entry.name}.json`, {cache: 'no-cache'})).json();
       const [south, west] = data.bounds, baseLat = Math.round(south * data.scale), baseLon = Math.round(west * data.scale);
       grid = new Map();
       data.ways = data.ways.map(([kind, name, deltas], index) => {
@@ -30,9 +41,22 @@
         }
         return {kind, name: data.names[name], points};
       });
-      map = data;
+      map = data; loadedName = entry.name;
       $('map-credit').textContent = `${data.title} · ${data.attribution}`;
     } catch { error = 'Map data unavailable'; }
+  }
+  async function download() {
+    const at = lastFix;
+    if (!at) return;
+    $('map-download').disabled = true; $('map-status').textContent = 'Downloading the streets around here from OpenStreetMap…';
+    try {
+      const response = await fetch('/maps/download', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({lat: at.lat, lon: at.lon})});
+      if (!response.ok) throw new Error(await response.text());
+      maps = await (await fetch('maps/index.json', {cache: 'no-cache'})).json();
+      await loadMap(pick(at) || maps[0]);
+      $('map-status').textContent = 'Map downloaded: kept on the Pi';
+    } catch (e) { $('map-status').textContent = e.message || 'The map could not be downloaded'; }
+    $('map-download').disabled = false;
     draw();
   }
   const live = key => { const v = latest.values?.[key]; return v && v.quality === 'live' ? v.value : null; };
@@ -54,6 +78,14 @@
     if (!map) { ctx.fillStyle = '#9fb0bb'; ctx.font = '20px system-ui'; ctx.textAlign = 'center'; ctx.fillText(error || 'Loading map…', w / 2, h / 2); return; }
     fix = position();
     if (fix) lastFix = fix;
+    // The car left this map: the one it is in now, if there is one.
+    if (fix && !fix.demo && !inside(map, fix)) {
+      const other = pick(fix);
+      if (other && other.name !== loadedName && !switching) switching = loadMap(other).finally(() => { switching = null; });
+      offMap = !other;
+    } else offMap = false;
+    const offer = $('map-download');
+    if (offer && offer.hidden !== !offMap) { offer.hidden = !offMap; if (offMap) $('map-status').textContent = 'No offline map here'; }
     const [south, west, north, east] = map.bounds;
     const centre = lastFix || {lat: (south + north) / 2, lon: (west + east) / 2, track: 0};
     const half = ZOOMS[prefs.zoom], cosLat = Math.cos(centre.lat * Math.PI / 180);
@@ -153,6 +185,7 @@
     if (dialog.open) return;
     dialog.showModal();
     if (!map && !error) load(); else draw();
+    if ($('map-download')) $('map-download').onclick = download;
     clearInterval(timer); timer = setInterval(draw, 500);
   }
   function close() { clearInterval(timer); if (dialog.open) dialog.close(); }

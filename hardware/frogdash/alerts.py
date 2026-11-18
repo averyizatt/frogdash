@@ -199,7 +199,9 @@ def module_quiet(snapshot, name):
     modules = snapshot.get('modules') or {}
     if snapshot.get('mode') != 'socketcan' or not (snapshot.get('transport') or {}).get('connected'):
         return None
-    others = [other for other in ('taillights', 'comfort', 'watermeth') if other != name]
+    if name not in modules:
+        return None   # A module this car does not have (system profile): never "not responding"
+    others = [other for other in ('taillights', 'comfort', 'watermeth') if other != name and other in modules]
     if not any(modules.get(other) == 'live' for other in others):
         return None   # Nothing heard at all: the bus, not this module.
     if name in (snapshot.get('updating') or ()):

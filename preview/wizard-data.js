@@ -5,6 +5,261 @@ window.frogdashSystemDemo = {
   "ecu_ids_heard": 18,
   "ids_heard": 24
  },
+ "catalog": [
+  [
+   "Engine",
+   [
+    [
+     "ecu.rpm",
+     "Engine speed",
+     "rpm"
+    ],
+    [
+     "ecu.map_kpa",
+     "Manifold pressure (MAP)",
+     "kPa",
+     "psi",
+     "bar"
+    ],
+    [
+     "ecu.baro_kpa",
+     "Barometric pressure",
+     "kPa",
+     "psi",
+     "bar"
+    ],
+    [
+     "ecu.throttle_pct",
+     "Throttle position",
+     "%"
+    ],
+    [
+     "ecu.pedal_pct",
+     "Accelerator pedal",
+     "%"
+    ],
+    [
+     "ecu.coolant_c",
+     "Coolant temperature",
+     "\u00b0C",
+     "degF",
+     "K"
+    ],
+    [
+     "ecu.iat_c",
+     "Intake air temperature",
+     "\u00b0C",
+     "degF",
+     "K"
+    ],
+    [
+     "ecu.battery_v",
+     "Battery voltage",
+     "V"
+    ],
+    [
+     "ecu.spark_deg",
+     "Ignition timing",
+     "\u00b0"
+    ],
+    [
+     "ecu.knock_retard_deg",
+     "Knock retard",
+     "\u00b0"
+    ],
+    [
+     "ecu.idle_target_rpm",
+     "Idle target",
+     "rpm"
+    ],
+    [
+     "ecu.boost_target_kpa",
+     "Boost target",
+     "kPa",
+     "psi",
+     "bar"
+    ]
+   ]
+  ],
+  [
+   "Fuel",
+   [
+    [
+     "ecu.afr",
+     "Air-fuel ratio",
+     "AFR"
+    ],
+    [
+     "ecu.afr_target",
+     "AFR target",
+     "AFR"
+    ],
+    [
+     "ecu.lambda1",
+     "Lambda",
+     "\u03bb"
+    ],
+    [
+     "ecu.lambda_target",
+     "Lambda target",
+     "\u03bb"
+    ],
+    [
+     "ecu.pw1_ms",
+     "Injector pulse width",
+     "ms"
+    ],
+    [
+     "ecu.injector_duty_pct",
+     "Injector duty",
+     "%"
+    ],
+    [
+     "ecu.ve1",
+     "Volumetric efficiency",
+     "%"
+    ],
+    [
+     "ecu.ego_correction_pct",
+     "O2 correction",
+     "%"
+    ],
+    [
+     "ecu.ethanol_pct",
+     "Ethanol content",
+     "%"
+    ],
+    [
+     "ecu.fuel_pressure_kpa",
+     "Fuel pressure",
+     "kPa",
+     "psi",
+     "bar"
+    ],
+    [
+     "ecu.fuel_temp_c",
+     "Fuel temperature",
+     "\u00b0C",
+     "degF",
+     "K"
+    ],
+    [
+     "ecu.fuel_level_pct",
+     "Fuel level",
+     "%"
+    ]
+   ]
+  ],
+  [
+   "Oil and drivetrain",
+   [
+    [
+     "ecu.oil_pressure_kpa",
+     "Oil pressure",
+     "kPa",
+     "psi",
+     "bar"
+    ],
+    [
+     "ecu.oil_temp_c",
+     "Oil temperature",
+     "\u00b0C",
+     "degF",
+     "K"
+    ],
+    [
+     "ecu.transmission_temp_c",
+     "Transmission temperature",
+     "\u00b0C",
+     "degF",
+     "K"
+    ],
+    [
+     "ecu.vehicle_speed_kph",
+     "Vehicle speed",
+     "km/h",
+     "mph"
+    ],
+    [
+     "ecu.gear",
+     "Gear",
+     ""
+    ],
+    [
+     "ecu.egt1_c",
+     "Exhaust gas temperature",
+     "\u00b0C",
+     "degF",
+     "K"
+    ]
+   ]
+  ],
+  [
+   "Switches (1 = on)",
+   [
+    [
+     "ecu.check_engine",
+     "Check engine light",
+     "on/off"
+    ],
+    [
+     "ecu.fan1",
+     "Cooling fan",
+     "on/off"
+    ],
+    [
+     "ecu.launch_control",
+     "Launch control",
+     "on/off"
+    ],
+    [
+     "ecu.turn_left",
+     "Left turn signal",
+     "on/off"
+    ],
+    [
+     "ecu.turn_right",
+     "Right turn signal",
+     "on/off"
+    ],
+    [
+     "ecu.brake_pedal",
+     "Brake pedal",
+     "on/off"
+    ],
+    [
+     "ecu.headlights",
+     "Headlights",
+     "on/off"
+    ],
+    [
+     "ecu.reverse",
+     "Reverse",
+     "on/off"
+    ]
+   ]
+  ],
+  [
+   "GPS",
+   [
+    [
+     "ecu.gps_latitude",
+     "GPS latitude",
+     "\u00b0"
+    ],
+    [
+     "ecu.gps_longitude",
+     "GPS longitude",
+     "\u00b0"
+    ],
+    [
+     "ecu.gps_heading_deg",
+     "GPS heading",
+     "\u00b0"
+    ]
+   ]
+  ]
+ ],
  "checks": {
   "aem": {
    "ecu": "aem",
@@ -123,6 +378,51 @@ window.frogdashSystemDemo = {
    "state": "other_ecu",
    "suggest": "megasquirt",
    "suggest_label": "MicroSquirt"
+  }
+ },
+ "checks_trial": {
+  "fueltech": {
+   "ecu": "fueltech",
+   "hints": [
+    "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000): FTCAN 2.0 is 1 Mbit/s with 29-bit IDs.",
+    "The ECU sends the simplified packets (fixed measures, 100 Hz); make sure its CAN output is on in FTManager or on the ECU.",
+    "CAN H to CAN H and CAN L to CAN L, a 120 ohm resistor at each end of the bus, and the ECU powered (key on)."
+   ],
+   "message": "Nothing is arriving on the CAN bus. Check that FuelTech's CAN output is on and the wiring.",
+   "state": "silent"
+  },
+  "haltech": {
+   "ecu": "haltech",
+   "hints": [
+    "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000), as Haltech's CAN does.",
+    "Nexus firmware 1.25 or later, Elite 3.11 or later (check in NSP while connected).",
+    "Fixed IDs 0x360-0x3E5 (and more the profile does not read yet); they cannot be moved.",
+    "CAN H to CAN H and CAN L to CAN L, a 120 ohm resistor at each end of the bus, and the ECU powered (key on)."
+   ],
+   "message": "Nothing is arriving on the CAN bus. Check that Haltech's CAN output is on and the wiring.",
+   "state": "silent"
+  },
+  "holley": {
+   "ecu": "holley",
+   "hints": [
+    "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000): Holley's CAN is 1 Mbit/s, 29-bit IDs.",
+    "The ECU broadcasts all the time; the low 11 bits of each ID are its serial number, so any Holley ECU is read.",
+    "Connect to the ECU's CAN wires, with the bus terminated at both ends.",
+    "CAN H to CAN H and CAN L to CAN L, a 120 ohm resistor at each end of the bus, and the ECU powered (key on)."
+   ],
+   "message": "Nothing is arriving on the CAN bus. Check that Holley Terminator X / HP / Dominator's CAN output is on and the wiring.",
+   "state": "silent"
+  },
+  "holley_sniper": {
+   "ecu": "holley_sniper",
+   "hints": [
+    "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000): Holley's CAN is 1 Mbit/s, 29-bit IDs.",
+    "The ECU broadcasts all the time; the low 11 bits of each ID are its serial number, so any Holley ECU is read.",
+    "Connect to the ECU's CAN wires, with the bus terminated at both ends.",
+    "CAN H to CAN H and CAN L to CAN L, a 120 ohm resistor at each end of the bus, and the ECU powered (key on)."
+   ],
+   "message": "Nothing is arriving on the CAN bus. Check that Holley Sniper's CAN output is on and the wiring.",
+   "state": "silent"
   }
  },
  "custom": {
@@ -646,6 +946,10 @@ window.frogdashSystemDemo = {
   ]
  },
  "pending": false,
+ "position": {
+  "lat": 39.0672,
+  "lon": -108.5645
+ },
  "presets": {
   "foxbody": {
    "camera": {
@@ -957,6 +1261,78 @@ window.frogdashSystemDemo = {
   },
   "windows_tuner": false
  },
+ "raw_demo": [
+  {
+   "extended": false,
+   "id": 256,
+   "samples": [
+    "05010502804600"
+   ]
+  },
+  {
+   "extended": false,
+   "id": 512,
+   "samples": [
+    "0100003C418E0001"
+   ]
+  },
+  {
+   "extended": false,
+   "id": 514,
+   "samples": [
+    "0D7A000001011400"
+   ]
+  },
+  {
+   "extended": false,
+   "id": 515,
+   "samples": [
+    "02F400640B031B0E"
+   ]
+  },
+  {
+   "extended": false,
+   "id": 768,
+   "samples": [
+    "0232640155505000"
+   ]
+  },
+  {
+   "extended": false,
+   "id": 771,
+   "samples": [
+    "7C4E00003C410000"
+   ]
+  },
+  {
+   "extended": false,
+   "id": 775,
+   "samples": [
+    "13140FB403225500"
+   ]
+  },
+  {
+   "extended": false,
+   "id": 1512,
+   "samples": [
+    "07080D7A080201F4"
+   ]
+  },
+  {
+   "extended": false,
+   "id": 1514,
+   "samples": [
+    "937C03E800000000"
+   ]
+  },
+  {
+   "extended": false,
+   "id": 1515,
+   "samples": [
+    "008E000000000000"
+   ]
+  }
+ ],
  "setup": null,
  "signals_now": {},
  "status": null

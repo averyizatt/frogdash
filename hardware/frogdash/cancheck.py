@@ -24,7 +24,7 @@ EXPECTED = [
 def expected_rows():
     """The modules' messages (but not an ID the ECU's profile uses in this car), then the
     ECU's own: the frames its profile names to check, under its label."""
-    rows = [row for row in EXPECTED if not protocol.is_ecu(row[1])]
+    rows = [row for row in EXPECTED if not protocol.is_ecu(row[1]) and protocol.has_module(row[0])]
     return rows + [(protocol.ECU.label, ident, purpose, False) for ident, purpose in protocol.ECU.checks()]
 METH_FAULTS = [
     (1, 'Tank low (float switch) or low-fluid failsafe', 'Fill the tank or check the float switch wiring'),
