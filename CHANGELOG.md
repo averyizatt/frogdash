@@ -14,6 +14,12 @@ on the Firmware page shows the version it runs and the version available.
 
 ## Unreleased
 
+- **Is the ECU talking?** The wizard's engine-computer page listens to the CAN bus every 2 s and
+  tests the ECU picked (`GET /system/check`, ecucheck.py): live readings when it talks, else
+  the likely reason in plain words (no CAN interface, nothing heard, bus errors, a bus speed
+  other than the ECU's, 29- versus 11-bit IDs, another ECU's messages with a button to pick
+  it), with that ECU's own setup steps. It runs again after Apply. The preview runs the same
+  test on a recording from the car.
 - **Car signals for any car:** turn signals, brake, lights, reverse and fuel level can come
   from a Pi pin (through an optocoupler; turn signals stay on between flashes), an ADS1115
   (the fuel sender, averaged), any CAN frame's bit or byte, or the ECU's own reading, chosen

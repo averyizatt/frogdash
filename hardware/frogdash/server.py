@@ -38,7 +38,7 @@ from .camera import BOUNDARY as CAMERA_BOUNDARY, Camera
 from .paint import Paint, validate as validate_paint
 from .imports import Imports
 from . import cancheck, methtune, selftest
-from . import ecu as ecu_profiles, inputs, protocol, sysconfig
+from . import ecu as ecu_profiles, ecucheck, inputs, protocol, sysconfig
 from .parking import rolling
 from .logview import LogCache, LogError
 
@@ -923,6 +923,28 @@ def create_app(state, adapter=None, connectivity=None):
                     'status': read_status('config-status.json'), 'setup': read_status('setup-status.json')}
         return web.json_response(await asyncio.to_thread(listing), headers={'Cache-Control': 'no-store'})
 
+    async def system_check(request):
+        """The wizard's connection test: is the ECU chosen (?ecu=, &base_id=) talking now?"""
+        def run():
+            name = request.query.get('ecu', protocol.ECU.id)
+            try:
+                base = int(request.query.get('base_id', '0'), 0)
+                candidate = ecu_profiles.load(name, base or None)
+            except (ValueError, ecu_profiles.ProfileError) as exc:
+                return {'state': 'no_profile', 'ecu': name, 'message': str(exc), 'hints': []}
+            now = state.wall() * 1000
+            recent = [f for f in list(state.raw.values()) if now - (f['timestamp_ms'] or 0) < 3000]
+            frames = [(f['id'], f['extended'], bytes.fromhex(f['data'])) for f in recent if not f['error'] and not f.get('remote')]
+            others = []
+            for other in ecu_profiles.built_in():
+                try:
+                    others.append(ecu_profiles.load(other))
+                except ecu_profiles.ProfileError:
+                    pass
+            return ecucheck.check(candidate, frames, sysconfig.load()['ecu']['bitrate'], state.connected,
+                                  sum(1 for f in recent if f['error']), others, protocol.OWNED)
+        return web.json_response(await asyncio.to_thread(run), headers={'Cache-Control': 'no-store'})
+
     async def ecu_list(request):
         """The ECU profile being read, why another was not (if so), and every built-in one
         with its source document, how far it has been checked and its tuning software."""
@@ -1125,7 +1147,7 @@ def create_app(state, adapter=None, connectivity=None):
                     web.post('/ui/appearance', appearance_snapshot),
                     web.route('*', '/ui/appearance/image/{field:background|splash}', appearance_image),
                     web.get('/taillights/{name}', taillight_frames), web.get('/skins/{name}', skin_image), web.get('/ecu-logos/{name}', ecu_logo), web.get('/maps/{name}', map_data),
-                    web.get('/ecu/profiles', ecu_list), web.get('/system', system), web.post('/system', system),
+                    web.get('/ecu/profiles', ecu_list), web.get('/system', system), web.post('/system', system), web.get('/system/check', system_check),
                     web.get('/ui/import', import_list), web.get('/ui/import/{name}', import_file),
                     web.get('/camera/status', camera_status), web.get('/camera/stream', camera_stream),
                     web.get('/dashcam/status', dashcam_status), web.get('/dashcam/stream', dashcam_stream),

@@ -43,7 +43,14 @@ async def main(browser_path):
         assert sorted(offered) == sorted(PROFILES + ['custom']), offered
         body = await page.text_content('#wizard-body')
         assert 'simulated' not in body.lower() and 'heard now' not in body and 'Running in a car' not in body, body
+        await page.wait_for_selector('#wizard-check[data-state="ok"]', timeout=5000)                 # The recording's MicroSquirt talks
+        assert 'MicroSquirt is talking' in await page.text_content('#wizard-check')
+        await page.click('[data-wizard-ecu="aem"]')
+        await page.wait_for_selector('#wizard-check[data-state="other_ecu"]', timeout=5000)
+        await page.click('#wizard-check .wizard-check-use')                                          # "Use MicroSquirt"
+        assert await page.get_attribute('[data-wizard-ecu="megasquirt"]', 'aria-pressed') == 'true'
         await page.click('[data-wizard-ecu="haltech"]')
+        await page.wait_for_selector('#wizard-check[data-state="wrong_speed"]', timeout=5000)        # 1 Mbit/s, the bus 500k
 
         await page.click('#wizard-next')
         assert await title() == 'CAN board'

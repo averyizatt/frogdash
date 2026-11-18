@@ -59,12 +59,26 @@ def wizard_data():
         found = ecu.load(name)
         profiles.append({**found.summary(), 'matches': 18 if name == 'megasquirt' else 0})
     active = ecu.load('megasquirt').summary()
+    # The connection test on a recording from the car (MicroSquirt and the modules), as the
+    # dash would answer /system/check for each ECU: the same messages as on a real bus.
+    from hardware.frogdash import ecucheck
+    frames = {}
+    for line in (ROOT / 'tests' / 'fixtures' / 'demo.candump').read_text(encoding='utf-8').splitlines()[:4000]:
+        match = re.search(r'\s([0-9A-F]{3,8})#([0-9A-F]*)', line)
+        if match:
+            frames[int(match[1], 16)] = (int(match[1], 16), len(match[1]) > 3, bytes.fromhex(match[2]))
+    built = [ecu.load(name) for name in ecu.built_in()]
+    from hardware.frogdash.protocol import owned_ranges
+    owned = owned_ranges(sysconfig.validate(sysconfig.preset('foxbody')))
+    checks = {p.id: ecucheck.check(p, list(frames.values()), 500000, True, 0, built, owned) for p in built}
+    checks['custom'] = {'state': 'no_profile', 'ecu': 'custom', 'hints': [],
+                        'message': 'No custom ECU profile yet: write one to /etc/frogdash/ecu/custom.json (docs/ecu-support.md)'}
     return {'profile': sysconfig.validate(sysconfig.preset('foxbody')),
             'presets': {name: sysconfig.preset(name) for name in sysconfig.preset_names()},
             'ecu': {'active': active, 'problem': None, 'profiles': profiles},
             'bus': {'connected': True, 'ids_heard': 24, 'ecu_ids_heard': 18},
             'custom': {'id': 'custom', 'missing': 'No custom ECU profile yet', 'path': '/etc/frogdash/ecu/custom.json'},
-            'signals_now': {}, 'pending': False, 'status': None, 'setup': None}
+            'signals_now': {}, 'checks': checks, 'pending': False, 'status': None, 'setup': None}
 
 
 def assets():

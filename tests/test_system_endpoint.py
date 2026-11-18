@@ -37,6 +37,12 @@ class SystemEndpointTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(matches['megasquirt'], 1)
                 self.assertEqual(matches['haltech'], 0)
                 self.assertFalse(data['pending'])
+                # The connection test: the MicroSquirt frame is heard; Haltech's 1 Mbit/s is not the bus's.
+                ms = await (await client.get('/system/check?ecu=megasquirt')).json()
+                self.assertEqual(ms['state'], 'ok', ms)
+                haltech = await (await client.get('/system/check?ecu=haltech')).json()
+                self.assertEqual(haltech['state'], 'wrong_speed', haltech)
+                self.assertEqual((await (await client.get('/system/check?ecu=nope')).json())['state'], 'no_profile')
 
                 wanted = sysconfig.preset('generic')
                 wanted['ecu'].update(profile='haltech', bitrate=1000000)

@@ -5,6 +5,106 @@ window.frogdashSystemDemo = {
   "ecu_ids_heard": 18,
   "ids_heard": 24
  },
+ "checks": {
+  "aem": {
+   "ecu": "aem",
+   "hints": [],
+   "message": "Messages are arriving, but they look like MicroSquirt, not AEM Infinity.",
+   "state": "other_ecu",
+   "suggest": "megasquirt",
+   "suggest_label": "MicroSquirt"
+  },
+  "custom": {
+   "ecu": "custom",
+   "hints": [],
+   "message": "No custom ECU profile yet: write one to /etc/frogdash/ecu/custom.json (docs/ecu-support.md)",
+   "state": "no_profile"
+  },
+  "ecumaster": {
+   "ecu": "ecumaster",
+   "hints": [],
+   "message": "Messages are arriving, but they look like MicroSquirt, not ECUMaster EMU.",
+   "state": "other_ecu",
+   "suggest": "megasquirt",
+   "suggest_label": "MicroSquirt"
+  },
+  "fueltech": {
+   "ecu": "fueltech",
+   "hints": [
+    "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000): FTCAN 2.0 is 1 Mbit/s with 29-bit IDs.",
+    "The ECU sends the simplified packets (fixed measures, 100 Hz); make sure its CAN output is on in FTManager or on the ECU."
+   ],
+   "message": "FuelTech sends at 1 Mbit/s and the dash's CAN bus runs at 500 kbit/s, so they cannot hear each other yet. Apply the setup (it changes the bus speed), and this test runs again.",
+   "state": "wrong_speed"
+  },
+  "haltech": {
+   "ecu": "haltech",
+   "hints": [
+    "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000), as Haltech's CAN does.",
+    "Nexus firmware 1.25 or later, Elite 3.11 or later (check in NSP while connected).",
+    "Fixed IDs 0x360-0x3E5 (and more the profile does not read yet); they cannot be moved."
+   ],
+   "message": "Haltech sends at 1 Mbit/s and the dash's CAN bus runs at 500 kbit/s, so they cannot hear each other yet. Apply the setup (it changes the bus speed), and this test runs again.",
+   "state": "wrong_speed"
+  },
+  "holley": {
+   "ecu": "holley",
+   "hints": [
+    "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000): Holley's CAN is 1 Mbit/s, 29-bit IDs.",
+    "The ECU broadcasts all the time; the low 11 bits of each ID are its serial number, so any Holley ECU is read.",
+    "Connect to the ECU's CAN wires, with the bus terminated at both ends."
+   ],
+   "message": "Holley Terminator X / HP / Dominator sends at 1 Mbit/s and the dash's CAN bus runs at 500 kbit/s, so they cannot hear each other yet. Apply the setup (it changes the bus speed), and this test runs again.",
+   "state": "wrong_speed"
+  },
+  "holley_sniper": {
+   "ecu": "holley_sniper",
+   "hints": [
+    "The dash's CAN bus must run at 1 Mbit/s (ecu.bitrate 1000000): Holley's CAN is 1 Mbit/s, 29-bit IDs.",
+    "The ECU broadcasts all the time; the low 11 bits of each ID are its serial number, so any Holley ECU is read.",
+    "Connect to the ECU's CAN wires, with the bus terminated at both ends."
+   ],
+   "message": "Holley Sniper sends at 1 Mbit/s and the dash's CAN bus runs at 500 kbit/s, so they cannot hear each other yet. Apply the setup (it changes the bus speed), and this test runs again.",
+   "state": "wrong_speed"
+  },
+  "maxxecu": {
+   "ecu": "maxxecu",
+   "hints": [],
+   "message": "Messages are arriving, but they look like MicroSquirt, not MaxxECU.",
+   "state": "other_ecu",
+   "suggest": "megasquirt",
+   "suggest_label": "MicroSquirt"
+  },
+  "megasquirt": {
+   "ecu": "megasquirt",
+   "hints": [],
+   "message": "MicroSquirt is talking: 3 of its messages heard. RPM 3450 \u00b7 Coolant 96 \u00b0C \u00b7 MAP 180 kPa \u00b7 Battery 14.2 V \u00b7 Throttle 50 %.",
+   "readings": [
+    "RPM 3450",
+    "Coolant 96 \u00b0C",
+    "MAP 180 kPa",
+    "Battery 14.2 V",
+    "Throttle 50 %"
+   ],
+   "state": "ok"
+  },
+  "rusefi": {
+   "ecu": "rusefi",
+   "hints": [],
+   "message": "Messages are arriving, but they look like MicroSquirt, not rusEFI.",
+   "state": "other_ecu",
+   "suggest": "megasquirt",
+   "suggest_label": "MicroSquirt"
+  },
+  "speeduino": {
+   "ecu": "speeduino",
+   "hints": [],
+   "message": "Messages are arriving, but they look like MicroSquirt, not Speeduino.",
+   "state": "other_ecu",
+   "suggest": "megasquirt",
+   "suggest_label": "MicroSquirt"
+  }
+ },
  "custom": {
   "id": "custom",
   "missing": "No custom ECU profile yet",

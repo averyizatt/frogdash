@@ -42,7 +42,11 @@
   // Pi pins free for a car signal: not I2C (2, 3), SPI0 (7-11) or the UART (14, 15).
   const FREE_PINS = [4, 5, 6, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27];
   const WAVESHARE = {present: true, oscillator: 12000000, interrupt: 25};
-  let data = null, draft = null, page = 0, applying = false, poll = null;
+  let data = null, draft = null, page = 0, applying = false, poll = null, listen = null;
+  // The connection test (/system/check, ecucheck.py): a title for each answer.
+  const CHECK_TITLES = {ok: 'Connected', wrong_speed: 'Bus speed differs', silent: 'Nothing heard', errors: 'Bus errors',
+    other_ecu: 'Another ECU found', wrong_ids: 'Different kind of CAN IDs', not_this_ecu: "Not this ECU's messages",
+    no_interface: 'No CAN interface', no_profile: 'No profile yet'};
 
   const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
   const copy = value => JSON.parse(JSON.stringify(value));
@@ -147,7 +151,8 @@
       detail = `<h3>${esc(active.label)}</h3>${(active.setup || []).length ? `<p><b>Set in the ECU:</b></p><ul>${active.setup.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}
         <p class="wizard-small">CAN bus at ${(active.bitrate || 500000) / 1000} kbit/s${active.extended ? ', 29-bit IDs' : ''}: set to match.</p>${base ? `<div class="wizard-row">${base}</div>` : ''}`;
     }
-    return `<p class="wizard-lead">Which engine computer is on the CAN bus?</p>
+    return `<div class="wizard-check" id="wizard-check" data-state="listening"><b>Listening to the CAN bus…</b></div>
+      <p class="wizard-lead">Which engine computer is on the CAN bus? The box above tests the one picked, live.</p>
       <div class="wizard-cards ecu-cards">${items}</div><div class="wizard-detail">${detail}</div>`;
   }
   function canPage() {
@@ -289,6 +294,36 @@
     return `<p class="wizard-lead">${changes ? `${changes} change${changes === 1 ? '' : 's'} from how this dash is set up now, listed first.` : 'The same as this dash is set up now.'} Apply saves them (the old setup is kept as a backup) and sets up the Pi to match: it may install packages and restart the dash.</p>
       <div class="wizard-review"><table>${rows}</table></div><div id="wizard-progress" class="wizard-progress"></div>`;
   }
+  // --- Connection test: is the ECU picked talking? ---
+  async function connection() {
+    if (DEMO) return data.checks?.[draft.ecu.profile] || {state: 'silent', message: 'No answer in the preview.', hints: []};
+    const response = await fetch(`/system/check?ecu=${encodeURIComponent(draft.ecu.profile)}&base_id=${draft.ecu.base_id || 0}`, {cache: 'no-store'});
+    if (!response.ok) throw new Error(await response.text());
+    return response.json();
+  }
+  function checkHtml(c) {
+    const suggest = c.suggest ? `<button type="button" class="wizard-check-use" data-wizard-ecu="${esc(c.suggest)}">Use ${esc(c.suggest_label)}</button>` : '';
+    return `<div class="wizard-check-text"><b>${esc(CHECK_TITLES[c.state] || c.state)}</b><p>${esc(c.message)}</p>
+      ${(c.hints || []).length ? `<ul>${c.hints.map(h => `<li>${esc(h)}</li>`).join('')}</ul>` : ''}</div>${suggest}`;
+  }
+  async function listenOnce() {
+    const box = $('wizard-check');
+    if (!box) return;
+    try {
+      const c = await connection();
+      if (!$('wizard-check')) return;
+      box.dataset.state = c.state; box.innerHTML = checkHtml(c);
+    } catch (error) {
+      box.dataset.state = 'errors'; box.innerHTML = `<div class="wizard-check-text"><b>Test not available</b><p>${esc(error.message || error)}</p></div>`;
+    }
+  }
+  function listening() {
+    clearInterval(listen); listen = null;
+    if (PAGES[page] !== 'ecu' || !dialog.open) return;
+    listenOnce();
+    if (!DEMO) listen = setInterval(listenOnce, 2000);
+  }
+
   const RENDER = {start: startPage, screen: screenPage, ecu: ecuPage, can: canPage, gps: gpsPage, cameras: camerasPage, signals: signalsPage,
                   features: featuresPage, power: powerPage, locale: localePage, review: reviewPage};
 
@@ -304,6 +339,7 @@
     $('wizard-next').textContent = name === 'review' ? (DEMO ? 'Apply (preview)' : 'Apply') : 'Next';
     $('wizard-next').disabled = applying;
     $('wizard-note').textContent = DEMO ? 'Preview: the choices are not saved anywhere.' : '';
+    listening();
   }
 
   // Typed values: numbers stay numbers, CAN IDs read as hex or decimal, volts as millivolts.
@@ -357,11 +393,22 @@
   });
   $('wizard-back').onclick = () => { if (page > 0) { page--; render(); } };
   $('wizard-next').onclick = () => { if (PAGES[page] === 'review') apply(); else { page++; render(); } };
-  $('wizard-close').onclick = () => { clearInterval(poll); poll = null; dialog.close(); };
+  $('wizard-close').onclick = () => { clearInterval(poll); clearInterval(listen); poll = listen = null; dialog.close(); };
 
   function progress(html) { const box = $('wizard-progress'); if (box) box.innerHTML = html; }
   function steps(setup) {
     return (setup?.steps || []).map(s => `<li data-result="${esc(s.result)}"><b>${esc(s.name)}</b> ${esc(s.result)}${s.detail ? ` · ${esc(s.detail)}` : ''}</li>`).join('');
+  }
+  // Once the Pi is set up: is the ECU talking now (the bus may have changed speed)?
+  async function afterApply(tries = 6) {
+    try {
+      const c = await connection();
+      const box = $('wizard-progress');
+      if (!box) return;
+      box.querySelector('.wizard-check')?.remove();
+      box.insertAdjacentHTML('afterbegin', `<div class="wizard-check" data-state="${esc(c.state)}">${checkHtml(c)}</div>`);
+      if (c.state !== 'ok' && tries > 1) setTimeout(() => afterApply(tries - 1), 3000);   // The bus may still be coming up
+    } catch { if (tries > 1) setTimeout(() => afterApply(tries - 1), 3000); }
   }
   async function apply() {
     applying = true; render();
@@ -372,6 +419,7 @@
         await new Promise(r => setTimeout(r, 450));
       }
       progress('<p class="good">On a real dash the choices would now be saved and the Pi set up to match. Nothing was saved in the preview.</p>');
+      afterApply(1);
       applying = false; $('wizard-next').disabled = true; $('wizard-back').disabled = false; return;
     }
     try {
@@ -391,6 +439,7 @@
         if (status.state !== 'applying') {
           clearInterval(poll); poll = null; applying = false; data = now; $('wizard-back').disabled = false;
           $('wizard-next').disabled = status.state === 'done';
+          if (status.state === 'done') afterApply();
         }
       } catch { progress('<p>The dash is restarting with the new setup…</p>'); }
     }, 2000);
@@ -403,8 +452,8 @@
       window.alert?.(`The setup could not be read: ${error.message || error}`); return;
     }
     draft = copy(data.profile); page = at; applying = false;
-    render();
     if (!dialog.open) dialog.showModal();
+    render();
     $('wizard-next').focus();
   }
   window.frogdashWizard = {open};
