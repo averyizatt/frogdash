@@ -59,7 +59,7 @@ MODULES = (
 # commands: firmware without the CAN updater, which only a USB flash can replace.
 METH_ON_BUS_SILENT = ('ESP32 board not answering firmware commands',
                       'The ESP32 board is on the bus but does not answer firmware commands, so it cannot be updated from here. '
-                      'Flash esp32s3_water_meth to it once by USB')
+                      'Flash WaterMethPrototypeV2 to it once by USB')
 MAX_IMAGE = 0x330000
 QUERY_EVERY_S = 20
 BLOCK_TRIES = 8

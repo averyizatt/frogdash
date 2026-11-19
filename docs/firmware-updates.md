@@ -100,7 +100,7 @@ The water/meth row distinguishes telemetry from firmware-update replies:
 | The water/meth controller | The line reads |
 |---|---|
 | Not heard at all | *Not answering*: check the ESP32 board's power and CAN wiring |
-| State reports arrive, but no firmware reply | *Not answering*: flash `esp32s3_water_meth` once by USB if its firmware lacks the updater |
+| State reports arrive, but no firmware reply | *Not answering*: flash `WaterMethPrototypeV2` once by USB if its firmware lacks the updater |
 | Firmware replies arrive | The installed build and any available update |
 
 Both current pulse firmware and earlier ESP32 PWM firmware use the same updater.

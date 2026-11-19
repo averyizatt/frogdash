@@ -545,7 +545,7 @@ class FirmwareUpdateTests(unittest.IsolatedAsyncioTestCase):
         shown = self.manager.snapshot_shown()['watermeth']
         self.assertEqual((shown['can_restart'], shown['can_install']), (False, False))
         self.assertEqual(shown['short'], 'ESP32 board not answering firmware commands')
-        self.assertIn('Flash esp32s3_water_meth to it once by USB', shown['note'])
+        self.assertIn('Flash WaterMethPrototypeV2 to it once by USB', shown['note'])
         # A restart is asked of its firmware updater, never 0x301's.
         self.assertIsNone(self.manager.restart('watermeth'))
         meth = self.manager.modules['watermeth']
