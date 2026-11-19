@@ -48,7 +48,8 @@ CUSTOM = 'custom'
 LOGOS = HERE.parents[1] / 'ui' / 'ecu-logos'
 # Car signals and GPS an ECU may broadcast (inputs.ECU_KEYS, state.FROM_ECU): the wizard
 # offers "from the ECU" only for what the chosen profile has.
-OFFERS = ('ecu.turn_left', 'ecu.turn_right', 'ecu.brake_pedal', 'ecu.headlights', 'ecu.reverse', 'ecu.fuel_level_pct',
+OFFERS = ('ecu.turn_left', 'ecu.turn_right', 'ecu.brake_pedal', 'ecu.headlights', 'ecu.reverse', 'ecu.high_beam',
+          'ecu.parking_brake', 'ecu.fuel_level_pct',
           'ecu.gps_latitude', 'ecu.gps_longitude', 'ecu.vehicle_speed_kph')
 DEFAULT = 'megasquirt'
 STATUSES = ('car', 'simulated', 'documented')
@@ -90,7 +91,8 @@ CATALOG = (
     ('Switches (1 = on)', [('ecu.check_engine', 'Check engine light', 'on/off'), ('ecu.fan1', 'Cooling fan', 'on/off'),
                            ('ecu.launch_control', 'Launch control', 'on/off'), ('ecu.turn_left', 'Left turn signal', 'on/off'),
                            ('ecu.turn_right', 'Right turn signal', 'on/off'), ('ecu.brake_pedal', 'Brake pedal', 'on/off'),
-                           ('ecu.headlights', 'Headlights', 'on/off'), ('ecu.reverse', 'Reverse', 'on/off')]),
+                           ('ecu.headlights', 'Headlights', 'on/off'), ('ecu.reverse', 'Reverse', 'on/off'),
+                           ('ecu.high_beam', 'High beam', 'on/off'), ('ecu.parking_brake', 'Parking brake', 'on/off')]),
     ('GPS', [('ecu.gps_latitude', 'GPS latitude', '°'), ('ecu.gps_longitude', 'GPS longitude', '°'),
              ('ecu.gps_heading_deg', 'GPS heading', '°')]),
 )

@@ -19,7 +19,7 @@
   <header class="topbar">
     <div class="indicators" aria-label="Vehicle indicators">
       <div class="turn-cluster" id="turn-left" data-on="false" aria-label="Left turn"><svg viewBox="0 0 40 28" aria-hidden="true"><path d="M2 14 16 2v7h21v10H16v7Z"/></svg></div>
-      <span class="indicator" id="icon-brake">BRAKE</span><span class="indicator" id="icon-running">LIGHTS</span><span class="indicator" id="icon-reverse">REV</span>
+      <span class="indicator" id="icon-brake">BRAKE</span><span class="indicator" id="icon-running">LIGHTS</span><span class="indicator" id="icon-reverse">REV</span><span class="indicator" id="icon-highbeam" hidden>HIGH</span><span class="indicator" id="icon-parking_brake" hidden>P-BRAKE</span>
       <div class="turn-cluster" id="turn-right" data-on="false" aria-label="Right turn"><svg viewBox="0 0 40 28" aria-hidden="true"><path d="M38 14 24 2v7H3v10h21v7Z"/></svg></div>
     </div>
     <div class="header-status"><span class="recording-badge" id="recording-badge">LOG OFF</span><span class="connection-badge" id="connection-summary">CONNECTING</span><time id="clock-time">—</time><span id="clock-tz" hidden></span></div>
@@ -493,6 +493,7 @@
         <header class="alerts-toolbar">
           <p class="alerts-summary" id="alerts-summary">Loading the alerts…</p>
           <div class="alerts-filters" role="group" aria-label="Show"><button type="button" data-alert-filter="all" aria-pressed="true">All</button><button type="button" data-alert-filter="active" aria-pressed="false">Going off</button><button type="button" data-alert-filter="off" aria-pressed="false">Switched off</button></div>
+          <button id="alert-new" type="button">+ New alert</button>
           <label class="check-label"><input id="alert-chime" type="checkbox"> Chimes</label>
           <label class="chime-volume" for="alert-volume">Volume <input id="alert-volume" type="range" min="0" max="100" step="5" value="50"><output id="alert-volume-value" for="alert-volume">50%</output></label>
           <button id="test-chime" type="button">Test chime</button>

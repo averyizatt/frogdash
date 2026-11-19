@@ -150,8 +150,9 @@ Key compatibility details:
 - RPM prefers fresh ECU data, then a valid physical/CAN tach source. TEST/DEMO
   tach sources are unavailable. Each field expires from its own source frame.
 - EGO displays ECU correction minus 100%; 100% correction displays as 0%.
-- **High beam and oil temperature remain unavailable** because no confirmed CAN
-  signal is defined. Fuel pressure is not fuel level. Fuel level uses the new
+- **Oil temperature remains unavailable** from the modules because no confirmed CAN
+  signal is defined. High beam and parking brake come from no module: they are car
+  signals ([car-signals.md](car-signals.md)), unavailable until one is set up. Fuel pressure is not fuel level. Fuel level uses the new
   [external-controller contract](fuel-can.md) and stays unavailable until received.
 
 No CAN IDs for the car's unrelated OEM traffic are guessed. The receiver can show

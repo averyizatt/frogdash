@@ -21,6 +21,7 @@ Everything else follows from it:
 """
 import argparse
 import copy
+import math
 import json
 import os
 from pathlib import Path
@@ -48,13 +49,20 @@ PATTERNS = {
     'can_hat.board': r'waveshare|other',     # The Waveshare RS485 CAN HAT (12 MHz, GPIO 25), or one set by hand
     'gps.source': r'usb|can|none',           # A USB receiver (gpsd), position from an ECU on the CAN bus, or none
     **{f'signals.{name}.source': r'module|ecu|gpio|can|none' for name in ('turn_left', 'turn_right', 'brake', 'lights', 'reverse')},
+    **{f'signals.{name}.source': r'ecu|gpio|can|none' for name in ('highbeam', 'parking_brake')},     # No board gives them
     'signals.fuel.source': r'module|ecu|adc|can|none',
+    # Analog sensors on the ADS1115 (inputs.py): what each is and the reading it gives.
+    **{f'sensors.{ch}.type': r'none|linear|thermistor' for ch in ('a0', 'a1', 'a2', 'a3')},
+    **{f'sensors.{ch}.reading': r'oil_pressure|fuel_pressure|oil_temp|coolant|iat|trans_temp|custom' for ch in ('a0', 'a1', 'a2', 'a3')},
+    **{f'sensors.{ch}.name': r"[A-Za-z0-9 _.()/%'-]{0,24}" for ch in ('a0', 'a1', 'a2', 'a3')},
+    **{f'sensors.{ch}.unit': r'none|psi|kpa|c|v|pct' for ch in ('a0', 'a1', 'a2', 'a3')},
 }
 # Car signals (inputs.py): where each comes from. module: the reference car's own boards;
 # ecu: the ECU profile's reading; gpio: a Pi pin (through an optocoupler: never 12 V on a
 # pin); adc: an ADS1115 on I2C (the fuel sender); can: a bit (or, for fuel, a byte) of any
 # CAN frame; none: not shown.
-SIGNALS = ('turn_left', 'turn_right', 'brake', 'lights', 'reverse', 'fuel')
+SWITCHES = ('turn_left', 'turn_right', 'brake', 'lights', 'reverse', 'highbeam', 'parking_brake')   # On or off
+SIGNALS = (*SWITCHES, 'fuel')
 # Pins a car signal may not use: I2C (2, 3), SPI0 for the CAN HAT (7-11) and the UART (14, 15).
 RESERVED_PINS = {2, 3, 7, 8, 9, 10, 11, 14, 15}
 RANGES = {
@@ -64,14 +72,18 @@ RANGES = {
     'can_hat.interrupt': (0, 27),
     'can_hat.spi_hz': (100000, 10000000),
     'camera.rotate': (0, 180),
-    **{f'signals.{name}.pin': (0, 27) for name in ('turn_left', 'turn_right', 'brake', 'lights', 'reverse')},
-    **{f'signals.{name}.can_id': (0, 0x1FFFFFFF) for name in ('turn_left', 'turn_right', 'brake', 'lights', 'reverse', 'fuel')},
-    **{f'signals.{name}.bit': (0, 63) for name in ('turn_left', 'turn_right', 'brake', 'lights', 'reverse')},
+    **{f'signals.{name}.pin': (0, 27) for name in SWITCHES},
+    **{f'signals.{name}.can_id': (0, 0x1FFFFFFF) for name in SIGNALS},
+    **{f'signals.{name}.bit': (0, 63) for name in SWITCHES},
     'signals.fuel.adc_channel': (0, 3),
     'signals.fuel.empty_mv': (0, 5000),
     'signals.fuel.full_mv': (0, 5000),
     'signals.fuel.byte': (0, 7),
     'signals.fuel.full_raw': (1, 255),
+    **{f'sensors.{ch}.{field}': limits for ch in ('a0', 'a1', 'a2', 'a3') for field, limits in {
+        'divider_pct': (1, 100), 'v1_mv': (0, 5000), 'v2_mv': (0, 5000), 'v1_value': (-1e6, 1e6), 'v2_value': (-1e6, 1e6),
+        'pullup_ohm': (10, 1000000), 'supply_mv': (1000, 5000), 'r1_ohm': (1, 10000000), 'r2_ohm': (1, 10000000),
+        'r3_ohm': (1, 10000000), 't1_c': (-60, 250), 't2_c': (-60, 250), 't3_c': (-60, 250)}.items()},
 }
 # Extra options for the dash, one word each (e.g. --camera-size 1280x720): the characters
 # the options step in tools/frogdash_setup.sh accepts.
@@ -134,6 +146,12 @@ def validate(profile):
         elif isinstance(kind, bool):
             if not isinstance(value, bool):
                 raise ProfileError(f'{key} should be true or false')
+        elif isinstance(kind, float):
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                raise ProfileError(f'{key} should be a number')
+            low, high = RANGES.get(key, (-1e9, 1e9))
+            if not low <= value <= high:
+                raise ProfileError(f'{key} should be from {low:g} to {high:g}')
         elif isinstance(kind, int):
             if isinstance(value, bool) or not isinstance(value, int):
                 raise ProfileError(f'{key} should be a whole number')
@@ -149,7 +167,7 @@ def validate(profile):
     if profile['camera']['rotate'] not in (0, 180):
         raise ProfileError('camera.rotate should be 0 or 180')
     pins = {}
-    for name in SIGNALS[:-1]:
+    for name in SWITCHES:
         signal = profile['signals'][name]
         if signal['source'] != 'gpio':
             continue
@@ -162,6 +180,22 @@ def validate(profile):
     fuel = profile['signals']['fuel']
     if fuel['source'] == 'adc' and fuel['empty_mv'] == fuel['full_mv']:
         raise ProfileError('signals.fuel: empty and full should be different voltages')
+    for channel, sensor in profile['sensors'].items():
+        name = f'sensors.{channel}'
+        if sensor['type'] == 'none':
+            continue
+        if fuel['source'] == 'adc' and fuel['adc_channel'] == int(channel[1]):
+            raise ProfileError(f'{name}: input A{channel[1]} is the fuel sender\'s')
+        if sensor['type'] == 'linear' and sensor['v1_mv'] == sensor['v2_mv']:
+            raise ProfileError(f'{name}: the two calibration points should be at different voltages')
+        if sensor['type'] == 'thermistor':
+            if sensor['reading'] not in ('oil_temp', 'coolant', 'iat', 'trans_temp', 'custom'):
+                raise ProfileError(f'{name}: a thermistor gives a temperature')
+            if not (sensor['t1_c'] < sensor['t2_c'] < sensor['t3_c'] and sensor['r1_ohm'] > sensor['r2_ohm'] > sensor['r3_ohm']):
+                raise ProfileError(f'{name}: the three points should be from cold to hot, the resistance falling')
+    readings = [sensor['reading'] for sensor in profile['sensors'].values() if sensor['type'] != 'none' and sensor['reading'] != 'custom']
+    if len(readings) != len(set(readings)):
+        raise ProfileError('sensors: two inputs give the same reading')
     preset(profile['preset'])   # It must name a preset that exists
     return profile
 
@@ -227,7 +261,10 @@ def ui_features(profile):
     modules = profile['modules']
     return {'map': profile['features']['map'], 'race': profile['features']['race'],
             'knock': modules['watermeth'], 'watermeth': modules['watermeth'], 'taillights': modules['taillights'],
-            'units': profile['locale']['units']}
+            'units': profile['locale']['units'],
+            # Indicators no board gives: shown only when the car has a source for them.
+            'highbeam': profile['signals']['highbeam']['source'] != 'none',
+            'parking_brake': profile['signals']['parking_brake']['source'] != 'none'}
 
 
 def shell(profile):
@@ -249,8 +286,8 @@ def shell(profile):
         'FD_WATERMETH': yes(profile['modules']['watermeth']),
         'FD_TUNERSTUDIO': yes(profile['tunerstudio']),
         'FD_WINDOWS_TUNER': yes(profile['windows_tuner']),
-        'FD_GPIO_INPUTS': yes(any(profile['signals'][n]['source'] == 'gpio' for n in SIGNALS[:-1])),
-        'FD_ADC_INPUTS': yes(profile['signals']['fuel']['source'] == 'adc'),
+        'FD_GPIO_INPUTS': yes(any(profile['signals'][n]['source'] == 'gpio' for n in SWITCHES)),
+        'FD_ADC_INPUTS': yes(profile['signals']['fuel']['source'] == 'adc' or any(s['type'] != 'none' for s in profile['sensors'].values())),
         'FD_TIMEZONE': profile['locale']['timezone'],
         'FD_WIFI_COUNTRY': profile['locale']['wifi_country'],
         'FD_HOTSPOT_NAME': profile['hotspot_name'],

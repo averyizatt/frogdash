@@ -14,6 +14,24 @@ on the Firmware page shows the version it runs and the version available.
 
 ## Unreleased
 
+- **Screen editor:** press and hold any gauge, **+ New gauge**: any reading the dash has on
+  it (the ECU's, a custom ECU's, car signals, sensors), with its name, range and decimals.
+  **Edit this gauge** sets warning zones on any gauge: outside them it turns red, and the
+  track shows them. Limits are typed in the display's units and kept in the reading's own.
+- **Alert builder:** **+ New alert** in the Alerts tab: any reading above or below a limit,
+  for how long, with the engine running or always, warning or critical. Checked on the Pi
+  like the built-in alerts (USR-01…), saved with them.
+- **Analog sensors:** the ADS1115's inputs for oil and fuel pressure, temperatures or a
+  reading of your own: a sender giving volts calibrated by two points (with a divider for
+  5 V senders), or a thermistor by three, set up on the wizard's Car signals page with
+  common senders to start from. Shown, logged and alerted like the ECU's readings.
+- **Roadmap:** [docs/roadmap.md](docs/roadmap.md), what is planned for setting the dash up
+  without code.
+- **High beam and parking brake** as car signals, from a Pi pin, a CAN bit or the ECU (a
+  custom profile can carry `ecu.high_beam` and `ecu.parking_brake`). Their indicators,
+  HIGH and P-BRAKE, show on the dash only once a source is set. New alert DRV-01: the
+  parking brake on while driving faster than 8 km/h.
+
 - **Custom ECU editor:** on the setup wizard's ECU page, Custom ECU opens an editor on the
   dash's screen: the CAN IDs on the bus now, each frame's bytes live, and each reading set
   with buttons (which bytes, order, sign, scale, offset, the unit the ECU sends) with its

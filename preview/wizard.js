@@ -37,6 +37,7 @@
   const SIGNALS = [
     ['turn_left', 'Left turn signal', 'ecu.turn_left'], ['turn_right', 'Right turn signal', 'ecu.turn_right'],
     ['brake', 'Brake', 'ecu.brake_pedal'], ['lights', 'Lights', 'ecu.headlights'], ['reverse', 'Reverse', 'ecu.reverse'],
+    ['highbeam', 'High beam', 'ecu.high_beam'], ['parking_brake', 'Parking brake', 'ecu.parking_brake'],
     ['fuel', 'Fuel level', 'ecu.fuel_level_pct'],
   ];
   // Pi pins free for a car signal: not I2C (2, 3), SPI0 (7-11) or the UART (14, 15).
@@ -46,7 +47,8 @@
   // The custom ECU editor's profile (ecu-editor.js), saved with Apply; null: unchanged.
   let customDraft = null;
   // Car signals and GPS an ECU profile may give (ecu/__init__.py OFFERS).
-  const OFFERS = ['ecu.turn_left', 'ecu.turn_right', 'ecu.brake_pedal', 'ecu.headlights', 'ecu.reverse', 'ecu.fuel_level_pct',
+  const OFFERS = ['ecu.turn_left', 'ecu.turn_right', 'ecu.brake_pedal', 'ecu.headlights', 'ecu.reverse', 'ecu.high_beam',
+                  'ecu.parking_brake', 'ecu.fuel_level_pct',
                   'ecu.gps_latitude', 'ecu.gps_longitude', 'ecu.vehicle_speed_kph'];
   // The connection test (/system/check, ecucheck.py): a title for each answer.
   const CHECK_TITLES = {ok: 'Connected', wrong_speed: 'Bus speed differs', silent: 'Nothing heard', errors: 'Bus errors',
@@ -215,7 +217,8 @@
   }
   // Where each car signal can come from in this car.
   function sources(name, ecuKey) {
-    const own = name === 'fuel' ? get('modules.gateway') : get('modules.taillights');
+    // No Frogdash board gives the high beam or the parking brake.
+    const own = name === 'fuel' ? get('modules.gateway') : !['highbeam', 'parking_brake'].includes(name) && get('modules.taillights');
     return [
       own && ['module', name === 'fuel' ? 'Frogdash gateway' : 'Frogdash taillight board'],
       offers(ecuKey) && ['ecu', `From the ECU`],
@@ -253,9 +256,68 @@
       : `<i class="good">Now: ${name === 'fuel' ? `${esc(now.value)} %` : now.value ? 'ON' : 'off'}</i>`) : '';
     return `<div class="signal-row"><div class="signal-head"><b>${esc(label)}</b>${reading}</div>${pick}${fields ? `<div class="signal-fields">${fields}</div>` : ''}</div>`;
   }
+  // Analog sensors on the ADS1115 (inputs.py): a sender with a straight-line output, or a
+  // thermistor. Calibration values are kept in psi and °C and shown in the units chosen here.
+  const SENSOR_READINGS = [['oil_pressure', 'Oil pressure', 'pressure'], ['fuel_pressure', 'Fuel pressure', 'pressure'],
+    ['oil_temp', 'Oil temperature', 'temp'], ['coolant', 'Coolant', 'temp'], ['iat', 'Intake air', 'temp'],
+    ['trans_temp', 'Transmission temperature', 'temp'], ['custom', 'A reading of its own', null]];
+  const SENSOR_UNITS = [['none', 'No unit'], ['psi', 'psi'], ['kpa', 'kPa'], ['c', '°C'], ['v', 'volts'], ['pct', '%']];
+  // Common senders: their published figures, to start from (check yours: docs/car-signals.md).
+  const SENDERS = {
+    linear: [['p100', '0.5–4.5 V, 0–100 psi', {v1_mv: 500, v1_value: 0, v2_mv: 4500, v2_value: 100}],
+             ['p150', '0.5–4.5 V, 0–150 psi', {v1_mv: 500, v1_value: 0, v2_mv: 4500, v2_value: 150}],
+             ['p200', '0.5–4.5 V, 0–200 psi', {v1_mv: 500, v1_value: 0, v2_mv: 4500, v2_value: 200}]],
+    thermistor: [['gm', 'GM-style coolant / air sender', {r1_ohm: 9420, t1_c: 0, r2_ohm: 1459, t2_c: 40, r3_ohm: 177, t3_c: 100}]],
+  };
+  const sensorKind = spec => spec.type === 'thermistor' ? 'temp' : spec.reading === 'custom' ? {psi: 'pressure', c: 'temp'}[spec.unit] || null
+    : SENSOR_READINGS.find(([r]) => r === spec.reading)?.[2] || null;
+  const metricWizard = () => draft.locale.units === 'metric';
+  // [unit, stored → shown, shown → stored] for a calibration value.
+  function sensorUnits(kind, spec = {}) {
+    if (kind === 'temp') return metricWizard() ? ['°C', v => v, v => v] : ['°F', v => v * 1.8 + 32, v => (v - 32) / 1.8];
+    if (kind === 'pressure') return metricWizard() ? ['kPa', v => v * 6.894757293, v => v / 6.894757293] : ['psi', v => v, v => v];
+    return [SENSOR_UNITS.find(([u]) => u === spec.unit)?.[1].replace('No unit', '') || '', v => v, v => v];
+  }
+  const roundShown = v => String(+Number(v).toFixed(2));
+  function sensorField(path, label, kind, spec, help = '') {
+    const [unit, show] = path.endsWith('_mv') ? ['', v => v / 1000] : sensorUnits(kind, spec);    // Volts shown, millivolts kept
+    return `<label class="wizard-field"><span>${esc(label)}${unit ? ` (${esc(unit)})` : ''}</span><input type="text" inputmode="decimal" data-wizard-path="${path}" data-conv="${kind || ''}" value="${esc(roundShown(show(get(path))))}" autocomplete="off">${help ? `<small>${help}</small>` : ''}</label>`;
+  }
+  function sensorRow(channel) {
+    const spec = draft.sensors[channel], path = `sensors.${channel}`, index = Number(channel[1]);
+    const fuel = draft.signals.fuel.source === 'adc' && draft.signals.fuel.adc_channel === index;
+    const now = data.signals_now?.sensors?.[channel];
+    const kind = sensorKind(spec), [unit, show] = sensorUnits(kind, spec);
+    const reading = now ? now.problem ? `<i class="bad">${esc(now.problem)}</i>` : now.volts === null ? '<i>No reading yet</i>'
+      : `<i class="${now.value === null ? 'bad' : 'good'}">Now: ${now.volts.toFixed(2)} V · ${now.value === null ? 'out of range (wire?)' : `${roundShown(show(now.value))} ${esc(unit)}`}</i>` : '';
+    if (fuel) return `<div class="signal-row sensor-row-wizard"><div class="signal-head"><b>Input A${index}</b><i>The fuel sender</i></div></div>`;
+    const type = segments(`${path}.type`, 'What is on it', [['none', 'Nothing'], ['linear', 'A sender giving volts'], ['thermistor', 'A temperature sender (thermistor)']]);
+    let fields = '';
+    if (spec.type !== 'none') {
+      const readings = SENSOR_READINGS.filter(([r, , k]) => spec.type === 'linear' || k === 'temp' || r === 'custom');
+      if (!readings.some(([r]) => r === spec.reading)) spec.reading = readings[0][0];
+      const senders = SENDERS[spec.type];
+      fields = `${choice(`${path}.reading`, 'It shows', readings.map(([r, l]) => [r, l]))}
+        ${spec.reading === 'custom' ? `${text(`${path}.name`, 'Its name', 'Shown in the screen editor and the logs.', 'Rail pressure')}${spec.type === 'linear' ? choice(`${path}.unit`, 'Unit', SENSOR_UNITS) : ''}` : ''}
+        <label class="wizard-field"><span>Start from</span><select data-wizard-sender="${channel}"><option value="">Your own figures</option>${senders.map(([id, label, values]) =>
+          `<option value="${id}"${Object.entries(values).every(([k, v]) => spec[k] === v) ? ' selected' : ''}>${esc(label)}</option>`).join('')}</select><small>A sender's published figures; measure yours to be sure.</small></label>`;
+      if (spec.type === 'linear') {
+        fields += `${sensorField(`${path}.v1_mv`, 'Volts at the first point', null, spec)}${sensorField(`${path}.v1_value`, 'Reading there', kind, spec)}
+          ${sensorField(`${path}.v2_mv`, 'Volts at the second point', null, spec)}${sensorField(`${path}.v2_value`, 'Reading there', kind, spec)}
+          ${sensorField(`${path}.divider_pct`, 'Divider passes (%)', null, spec, 'A 5 V sender needs a divider (the ADS1115 reads up to 3.3 V on the Pi): 10 kΩ over 20 kΩ passes 66 %. None: 100.')}`;
+      } else {
+        fields += `${sensorField(`${path}.pullup_ohm`, 'Pull-up resistor (Ω)', null, spec)}${sensorField(`${path}.supply_mv`, 'Pull-up fed from (V)', null, spec, "The Pi's 3.3 V pin: never 5 V into the ADS1115.")}
+          ${[1, 2, 3].map(n => `${sensorField(`${path}.t${n}_c`, `Point ${n}: temperature`, 'temp', spec)}${sensorField(`${path}.r${n}_ohm`, 'resistance (Ω)', null, spec)}`).join('')}`;
+      }
+    }
+    return `<div class="signal-row sensor-row-wizard"><div class="signal-head"><b>Input A${index}</b>${reading}</div>${type}${fields ? `<div class="signal-fields">${fields}</div>` : ''}</div>`;
+  }
   function signalsPage() {
-    return `<p class="wizard-lead">Where the dash gets the turn signals, brake, lights, reverse and fuel level. <b>Never connect 12 V to a Pi pin:</b> use an optocoupler board (docs/car-signals.md). "Now" shows each reading as the dash is set up at the moment.</p>
-      <div class="signal-grid">${SIGNALS.map(signalRow).join('')}</div>`;
+    return `<p class="wizard-lead">Where the dash gets the turn signals, brake, lights, reverse, high beam, parking brake and fuel level. <b>Never connect 12 V to a Pi pin:</b> use an optocoupler board (docs/car-signals.md). "Now" shows each reading as the dash is set up at the moment.</p>
+      <div class="signal-grid">${SIGNALS.map(signalRow).join('')}</div>
+      <h3 class="wizard-subhead">Sensors on the ADS1115</h3>
+      <p class="wizard-lead">Oil and fuel pressure, temperatures, or anything with a voltage: up to four on the ADS1115's inputs (one may be the fuel sender). Each shows like the ECU's readings, in the screen editor, the alert builder and the logs.</p>
+      <div class="signal-grid">${['a0', 'a1', 'a2', 'a3'].map(sensorRow).join('')}</div>`;
   }
   // The offline map (map.js): where and how much, downloaded now from OpenStreetMap.
   const MAP_SIZES = [[10, 'Town', 'about 20 km across'], [25, 'City', 'about 50 km across'], [40, 'Region', 'about 80 km across, slower']];
@@ -345,6 +407,7 @@
     'can_hat.board': 'CAN board', 'can_hat.present': 'CAN board type', 'can_hat.oscillator': 'Board crystal', 'can_hat.interrupt': 'Board interrupt',
     'gps.source': 'GPS', 'camera.enabled': 'Reverse camera', 'camera.rotate': 'Camera picture', 'dashcam.enabled': 'Dash cam',
     ...Object.fromEntries(SIGNALS.map(([n, l]) => [`signals.${n}.source`, l])),
+    ...Object.fromEntries(['a0', 'a1', 'a2', 'a3'].map(ch => [`sensors.${ch}.type`, `Sensor on A${ch[1]}`])),
     'features.map': 'Map', 'features.race': 'Race timer', 'recording': 'Drive recording', 'terminal': 'Terminal', 'tunerstudio': 'TunerStudio',
     'windows_tuner': 'Windows tuner on the dash', 'power': 'Power', 'locale.timezone': 'Time zone', 'locale.wifi_country': 'Wi-Fi country', 'locale.units': 'Units',
     'hotspot_name': 'Hotspot name', 'uploads.repo': 'Reports to', 'preset': 'Preset'};
@@ -359,6 +422,13 @@
             adc: `ADS1115 A${s.adc_channel}, ${(s.empty_mv / 1000).toFixed(2)} V empty, ${(s.full_mv / 1000).toFixed(2)} V full`,
             can: `CAN 0x${s.can_id.toString(16).toUpperCase()} ${name === 'fuel' ? `byte ${s.byte}` : `byte ${s.bit >> 3} bit ${s.bit & 7}`}`}[s.source] || s.source;
   }
+  function sensorText(profile, channel) {
+    const s = profile.sensors?.[channel];
+    if (!s || s.type === 'none') return 'Not used';
+    const what = s.reading === 'custom' ? s.name || 'its own reading' : SENSOR_READINGS.find(([r]) => r === s.reading)?.[1] || s.reading;
+    return s.type === 'linear' ? `${what}: ${(s.v1_mv / 1000).toFixed(2)} V = ${roundShown(s.v1_value)}, ${(s.v2_mv / 1000).toFixed(2)} V = ${roundShown(s.v2_value)}${s.divider_pct !== 100 ? `, divider ${s.divider_pct} %` : ''}`
+      : `${what}: thermistor, ${s.pullup_ohm} Ω pull-up from ${(s.supply_mv / 1000).toFixed(1)} V`;
+  }
   const SHOWN = {
     'ecu.profile': v => ecuProfile(v).label, 'ecu.bitrate': v => `${v / 1000} kbit/s`, 'ecu.base_id': v => v ? `0x${v.toString(16).toUpperCase()}` : "The profile's default",
     'can_hat.board': v => v === 'waveshare' ? 'Waveshare RS485 CAN HAT' : 'Other', 'can_hat.present': v => v ? 'MCP2515 on the pins' : 'USB adapter',
@@ -370,10 +440,12 @@
   const shown = (key, value) => SHOWN[key] ? SHOWN[key](value) : typeof value === 'boolean' ? (value ? 'On' : 'Off') : value === '' ? "(the Pi's own)" : String(value);
   function reviewPage() {
     const before = new Map(flat(data.profile)), after = new Map(flat(draft));
-    const signal = key => key.match(/^signals\.(\w+)\.source$/)?.[1];
-    // A signal row is one change whichever of its fields changed, and shows them all.
-    const changed = key => signal(key) ? signalText(data.profile, signal(key)) !== signalText(draft, signal(key)) : JSON.stringify(before.get(key)) !== JSON.stringify(after.get(key));
-    const value = (profile, map, key) => signal(key) ? signalText(profile, signal(key)) : shown(key, map.get(key));
+    const signal = key => key.match(/^signals\.(\w+)\.source$/)?.[1], sensor = key => key.match(/^sensors\.(a\d)\.type$/)?.[1];
+    // A signal or sensor row is one change whichever of its fields changed, and shows them all.
+    const changed = key => signal(key) ? signalText(data.profile, signal(key)) !== signalText(draft, signal(key))
+      : sensor(key) ? JSON.stringify(data.profile.sensors?.[sensor(key)]) !== JSON.stringify(draft.sensors[sensor(key)])
+      : JSON.stringify(before.get(key)) !== JSON.stringify(after.get(key));
+    const value = (profile, map, key) => signal(key) ? signalText(profile, signal(key)) : sensor(key) ? sensorText(profile, sensor(key)) : shown(key, map.get(key));
     const keys = Object.keys(LABELS).filter(k => after.has(k));
     const order = [...keys.filter(changed), ...keys.filter(k => !changed(k))];
     const rows = order.map(k => `<tr class="${changed(k) ? 'changed' : ''}"><th>${esc(LABELS[k])}</th><td>${esc(value(draft, after, k))}</td><td>${changed(k) ? `was ${esc(value(data.profile, before, k))}` : ''}</td></tr>`).join('');
@@ -492,11 +564,25 @@
       const t = String(raw).trim();
       return Math.max(0, /^0x[0-9a-f]+$/i.test(t) ? parseInt(t, 16) : parseInt(t, 10) || 0);
     }
+    if (path.startsWith('sensors.') && field.tagName === 'INPUT' && !path.endsWith('.name')) {
+      const number = parseFloat(String(raw).replace(',', '.'));
+      if (!Number.isFinite(number)) return get(path);                    // Not a number: as it was
+      if (path.endsWith('_mv')) return Math.max(0, Math.min(5000, Math.round(number * 1000)));
+      if (path.endsWith('_ohm') || path.endsWith('_pct')) return Math.round(number);
+      const spec = draft.sensors[path.split('.')[1]];
+      return +sensorUnits(field.dataset.conv || null, spec)[2](number).toFixed(4);
+    }
     if (path.endsWith('_mv')) return Math.max(0, Math.min(5000, Math.round((parseFloat(String(raw).replace(',', '.')) || 0) * 1000)));
     if (path === 'locale.wifi_country') return String(raw).trim().toUpperCase();
     return raw;
   }
   dialog.addEventListener('change', event => {
+    const sender = event.target.closest('[data-wizard-sender]');
+    if (sender) {
+      const spec = draft.sensors[sender.dataset.wizardSender], found = SENDERS[spec.type]?.find(([id]) => id === sender.value);
+      if (found) Object.assign(spec, found[2]);
+      render(); return;
+    }
     const field = event.target.closest('[data-wizard-path]');
     if (!field) return;
     const path = field.dataset.wizardPath;
@@ -614,7 +700,7 @@
     render();
     $('wizard-next').focus();
   }
-  window.frogdashWizard = {open};
+  window.frogdashWizard = {open, get draft() { return draft; }};     // draft: for the tests
   document.addEventListener('click', event => { if (event.target.closest('[data-wizard-open]')) open(); });
 
   // A new install (or the preview opened with ?wizard, or ?wizard=3 for page 3) starts here.

@@ -86,7 +86,7 @@ async def preview(browser):
     # Switched off from its widget: no longer counted as on; back on, then the limit put back.
     await page.locator(f'{OIL} .alert-switch').click()
     await oil_state(page, ['off'])
-    assert '24 of 26' in await page.locator('#alerts-summary').inner_text()
+    assert '25 of 27' in await page.locator('#alerts-summary').inner_text()
     await page.locator(f'{OIL} .alert-switch').click()
     await oil_state(page, ['active'])
     await limits(page, psi=15)

@@ -23,11 +23,45 @@
     average: ['Avg. economy', 'fuel.average_mpg', 'US MPG', 0, 60, 1],
     lastlap: ['Last lap', '@last', 's', 0, 180, 2], bestlap: ['Best lap', '@best', 's', 0, 180, 2]
   };
+  // Gauges of the owner's own (the screen editor): any reading the dash has, named, with its
+  // range and decimals. Values are kept in the reading's own units (°C, kPa, psi, km/h) and
+  // shown in the display's (Display modes > Units): the kind comes from the reading's name.
+  const UNIT_KINDS = [['_c', 'temp'], ['_kpa', 'kpa'], ['_psi', 'psi'], ['_kph', 'speed'], ['_km', 'distance']];
+  const same = n => n;
+  const KINDS = {
+    temp: {us: ['°F', c => c * 1.8 + 32, f => (f - 32) / 1.8], metric: ['°C', same, same]},
+    kpa: {us: ['psi', k => k * .145037738, p => p / .145037738], metric: ['kPa', same, same]},
+    psi: {us: ['psi', same, same], metric: ['kPa', p => p * 6.894757293, k => k / 6.894757293]},
+    speed: {us: ['mph', k => k / 1.609344, m => m * 1.609344], metric: ['km/h', same, same]},
+    distance: {us: ['mi', k => k / 1.609344, m => m * 1.609344], metric: ['km', same, same]},
+  };
+  const kindOf = signal => UNIT_KINDS.find(([end]) => signal.endsWith(end))?.[1] || null;
+  const system = () => window.FrogdashUnits?.metric ? 'metric' : 'us';
+  // [unit, raw → shown, shown → raw] for a reading, or its own unit label.
+  const shownAs = (signal, unit = '') => { const k = kindOf(signal); return k ? KINDS[k][system()] : [unit, same, same]; };
+  const CUSTOM_KEY = /^my\d{1,3}$/, SIGNAL_KEY = /^[a-z][a-z0-9_]{0,30}\.[a-z0-9_.]{1,60}$/;
+  const finite = n => typeof n === 'number' && Number.isFinite(n);
+  function cleanCustom(c) {
+    if (!c || typeof c !== 'object' || !SIGNAL_KEY.test(c.signal) || typeof c.title !== 'string') return null;
+    if (!finite(c.min) || !finite(c.max) || c.max <= c.min || ![0, 1, 2, 3].includes(c.digits)) return null;
+    return {signal: c.signal, title: c.title.slice(0, 24) || c.signal, unit: typeof c.unit === 'string' ? c.unit.slice(0, 8) : '', min: c.min, max: c.max, digits: c.digits};
+  }
+  function cleanZone(z) {
+    if (!z || typeof z !== 'object') return null;
+    const out = {};
+    for (const side of ['low', 'high']) if (finite(z[side])) out[side] = z[side];
+    if (!('low' in out) && !('high' in out)) return null;
+    return 'low' in out && 'high' in out && out.low >= out.high ? null : out;
+  }
   const layouts = {street: ['coolant', 'oil', 'fuelp', 'iat', 'batt', 'fuel'], tuning: ['afr', 'target', 'boost', 'fuelp', 'meth', 'tank'], track: ['coolant', 'oil', 'iat', 'boost', 'lastlap', 'bestlap']};
-  let prefs = {layout: 'street', layouts: structuredClone(layouts), lighting: 'auto', day: 100, night: 85, nightAccent: '#ffc77d', shift: 5800, chimeVolume: 50};
+  let prefs = {layout: 'street', layouts: structuredClone(layouts), lighting: 'auto', day: 100, night: 85, nightAccent: '#ffc77d', shift: 5800, chimeVolume: 50, custom: {}, zones: {}};
+  // A custom gauge in the picker's list: its name, reading and unit as defined.
+  const register = (key, c) => { metricDefs[key] = [c.title, c.signal, shownAs(c.signal, c.unit)[0], c.min, c.max, c.digits]; };
   try {
     const p = JSON.parse(localStorage.getItem('frogdash.driving.v1'));
     if (p && typeof p === 'object') {
+      for (const [key, c] of Object.entries(p.custom || {})) { const clean = CUSTOM_KEY.test(key) && cleanCustom(c); if (clean) { prefs.custom[key] = clean; register(key, clean); } }
+      for (const [key, z] of Object.entries(p.zones || {})) { const clean = Object.hasOwn(metricDefs, key) && cleanZone(z); if (clean) prefs.zones[key] = clean; }
       if (Object.hasOwn(layouts, p.layout)) prefs.layout = p.layout;
       if (['auto', 'day', 'night'].includes(p.lighting)) prefs.lighting = p.lighting;
       for (const key of ['street', 'tuning', 'track']) if (Array.isArray(p.layouts?.[key]) && p.layouts[key].length === 6 && p.layouts[key].every(k => Object.hasOwn(metricDefs, k))) prefs.layouts[key] = p.layouts[key];
@@ -44,19 +78,31 @@
   const get = key => online && latest.values?.[key]?.quality === 'live' ? latest.values[key].value : null;
   const el = (tag, text, cls) => { const n = document.createElement(tag); if (text !== undefined) n.textContent = text; if (cls) n.className = cls; return n; };
   // One reading for any metric, in display units, with the same quality rules everywhere.
+  function definition(key) {
+    const c = prefs.custom[key];
+    if (!c) return window.FrogdashUnits.definition(metricDefs[key]);
+    const [unit, show] = shownAs(c.signal, c.unit);
+    return [c.title, c.signal, unit, +show(c.min).toFixed(c.digits), +show(c.max).toFixed(c.digits), c.digits, show];
+  }
   function read(key, snapshot = latest, connected = online) {
-    const [title, signal, unit, min, max, digits, convert] = window.FrogdashUnits.definition(metricDefs[key]);
+    if (!Object.hasOwn(metricDefs, key)) key = 'coolant';     // A gauge deleted while shown
+    const [title, signal, unit, min, max, digits, convert] = definition(key);
     const race = (snapshot.mode === 'demo' ? window.frogdashRaceView : snapshot.race) || {};
     const live = connected && snapshot.values?.[signal]?.quality === 'live' ? snapshot.values[signal].value : null;
     const raw = !connected ? null : signal === '@last' ? race.laps?.at(-1)?.seconds : signal === '@best' ? race.best_lap : live;
     const v = Number.isFinite(raw) ? (convert ? convert(raw) : raw) : null, value = Number.isFinite(v) ? v : null;
     const quality = value !== null ? 'live' : !connected ? 'stale' : snapshot.values?.[signal]?.quality || 'unavailable';
     const label = value !== null ? signal.startsWith('fuel.') ? 'Estimated' : signal.startsWith('trip.') ? 'Tracked' : 'Live' : !connected ? 'Stale' : snapshot.values?.[signal]?.quality || 'No signal';
-    return {key, title, signal, unit, min, max, digits, value, quality, label, text: value === null ? '\u2014' : value.toFixed(digits), ratio: value === null ? 0 : Math.max(0, Math.min(1, (value - min) / (max - min)))};
+    // Warning zones, kept in the reading's own units: outside them the gauge turns red.
+    const zone = prefs.zones[key], show = convert || same, at = n => Math.max(0, Math.min(1, (show(n) - min) / (max - min)));
+    const tone = zone && Number.isFinite(raw) ? (raw < zone.low ? 'low' : raw > zone.high ? 'high' : null) : null;
+    return {key, title, signal, unit, min, max, digits, value, quality, label, tone, custom: Object.hasOwn(prefs.custom, key),
+      zones: zone ? {low: zone.low === undefined ? null : at(zone.low), high: zone.high === undefined ? null : at(zone.high)} : null,
+      text: value === null ? '\u2014' : value.toFixed(digits), ratio: value === null ? 0 : Math.max(0, Math.min(1, (value - min) / (max - min)))};
   }
   // Press and hold any [data-gauge-slot] element; its owner listens for 'gauge-hold'.
   const picker = el('dialog', undefined, 'workspace-dialog gauge-picker'); picker.id = 'gauge-picker'; picker.setAttribute('aria-labelledby', 'gauge-picker-title');
-  picker.innerHTML = '<header class="dialog-header"><div><span class="eyebrow">PRESS AND HOLD ANY GAUGE</span><h2 id="gauge-picker-title">Change gauge</h2><p id="gauge-picker-note"></p></div><button id="gauge-picker-default" type="button">Restore default</button><button id="gauge-picker-close" class="close-button" type="button">Close <span aria-hidden="true">\u00d7</span></button></header><div id="gauge-picker-options" class="gauge-picker-options" role="group" aria-label="Readings"></div>';
+  picker.innerHTML = '<header class="dialog-header"><div><span class="eyebrow">PRESS AND HOLD ANY GAUGE</span><h2 id="gauge-picker-title">Change gauge</h2><p id="gauge-picker-note"></p></div><button id="gauge-picker-new" class="gauge-picker-action" type="button">+ New gauge</button><button id="gauge-picker-edit" class="gauge-picker-action" type="button">Edit this gauge</button><button id="gauge-picker-default" type="button">Restore default</button><button id="gauge-picker-close" class="close-button" type="button">Close <span aria-hidden="true">\u00d7</span></button></header><div id="gauge-picker-options" class="gauge-picker-options" role="group" aria-label="Readings"></div>';
   document.body.append(picker);
   let pickRequest = null;
   function renderPicker() {
@@ -67,23 +113,191 @@
       button.querySelector('small').textContent = m.value === null ? m.label : `${m.text} ${m.unit}`.trim();
     }
   }
-  for (const key of Object.keys(metricDefs)) {
-    const button = el('button'); button.type = 'button'; button.dataset.metric = key;
-    button.append(el('strong', metricDefs[key][0]), el('small'));
-    button.onclick = () => { const request = pickRequest; picker.close(); request?.onPick(key); };
-    $('gauge-picker-options').append(button);
+  function buildOptions() {
+    $('gauge-picker-options').replaceChildren();
+    for (const key of Object.keys(metricDefs)) {
+      const button = el('button'); button.type = 'button'; button.dataset.metric = key;
+      if (Object.hasOwn(prefs.custom, key)) button.dataset.custom = 'true';
+      button.append(el('strong', metricDefs[key][0]), el('small'));
+      button.onclick = () => { const request = pickRequest; picker.close(); request?.onPick(key); };
+      $('gauge-picker-options').append(button);
+    }
   }
+  buildOptions();
   $('gauge-picker-close').onclick = () => picker.close();
+  $('gauge-picker-new').onclick = () => { const request = pickRequest; picker.close(); editGauge(null, request); };
+  $('gauge-picker-edit').onclick = () => { const request = pickRequest; picker.close(); editGauge(request.current, request); };
   $('gauge-picker-default').onclick = () => { const request = pickRequest; picker.close(); request?.onPick(request.fallback); };
   picker.addEventListener('close', () => { pickRequest = null; });
   function pick(request) {
     pickRequest = request;
     $('gauge-picker-title').textContent = `Change ${request.title}`;
-    $('gauge-picker-note').textContent = `Default: ${metricDefs[request.fallback][0]}. Speed and RPM stay fixed.`;
+    $('gauge-picker-note').textContent = `Default: ${metricDefs[request.fallback][0]}. Speed and RPM stay fixed. Edit sets its warning zones; New makes a gauge for any reading.`;
+    $('gauge-picker-edit').hidden = !Object.hasOwn(metricDefs, request.current) || metricDefs[request.current][1].startsWith('@');
     if (!picker.open) picker.showModal();
     renderPicker();
   }
-  window.FrogdashMetrics = {defs: metricDefs, read, pick};
+  // The screen editor: a gauge for any reading, or the warning zones of one already there.
+  const editor = el('dialog', undefined, 'workspace-dialog gauge-editor'); editor.id = 'gauge-editor'; editor.setAttribute('aria-labelledby', 'gauge-editor-title');
+  editor.innerHTML = `<header class="dialog-header"><div><span class="eyebrow">SCREEN EDITOR</span><h2 id="gauge-editor-title">New gauge</h2><p id="gauge-editor-note"></p></div>
+    <button id="gauge-editor-close" class="close-button" type="button">Cancel <span aria-hidden="true">×</span></button></header>
+    <div class="gauge-editor-body">
+      <div class="gauge-editor-readings" id="gauge-editor-readings-box"><label for="gauge-editor-filter">Reading</label><input id="gauge-editor-filter" type="search" placeholder="Find a reading" autocomplete="off">
+        <div id="gauge-editor-readings" class="gauge-editor-readings-list" role="listbox" aria-label="Readings the dash has now"></div></div>
+      <div class="gauge-editor-form">
+        <div class="gauge-editor-preview"><span id="gauge-editor-signal">—</span><strong id="gauge-editor-now">—</strong><div class="track"><div class="fill" id="gauge-editor-fill"></div><i class="zone zone-low" id="gauge-editor-zlow"></i><i class="zone zone-high" id="gauge-editor-zhigh"></i></div></div>
+        <div class="gauge-editor-fields">
+          <label class="ge-custom">Name <input id="gauge-editor-name" maxlength="24" autocomplete="off"></label>
+          <label class="ge-custom ge-unit">Unit <input id="gauge-editor-unit" maxlength="8" autocomplete="off" placeholder="bar, %, V…"></label>
+          <label class="ge-custom">Lowest shown <input id="gauge-editor-min" type="number" step="any"></label>
+          <label class="ge-custom">Highest shown <input id="gauge-editor-max" type="number" step="any"></label>
+          <label class="ge-custom">Decimals <select id="gauge-editor-digits"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+          <label>Warn below <input id="gauge-editor-low" type="number" step="any" placeholder="No limit"></label>
+          <label>Warn above <input id="gauge-editor-high" type="number" step="any" placeholder="No limit"></label>
+        </div>
+        <p id="gauge-editor-problem" class="gauge-editor-problem" role="alert"></p>
+        <div class="gauge-editor-buttons"><button id="gauge-editor-delete" type="button">Delete gauge</button><button id="gauge-editor-save" class="primary" type="button">Save</button></div>
+      </div>
+    </div>`;
+  document.body.append(editor);
+  let editing = null;      // {key: null for a new gauge, request, signal}
+  // A reading's name: a built-in gauge's where one shows it, else made from its key.
+  const ACRONYMS = new Set(['afr', 'iat', 'rpm', 'map', 'tps', 'egt', 'ego', 'mpg', 'gps', 'vss', 'clt', 'ecu', 'pw', 've', 'mat', 'iac']);
+  function humanize(key) {
+    const known = Object.entries(metricDefs).find(([k, d]) => !Object.hasOwn(prefs.custom, k) && d[1] === key);
+    if (known) return known[1][0];
+    const words = key.split('.').slice(1).join(' ').replace(/_/g, ' ').replace(/ (c|kpa|psi|kph|km|pct|v|deg|ms)$/i, '').trim().split(' ');
+    const text = words.map(w => ACRONYMS.has(w.toLowerCase()) ? w.toUpperCase() : w).join(' ');
+    return text ? text[0].toUpperCase() + text.slice(1) : key;
+  }
+  const numberIn = id => { const v = $(id).value.trim(); return v === '' ? null : Number(v); };
+  const fmt = (n, digits = 2) => n === null || n === undefined ? '' : String(+n.toFixed(digits));
+  // Every reading the dash has a number for now (and the one being edited), grouped by source.
+  function readingKeys() {
+    const keys = Object.entries(latest.values || {}).filter(([, v]) => typeof v?.value === 'number' || v?.value === null).map(([k]) => k);
+    if (editing?.signal && !keys.includes(editing.signal)) keys.push(editing.signal);
+    return keys.filter(k => SIGNAL_KEY.test(k)).sort();
+  }
+  function renderReadings() {
+    const list = $('gauge-editor-readings'), filter = $('gauge-editor-filter').value.trim().toLowerCase();
+    const keys = readingKeys().filter(k => !filter || k.includes(filter) || humanize(k).toLowerCase().includes(filter));
+    const sig = keys.join('|') + '#' + editing?.signal;
+    if (list.dataset.keys !== sig) {
+      list.dataset.keys = sig; list.replaceChildren();
+      for (const key of keys) {
+        const button = el('button'); button.type = 'button'; button.dataset.reading = key; button.setAttribute('role', 'option');
+        button.append(el('strong', humanize(key)), el('code', key), el('small'));
+        button.onclick = () => chooseReading(key);
+        list.append(button);
+      }
+    }
+    for (const button of list.children) {
+      const v = latest.values?.[button.dataset.reading], [unit, show] = shownAs(button.dataset.reading);
+      button.setAttribute('aria-selected', String(button.dataset.reading === editing?.signal));
+      button.querySelector('small').textContent = v?.quality === 'live' && finite(v.value) ? `${+show(v.value).toFixed(2)} ${unit}`.trim() : v?.quality || 'no signal';
+    }
+  }
+  function chooseReading(key) {
+    const before = editing.signal; editing.signal = key;
+    if (!$('gauge-editor-name').value || $('gauge-editor-name').value === humanize(before || '')) $('gauge-editor-name').value = humanize(key);
+    $('gauge-editor-unit').closest('label').hidden = !!kindOf(key);
+    if ($('gauge-editor-min').value === '' && $('gauge-editor-max').value === '') {
+      const v = latest.values?.[key]?.value, [, show] = shownAs(key), now = finite(v) ? show(v) : null;
+      // A round top about half again above what it reads now: 205 °F gives 400.
+      const top = now === null || now <= 0 ? 100 : now * 1.5, step = Math.pow(10, Math.floor(Math.log10(top)));
+      $('gauge-editor-min').value = 0; $('gauge-editor-max').value = fmt(Math.ceil(top / step) * step, 3);
+    }
+    renderReadings(); renderEditor();
+  }
+  // What the form says now, in the reading's own units; or a problem to show.
+  function formGauge() {
+    const signal = editing.signal, [, , back] = shownAs(signal || '');
+    if (!signal) return {problem: 'Pick the reading this gauge shows.'};
+    const custom = editing.key === null || Object.hasOwn(prefs.custom, editing.key);
+    const low = numberIn('gauge-editor-low'), high = numberIn('gauge-editor-high');
+    if ([low, high].some(n => n !== null && !Number.isFinite(n))) return {problem: 'The warning limits should be numbers.'};
+    if (low !== null && high !== null && low >= high) return {problem: 'Warn below should be lower than warn above.'};
+    const zone = cleanZone({low: low === null ? undefined : back(low), high: high === null ? undefined : back(high)});
+    if (!custom) return {zone};
+    const min = numberIn('gauge-editor-min'), max = numberIn('gauge-editor-max');
+    if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return {problem: 'Highest shown should be above lowest shown.'};
+    const gauge = cleanCustom({signal, title: $('gauge-editor-name').value.trim() || humanize(signal), unit: $('gauge-editor-unit').value.trim(),
+      min: back(min), max: back(max), digits: Number($('gauge-editor-digits').value)});
+    return gauge ? {gauge, zone} : {problem: 'Check the name and the range.'};
+  }
+  function renderEditor() {
+    if (!editor.open || !editing) return;
+    renderReadings();
+    const form = formGauge(), signal = editing.signal;
+    $('gauge-editor-problem').textContent = form.problem && signal ? form.problem : '';
+    $('gauge-editor-save').disabled = !!form.problem;
+    const [unit, show] = shownAs(signal || '', $('gauge-editor-unit').value.trim());
+    const v = signal ? latest.values?.[signal] : null, live = v?.quality === 'live' && finite(v.value) ? v.value : null;
+    $('gauge-editor-signal').textContent = signal || 'No reading picked';
+    const digits = Number($('gauge-editor-digits').value) || 0;
+    const zone = form.zone, tone = zone && live !== null ? (live < zone.low ? 'low' : live > zone.high ? 'high' : null) : null;
+    $('gauge-editor-now').textContent = live === null ? (v?.quality || '—') : `${show(live).toFixed(editing.key && !Object.hasOwn(prefs.custom, editing.key) ? read(editing.key).digits : digits)} ${unit}${tone ? tone === 'low' ? ' · LOW' : ' · HIGH' : ''}`;
+    editor.querySelector('.gauge-editor-preview').dataset.tone = tone ? 'danger' : 'normal';
+    const [min, max] = form.gauge ? [show(form.gauge.min), show(form.gauge.max)] : editing.key ? [read(editing.key).min, read(editing.key).max] : [0, 100];
+    const at = n => Math.max(0, Math.min(100, (show(n) - min) / (max - min) * 100));
+    $('gauge-editor-fill').style.width = live === null ? '0%' : `${at(live)}%`;
+    $('gauge-editor-zlow').hidden = zone?.low === undefined; $('gauge-editor-zhigh').hidden = zone?.high === undefined;
+    if (zone?.low !== undefined) $('gauge-editor-zlow').style.width = `${at(zone.low)}%`;
+    if (zone?.high !== undefined) $('gauge-editor-zhigh').style.left = `${at(zone.high)}%`;
+  }
+  // key null: a new gauge (put in the slot asked from, if any); otherwise that gauge.
+  function editGauge(key, request = null) {
+    const custom = key !== null && Object.hasOwn(prefs.custom, key);
+    const def = key === null ? null : custom ? prefs.custom[key] : {signal: metricDefs[key][1]};
+    editing = {key, request, signal: def?.signal || null};
+    $('gauge-editor-title').textContent = key === null ? 'New gauge' : `Edit ${metricDefs[key][0]}`;
+    $('gauge-editor-note').textContent = key === null ? 'Any reading the dash has, from the ECU, the car signals or the sensors. It goes where you held.'
+      : custom ? 'Its reading, name, range and warning zones.' : 'Its warning zones: outside them the gauge turns red. For another range, make a new gauge on the same reading.';
+    editor.dataset.kind = key === null || custom ? 'custom' : 'zones';
+    $('gauge-editor-readings-box').hidden = !(key === null || custom);
+    $('gauge-editor-delete').hidden = !custom;
+    const [, show] = shownAs(editing.signal || '', def?.unit || '');
+    $('gauge-editor-name').value = custom ? def.title : '';
+    $('gauge-editor-unit').value = custom ? def.unit : '';
+    $('gauge-editor-unit').closest('label').hidden = !!(editing.signal && kindOf(editing.signal));
+    $('gauge-editor-min').value = custom ? fmt(show(def.min)) : '';
+    $('gauge-editor-max').value = custom ? fmt(show(def.max)) : '';
+    $('gauge-editor-digits').value = String(custom ? def.digits : 0);
+    const zone = key === null ? null : prefs.zones[key];
+    $('gauge-editor-low').value = zone?.low === undefined ? '' : fmt(show(zone.low));
+    $('gauge-editor-high').value = zone?.high === undefined ? '' : fmt(show(zone.high));
+    $('gauge-editor-filter').value = '';
+    delete $('gauge-editor-readings').dataset.keys;
+    if (!editor.open) editor.showModal();
+    renderEditor();
+  }
+  for (const id of ['gauge-editor-name', 'gauge-editor-unit', 'gauge-editor-min', 'gauge-editor-max', 'gauge-editor-low', 'gauge-editor-high', 'gauge-editor-digits', 'gauge-editor-filter'])
+    $(id).addEventListener('input', renderEditor);
+  $('gauge-editor-digits').addEventListener('change', renderEditor);
+  $('gauge-editor-close').onclick = () => editor.close();
+  editor.addEventListener('close', () => { editing = null; window.FrogdashKeyboard?.close?.(); });
+  $('gauge-editor-save').onclick = () => {
+    const form = formGauge();
+    if (form.problem || !editing) return;
+    let key = editing.key;
+    if (form.gauge) {
+      if (key === null) { let n = 1; while (Object.hasOwn(prefs.custom, `my${n}`)) n++; key = `my${n}`; }
+      prefs.custom[key] = form.gauge; register(key, form.gauge);
+    }
+    if (form.zone) prefs.zones[key] = form.zone; else delete prefs.zones[key];
+    const request = editing.key === null ? editing.request : null;
+    editor.close();
+    buildOptions(); buildSlotChoices();
+    if (request) request.onPick(key); else saveDisplay();
+  };
+  $('gauge-editor-delete').onclick = () => {
+    const key = editing?.key;
+    if (!key || !Object.hasOwn(prefs.custom, key)) return;
+    delete prefs.custom[key]; delete prefs.zones[key]; delete metricDefs[key];
+    for (const name of Object.keys(prefs.layouts)) prefs.layouts[name] = prefs.layouts[name].map((k, i) => k === key ? layouts[name][i] : k);
+    editor.close(); buildOptions(); buildSlotChoices(); saveDisplay();
+  };
+  window.FrogdashMetrics = {defs: metricDefs, read, pick, edit: editGauge, name: humanize};
   let hold = null;
   const cancelHold = () => { if (hold) { clearTimeout(hold.timer); hold.target.classList.remove('gauge-holding'); } hold = null; };
   const fireHold = target => { cancelHold(); if (!picker.open) target.dispatchEvent(new Event('gauge-hold')); };
@@ -104,19 +318,25 @@
     const card = el('article', undefined, 'sensor-card');
     const heading = el('div', undefined, 'card-heading'), title = el('h2'), quality = el('span', '', 'quality-label'); heading.append(title, quality);
     const readout = el('div', undefined, 'sensor-reading'), value = el('span'), unit = el('span', '', 'unit'); readout.append(value, unit);
-    const track = el('div', undefined, 'track'), fill = el('div', undefined, 'fill'); track.append(fill);
+    const track = el('div', undefined, 'track'), fill = el('div', undefined, 'fill'), zlow = el('i', undefined, 'zone zone-low'), zhigh = el('i', undefined, 'zone zone-high'); track.append(fill, zlow, zhigh);
     const scale = el('div', undefined, 'scale-labels'), lo = el('span'), hi = el('span'); scale.append(lo, hi); card.append(heading, readout, track, scale); row.append(card);
-    tiles.push({card, title, quality, value, unit, fill, lo, hi});
+    tiles.push({card, title, quality, value, unit, fill, lo, hi, zlow, zhigh});
     const native = document.querySelectorAll('.sensor-row:not(.profile-sensors) .sensor-card')[i];
     for (const target of [card, native].filter(Boolean)) {
       target.dataset.gaugeSlot = `sensor-${i}`;
       target.addEventListener('gauge-hold', () => pick({title: `position ${i + 1}`, current: prefs.layouts[prefs.layout][i], fallback: layouts[prefs.layout][i], onPick: key => { prefs.layouts[prefs.layout][i] = key; saveDisplay(); }}));
     }
     const label = el('label', `Position ${i + 1}`), select = el('select'); select.id = `layout-slot-${i}`;
-    for (const [key, [name]] of Object.entries(metricDefs)) { const option = el('option', name); option.value = key; select.append(option); }
     select.onchange = () => { prefs.layouts[prefs.layout][i] = select.value; saveDisplay(); };
     label.append(select); $('layout-instruments').append(label);
   }
+  function buildSlotChoices() {
+    for (let i = 0; i < 6; i++) {
+      const select = $(`layout-slot-${i}`);
+      select.replaceChildren(...Object.entries(metricDefs).map(([key, [name]]) => { const option = el('option', name); option.value = key; return option; }));
+    }
+  }
+  buildSlotChoices();
   function syncDisplayForm() {
     prefs.layouts[prefs.layout].forEach((v, i) => { $(`layout-slot-${i}`).value = v; });
     $('lighting-mode').value = prefs.lighting; $('day-brightness').value = prefs.day; $('night-brightness').value = prefs.night;
@@ -129,6 +349,7 @@
     try { localStorage.setItem('frogdash.driving.v1', JSON.stringify(prefs)); $('display-save-status').textContent = 'Saved on this display.'; }
     catch { $('display-save-status').textContent = 'Applied for this session; browser storage unavailable.'; }
     syncDisplayForm(); renderDisplay();
+    window.dispatchEvent(new Event('frogdash-gauges-changed'));
   }
   for (const b of document.querySelectorAll('button[data-layout]')) b.onclick = () => { prefs.layout = b.dataset.layout; saveDisplay(); };
   $('layout-reset').onclick = () => { prefs.layouts[prefs.layout] = [...layouts[prefs.layout]]; saveDisplay(); };
@@ -143,7 +364,7 @@
     document.documentElement.style.setProperty('--display-brightness', (night ? prefs.night : prefs.day) / 100);
     document.documentElement.style.setProperty('--night-accent', prefs.nightAccent);
     $('lighting-status').textContent = `${night ? 'Night' : 'Day'} mode · ${prefs.lighting === 'auto' ? lights === null ? 'running-light signal unavailable; day fallback' : 'following running lights' : 'manual override'}`;
-    const native = prefs.layout === 'street' && JSON.stringify(prefs.layouts.street) === JSON.stringify(layouts.street);
+    const native = prefs.layout === 'street' && JSON.stringify(prefs.layouts.street) === JSON.stringify(layouts.street) && !layouts.street.some(k => prefs.zones[k]);
     document.querySelector('.sensor-row:not(.profile-sensors)').hidden = !native;
     row.hidden = native;
     $('display').dataset.layout = prefs.layout;
@@ -158,9 +379,14 @@
       tile.title.textContent = m.title; tile.unit.textContent = m.unit; tile.lo.textContent = m.min; tile.hi.textContent = m.max;
       tile.value.textContent = m.text; tile.quality.textContent = m.label;
       tile.card.dataset.quality = m.quality;
+      tile.card.dataset.tone = m.tone ? 'danger' : 'normal';
       tile.fill.style.width = `${m.ratio * 100}%`;
+      tile.zlow.hidden = m.zones?.low == null; tile.zhigh.hidden = m.zones?.high == null;
+      if (m.zones?.low != null) tile.zlow.style.width = `${m.zones.low * 100}%`;
+      if (m.zones?.high != null) tile.zhigh.style.left = `${m.zones.high * 100}%`;
     });
     renderPicker();
+    renderEditor();
   }
   syncDisplayForm();
   // The alerts themselves, their words and limits: alert-rules.json, shown and set in the

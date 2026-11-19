@@ -19,6 +19,8 @@ svg { display:block; }
 .indicator { font-size:16px; font-weight:800; letter-spacing:.7px; padding:8px 12px; border:1px solid #28343d; border-radius:6px; color:#637884; }
 .indicator.on { color:var(--accent); border-color:#64967f; background:#152e25; }
 #icon-brake.on { color:var(--warn); border-color:#88724c; background:#292519; }
+#icon-highbeam.on { color:#9cc8ff; border-color:#3f6aa8; background:#132238; }
+#icon-parking_brake.on { color:var(--danger); border-color:#8a4646; background:#2c1717; }
 .turn-cluster { width:48px; padding:6px; color:#3c505c; }
 .turn-cluster svg { width:36px; fill:currentColor; }
 .turn-cluster[data-on="true"] { color:var(--accent); }

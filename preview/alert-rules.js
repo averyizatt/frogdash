@@ -3,7 +3,7 @@ window.frogdashAlertRules = {
   "about": "Every advisory alert the dash checks: the Pi evaluates them (hardware/frogdash/alerts.py) and the Alerts tab shows them (hardware/ui/alerts.js). Thresholds are stored in the units of their signal: pressure psi, boost kPa above atmosphere, temperature degrees C. A rule goes off when every clause in 'when' holds for its 'delay' seconds; 'special' rules are worked out in code.",
   "groups": [
     ["engine", "Engine"], ["fuel", "Fuel"], ["boost", "Boost & mixture"], ["temps", "Temperatures"],
-    ["meth", "Water / meth"], ["electrical", "Electrical"], ["modules", "Modules & Pi"]
+    ["meth", "Water / meth"], ["electrical", "Electrical"], ["vehicle", "Driving"], ["modules", "Modules & Pi"], ["custom", "Your own"]
   ],
   "rules": [
     {"key": "oil", "code": "OIL-01", "title": "LOW OIL PRESSURE", "name": "Low oil pressure", "group": "engine", "severity": "critical",
@@ -143,6 +143,11 @@ window.frogdashAlertRules = {
      "params": [{"key": "v", "label": "Above", "kind": "volt", "min": 14, "max": 17, "step": 0.1, "default": 15.2}],
      "when": [["vehicle.battery_v", ">", {"param": "v"}]]},
 
+    {"key": "parking_brake", "code": "DRV-01", "title": "PARKING BRAKE ON", "name": "Driving with the parking brake on", "group": "vehicle", "severity": "warning",
+     "about": "The parking brake is on while the car moves faster than 8 km/h (5 mph). Needs a parking brake signal (setup wizard, Car signals).",
+     "check": "Release the parking brake. If it is off, check the switch and its wiring, or the signal's setting.",
+     "show": ["lighting.parking_brake", "text"], "enabled": true, "delay": 2.0, "params": [],
+     "when": [["vehicle.speed_kph", ">", 8], ["lighting.parking_brake", "==", true]]},
     {"key": "taillights", "code": "MOD-01", "title": "TAILLIGHTS NOT RESPONDING", "name": "Taillights not responding", "group": "modules", "severity": "warning",
      "about": "The taillight controller is silent while other modules are heard: no brake lights.",
      "check": "Restart it from Software & power, or press its button. Check its power and CAN wiring.",

@@ -1,8 +1,10 @@
 """Car signals from somewhere other than the reference car's own boards.
 
 In the reference car the turn signals, brake, lights and reverse come from the taillight
-board (0x100) and the fuel level from the sensor gateway (0x500). Another car chooses, per
-signal, in the setup wizard (the system profile's `signals`, sysconfig.SIGNALS):
+board (0x100) and the fuel level from the sensor gateway (0x500). High beam and parking
+brake come from no board: any car, the reference one included, can wire them here. Each
+car chooses, per signal, in the setup wizard (the system profile's `signals`,
+sysconfig.SIGNALS):
 
   ecu    the ECU profile's own reading (ECU_KEYS), when its broadcast has one
   gpio   a Pi pin, through an optocoupler (never 12 V on a pin), active low or high
@@ -15,28 +17,85 @@ Whatever the source, the dash value is the same one the boards give (TARGETS), s
 indicators, the reverse camera, alerts, logs and the fuel gauge work unchanged. Turn
 signals flash: they count as on while a pulse came within FLASH_HOLD_S.
 
+Analog sensors (the system profile's `sensors`, a0-a3: the ADS1115's inputs not used for the
+fuel level): a sender with a straight-line output (0.5-4.5 V pressure senders and the like),
+calibrated by two points, or a thermistor temperature sender with a pull-up resistor,
+calibrated by three (Steinhart-Hart). Volts are the sender's own: the input's reading
+divided by the divider in front of it (a 5 V sender needs one: the ADS1115 reads at most
+4.096 V). Each feeds a dash reading (SENSOR_READINGS) or one of its own (sensor.a0...).
+
 The Pi-pin reader needs python3-libgpiod (setup installs it when a pin is used) and is
 imported only then; without it the signals say why they are unavailable.
 """
+import math
 import os
 import threading
 import time
 
 TARGETS = {'turn_left': 'lighting.turn_left', 'turn_right': 'lighting.turn_right', 'brake': 'lighting.brake',
-           'lights': 'lighting.running', 'reverse': 'lighting.reverse', 'fuel': 'vehicle.fuel_pct'}
+           'lights': 'lighting.running', 'reverse': 'lighting.reverse', 'highbeam': 'lighting.highbeam',
+           'parking_brake': 'lighting.parking_brake', 'fuel': 'vehicle.fuel_pct'}
 ECU_KEYS = {'turn_left': 'ecu.turn_left', 'turn_right': 'ecu.turn_right', 'brake': 'ecu.brake_pedal',
-            'lights': 'ecu.headlights', 'reverse': 'ecu.reverse', 'fuel': 'ecu.fuel_level_pct'}
+            'lights': 'ecu.headlights', 'reverse': 'ecu.reverse', 'highbeam': 'ecu.high_beam',
+            'parking_brake': 'ecu.parking_brake', 'fuel': 'ecu.fuel_level_pct'}
 LABELS = {'turn_left': 'Left turn signal', 'turn_right': 'Right turn signal', 'brake': 'Brake', 'lights': 'Lights',
-          'reverse': 'Reverse', 'fuel': 'Fuel level'}
+          'reverse': 'Reverse', 'highbeam': 'High beam', 'parking_brake': 'Parking brake', 'fuel': 'Fuel level'}
+SENSOR_CHANNELS = ('a0', 'a1', 'a2', 'a3')
+# The dash reading an analog sensor can feed, and the unit its calibration values are in.
+SENSOR_READINGS = {'oil_pressure': 'engine.oil_pressure_psi', 'fuel_pressure': 'engine.fuel_pressure_psi',
+                   'oil_temp': 'engine.oil_temp_c', 'coolant': 'engine.coolant_c', 'iat': 'engine.iat_c',
+                   'trans_temp': 'sensor.trans_temp_c'}
+TEMPERATURE_READINGS = ('oil_temp', 'coolant', 'iat', 'trans_temp')
+SENSOR_UNITS = {'none': '', 'psi': '_psi', 'kpa': '_kpa', 'c': '_c', 'v': '_v', 'pct': '_pct'}
+SENSOR_AVERAGE = 3
 FLASH_HOLD_S = 0.8      # A flasher is off for about a third of a second between pulses
 CAN_TIMEOUT_S = 1.5
 ADC_TIMEOUT_S = 3.0
 FUEL_AVERAGE = 20       # ADS1115 samples (5 a second) averaged: the fuel moves in the tank
 
 
+def sensor_key(channel, spec):
+    """The dash reading an analog sensor gives: one the dash has, or sensor.a0 (with its unit)."""
+    if spec['reading'] != 'custom':
+        return SENSOR_READINGS[spec['reading']]
+    return f"sensor.{channel}{'_c' if spec['type'] == 'thermistor' else SENSOR_UNITS[spec['unit']]}"
+
+
+def sensor_keys(sensors):
+    return [sensor_key(ch, spec) for ch, spec in (sensors or {}).items() if spec.get('type', 'none') != 'none']
+
+
+def steinhart(points):
+    """Steinhart-Hart A, B, C from three (ohms, degC) points."""
+    (r1, t1), (r2, t2), (r3, t3) = points
+    l1, l2, l3 = math.log(r1), math.log(r2), math.log(r3)
+    y1, y2, y3 = 1 / (t1 + 273.15), 1 / (t2 + 273.15), 1 / (t3 + 273.15)
+    g2, g3 = (y2 - y1) / (l2 - l1), (y3 - y1) / (l3 - l1)
+    c = (g3 - g2) / (l3 - l2) / (l1 + l2 + l3)
+    b = g2 - c * (l1 * l1 + l1 * l2 + l2 * l2)
+    return y1 - (b + l1 * l1 * c) * l1, b, c
+
+
+def sensor_value(spec, mv):
+    """The reading for the sender's own voltage, or None (open or shorted: a fault)."""
+    if spec['type'] == 'linear':
+        return spec['v1_value'] + (mv - spec['v1_mv']) * (spec['v2_value'] - spec['v1_value']) / (spec['v2_mv'] - spec['v1_mv'])
+    if spec['type'] == 'thermistor':
+        if not 0 < mv < spec['supply_mv'] * 0.995:
+            return None
+        ohms = spec['pullup_ohm'] * mv / (spec['supply_mv'] - mv)
+        a, b, c = steinhart([(spec['r1_ohm'], spec['t1_c']), (spec['r2_ohm'], spec['t2_c']), (spec['r3_ohm'], spec['t3_c'])])
+        ln = math.log(ohms)
+        inverse = a + b * ln + c * ln ** 3
+        return None if inverse <= 0 else 1 / inverse - 273.15
+    return None
+
+
 class Inputs:
-    def __init__(self, signals, clock=time.monotonic):
+    def __init__(self, signals, sensors=None, clock=time.monotonic):
         self.clock = clock
+        self.sensors = {ch: spec for ch, spec in (sensors or {}).items() if ch in SENSOR_CHANNELS and spec.get('type', 'none') != 'none'}
+        self.sensor_mv = {}       # channel -> the sender's volts, the last few
         self.signals = {name: spec for name, spec in (signals or {}).items()
                         if name in TARGETS and spec.get('source') in ('ecu', 'gpio', 'adc', 'can')}
         self.latest = {}          # name -> (value, when)
@@ -99,6 +158,25 @@ class Inputs:
             for name in names:
                 self.problem[name] = why
 
+    def analog(self, channel, input_mv):
+        """One reading of an ADS1115 input used by an analog sensor (a0-a3)."""
+        spec = self.sensors.get(channel)
+        if not spec:
+            return
+        with self.lock:
+            recent = self.sensor_mv[channel] = (self.sensor_mv.get(channel, []) + [input_mv * 100 / spec['divider_pct']])[-SENSOR_AVERAGE:]
+            mv = sum(recent) / len(recent)
+        value = sensor_value(spec, mv)
+        self.seen(f'sensor.{channel}', None if value is None or not math.isfinite(value) else round(value, 3))
+
+    def adc_inputs(self):
+        """The ADS1115 inputs to read: the fuel sender's and the analog sensors'."""
+        wanted = [int(ch[1]) for ch in self.sensors]
+        fuel = self.signals.get('fuel')
+        if fuel and fuel['source'] == 'adc':
+            wanted.append(fuel['adc_channel'])
+        return sorted(set(wanted))
+
     # --- What the dash shows ---
     def values(self, values, now_ms):
         """Samples for the dash values these signals stand for (TARGETS)."""
@@ -128,16 +206,33 @@ class Inputs:
             if name.startswith('turn_') and sample['quality'] == 'live' and sample['value'] is False:
                 sample['value'] = now - self.last_on.get(name, -1e9) <= FLASH_HOLD_S   # Between flashes
             out[target] = sample
+        for channel, spec in self.sensors.items():
+            sample = {'value': None, 'quality': 'unavailable', 'source_id': None, 'source': f'sensor {channel.upper()}', 'timestamp_ms': now_ms}
+            with self.lock:
+                found = self.latest.get(f'sensor.{channel}')
+            if found:
+                fresh = now - found[1] <= ADC_TIMEOUT_S
+                sample.update(value=found[0], quality='fault' if found[0] is None and fresh else 'live' if fresh else 'stale')
+            out[sensor_key(channel, spec)] = sample
         return out
 
     def view(self):
-        """For the setup wizard: each signal's source, last value and any problem."""
+        """For the setup wizard: each signal's source, last value and any problem, and each
+        analog sensor's volts and reading."""
         now = self.clock()
         with self.lock:
-            return {name: {'source': spec['source'], 'value': self.latest.get(name, (None, 0))[0],
-                           'age_s': round(now - self.latest[name][1], 1) if name in self.latest else None,
-                           'problem': self.problem.get(name)}
-                    for name, spec in self.signals.items()}
+            out = {name: {'source': spec['source'], 'value': self.latest.get(name, (None, 0))[0],
+                          'age_s': round(now - self.latest[name][1], 1) if name in self.latest else None,
+                          'problem': self.problem.get(name)}
+                   for name, spec in self.signals.items()}
+            out['sensors'] = {}
+            for channel, spec in self.sensors.items():
+                name, recent = f'sensor.{channel}', self.sensor_mv.get(channel)
+                out['sensors'][channel] = {'key': sensor_key(channel, spec), 'value': self.latest.get(name, (None, 0))[0],
+                                           'volts': round(sum(recent) / len(recent) / 1000, 3) if recent else None,
+                                           'age_s': round(now - self.latest[name][1], 1) if name in self.latest else None,
+                                           'problem': self.problem.get(name)}
+            return out
 
 
 # --- Readers (threads), started by the server when a signal needs one ---
@@ -201,17 +296,24 @@ def start(inputs, stop=None):
                     stop.wait(2)
         threading.Thread(target=read_pins, name='car signals: pins', daemon=True).start()
     fuel = inputs.signals.get('fuel')
-    if fuel and fuel['source'] == 'adc':
+    fuel_input = fuel['adc_channel'] if fuel and fuel['source'] == 'adc' else None
+    wanted = inputs.adc_inputs()
+    if wanted:
+        users = (['fuel'] if fuel_input is not None else []) + [f'sensor.{ch}' for ch in inputs.sensors]
         def read_adc():
             try:
                 adc = ADS1115()
             except Exception as exc:
-                return inputs.failed(['fuel'], f'No ADS1115 found on I2C (address 0x48): {exc}')
+                return inputs.failed(users, f'No ADS1115 found on I2C (address 0x48): {exc}')
             while not stop.wait(0.2):
                 try:
-                    inputs.adc(adc.millivolts(fuel['adc_channel']))
+                    for index in wanted:
+                        mv = adc.millivolts(index)
+                        if index == fuel_input:
+                            inputs.adc(mv)
+                        inputs.analog(f'a{index}', mv)
                 except Exception as exc:
-                    inputs.failed(['fuel'], f'The ADS1115 did not answer: {exc}')
+                    inputs.failed(users, f'The ADS1115 did not answer: {exc}')
                     stop.wait(2)
-        threading.Thread(target=read_adc, name='car signals: fuel sender', daemon=True).start()
+        threading.Thread(target=read_adc, name='car signals: ADS1115', daemon=True).start()
     return stop

@@ -15,7 +15,7 @@ class SystemEndpointTests(unittest.IsolatedAsyncioTestCase):
     def test_a_car_without_a_module_hides_its_screens(self):
         generic = sysconfig.validate(sysconfig.preset('generic'))
         self.assertEqual(sysconfig.ui_features(generic), {'map': True, 'race': True, 'knock': False, 'watermeth': False,
-                                                          'taillights': False, 'units': 'us'})
+                                                          'taillights': False, 'units': 'us', 'highbeam': False, 'parking_brake': False})
         car = sysconfig.ui_features(sysconfig.validate(sysconfig.preset('foxbody')))
         self.assertTrue(all(car[k] for k in ('map', 'race', 'knock', 'watermeth', 'taillights')))
 

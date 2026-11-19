@@ -16,7 +16,15 @@
     "brake": {"source": "module", "pin": 0, "active_low": true, "can_id": 0, "bit": 0},
     "lights": {"source": "module", "pin": 0, "active_low": true, "can_id": 0, "bit": 0},
     "reverse": {"source": "module", "pin": 0, "active_low": true, "can_id": 0, "bit": 0},
+    "highbeam": {"source": "none", "pin": 0, "active_low": true, "can_id": 0, "bit": 0},
+    "parking_brake": {"source": "none", "pin": 0, "active_low": true, "can_id": 0, "bit": 0},
     "fuel": {"source": "module", "adc_channel": 0, "empty_mv": 500, "full_mv": 3000, "can_id": 0, "byte": 0, "full_raw": 100}
+  },
+  "sensors": {
+    "a0": {"type": "none", "reading": "oil_pressure", "name": "", "unit": "none", "divider_pct": 100, "v1_mv": 500, "v1_value": 0.0, "v2_mv": 4500, "v2_value": 100.0, "pullup_ohm": 2200, "supply_mv": 3300, "r1_ohm": 9420, "t1_c": 0.0, "r2_ohm": 1459, "t2_c": 40.0, "r3_ohm": 177, "t3_c": 100.0},
+    "a1": {"type": "none", "reading": "oil_pressure", "name": "", "unit": "none", "divider_pct": 100, "v1_mv": 500, "v1_value": 0.0, "v2_mv": 4500, "v2_value": 100.0, "pullup_ohm": 2200, "supply_mv": 3300, "r1_ohm": 9420, "t1_c": 0.0, "r2_ohm": 1459, "t2_c": 40.0, "r3_ohm": 177, "t3_c": 100.0},
+    "a2": {"type": "none", "reading": "oil_pressure", "name": "", "unit": "none", "divider_pct": 100, "v1_mv": 500, "v1_value": 0.0, "v2_mv": 4500, "v2_value": 100.0, "pullup_ohm": 2200, "supply_mv": 3300, "r1_ohm": 9420, "t1_c": 0.0, "r2_ohm": 1459, "t2_c": 40.0, "r3_ohm": 177, "t3_c": 100.0},
+    "a3": {"type": "none", "reading": "oil_pressure", "name": "", "unit": "none", "divider_pct": 100, "v1_mv": 500, "v1_value": 0.0, "v2_mv": 4500, "v2_value": 100.0, "pullup_ohm": 2200, "supply_mv": 3300, "r1_ohm": 9420, "t1_c": 0.0, "r2_ohm": 1459, "t2_c": 40.0, "r3_ohm": 177, "t3_c": 100.0}
   },
   "tunerstudio": false,
   "windows_tuner": false,

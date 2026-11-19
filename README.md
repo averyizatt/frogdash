@@ -64,12 +64,17 @@ Frogdash was developed in a turbocharged Foxbody Mustang, where it has run since
   dial wired to a reading, each with a day and a night picture. With the lights on, the
   cluster lights up and the needles glow.
 - **Street, Tuning and Track layouts** that keep their own gauge choices.
+- **A screen editor:** press and hold any gauge to put any reading on it (the ECU's own, a
+  custom ECU's, the car signals, the analog sensors), named, with its range and warning
+  zones that turn it red.
 - [UI design](docs/ui-design.md) · [Race and appearance](docs/race-and-appearance.md)
 
 ### Alerts that say what went wrong
-- **26 alerts** across oil, temperatures, boost, AFR, fuel, knock, ignition, electrics,
-  add-on modules and the Pi itself. Each has its own switch, threshold and delay, and a
-  plain explanation of what it watches and what to check.
+- **27 alerts** across oil, temperatures, boost, AFR, fuel, knock, ignition, electrics,
+  driving, add-on modules and the Pi itself. Each has its own switch, threshold and delay,
+  and a plain explanation of what it watches and what to check.
+- **An alert builder:** an alert of your own on any reading, above or below a limit, for
+  how long, only with the engine running if you like, warning or critical.
 - Shown on the dash (and on photo clusters as a CHECK lamp), with optional chimes,
   latched until acknowledged and saved in the drive's record.
 - [Driving tools and alerts](docs/driving-tools.md) · [Screen audio](docs/screen-audio.md)
@@ -147,11 +152,10 @@ Each is chosen in the setup wizard (Car signals page), per reading:
 
 | Reading | Sources |
 |---|---|
-| Turn signals, brake, lights, reverse | A **Pi pin** through an optocoupler board (turn signals stay lit between flashes; reverse also opens the reverse camera); **any CAN message** (an ID and a bit); the **ECU**, where it broadcasts it (Haltech, MaxxECU, ECUMaster and rusEFI send the brake switch); or Frogdash's own taillight board (`0x100`, [taillights](docs/taillights.md)) as in the reference car |
+| Turn signals, brake, lights, reverse, high beam, parking brake | A **Pi pin** through an optocoupler board (turn signals stay lit between flashes; reverse also opens the reverse camera); **any CAN message** (an ID and a bit); the **ECU**, where it broadcasts it (Haltech, MaxxECU, ECUMaster and rusEFI send the brake switch); or Frogdash's own taillight board (`0x100`, [taillights](docs/taillights.md)) as in the reference car |
 | Fuel level | A **fuel sender on an ADS1115** (empty and full voltages from the wizard, averaged against slosh); **any CAN message** (an ID and a byte); the **ECU** (rusEFI, OBD-II); or Frogdash's gateway / `0x204` ([fuel over CAN](docs/fuel-can.md)) |
 | Vehicle speed | GPS, the ECU (most profiles and OBD-II broadcast it), or the gateway reading the speed sensor |
-| Oil and fuel pressure, oil temperature | The ECU where it has them (shown in psi and °F like the reference car's sensors), or 0.5–4.5 V senders on a module |
-| High beam | Not yet |
+| Oil and fuel pressure, temperatures | The ECU where it has them (shown in psi and °F like the reference car's sensors); **senders on an ADS1115** (0.5–4.5 V pressure senders, thermistor temperature senders, anything with a voltage, calibrated in the wizard); or 0.5–4.5 V senders on a module |
 
 Wiring and safety (never 12 V on a Pi pin): [car signals](docs/car-signals.md).
 
@@ -415,8 +419,10 @@ preview check, and deploys `preview/` to GitHub Pages.
 Version 1.2, running in the reference car with diagnostics uploaded after each update;
 desktop and browser tests cover every feature. Opening it up to other cars is the work in
 progress: the system profile, ECU profiles (OBD-II included), the setup wizard, car signals
-on the Pi, Windows tuning and a custom ECU editor are in, proven so far in simulation.
-Next: each of these in a real car. See the [changelog](CHANGELOG.md).
+on the Pi, Windows tuning, a custom ECU editor, a screen editor, an alert builder and
+analog sensors are in, proven so far in simulation. Next: each of these in a real car, and
+the [roadmap](docs/roadmap.md) for setting it all up without code. See the
+[changelog](CHANGELOG.md).
 
 **One version for the whole system:** the dash and the three modules'
 firmware (gateway, taillights, water/meth) share one number, in the `VERSION` file of each

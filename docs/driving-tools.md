@@ -28,7 +28,39 @@ with a saved 2000–9000 RPM threshold. This is a visual shift cue, not an ECU
 rev limiter, and it does not change the tachometer's existing red-zone scale.
 Reset this layout restores only the selected layout's instrument choices.
 
+### The screen editor: any reading on any gauge
+
+Press and hold a lower tile, a small dial or a strip reading (or right-click it) to choose
+what it shows. In that list:
+
+- **+ New gauge** makes a gauge for any reading the dash has now: the ECU's own (a custom
+  ECU profile's readings included), the car signals and the analog sensors. Pick the
+  reading from the list (each shows its live value; type to find one), then give it a name,
+  the lowest and highest values shown, and its decimals. It goes where you held, and is in
+  the list for every other tile from then on.
+- **Edit this gauge** sets its **warning zones**: below **Warn below** or above **Warn
+  above** the tile turns red (a small dial's needle and a strip reading too), and the track
+  shows the zones in red. For a gauge of your own it also changes its reading, name and
+  range; **Delete gauge** removes it, and each tile that showed it goes back to its default.
+
+Values are typed in the display's units (Display modes > Units) and kept in the reading's
+own (°C, kPa, psi, km/h, from the reading's name), so switching units keeps every limit. A
+reading the dash does not know the unit of shows as it comes, with the unit you give it.
+The gauges are saved on this display with the layouts, like the rest of Display modes.
+
 ## Advisory alerts
+
+### Alerts of your own
+
+**+ New alert** in the Alerts tab makes an alert on any reading the dash has (the same list
+as the screen editor's): above or below a limit typed in the display's units, for how long,
+only with the engine running (RPM 400 or more) or always, a warning or critical. It is a card
+under **Your own** (USR-01, USR-02…) and does everything the built-in ones do: it goes off
+on the dash, chimes, latches until acknowledged, marks the log and the drive review, and
+its switch, limit and delay are set in its details like theirs. **Change** in its details
+opens it again (to delete it too). Up to 24; they are saved on the Pi with the other alert
+settings (`alerts.json`, the `custom` list, in backups too) and checked there every 100 ms
+like the rest (`alerts.py` `custom_rule`).
 
 Defaults are starting values to configure for the engine, not a validated tune.
 All rules require fresh inputs. The Pi evaluates them every 100 ms, independently

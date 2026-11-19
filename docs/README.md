@@ -6,7 +6,8 @@ Back to the [project overview](../README.md).
 - [Fresh install on a new SD card](fresh-install.md): one script, then restart
 - [Presets and the system profile](presets.md): what this car has, in one file on the Pi
 - [Tuning with Windows software](windows-tuning.md): Wine and Box64 on the dash, or USB sharing to a Windows PC
-- [Car signals](car-signals.md): turn signals, brake, lights, reverse and fuel level from Pi pins, an ADS1115, CAN or the ECU
+- [Car signals](car-signals.md): turn signals, brake, lights, reverse, high beam, parking brake and fuel level from Pi pins, an ADS1115, CAN or the ECU, and analog sensors (pressure and temperature senders)
+- [Roadmap](roadmap.md): what is planned for setting the dash up without writing code
 - [ECU support](ecu-support.md): ECU profiles, adding an ECU, tuning software and what has been checked
 - [CAN + USB GPS installation](can-integration.md): the service, `gpsd` and the protocol
 - [MCP2515 wiring and boot configuration](mcp2515.md)

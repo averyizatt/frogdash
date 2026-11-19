@@ -68,3 +68,6 @@ jobs:
       - run: python tests/browser_logview.py
       - run: python tests/browser_wizard.py
       - run: python tests/browser_ecu_editor.py
+      - run: python tests/browser_gauge_editor.py
+      - run: python tests/browser_alert_builder.py
+      - run: python tests/browser_sensors.py

@@ -236,6 +236,16 @@ window.frogdashSystemDemo = {
      "ecu.reverse",
      "Reverse",
      "on/off"
+    ],
+    [
+     "ecu.high_beam",
+     "High beam",
+     "on/off"
+    ],
+    [
+     "ecu.parking_brake",
+     "Parking brake",
+     "on/off"
     ]
    ]
   ],
@@ -1001,6 +1011,84 @@ window.frogdashSystemDemo = {
     "mode": "1920x720",
     "size": "1920x720"
    },
+   "sensors": {
+    "a0": {
+     "divider_pct": 100,
+     "name": "",
+     "pullup_ohm": 2200,
+     "r1_ohm": 9420,
+     "r2_ohm": 1459,
+     "r3_ohm": 177,
+     "reading": "oil_pressure",
+     "supply_mv": 3300,
+     "t1_c": 0.0,
+     "t2_c": 40.0,
+     "t3_c": 100.0,
+     "type": "none",
+     "unit": "none",
+     "v1_mv": 500,
+     "v1_value": 0.0,
+     "v2_mv": 4500,
+     "v2_value": 100.0
+    },
+    "a1": {
+     "divider_pct": 100,
+     "name": "",
+     "pullup_ohm": 2200,
+     "r1_ohm": 9420,
+     "r2_ohm": 1459,
+     "r3_ohm": 177,
+     "reading": "oil_pressure",
+     "supply_mv": 3300,
+     "t1_c": 0.0,
+     "t2_c": 40.0,
+     "t3_c": 100.0,
+     "type": "none",
+     "unit": "none",
+     "v1_mv": 500,
+     "v1_value": 0.0,
+     "v2_mv": 4500,
+     "v2_value": 100.0
+    },
+    "a2": {
+     "divider_pct": 100,
+     "name": "",
+     "pullup_ohm": 2200,
+     "r1_ohm": 9420,
+     "r2_ohm": 1459,
+     "r3_ohm": 177,
+     "reading": "oil_pressure",
+     "supply_mv": 3300,
+     "t1_c": 0.0,
+     "t2_c": 40.0,
+     "t3_c": 100.0,
+     "type": "none",
+     "unit": "none",
+     "v1_mv": 500,
+     "v1_value": 0.0,
+     "v2_mv": 4500,
+     "v2_value": 100.0
+    },
+    "a3": {
+     "divider_pct": 100,
+     "name": "",
+     "pullup_ohm": 2200,
+     "r1_ohm": 9420,
+     "r2_ohm": 1459,
+     "r3_ohm": 177,
+     "reading": "oil_pressure",
+     "supply_mv": 3300,
+     "t1_c": 0.0,
+     "t2_c": 40.0,
+     "t3_c": 100.0,
+     "type": "none",
+     "unit": "none",
+     "v1_mv": 500,
+     "v1_value": 0.0,
+     "v2_mv": 4500,
+     "v2_value": 100.0
+    }
+   },
    "signals": {
     "brake": {
      "active_low": true,
@@ -1018,12 +1106,26 @@ window.frogdashSystemDemo = {
      "full_raw": 100,
      "source": "module"
     },
+    "highbeam": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "none"
+    },
     "lights": {
      "active_low": true,
      "bit": 0,
      "can_id": 0,
      "pin": 0,
      "source": "module"
+    },
+    "parking_brake": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "none"
     },
     "reverse": {
      "active_low": true,
@@ -1104,6 +1206,84 @@ window.frogdashSystemDemo = {
     "mode": "auto",
     "size": "auto"
    },
+   "sensors": {
+    "a0": {
+     "divider_pct": 100,
+     "name": "",
+     "pullup_ohm": 2200,
+     "r1_ohm": 9420,
+     "r2_ohm": 1459,
+     "r3_ohm": 177,
+     "reading": "oil_pressure",
+     "supply_mv": 3300,
+     "t1_c": 0.0,
+     "t2_c": 40.0,
+     "t3_c": 100.0,
+     "type": "none",
+     "unit": "none",
+     "v1_mv": 500,
+     "v1_value": 0.0,
+     "v2_mv": 4500,
+     "v2_value": 100.0
+    },
+    "a1": {
+     "divider_pct": 100,
+     "name": "",
+     "pullup_ohm": 2200,
+     "r1_ohm": 9420,
+     "r2_ohm": 1459,
+     "r3_ohm": 177,
+     "reading": "oil_pressure",
+     "supply_mv": 3300,
+     "t1_c": 0.0,
+     "t2_c": 40.0,
+     "t3_c": 100.0,
+     "type": "none",
+     "unit": "none",
+     "v1_mv": 500,
+     "v1_value": 0.0,
+     "v2_mv": 4500,
+     "v2_value": 100.0
+    },
+    "a2": {
+     "divider_pct": 100,
+     "name": "",
+     "pullup_ohm": 2200,
+     "r1_ohm": 9420,
+     "r2_ohm": 1459,
+     "r3_ohm": 177,
+     "reading": "oil_pressure",
+     "supply_mv": 3300,
+     "t1_c": 0.0,
+     "t2_c": 40.0,
+     "t3_c": 100.0,
+     "type": "none",
+     "unit": "none",
+     "v1_mv": 500,
+     "v1_value": 0.0,
+     "v2_mv": 4500,
+     "v2_value": 100.0
+    },
+    "a3": {
+     "divider_pct": 100,
+     "name": "",
+     "pullup_ohm": 2200,
+     "r1_ohm": 9420,
+     "r2_ohm": 1459,
+     "r3_ohm": 177,
+     "reading": "oil_pressure",
+     "supply_mv": 3300,
+     "t1_c": 0.0,
+     "t2_c": 40.0,
+     "t3_c": 100.0,
+     "type": "none",
+     "unit": "none",
+     "v1_mv": 500,
+     "v1_value": 0.0,
+     "v2_mv": 4500,
+     "v2_value": 100.0
+    }
+   },
    "signals": {
     "brake": {
      "active_low": true,
@@ -1121,7 +1301,21 @@ window.frogdashSystemDemo = {
      "full_raw": 100,
      "source": "none"
     },
+    "highbeam": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "none"
+    },
     "lights": {
+     "active_low": true,
+     "bit": 0,
+     "can_id": 0,
+     "pin": 0,
+     "source": "none"
+    },
+    "parking_brake": {
      "active_low": true,
      "bit": 0,
      "can_id": 0,
@@ -1208,6 +1402,84 @@ window.frogdashSystemDemo = {
    "mode": "1920x720",
    "size": "1920x720"
   },
+  "sensors": {
+   "a0": {
+    "divider_pct": 100,
+    "name": "",
+    "pullup_ohm": 2200,
+    "r1_ohm": 9420,
+    "r2_ohm": 1459,
+    "r3_ohm": 177,
+    "reading": "oil_pressure",
+    "supply_mv": 3300,
+    "t1_c": 0.0,
+    "t2_c": 40.0,
+    "t3_c": 100.0,
+    "type": "none",
+    "unit": "none",
+    "v1_mv": 500,
+    "v1_value": 0.0,
+    "v2_mv": 4500,
+    "v2_value": 100.0
+   },
+   "a1": {
+    "divider_pct": 100,
+    "name": "",
+    "pullup_ohm": 2200,
+    "r1_ohm": 9420,
+    "r2_ohm": 1459,
+    "r3_ohm": 177,
+    "reading": "oil_pressure",
+    "supply_mv": 3300,
+    "t1_c": 0.0,
+    "t2_c": 40.0,
+    "t3_c": 100.0,
+    "type": "none",
+    "unit": "none",
+    "v1_mv": 500,
+    "v1_value": 0.0,
+    "v2_mv": 4500,
+    "v2_value": 100.0
+   },
+   "a2": {
+    "divider_pct": 100,
+    "name": "",
+    "pullup_ohm": 2200,
+    "r1_ohm": 9420,
+    "r2_ohm": 1459,
+    "r3_ohm": 177,
+    "reading": "oil_pressure",
+    "supply_mv": 3300,
+    "t1_c": 0.0,
+    "t2_c": 40.0,
+    "t3_c": 100.0,
+    "type": "none",
+    "unit": "none",
+    "v1_mv": 500,
+    "v1_value": 0.0,
+    "v2_mv": 4500,
+    "v2_value": 100.0
+   },
+   "a3": {
+    "divider_pct": 100,
+    "name": "",
+    "pullup_ohm": 2200,
+    "r1_ohm": 9420,
+    "r2_ohm": 1459,
+    "r3_ohm": 177,
+    "reading": "oil_pressure",
+    "supply_mv": 3300,
+    "t1_c": 0.0,
+    "t2_c": 40.0,
+    "t3_c": 100.0,
+    "type": "none",
+    "unit": "none",
+    "v1_mv": 500,
+    "v1_value": 0.0,
+    "v2_mv": 4500,
+    "v2_value": 100.0
+   }
+  },
   "signals": {
    "brake": {
     "active_low": true,
@@ -1225,12 +1497,26 @@ window.frogdashSystemDemo = {
     "full_raw": 100,
     "source": "module"
    },
+   "highbeam": {
+    "active_low": true,
+    "bit": 0,
+    "can_id": 0,
+    "pin": 0,
+    "source": "none"
+   },
    "lights": {
     "active_low": true,
     "bit": 0,
     "can_id": 0,
     "pin": 0,
     "source": "module"
+   },
+   "parking_brake": {
+    "active_low": true,
+    "bit": 0,
+    "can_id": 0,
+    "pin": 0,
+    "source": "none"
    },
    "reverse": {
     "active_low": true,

@@ -156,7 +156,10 @@
       $(`turn-${side}`).dataset.on = connected && v.quality === 'live' && v.value ? 'true' : 'false';
       $(`turn-${side}`).title = `Turn signal: ${v.quality}`;
     }
-    for (const name of ['brake', 'running', 'reverse']) {
+    // High beam and parking brake: shown only in a car with a source for them (the wizard's
+    // car signals page), so a car without them keeps its indicators as they were.
+    for (const name of ['highbeam', 'parking_brake']) $(`icon-${name}`).hidden = snapshot.features?.[name] !== true;
+    for (const name of ['brake', 'running', 'reverse', 'highbeam', 'parking_brake']) {
       const v = signal(`lighting.${name}`), icon = $(`icon-${name}`);
       icon.classList.toggle('on', v.quality === 'live' && v.value === true);
       icon.dataset.quality = v.quality;

@@ -1,4 +1,4 @@
-# Car signals: turn signals, brake, lights, reverse and fuel level
+# Car signals: turn signals, brake, lights, reverse, high beam, parking brake and fuel level
 
 In the reference car these come from Frogdash's own boards: the taillight board (0x100)
 sends turn, brake, lights and reverse, and the sensor gateway (0x500) sends the fuel level.
@@ -7,13 +7,25 @@ choice is the system profile's `signals` ([presets.md](presets.md)); the dash sh
 result exactly as it shows the boards' readings, so the indicators, the reverse camera,
 alerts, logs and the fuel gauge work the same.
 
+High beam and parking brake come from no Frogdash board, so in every car, the reference
+one included, they are wired here or left off. Their indicators (**HIGH** in blue,
+**P-BRAKE** in red, beside REV) appear on the dash only once a source is set, so a car
+without them looks as before. Driving faster than 8 km/h (5 mph) with the parking brake on
+raises the **PARKING BRAKE ON** alert (DRV-01, Alerts tab).
+
 | Source | For | What it needs |
 |---|---|---|
 | From the ECU | Any signal the ECU's profile broadcasts (Haltech, MaxxECU, ECUMaster and rusEFI send the brake switch; rusEFI the fuel level) | Nothing: offered only when the chosen ECU has it |
-| Wired to a Pi pin | Turn, brake, lights, reverse | An optocoupler board between the car's 12 V wire and the Pi (below) |
+| Wired to a Pi pin | Turn, brake, lights, reverse, high beam, parking brake | An optocoupler board between the car's 12 V wire and the Pi (below) |
 | Fuel sender (ADS1115) | Fuel level | An ADS1115 board on the Pi's I2C pins and a divider (below) |
 | A CAN message | Any | The frame's ID and the bit (for fuel: the byte, and whether full is 100 or 255) |
 | Not used | Any | The reading stays blank |
+
+A parking brake switch usually *grounds* its wire when the brake is on (it completes the
+warning lamp's circuit) instead of giving 12 V. For one like that, turn the opto around:
+its **+** input to a fused, ignition-switched 12 V and its **−** input to the switch's wire,
+so the opto lights when the switch closes to ground. Leave the warning lamp connected.
+High beam is an ordinary 12 V feed: the high-beam wire at the headlight switch or a bulb.
 
 Turn signals flash: the dash treats one as on while a pulse came within 0.8 s, so the arrow
 stays lit through the flasher's off time.
@@ -50,6 +62,35 @@ Then fill in the wizard: the ADS1115 input (A0 to A3) and the voltage it reads w
 empty and with it full (measure both, or work them out from the sender's ohms). The dash
 averages four seconds of readings, so the needle does not swing as fuel moves in the tank.
 Setup switches I2C on (a restart is needed the first time).
+
+## Analog sensors on the ADS1115
+
+The ADS1115's four inputs (A0 to A3, one of them the fuel sender's if it is used) can each
+read a sensor: oil or fuel pressure, oil, coolant, intake or transmission temperature, or a
+reading of its own name and unit. In the wizard, under **Sensors on the ADS1115**, pick
+what is on each input:
+
+- **A sender giving volts** (0.5–4.5 V pressure senders, or anything with a straight-line
+  output): two calibration points, the volts and the reading at each. **Start from** fills
+  in a common sender's published figures (0–100, 150 or 200 psi); measure yours to be sure.
+  The ADS1115 on the Pi reads at most 3.3 V, so **a 5 V sender needs a divider**: for
+  example 10 kΩ from the sender's signal to the input and 20 kΩ from the input to ground,
+  which passes 66 % (type 66 under **Divider passes**). The volts in the calibration are
+  the sender's own; the dash works back through the divider.
+- **A temperature sender (thermistor)**, the usual two-wire or one-wire temperature sender:
+  feed it from the Pi's **3.3 V** pin through a pull-up resistor (2.2 kΩ suits most) and read
+  the voltage at the sender. Give the resistor's value and three points of the sender's
+  table (temperature and resistance, cold to hot); the dash fits the curve between them
+  (Steinhart-Hart). **Start from** fills in a GM-style sender's published table. Better
+  still: measure yours in water at three temperatures. Never feed a pull-up from 5 V into
+  the ADS1115.
+
+Each sensor's reading takes the place of the same reading from the ECU or the modules
+(oil pressure from A1 rather than the ECU's, for example), and a reading of its own is
+`sensor.a0` and so on, with its unit (`sensor.a2_psi`, `sensor.a3_c`). They show in the
+screen editor, the alert builder and the logs like any other reading. A thermistor that
+reads the pull-up's full voltage (a broken wire) or nothing (a short) shows as a fault, not
+a temperature. The **Car signals** page shows each input's volts and reading live.
 
 ## Checking it
 

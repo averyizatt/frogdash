@@ -31,7 +31,7 @@ ALIASES = {
     "engine.ego_correction_pct": ("ecu.ego_correction_pct",),
     "vehicle.battery_v": ("ecu.battery_v",),
 }
-UNAVAILABLE = ("vehicle.fuel_pct", "lighting.highbeam", "engine.oil_temp_c")
+UNAVAILABLE = ("vehicle.fuel_pct", "lighting.highbeam", "lighting.parking_brake", "engine.oil_temp_c")
 
 # Readings the dash shows in one form that some ECUs send in another, and readings the
 # owner's modules give that other ECUs broadcast themselves. Each is filled from the ECU

@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#090f13">
   <link rel="icon" href="data:,">
   <title>Fox Body · Driver display</title>
-  <link rel="stylesheet" href="style.css?v=591b1e9a5439">
+  <link rel="stylesheet" href="style.css?v=36f91f5d0de4">
   <link rel="stylesheet" href="review.css?v=4131615d94e6">
   <link rel="stylesheet" href="responsive.css?v=da2c9ab114c3">
-<link rel="stylesheet" href="instruments.css?v=bf8df61fb2d1">
+<link rel="stylesheet" href="instruments.css?v=7c7403e858f4">
 <link rel="stylesheet" href="camera.css?v=287024d68ea0">
 <script src="offline.js?v=c5796081ea94"></script>
 <script src="boot.js?v=447cd355bc91"></script>
@@ -20,7 +20,7 @@
   <header class="topbar">
     <div class="indicators" aria-label="Vehicle indicators">
       <div class="turn-cluster" id="turn-left" data-on="false" aria-label="Left turn"><svg viewBox="0 0 40 28" aria-hidden="true"><path d="M2 14 16 2v7h21v10H16v7Z"/></svg></div>
-      <span class="indicator" id="icon-brake">BRAKE</span><span class="indicator" id="icon-running">LIGHTS</span><span class="indicator" id="icon-reverse">REV</span>
+      <span class="indicator" id="icon-brake">BRAKE</span><span class="indicator" id="icon-running">LIGHTS</span><span class="indicator" id="icon-reverse">REV</span><span class="indicator" id="icon-highbeam" hidden>HIGH</span><span class="indicator" id="icon-parking_brake" hidden>P-BRAKE</span>
       <div class="turn-cluster" id="turn-right" data-on="false" aria-label="Right turn"><svg viewBox="0 0 40 28" aria-hidden="true"><path d="M38 14 24 2v7H3v10h21v7Z"/></svg></div>
     </div>
     <div class="header-status"><span class="recording-badge" id="recording-badge">LOG OFF</span><span class="connection-badge" id="connection-summary">CONNECTING</span><time id="clock-time">—</time><span id="clock-tz" hidden></span></div>
@@ -494,6 +494,7 @@
         <header class="alerts-toolbar">
           <p class="alerts-summary" id="alerts-summary">Loading the alerts…</p>
           <div class="alerts-filters" role="group" aria-label="Show"><button type="button" data-alert-filter="all" aria-pressed="true">All</button><button type="button" data-alert-filter="active" aria-pressed="false">Going off</button><button type="button" data-alert-filter="off" aria-pressed="false">Switched off</button></div>
+          <button id="alert-new" type="button">+ New alert</button>
           <label class="check-label"><input id="alert-chime" type="checkbox"> Chimes</label>
           <label class="chime-volume" for="alert-volume">Volume <input id="alert-volume" type="range" min="0" max="100" step="5" value="50"><output id="alert-volume-value" for="alert-volume">50%</output></label>
           <button id="test-chime" type="button">Test chime</button>
@@ -518,24 +519,24 @@
 <script src="viewport.js?v=e82046cba6df"></script>
 <script src="units.js?v=7f934be8abf3"></script>
 <script src="review.js?v=c6ec99c5fdab"></script>
-<script src="instruments.js?v=f99ebd832402"></script>
+<script src="instruments.js?v=c2b7c57e4442"></script>
 <script src="skins.js?v=3bc40b2c848c"></script>
 <script src="personalize.js?v=6bb50c768489"></script>
 <script src="trip.js?v=8663447547eb"></script>
-<script src="driving.js?v=c79e0982a1ce"></script>
+<script src="driving.js?v=cad71373d5f2"></script>
 <script src="camera.js?v=af4d6ed35d46"></script>
 <script src="dashcam.js?v=59b85171a81e"></script>
 <script src="meth-tune.js?v=116e4dff8b17"></script>
 <script src="demo.js?v=097b4246516e"></script>
-<script src="app.js?v=1e24884e60dd"></script>
+<script src="app.js?v=bc8203187bef"></script>
 <!-- Everything else, about four seconds after the gauges' first frame (later.js), one
      file at a time, in this order: ready long before it is opened. -->
 <script type="application/json" id="later-files">[
-  "alerts.css?v=38d2a6725bde",
+  "alerts.css?v=78c14a62a89a",
   "taillights.css?v=d1359011b47c",
   "knock.css?v=0c2fbd4e553a",
   "keyboard.css?v=50c5309bcdc9",
-  "wizard.css?v=54564238340f",
+  "wizard.css?v=34967f4ec693",
   "uPlot.min.css?v=df630c6a8d6f",
   "graphs.css?v=972a51403f2a",
   "mlgplot.css?v=339a52dfa1f6",
@@ -548,15 +549,15 @@
   "knock.js?v=2ddd0045ea63",
   "keyboard.js?v=320aa899d03d",
   "ecu-editor.js?v=c9b2dd65d780",
-  "wizard-data.js?v=aecddbaad71e",
-  "wizard.js?v=bdb0f8e6f506",
+  "wizard-data.js?v=cd8047d72f5f",
+  "wizard.js?v=87db5197a1db",
   "summary.js?v=10e9f3c08954",
   "uPlot.iife.min.js?v=2d27e8ad3d22",
   "graphs.js?v=4ddec132eab0",
   "mlgplot.js?v=868ca37b6a64",
   "tuning.js?v=0548f65762ac",
-  "alert-rules.js?v=f0ada2ff14d8",
-  "alerts.js?v=19af0e115d02"
+  "alert-rules.js?v=f34a0f3f3609",
+  "alerts.js?v=e3f733545351"
 ]</script>
 <script src="later.js?v=3dac14eaaaca"></script>
 </body>

@@ -55,6 +55,16 @@ class Channel:
         return value, quality
 
 
+def sensor_readings():
+    """The readings this car's analog sensors give (inputs.py), so the logs have them."""
+    try:
+        from . import sysconfig
+        from .inputs import sensor_keys
+        return sensor_keys(sysconfig.load()['sensors'])
+    except Exception:   # pragma: no cover (load falls back by itself)
+        return []
+
+
 def channels():
     # Labels match the supplied TS log where the same measurement is available.
     primary = [
@@ -118,7 +128,7 @@ def channels():
     # Enumerate the decoder's schema with valid, synthetic definition frames only.
     # Values from these frames NEVER enter a recording. This includes diagnostics,
     # config replies and fault/event channels even if they haven't arrived yet.
-    keys = set(ALIASES) | set(UNAVAILABLE) | {'gps.satellites_in_view'}
+    keys = set(ALIASES) | set(UNAVAILABLE) | {'gps.satellites_in_view'} | set(sensor_readings())
     definitions = dict(LENGTHS)
     definitions.update(protocol.ECU.ids())   # The ECU profile's frames (ecu/profiles/)
     for can_id, length in definitions.items():

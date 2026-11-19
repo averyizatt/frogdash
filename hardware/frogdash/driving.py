@@ -20,7 +20,8 @@ CHANNELS = ['engine.rpm', 'vehicle.speed_kph', 'engine.boost_kpa', 'engine.afr',
 CONTEXT = CHANNELS + ['meth.state', 'meth.flow', 'meth.fault_flags', 'knock.warning', 'knock.critical',
                       'vehicle.battery_v', 'vehicle.fuel_pct', 'ecu.iat_c', 'ecu.knock_retard_deg',
                       'engine.ego_correction_pct', 'ecu.sync_loss_count']
-# Every alert, its words and its rules: hardware/ui/alert-rules.json (alerts.py).
+# Every alert, its words and its rules: hardware/ui/alert-rules.json (alerts.py), and the
+# owner's own from the alert builder (self.rules).
 RULES = catalogue.RULES
 
 
@@ -46,10 +47,7 @@ class Driving:
         self.settings = catalogue.defaults()
         self.settings_error = self.storage_error = ''
         self.specials = catalogue.Specials(clock=state.clock)
-        self.alerts = {key: {'key': key, 'code': rule['code'], 'title': rule['title'], 'severity': rule['severity'],
-                             'group': rule['group'], 'active': False, 'latched': False, 'acknowledged': False,
-                             'condition': 'unknown', 'since_ms': None, 'context': {}, 'value': None,
-                             'count': 0, 'last_ms': None, 'last_context': {}} for key, rule in RULES.items()}
+        self.rules, self.alerts = {}, {}
         self.pending, self.normal_since = {}, {}
         self.current, self.started, self.idle_since = None, 0, None
         self.last_point = self.last_save = float('-inf')
@@ -67,16 +65,31 @@ class Driving:
                     self.settings = validate_settings(json.loads(path.read_text(encoding='utf-8')))
             except (OSError, ValueError, TypeError):
                 self.settings_error = 'Could not read alert settings; defaults are active'
+        self.sync_rules()
+
+    def sync_rules(self):
+        """The rules for the settings now: an alert of the owner's own added or removed."""
+        self.rules = catalogue.all_rules(self.settings)
+        for key in set(self.alerts) - set(self.rules):
+            del self.alerts[key]
+            self.pending.pop(key, None)
+            self.normal_since.pop(key, None)
+        for key, rule in self.rules.items():
+            alert = self.alerts.setdefault(key, {'key': key, 'active': False, 'latched': False, 'acknowledged': False,
+                                                 'condition': 'unknown', 'since_ms': None, 'context': {}, 'value': None,
+                                                 'count': 0, 'last_ms': None, 'last_context': {}})
+            alert.update(code=rule['code'], title=rule['title'], severity=rule['severity'], group=rule['group'])
 
     def configure(self, settings):
         self.settings = validate_settings(settings)
         self.pending.clear()
+        self.sync_rules()
         self.settings_dirty = True
 
     def conditions(self, snapshot):
         """Each alert's condition now: True, False, or None when it cannot be told."""
         result = {}
-        for key, rule in RULES.items():
+        for key, rule in self.rules.items():
             settings = self.settings['rules'][key]
             if not settings['enabled']:
                 result[key] = False

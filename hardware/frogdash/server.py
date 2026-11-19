@@ -87,7 +87,7 @@ def create_app(state, adapter=None, connectivity=None):
             profile = sysconfig.load()
             state.features = sysconfig.ui_features(profile)
             if state.inputs is None:
-                state.inputs = inputs.Inputs(profile['signals'])
+                state.inputs = inputs.Inputs(profile['signals'], profile['sensors'])
                 inputs.start(state.inputs)
             if state.obd is None and protocol.ECU.obd2:
                 state.obd = obd2.Poller(extended=protocol.ECU.extended)

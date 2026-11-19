@@ -62,6 +62,8 @@
     cell.addEventListener('gauge-hold', () => window.FrogdashMetrics.pick({title: 'this reading', current: metricOf(assigned.strip[i], id), fallback: id, onPick: key => assign(() => { assigned.strip[i] = key; })}));
   });
   host.before(board, strip);
+  // A gauge made or changed in the screen editor (driving.js): its scale is drawn again.
+  window.addEventListener('frogdash-gauges-changed', () => { metric = null; if (last) render(last.snapshot, last.connected); });
   const tach = document.querySelector('.tach-dial');
   if (tach) tach.insertAdjacentHTML('afterbegin', '<defs><linearGradient id="tach-gradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0" class="tach-stop-start"/><stop offset="1" class="tach-stop-end"/></linearGradient></defs>');
   function configureScales() {
@@ -70,7 +72,8 @@
       coolant:u.metric ? [40,120,4,'\u00b0C'] : [100,260,4,'\u00b0F'], fuel:[0,100,4,'%'], oil:[0,u.metric ? 700 : 100,4,u.metric ? 'kPa' : 'psi'], volts:[8,18,5,'V']};
     for (const [id,g] of gauges) {
       g.metric = Object.hasOwn(nativeMetric, id) ? metricOf(assigned[id], nativeMetric[id]) : null;
-      g.generic = g.metric !== null && g.metric !== nativeMetric[id];
+      // Its own drawing for a dial's first reading, unless given warning zones in the screen editor.
+      g.generic = g.metric !== null && (g.metric !== nativeMetric[id] || !!window.FrogdashMetrics.read(g.metric, {}, false).zones);
       const m = g.generic ? window.FrogdashMetrics.read(g.metric, {}, false) : null;
       [g.min,g.max,g.steps,g.unit] = g.generic ? [m.min, m.max, 4, m.unit] : config[id];
       g.title = g.generic ? m.title.toUpperCase() : g.nativeTitle;
@@ -118,7 +121,7 @@
         }
       }
       g.card.dataset.quality = q;
-      g.card.dataset.danger = String(id==='rpm' && value >= 6000 || id==='coolant' && !generic && live(g.signal) >= (snapshot.drive?.settings?.coolant_c ?? 112));
+      g.card.dataset.danger = String(id==='rpm' && value >= 6000 || id==='coolant' && !generic && live(g.signal) >= (snapshot.drive?.settings?.coolant_c ?? 112) || !!generic?.tone);
       g.needle.setAttribute('transform',`rotate(${-135+270*ratio} 180 180)`);
       g.needle.style.visibility = value === null ? 'hidden' : 'visible';
       for(const n of g.card.querySelectorAll('.dial-value,.terminal-value,.cyber-value')) n.textContent=text;
@@ -132,6 +135,7 @@
       cell.querySelector('span').textContent = m.title.toUpperCase();
       cell.querySelector('strong').textContent = m.text;
       cell.querySelector('small').textContent = m.value === null ? m.quality.toUpperCase() : m.unit;
+      cell.dataset.tone = m.tone ? 'danger' : 'normal';
     });
     const shifts = document.getElementById('shift-lights');
     track.hidden=shifts.hidden;
