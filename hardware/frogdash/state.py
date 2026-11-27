@@ -11,6 +11,7 @@ from .taillight import TaillightSettings
 from .methtune import MethTune
 from .knockview import KnockDetail
 from .blackbox import ID as BLACK_BOX_ID, BlackBox
+from .fitted import FittedSensors
 from .fuel import FuelGauge
 from .parking import parked
 from .race import Race
@@ -87,6 +88,7 @@ class State:
         self.events = deque(maxlen=100)
         self.gaps = deque(maxlen=100)  # Modules that went quiet for a moment (a restart or a dropout)
         self.flag_since = {}  # (fault value name, bit) -> when the module first reported it
+        self.fitted = FittedSensors()  # Which modules' analog inputs have a sensor on them (fitted.py)
         self.received = self.malformed = self.ignored = self.seq = 0
         self.tx_full = 0          # Sends that waited for room in can0's queue (adapters.send_frame)
         self.gps = None
@@ -203,6 +205,8 @@ class State:
                         self.flag_since.setdefault((name, bit), now)
                     else:
                         self.flag_since.pop((name, bit), None)
+        if "sensors.fault_flags" in signals and isinstance(signals["sensors.fault_flags"].value, int):
+            self.fitted.observe(signals["sensors.fault_flags"].value, now)
         for name, signal in signals.items():
             self.samples[name, can_id] = {"value": signal.value, "quality": signal.quality,
                                          "source_id": can_id, "timestamp_ms": stamp,
@@ -257,13 +261,19 @@ class State:
                             and now - self.flag_since.get((name, bit), now) >= FLAG_HOLD_S)
                 values[name] = {**sample, "value": shown, "raw": sample["value"]}
         faults = values.get("sensors.fault_flags", missing)
+        not_fitted = []
         for name, bit in ANALOG_BITS.items():
             if name not in values or values[name]["quality"] != "live":
                 continue
             if faults["quality"] != "live":
                 values[name] = {**values[name], "quality": "unavailable" if faults["quality"] == "unavailable" else "stale"}
             elif faults["value"] & (1 << bit):
-                values[name] = {**values[name], "quality": "fault"}
+                # An input that has never read in range has no sensor on it (fitted.py): not a fault.
+                if self.fitted.fitted(name):
+                    values[name] = {**values[name], "quality": "fault"}
+                else:
+                    values[name] = {**values[name], "quality": "unavailable", "not_fitted": True}
+                    not_fitted.append(name)
         # Prefer ECU IAT only while its own frame is fresh.
         ecu_iat = values.get("ecu.iat_c")
         if ecu_iat and ecu_iat["quality"] == "live":
@@ -331,6 +341,7 @@ class State:
             modules[name] = "live" if any(v["quality"] == "live" for v in matching) else "stale" if matching else "unavailable"
         result = {"type": "state", "seq": self.seq, "timestamp_ms": int(self.wall() * 1000),
                 "mode": self.mode, "values": values, "modules": modules, "features": self.features,
+                "analog": {"fitted": sorted(self.fitted.seen), "not_fitted": not_fitted},
                 "transport": {"connected": self.connected, "status": self.status,
                               "received": self.received, "malformed": self.malformed, "ignored": self.ignored,
                               "tx_full": self.tx_full},

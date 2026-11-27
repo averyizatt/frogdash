@@ -177,7 +177,7 @@
       if (live('engine.coolant_c') !== null && live('engine.coolant_c') >= 112) warnings.push('COOLANT HIGH');
     }
     const engineRunning = Number.isFinite(rpm) && rpm > 0;
-    const bad = Object.entries(snapshot.values).some(([key, v]) => {
+    const bad = Object.entries(snapshot.values).filter(([key, v]) => {
       if (key.startsWith('race.') || v.quality !== 'fault') return false;
       // The water/meth controller's sensors need a running engine before they
       // raise the generic banner. Keep their actual fault quality in diagnostics.
@@ -185,8 +185,10 @@
       const missingMap = key === 'engine.boost_kpa' && (flags & 2);
       const waterMethSensor = v.source_id === 0x300 || v.source_id === 0x303;
       return !waterMethSensor || missingMap || engineRunning;
-    });
-    if (bad) warnings.push('SENSOR FAULT');
+    }).map(([key]) => sensorName(key));
+    // Which sensor: the banner names them (two at most, then how many more), so there is
+    // something to look for under Sensors > Signals.
+    if (bad.length) warnings.push('SENSOR FAULT: ' + [...new Set(bad)].slice(0, 2).join(', ') + (new Set(bad).size > 2 ? ` +${new Set(bad).size - 2}` : ''));
     $('warn-banner').hidden = warnings.length === 0;
     $('warn-banner').textContent = warnings.join(' · ');
     renderControls();
@@ -234,7 +236,14 @@
       box.closest('.speed, [data-speed-card]')?.classList.toggle('has-speed-problem', !!title);
     }
   }
+  // engine.oil_pressure_psi -> OIL PRESSURE
+  function sensorName(key) {
+    return key.split('.').pop().replace(/_(psi|kpa|c|f|pct|v|ms)$/, '').replace(/_/g, ' ').toUpperCase();
+  }
   function renderDiagnostics() {
+    const notFitted = snapshot.analog?.not_fitted || [];
+    $('not-fitted').hidden = notFitted.length === 0;
+    $('not-fitted-list').textContent = notFitted.map(k => sensorName(k).toLowerCase()).join(', ');
     $('module-health').textContent = $('source-health').textContent + ` · ${snapshot.transport.received || 0} received · ${snapshot.transport.malformed || 0} malformed`;
     const filter = $('signal-filter').value.toLowerCase().trim();
     $('signals').replaceChildren(...Object.keys(snapshot.values).filter(key => key.toLowerCase().includes(filter)).sort().map(key => {
@@ -316,6 +325,12 @@
     finally { logsPending = false; }
   }
   $('refresh-logs').onclick = loadLogs;
+  // A sensor taken out for good: forget which inputs are fitted (fitted.py). It is learnt
+  // again from the next drive; until then a working sensor's faults show as "not fitted".
+  $('forget-sensors').onclick = async () => {
+    const response = await fetch('/sensors/forget', {method: 'POST'}).catch(() => null);
+    $('forget-sensors').textContent = response?.ok ? 'Forgotten: learnt again as they read' : 'Not done: no connection';
+  };
   $('diagnostics-launch').onclick = () => { $('diagnostics').showModal(); renderDiagnostics(); loadLogs(); };
   $('diagnostics-close').onclick = () => $('diagnostics').close();
   $('signal-filter').addEventListener('input', renderDiagnostics);

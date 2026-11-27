@@ -192,14 +192,20 @@ class DrivingTests(unittest.TestCase):
         self.assertTrue(self.condition('meth_off'))
         self.assertFalse(self.condition('meth_off', **{'meth.state': 'SPRAYING'}))
 
-    def test_fuel_trim_either_way_and_cold_boost(self):
+    def test_fuel_trim_either_way(self):
         # The ECU sends 100 % for no correction (its logs: 90 to 110).
         self.assertFalse(self.condition('trim', **{'engine.ego_correction_pct': 100}))
         self.assertFalse(self.condition('trim', **{'engine.ego_correction_pct': 106}))
         self.assertTrue(self.condition('trim', **{'engine.ego_correction_pct': 110}))
         self.assertTrue(self.condition('trim', **{'engine.ego_correction_pct': 90}))
-        self.assertTrue(self.condition('cold_boost', **{'engine.coolant_c': 40, 'engine.boost_kpa': 30}))
-        self.assertFalse(self.condition('cold_boost', **{'engine.coolant_c': 85}))
+
+    def test_a_removed_alert_in_saved_settings_keeps_the_rest(self):
+        # Boost on a cold engine was removed (2026-11-27); a Pi's saved settings may still name it.
+        saved = {'version': 2, 'chime': True, 'rules': {'cold_boost': {'enabled': True}, 'overboost': {'enabled': False}}}
+        settings = validate_settings(saved)
+        self.assertNotIn('cold_boost', settings['rules'])
+        self.assertFalse(settings['rules']['overboost']['enabled'])
+        self.assertTrue(settings['chime'])
 
     def test_pi_heat_power_and_sync_loss(self):
         self.assertTrue(self.condition('pi_heat', system={'cpu_c': 82}))
@@ -347,10 +353,10 @@ class DrivingServiceTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual((await response.json())['settings']['rules']['oil']['psi'], 20)
             self.assertEqual((await client.post('/drive/settings', json=alert_defaults(), headers={'Origin': 'https://evil.example'})).status, 403)
             details = await (await client.get('/drive/alerts')).json()
-            self.assertEqual(len(details['alerts']), 27)
+            self.assertEqual(len(details['alerts']), 26)   # 27 until boost on a cold engine was removed
             self.assertEqual({a['key']: a['code'] for a in details['alerts']}['fuel_boost'], 'FUEL-02')
             rules = await (await client.get('/alert-rules.json')).json()
-            self.assertEqual(len(rules['rules']), 27)
+            self.assertEqual(len(rules['rules']), 26)
             self.assertEqual((await client.post('/drive/mark', json={'label': 'Test marker'})).status, 200)
             self.assertEqual((await client.post('/drive/ack', json={'key': 'all'})).status, 200)
             self.assertEqual((await client.post('/drive/ack', json={'key': 'nope'})).status, 400)

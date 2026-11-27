@@ -47,6 +47,8 @@ async def sensor_fault_rpm_gate(page):
         await page.wait_for_function('(n) => window.frogdashRendered > n', arg=rendered)
         banner = await page.locator('#warn-banner').text_content()
         assert ('SENSOR FAULT' in banner) == expected, (values, banner)
+        if 'knock.energy' in values:
+            assert 'SENSOR FAULT: ENERGY' in banner, banner   # The banner names the sensor
         if 'engine.oil_pressure_psi' in values:
             assert await page.locator('[data-signal="engine.oil_pressure_psi"]').first.get_attribute('data-quality') == 'fault'
     await page.evaluate("FrogdashDemoSocket.prototype.emit = originalDemoEmit; delete window.sensorFaultCase; frogdashDemo.scenario('drive')")

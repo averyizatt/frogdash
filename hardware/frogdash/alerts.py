@@ -109,6 +109,12 @@ def number(value):
     return type(value) in (int, float) and math.isfinite(value)
 
 
+# Alerts that have been removed. Settings saved before then still mention them; refusing
+# those would put every alert back to its defaults, so they are skipped instead.
+#   cold_boost (BST-02, boost on a cold engine): removed at the owner's request, 2026-11-27.
+RETIRED = {'cold_boost'}
+
+
 def validate_settings(data):
     """Complete version 2 settings from version 1 or 2, or ValueError with the reason.
     A rule that is not mentioned keeps its defaults; an unknown one is refused."""
@@ -134,6 +140,8 @@ def validate_settings(data):
     result = defaults(custom)
     result['chime'] = data.get('chime', False)
     for key, given in data['rules'].items():
+        if key in RETIRED:
+            continue   # An alert since removed: its saved settings are dropped, the rest kept
         rule = rules.get(key)
         if rule is None:
             raise ValueError(f'Unknown alert: {key}')

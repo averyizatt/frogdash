@@ -104,6 +104,7 @@ class MissingECUTests(unittest.TestCase):
     def test_other_sensor_controller_and_flow_faults_still_warn_while_parked(self):
         self.gps(0)
         self.report(flags=3)  # Missing MAP plus low tank.
+        self.state.fitted.seen = {'engine.oil_pressure_psi'}   # An oil sender that has worked
         self.state.ingest(0x303, bytes.fromhex('7D4F00003C410100'))  # Oil sender fault.
         self.now += 2
         self.state.ingest(0x303, bytes.fromhex('7D4F00003C410100'))

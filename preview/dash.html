@@ -253,6 +253,7 @@
       </section>
       <section id="sensor-panel-signals" class="sensor-panel" role="tabpanel" aria-labelledby="sensor-tab-signals" hidden>
         <div class="diagnostics-toolbar"><label for="signal-filter">Find a signal</label><input id="signal-filter" type="search" placeholder="Search name, e.g. oil or GPS" autocomplete="off"><span>LIVE / STALE / FAULT / NO SIGNAL</span></div>
+        <p id="not-fitted" class="control-note" hidden>Not fitted (these inputs have never read in range, so they are not faults): <span id="not-fitted-list"></span>. A sensor that has worked once is watched from then on. <button id="forget-sensors" class="close-button" type="button">Forget fitted sensors</button></p>
         <div class="sensor-table" data-wheel-scroll data-wheel-first tabindex="0" aria-label="Signal list"><table><thead><tr><th>Signal</th><th>Reading</th><th>Quality</th><th>Source</th></tr></thead><tbody id="signals"></tbody></table></div>
       </section>
       <section id="sensor-panel-logs" class="sensor-panel" role="tabpanel" aria-labelledby="sensor-tab-logs" hidden>
@@ -528,7 +529,7 @@
 <script src="dashcam.js?v=59b85171a81e"></script>
 <script src="meth-tune.js?v=116e4dff8b17"></script>
 <script src="demo.js?v=097b4246516e"></script>
-<script src="app.js?v=bc8203187bef"></script>
+<script src="app.js?v=8b4b7702f0f7"></script>
 <!-- Everything else, about four seconds after the gauges' first frame (later.js), one
      file at a time, in this order: ready long before it is opened. -->
 <script type="application/json" id="later-files">[
@@ -556,7 +557,7 @@
   "graphs.js?v=4ddec132eab0",
   "mlgplot.js?v=868ca37b6a64",
   "tuning.js?v=0548f65762ac",
-  "alert-rules.js?v=f34a0f3f3609",
+  "alert-rules.js?v=a4544307055c",
   "alerts.js?v=e3f733545351"
 ]</script>
 <script src="later.js?v=3dac14eaaaca"></script>

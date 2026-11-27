@@ -130,6 +130,7 @@ class FreshnessTests(unittest.TestCase):
         self.assertEqual(self.values()['engine.afr']['quality'], 'live')
 
     def test_fault_flags_apply_across_frames_and_recover(self):
+        self.state.fitted.seen = {'engine.iat_c', 'engine.oil_pressure_psi'}   # Sensors that have worked (fitted.py)
         self.state.ingest(0x300, bytes.fromhex('0100640055505000'))
         self.assertEqual(self.values()['engine.iat_c']['quality'], 'unavailable')
         self.state.ingest(0x303, bytes.fromhex('7D4F00003C411100'))

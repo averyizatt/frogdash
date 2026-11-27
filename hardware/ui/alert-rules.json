@@ -90,13 +90,6 @@
      "params": [{"key": "afr", "label": "Richer than", "kind": "afr", "min": 8, "max": 12, "step": 0.1, "default": 10},
                 {"key": "boost", "label": "From boost", "kind": "boost", "min": 0, "max": 250, "step": 1, "default": 34}],
      "when": [["engine.boost_kpa", ">=", {"param": "boost"}], ["engine.afr", "<", {"param": "afr"}]]},
-    {"key": "cold_boost", "code": "BST-02", "title": "BOOST ON A COLD ENGINE", "name": "Boost before warm-up", "group": "boost", "severity": "warning",
-     "about": "Boost with the coolant still below the temperature set here.",
-     "check": "Let the engine warm up before using boost: cold oil and pistons wear faster.",
-     "show": ["engine.coolant_c", "temp"], "enabled": true, "delay": 0.5,
-     "params": [{"key": "c", "label": "Coolant below", "kind": "temp", "min": 20, "max": 90, "step": 1, "default": 60},
-                {"key": "boost", "label": "From boost", "kind": "boost", "min": 0, "max": 200, "step": 1, "default": 14}],
-     "when": [["engine.coolant_c", "<", {"param": "c"}], ["engine.boost_kpa", ">=", {"param": "boost"}]]},
 
     {"key": "coolant", "code": "TMP-01", "title": "COOLANT HIGH", "name": "High coolant temperature", "group": "temps", "severity": "critical",
      "about": "Coolant temperature at or above the limit.",

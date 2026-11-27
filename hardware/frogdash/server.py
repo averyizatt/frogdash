@@ -33,6 +33,7 @@ from .eventlog import EventLog, read as read_events, as_text as events_text
 from .github_link import GitHubLink
 from .summary import DriveSummary
 from .health import Health
+from .fitted import FittedSensors
 from .shutdown import ShutdownHistory
 from .trip import Trip
 from .nav import Navigator
@@ -617,6 +618,13 @@ def create_app(state, adapter=None, connectivity=None):
     async def self_test(request):
         folder = state.paint.path.parent if state.paint else None
         return web.json_response(await asyncio.to_thread(selftest.report, state, folder), headers={'Cache-Control': 'no-store'})
+
+    async def sensors_forget(request):
+        # A sensor taken out for good: every module analog input back to "not fitted" until
+        # it reads in range again (fitted.py).
+        require_local(request)
+        state.fitted.forget()
+        return web.json_response({'ok': True})
 
     async def can_capture(request):
         # Record raw CAN traffic for a few seconds, then download it in candump log format.
@@ -1331,7 +1339,7 @@ def create_app(state, adapter=None, connectivity=None):
 
     app.cleanup_ctx.append(lifecycle)
     app.add_routes([web.get("/state", websocket), web.get("/health", health),
-                    web.get("/ui/display", display_info), web.get("/snapshot", snapshot_page), web.post("/ui/error", screen_error), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.get("/can/frogdash.dbc", can_dbc), web.post("/can/capture", can_capture), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.get("/tune/windows", tune_windows), web.post("/tune/windows", tune_windows), web.post("/tune/windows/kiosk", tune_windows_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/events', events), web.get('/uploads', uploads), web.post('/uploads', uploads), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log), web.get('/logs/{name}/view', log_view), web.get('/logs/{name}/series', log_series),
+                    web.get("/ui/display", display_info), web.get("/snapshot", snapshot_page), web.post("/ui/error", screen_error), web.get("/raw", raw), web.get("/can/check", can_check), web.get("/selftest", self_test), web.get("/can/capture", can_capture), web.get("/can/frogdash.dbc", can_dbc), web.post("/can/capture", can_capture), web.post("/sensors/forget", sensors_forget), web.get("/terminal", terminal), web.get("/terminal/session", terminal_session), web.get("/meth/presets", meth_presets), web.post("/meth/presets", meth_presets), web.get("/tune", tune), web.post("/tune", tune), web.post("/tune/kiosk", tune_kiosk), web.get("/tune/windows", tune_windows), web.post("/tune/windows", tune_windows), web.post("/tune/windows/kiosk", tune_windows_kiosk), web.post("/terminal", terminal), web.get("/update", update), web.get("/screen", screen), web.post("/screen", screen), web.get("/firmware", firmware), web.post("/firmware", firmware), web.get("/wifi-client", wifi_client), web.post("/wifi-client", wifi_client), web.post("/update", update), web.get('/logs', logs), web.get('/events', events), web.get('/uploads', uploads), web.post('/uploads', uploads), web.post('/logs/finish', finish_log), web.get('/logs/{name}', download_log), web.get('/logs/{name}/view', log_view), web.get('/logs/{name}/series', log_series),
                     web.get('/connectivity', wifi_status), web.post('/connectivity', wifi_toggle),
                     web.post('/race', race_command), web.get('/race/results', race_results),
                     web.get('/drive/settings', drive_settings), web.get('/drive/alerts', drive_alerts), web.post('/drive/settings', drive_settings),
@@ -1425,6 +1433,7 @@ def main():
     state.meth_tune.load((args.data_dir / 'replay' if args.replay else args.data_dir) / 'meth-presets.json')
     state.imports = Imports((args.data_dir / 'replay' if args.replay else args.data_dir) / 'import', Path(__file__).resolve().parents[1] / 'art')
     state.paint = Paint((args.data_dir / 'replay' if args.replay else args.data_dir) / 'appearance-paint.json')
+    state.fitted = FittedSensors(None if args.replay else args.data_dir / 'analog-sensors.json')
     state.shutdown_history = ShutdownHistory((args.data_dir / 'replay' if args.replay else args.data_dir) / 'shutdown.json')
     # Finished CAN recordings, sent with the next report (tools/frogdash_upload.py).
     state.recordings = None if args.replay else args.data_dir / 'can-recordings'
