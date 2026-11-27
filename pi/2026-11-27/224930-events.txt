@@ -1,0 +1,6 @@
+2026-11-27 22:46:45 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-27 22:47:30 UTC  WARN   module   water/meth silent for 4.9 s (0x300), then back: a restart of the module, or a dropout  {"id":"0x300"}
+2026-11-27 22:47:30 UTC  WARN   module   sensor gateway silent for 4.8 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-27 22:47:32 UTC  WARN   module   taillights silent for 6.9 s (0x100), then back: a restart of the module, or a dropout  {"id":"0x100"}
+2026-11-27 22:47:32 UTC  INFO   module   water/meth controller started (power-on or reset button)  {"frame":"0x302#0A000100"}
+2026-11-27 22:47:32 UTC  INFO   module   taillights started (software restart): after its restart on settled power  {"frame":"0x102#08000301"}
