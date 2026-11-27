@@ -1,0 +1,4 @@
+2026-11-27 22:44:04 UTC  WARN   module   sensor gateway silent for 1.1 s (0x500), then back: a restart of the module, or a dropout  {"id":"0x500"}
+2026-11-27 22:44:04 UTC  INFO   gps      Satellite data saved: 7 satellite orbits, 8 almanac entries
+2026-11-27 22:44:20 UTC  INFO   module   taillights started (software restart): new firmware on trial  {"frame":"0x102#08000308"}
+2026-11-27 22:44:24 UTC  INFO   firmware Taillight controller updated to build 0f6221d2 (sent in 1 min 45 s, 9.7 KB/s, 660 KB on the bus); working: its light state back · 1 block had frames sent again · ended at 4 frame(s) per 1 ms
